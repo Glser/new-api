@@ -53,6 +53,8 @@ import type {
 } from '../types'
 import { CreemProductsSection } from './creem-products-section'
 
+const XIANYU_REDEMPTION_URL = 'https://m.tb.cn/h.8g9J7gA?tk=QplcgBdWJxW'
+
 interface RechargeFormCardProps {
   topupInfo: TopupInfo | null
   presetAmounts: PresetAmount[]
@@ -517,7 +519,7 @@ export function RechargeFormCard({
               {t('Have a Code?')}
             </Label>
           </div>
-          <div className='grid grid-cols-[minmax(0,1fr)_auto] gap-2'>
+          <div className='grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2'>
             <Input
               id='redemption-code'
               value={redemptionCode}
@@ -534,6 +536,36 @@ export function RechargeFormCard({
               {redeeming && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
               {t('Redeem')}
             </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      render={
+                        <a
+                          href={XIANYU_REDEMPTION_URL}
+                          target='_blank'
+                          rel='noopener noreferrer'
+                        />
+                      }
+                      variant='ghost'
+                      size='icon-lg'
+                      aria-label={`${t('Get one here')} - 闲鱼`}
+                      className='overflow-hidden p-0'
+                    />
+                  }
+                >
+                  <img
+                    src='/xianyu-logo.png'
+                    alt=''
+                    width={36}
+                    height={36}
+                    className='size-full object-cover'
+                  />
+                </TooltipTrigger>
+                <TooltipContent>{t('Get one here')} - 闲鱼</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           {topupLink && (
             <p className='text-muted-foreground text-xs'>

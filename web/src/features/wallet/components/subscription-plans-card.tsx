@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Crown, RefreshCw, Sparkles, Check } from 'lucide-react'
+import { Crown, RefreshCw, Check } from 'lucide-react'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -524,12 +524,11 @@ export function SubscriptionPlansCard({
         {/* Available plans grid */}
         {plans.length > 0 ? (
           <div className='grid grid-cols-1 gap-3 2xl:grid-cols-2 2xl:gap-4'>
-            {plans.map((p, index) => {
+            {plans.map((p) => {
               const plan = p?.plan
               if (!plan) return null
               const totalAmount = Number(plan.total_amount || 0)
               const price = Number(plan.price_amount || 0).toFixed(2)
-              const isPopular = index === 0 && plans.length > 1
               const limit = Number(plan.max_purchase_per_user || 0)
               const count = planPurchaseCountMap.get(plan.id) || 0
               const reached = limit > 0 && count >= limit
@@ -549,11 +548,7 @@ export function SubscriptionPlansCard({
               ].filter(Boolean) as string[]
 
               return (
-                <Card
-                  key={plan.id}
-                  data-card-hover='false'
-                  className={cn(isPopular && 'border-primary/70 shadow-sm')}
-                >
+                <Card key={plan.id} data-card-hover='false'>
                   <CardContent className='flex h-full flex-col p-3.5 sm:p-4'>
                     <div className='mb-2 flex items-start justify-between gap-3'>
                       <div className='min-w-0'>
@@ -566,16 +561,6 @@ export function SubscriptionPlansCard({
                           </p>
                         )}
                       </div>
-                      {isPopular && (
-                        <StatusBadge
-                          variant='info'
-                          copyable={false}
-                          className='shrink-0'
-                        >
-                          <Sparkles className='h-3 w-3' />
-                          {t('Recommended')}
-                        </StatusBadge>
-                      )}
                     </div>
 
                     <div className='py-2'>
