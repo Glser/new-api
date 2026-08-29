@@ -18,6 +18,8 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { cn } from '@/lib/utils'
 
+import { BrandImage } from './brand-image'
+
 interface HeaderLogoProps {
   src: string
   alt?: string
@@ -30,21 +32,15 @@ interface HeaderLogoProps {
  * Logo component for header with loading state
  * Shows image only when fully loaded for smooth UX
  */
-export function HeaderLogo({
-  src,
-  alt = 'logo',
-  loading,
-  logoLoaded,
-  className,
-}: HeaderLogoProps) {
+export function HeaderLogo(props: HeaderLogoProps) {
   return (
-    <img
-      src={src}
-      alt={alt}
-      className={cn(
-        'h-6 w-6 rounded-full transition-opacity duration-200',
-        !loading && logoLoaded ? 'opacity-100' : 'opacity-0',
-        className
+    <BrandImage
+      src={props.src}
+      alt={props.alt ?? 'logo'}
+      className={cn('h-7 w-16', props.className)}
+      imageClassName={cn(
+        'transition-opacity duration-200',
+        !props.loading && props.logoLoaded ? 'opacity-100' : 'opacity-0'
       )}
     />
   )

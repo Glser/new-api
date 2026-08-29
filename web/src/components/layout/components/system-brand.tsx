@@ -28,6 +28,8 @@ import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { cn } from '@/lib/utils'
 
+import { BrandImage } from './brand-image'
+
 type SystemBrandProps = {
   defaultName?: string
   defaultVersion?: string
@@ -65,13 +67,7 @@ export function SystemBrand(props: SystemBrandProps) {
           'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
         )}
       >
-        <div className='flex size-5 items-center justify-center overflow-hidden rounded-md'>
-          <img
-            src={logo}
-            alt={t('Logo')}
-            className='size-full rounded-md object-cover'
-          />
-        </div>
+        <BrandImage src={logo} alt={t('Logo')} className='h-5 w-14 shrink-0' />
         <span className='max-w-[12rem] truncate'>{name}</span>
       </Link>
     )
@@ -85,13 +81,11 @@ export function SystemBrand(props: SystemBrandProps) {
           className='hover:text-sidebar-foreground active:text-sidebar-foreground cursor-default hover:bg-transparent active:bg-transparent'
           render={<div />}
         >
-          <div className='flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
-            <img
-              src={logo}
-              alt={t('Logo')}
-              className='size-full rounded-lg object-cover'
-            />
-          </div>
+          <BrandImage
+            src={logo}
+            alt={t('Logo')}
+            className='h-8 w-24 shrink-0 group-data-[collapsible=icon]:w-8'
+          />
           <div className='grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden'>
             <span className='truncate font-semibold'>{name}</span>
             <span className='truncate text-xs'>{version}</span>

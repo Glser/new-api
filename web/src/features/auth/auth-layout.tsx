@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { BrandImage } from '@/components/layout/components/brand-image'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSystemConfig } from '@/hooks/use-system-config'
 
@@ -36,17 +37,11 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         to='/'
         className='absolute top-4 left-4 z-10 flex items-center gap-2 transition-opacity hover:opacity-80 sm:top-8 sm:left-8'
       >
-        <div className='relative h-8 w-8'>
-          {loading ? (
-            <Skeleton className='absolute inset-0 rounded-full' />
-          ) : (
-            <img
-              src={logo}
-              alt={t('Logo')}
-              className='h-8 w-8 rounded-full object-cover'
-            />
-          )}
-        </div>
+        {loading ? (
+          <Skeleton className='h-8 w-20 rounded-md' />
+        ) : (
+          <BrandImage src={logo} alt={t('Logo')} className='h-8 w-20' />
+        )}
         {loading ? (
           <Skeleton className='h-6 w-24' />
         ) : (

@@ -32,6 +32,8 @@ import type { AuthUser } from '@/stores/auth-store'
 import { MOBILE_DRAWER_ANIMATION, MOBILE_DRAWER_CONFIG } from '../constants'
 import type { TopNavLink } from '../types'
 
+const MOBILE_DRAWER_SKELETON_KEYS = ['one', 'two', 'three', 'four']
+
 /**
  * Brand logo component with skeleton loading
  */
@@ -58,9 +60,9 @@ function BrandLogo({
       className='flex items-center gap-2 text-xl font-bold'
       onClick={onClick}
     >
-      <div className='relative h-6 w-6'>
+      <div className='relative h-6 w-16 shrink-0'>
         {loading || !logoLoaded ? (
-          <Skeleton className='absolute inset-0 rounded-full' />
+          <Skeleton className='absolute inset-0 rounded-md' />
         ) : null}
         {displayLogo}
       </div>
@@ -255,15 +257,15 @@ export function MobileDrawer({
               >
                 {loading ? (
                   <div className='flex flex-col gap-1 p-2'>
-                    {Array.from({ length: 4 }, (_, i) => (
-                      <Skeleton key={i} className='h-8 w-full' />
+                    {MOBILE_DRAWER_SKELETON_KEYS.map((key) => (
+                      <Skeleton key={key} className='h-8 w-full' />
                     ))}
                   </div>
                 ) : (
                   <AnimatePresence>
-                    {mobileLinksList.map((link, index) => (
+                    {mobileLinksList.map((link) => (
                       <motion.div
-                        key={`${link.href}-${index}`}
+                        key={`${link.href}:${link.title}`}
                         className='border-border border-b p-2.5 last:border-b-0'
                         variants={MOBILE_DRAWER_ANIMATION.menuItem as Variants}
                       >

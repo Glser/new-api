@@ -25,6 +25,7 @@ import { toast } from 'sonner'
 
 import { ErrorState } from '@/components/error-state'
 import { LanguageSwitcher } from '@/components/language-switcher'
+import { BrandImage } from '@/components/layout/components/brand-image'
 import { LoadingState } from '@/components/loading-state'
 import {
   Card,
@@ -204,6 +205,29 @@ export function SetupWizard() {
     return <CompleteStep status={setupStatus} values={watchedValues} />
   }, [currentStep, setupStatus, form, watchedValues])
 
+  let setupContent: React.ReactNode
+  if (isLoading) {
+    setupContent = <LoadingState message={t('Loading setup status…')} />
+  } else if (isError) {
+    setupContent = (
+      <ErrorState
+        title={t('We could not load the setup status.')}
+        onRetry={() => refetch()}
+      />
+    )
+  } else {
+    setupContent = (
+      <Form {...form}>
+        <form
+          className='space-y-6'
+          onSubmit={(event) => event.preventDefault()}
+        >
+          {currentStepComponent}
+        </form>
+      </Form>
+    )
+  }
+
   const validateAdminStep = () => {
     if (setupStatus?.root_init) return true
 
@@ -285,17 +309,15 @@ export function SetupWizard() {
       </div>
       <div className='container mx-auto flex max-w-5xl flex-col gap-8 px-4 sm:px-6'>
         <div className='flex flex-col items-center gap-3'>
-          <div className='relative h-12 w-12'>
-            {systemConfigLoading ? (
-              <Skeleton className='absolute inset-0 rounded-full' />
-            ) : (
-              <img
-                src={logo}
-                alt={t('System logo')}
-                className='h-12 w-12 rounded-full object-cover shadow-sm'
-              />
-            )}
-          </div>
+          {systemConfigLoading ? (
+            <Skeleton className='h-12 w-32 rounded-md' />
+          ) : (
+            <BrandImage
+              src={logo}
+              alt={t('System logo')}
+              className='h-12 w-32 shadow-sm'
+            />
+          )}
           {systemConfigLoading ? (
             <Skeleton className='h-7 w-40' />
           ) : (
@@ -325,27 +347,27 @@ export function SetupWizard() {
               {STEPS.map((step, index) => {
                 const isActive = currentStep === index
                 const isCompleted = currentStep > index
+                let stepClassName = 'border-muted bg-card'
+                if (isCompleted) {
+                  stepClassName = 'border-primary/40 bg-primary/5'
+                }
+                if (isActive) {
+                  stepClassName = 'border-primary ring-primary/20 ring-2'
+                }
+                const indicatorClassName =
+                  isActive || isCompleted
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-muted-foreground/40 text-muted-foreground'
                 return (
                   <li
                     key={step.titleKey}
-                    className={cn(
-                      'rounded-xl border p-3',
-                      isActive
-                        ? 'border-primary ring-primary/20 ring-2'
-                        : isCompleted
-                          ? 'border-primary/40 bg-primary/5'
-                          : 'border-muted bg-card'
-                    )}
+                    className={cn('rounded-xl border p-3', stepClassName)}
                   >
                     <div className='flex items-start gap-3'>
                       <span
                         className={cn(
                           'flex size-6 items-center justify-center rounded-md border text-xs font-semibold',
-                          isActive
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : isCompleted
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-muted-foreground/40 text-muted-foreground'
+                          indicatorClassName
                         )}
                       >
                         {index + 1}
@@ -364,23 +386,7 @@ export function SetupWizard() {
               })}
             </ol>
 
-            {isLoading ? (
-              <LoadingState message={t('Loading setup status…')} />
-            ) : isError ? (
-              <ErrorState
-                title={t('We could not load the setup status.')}
-                onRetry={() => refetch()}
-              />
-            ) : (
-              <Form {...form}>
-                <form
-                  className='space-y-6'
-                  onSubmit={(event) => event.preventDefault()}
-                >
-                  {currentStepComponent}
-                </form>
-              </Form>
-            )}
+            {setupContent}
           </CardContent>
 
           {!isLoading && !isError && (

@@ -16,16 +16,48 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import {
+  DEFAULT_FAVICON,
+  DEFAULT_LOGO,
+  LEGACY_DEFAULT_LOGO,
+} from '@/lib/constants'
+
+function resolveUrl(url: string): string {
+  const base =
+    typeof window === 'undefined' ? 'http://localhost/' : window.location.href
+  return new URL(url, base).href
+}
+
+/** Whether a URL points at one of the bundled default brand assets. */
+export function isDefaultLogoUrl(url: string): boolean {
+  if (!url) return false
+
+  try {
+    const resolved = resolveUrl(url)
+    return [DEFAULT_LOGO, LEGACY_DEFAULT_LOGO].some(
+      (defaultLogo) => resolveUrl(defaultLogo) === resolved
+    )
+  } catch {
+    return false
+  }
+}
+
 export function applyFaviconToDom(url: string) {
   if (typeof document === 'undefined' || !url) return
   try {
-    const next = new URL(url, window.location.href).href
+    const isDefaultFavicon = isDefaultLogoUrl(url)
+    const faviconUrl = isDefaultFavicon ? DEFAULT_FAVICON : url
+    const next = resolveUrl(faviconUrl)
     const existing =
       document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]')
     if (existing.length === 1 && existing[0].href === next) return
     const link = document.createElement('link')
     link.rel = 'icon'
-    link.href = url
+    if (isDefaultFavicon) {
+      link.type = 'image/png'
+      link.setAttribute('sizes', '128x128')
+    }
+    link.href = faviconUrl
     existing.forEach((l) => l.remove())
     document.head.appendChild(link)
   } catch {
