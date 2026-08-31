@@ -765,11 +765,11 @@ export function OverviewDashboard() {
               className={cn(
                 'grid min-w-0 grid-cols-1 gap-4',
                 (showApiInfoPanel || showAnnouncementsPanel || showFAQPanel) &&
-                  'lg:grid-cols-2'
+                  'md:grid-cols-2 lg:grid-cols-3'
               )}
             >
               {isAdmin && (
-                <CardStaggerItem className='lg:col-span-2'>
+                <CardStaggerItem className='md:col-span-2 lg:col-span-3'>
                   <PerformanceHealthPanel />
                 </CardStaggerItem>
               )}

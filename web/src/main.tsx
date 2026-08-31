@@ -130,10 +130,12 @@ if (!rootElement) {
       if (saved) {
         const s = JSON.parse(saved)
         if (s?.system_name) apply(s.system_name)
-        if (s?.logo) applyFaviconToDom(s.logo)
+        applyFaviconToDom(s?.logo)
+      } else {
+        applyFaviconToDom()
       }
     } catch {
-      /* empty */
+      applyFaviconToDom()
     }
     // Background refresh
     getStatus()
@@ -146,7 +148,7 @@ if (!rootElement) {
             /* empty */
           }
         }
-        if (s?.logo) applyFaviconToDom(s.logo as string)
+        applyFaviconToDom(s?.logo as string | undefined)
       })
       .catch(() => {
         /* empty */

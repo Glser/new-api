@@ -28,6 +28,21 @@ function resolveUrl(url: string): string {
   return new URL(url, base).href
 }
 
+/** Whether a URL points to the bundled favicon, regardless of cache-busting query. */
+function isBundledFaviconUrl(url: string): boolean {
+  try {
+    const base =
+      typeof window === 'undefined' ? 'http://localhost/' : window.location.href
+    const resolved = new URL(url, base)
+    const current = new URL(base)
+    return (
+      resolved.origin === current.origin && resolved.pathname === '/favicon.png'
+    )
+  } catch {
+    return false
+  }
+}
+
 /** Whether a URL points at one of the bundled default brand assets. */
 export function isDefaultLogoUrl(url: string): boolean {
   if (!url) return false
@@ -42,10 +57,11 @@ export function isDefaultLogoUrl(url: string): boolean {
   }
 }
 
-export function applyFaviconToDom(url: string) {
-  if (typeof document === 'undefined' || !url) return
+export function applyFaviconToDom(url?: string | null) {
+  if (typeof document === 'undefined') return
   try {
-    const isDefaultFavicon = isDefaultLogoUrl(url)
+    const isDefaultFavicon =
+      !url || isDefaultLogoUrl(url) || isBundledFaviconUrl(url)
     const faviconUrl = isDefaultFavicon ? DEFAULT_FAVICON : url
     const next = resolveUrl(faviconUrl)
     const existing =
