@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { useState, useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 
 import { useStatus } from '@/hooks/use-status'
 import { getNotice } from '@/lib/api'
@@ -67,6 +67,7 @@ export function useNotifications() {
   const [activeTab, setActiveTab] = useState<'notice' | 'announcements'>(
     'notice'
   )
+  const ignoreNextOpenRef = useRef(false)
 
   // Fetch Notice from API
   const {
@@ -145,12 +146,20 @@ export function useNotifications() {
   }
 
   const handlePopoverOpenChange = (open: boolean) => {
-    if (open) {
-      handleOpenPopover(activeTab)
+    if (!open) {
+      ignoreNextOpenRef.current = true
+      setPopoverOpen(false)
+      window.setTimeout(() => {
+        ignoreNextOpenRef.current = false
+      }, 50)
       return
     }
 
-    setPopoverOpen(false)
+    if (ignoreNextOpenRef.current) {
+      return
+    }
+
+    handleOpenPopover(activeTab)
   }
 
   // Handle tab change - mark announcements as read when switching to that tab

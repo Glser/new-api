@@ -55,6 +55,8 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
+import { useSystemConfig } from '@/hooks/use-system-config'
+import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 import { formatQuota } from '@/lib/format'
 
 import {
@@ -112,6 +114,7 @@ function SubscriptionStatusBadge(props: {
 
 export function UserSubscriptionsDialog(props: Props) {
   const { t } = useTranslation()
+  useSystemConfig()
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
   const [plans, setPlans] = useState<PlanRecord[]>([])
@@ -251,8 +254,11 @@ export function UserSubscriptionsDialog(props: Props) {
                   value: String(p.plan.id),
                   label: (
                     <>
-                      {p.plan.title}($
-                      {Number(p.plan.price_amount || 0).toFixed(2)})
+                      {p.plan.title}(
+                      {formatBillingCurrencyFromUSD(
+                        Number(p.plan.price_amount || 0),
+                        { abbreviate: false }
+                      )})
                     </>
                   ),
                 }))}
@@ -266,8 +272,11 @@ export function UserSubscriptionsDialog(props: Props) {
                   <SelectGroup>
                     {plans.map((p) => (
                       <SelectItem key={p.plan.id} value={String(p.plan.id)}>
-                        {p.plan.title} ($
-                        {Number(p.plan.price_amount || 0).toFixed(2)})
+                        {p.plan.title} (
+                        {formatBillingCurrencyFromUSD(
+                          Number(p.plan.price_amount || 0),
+                          { abbreviate: false }
+                        )})
                       </SelectItem>
                     ))}
                   </SelectGroup>
