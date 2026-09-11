@@ -52,7 +52,7 @@ import type {
 } from '../types'
 import { CreemProductsSection } from './creem-products-section'
 
-const XIANYU_REDEMPTION_URL = 'https://m.tb.cn/h.8g9J7gA?tk=QplcgBdWJxW'
+const XIANYU_REDEMPTION_URL = 'https://m.tb.cn/h.8IP2BiK?tk=sbDgT7Lla3k'
 
 interface RechargeFormCardProps {
   topupInfo: TopupInfo | null
