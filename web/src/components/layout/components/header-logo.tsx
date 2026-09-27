@@ -18,8 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { cn } from '@/lib/utils'
 
-import { BrandImage } from './brand-image'
-
 interface HeaderLogoProps {
   src: string
   alt?: string
@@ -31,16 +29,52 @@ interface HeaderLogoProps {
 /**
  * Logo component for header with loading state
  * Shows image only when fully loaded for smooth UX
+ * Supports dark mode auto-switching when default /logo.png is used
  */
-export function HeaderLogo(props: HeaderLogoProps) {
+export function HeaderLogo({
+  src,
+  alt = 'logo',
+  loading,
+  logoLoaded,
+  className,
+}: HeaderLogoProps) {
+  const isDefaultLogo = src === '/logo.png'
+
+  if (isDefaultLogo) {
+    return (
+      <>
+        {/* Light mode: default black letter logo */}
+        <img
+          src="/logo.png"
+          alt={alt}
+          className={cn(
+            'h-6 w-6 rounded-full transition-opacity duration-200 block dark:hidden',
+            !loading && logoLoaded ? 'opacity-100' : 'opacity-0',
+            className
+          )}
+        />
+        {/* Dark mode: white letter logo */}
+        <img
+          src="/logo-dark.png"
+          alt={alt}
+          className={cn(
+            'h-6 w-6 rounded-full transition-opacity duration-200 hidden dark:block',
+            !loading && logoLoaded ? 'opacity-100' : 'opacity-0',
+            className
+          )}
+        />
+      </>
+    )
+  }
+
   return (
-    <BrandImage
-      src={props.src}
-      alt={props.alt ?? 'logo'}
-      className={cn('h-7 w-16', props.className)}
-      imageClassName={cn(
-        'transition-opacity duration-200',
-        !props.loading && props.logoLoaded ? 'opacity-100' : 'opacity-0'
+    <img
+      src={src}
+      alt={alt}
+      className={cn(
+        'h-6 w-6 rounded-full transition-opacity duration-200',
+        !loading && logoLoaded ? 'opacity-100' : 'opacity-0',
+        className
       )}
     />
   )

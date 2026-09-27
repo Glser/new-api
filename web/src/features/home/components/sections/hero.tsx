@@ -16,311 +16,261 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useState, useCallback } from "react"
-import { CherryStudio } from "@lobehub/icons"
-import { Link } from "@tanstack/react-router"
-import { ArrowUpRight, BookOpen, Check, Copy, Sparkles, Terminal, ChevronDown } from "lucide-react"
-import { useTranslation } from "react-i18next"
-import { toast } from "sonner"
+import { Link } from '@tanstack/react-router'
+import { ArrowUpRight, BookOpen, Check, ChevronDown, Copy } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
-import { Button } from "@/components/ui/button"
-import { useStatus } from "@/hooks/use-status"
-import { useSystemConfig } from "@/hooks/use-system-config"
+import { HeaderLogo } from '@/components/layout/components/header-logo'
+import { Button } from '@/components/ui/button'
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
+import { useStatus } from '@/hooks/use-status'
+import { useSystemConfig } from '@/hooks/use-system-config'
 
-import { HeroTerminalDemo } from "../hero-terminal-demo"
+import { HeroAgentShowcase } from '../hero-agent-showcase'
 
 interface HeroProps {
   className?: string
   isAuthenticated?: boolean
 }
 
-// Stylized three-dots indicator representing "More"
-const MoreIcon = () => (
-  <svg
-    className="text-muted-foreground/60 group-hover:text-foreground size-5 shrink-0 transition-colors"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <circle cx="6" cy="12" r="2" fill="currentColor" />
-    <circle cx="12" cy="12" r="2" fill="currentColor" />
-    <circle cx="18" cy="12" r="2" fill="currentColor" />
-  </svg>
-)
+function readServerAddress(status: unknown): string {
+  if (!status || typeof status !== 'object') return ''
+  const record = status as Record<string, unknown>
+  if (typeof record.server_address === 'string' && record.server_address.trim()) {
+    return record.server_address.trim()
+  }
+  if (record.data && typeof record.data === 'object') {
+    const nested = (record.data as Record<string, unknown>).server_address
+    if (typeof nested === 'string' && nested.trim()) return nested.trim()
+  }
+  return ''
+}
+
+function toGatewayBaseUrl(origin: string): string {
+  const trimmed = origin.replace(/\/+$/, '')
+  if (/\/v1$/i.test(trimmed)) return trimmed
+  return `${trimmed}/v1`
+}
+
+const specs = [
+  ['hero_spec_protocol_label', 'hero_spec_protocol_value'],
+  ['hero_spec_routing_label', 'hero_spec_routing_value'],
+  ['hero_spec_control_label', 'hero_spec_control_value'],
+] as const
 
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
   const { status } = useStatus()
-  const { systemName } = useSystemConfig()
-  const [copied, setCopied] = useState(false)
+  const { logo, loading, logoLoaded } = useSystemConfig()
+  const { copiedText, copyToClipboard } = useCopyToClipboard({ notify: false })
 
   const docsUrl =
-    (status?.docs_link as string | undefined) || "https://docs.newapi.pro"
-
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://api.example.com"
-
-  const handleCopyBaseUrl = useCallback(() => {
-    navigator.clipboard.writeText(baseUrl)
-    setCopied(true)
-    toast.success(t("Base URL copied to clipboard"))
-    setTimeout(() => setCopied(false), 2000)
-  }, [baseUrl, t])
+    (status?.docs_link as string | undefined) || 'https://docs.newapi.pro'
+  const configuredOrigin = readServerAddress(status)
+  const gatewayOrigin =
+    configuredOrigin ||
+    (typeof window !== 'undefined' ? window.location.origin : '')
+  const gatewayBaseUrl = gatewayOrigin ? toGatewayBaseUrl(gatewayOrigin) : ''
+  const endpointCopied = copiedText === gatewayBaseUrl
 
   const renderDocsButton = () => {
-    const isExternal = docsUrl.startsWith("http")
-    if (isExternal) {
+    const className =
+      'text-muted-foreground hover:text-foreground inline-flex h-11 items-center gap-1.5 px-2 text-sm font-medium transition-colors'
+    const content = (
+      <>
+        <BookOpen className='size-4' />
+        <span>{t('Docs')}</span>
+      </>
+    )
+    if (docsUrl.startsWith('http')) {
       return (
-        <Button
-          variant="outline"
-          className="group border-border/60 hover:border-border hover:bg-muted/40 inline-flex h-11 items-center gap-1.5 rounded-lg px-4 text-sm font-medium transition-all"
-          render={
-            <a href={docsUrl} target="_blank" rel="noopener noreferrer" />
-          }
+        <a
+          href={docsUrl}
+          target='_blank'
+          rel='noopener noreferrer'
+          className={className}
         >
-          <BookOpen className="text-muted-foreground/80 group-hover:text-foreground size-4 transition-colors" />
-          <span>{t("Docs")}</span>
-          <ArrowUpRight className="text-muted-foreground/60 group-hover:text-foreground size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-        </Button>
+          {content}
+        </a>
       )
     }
     return (
-      <Button
-        variant="outline"
-        className="group border-border/60 hover:border-border hover:bg-muted/40 inline-flex h-11 items-center gap-1.5 rounded-lg px-4 text-sm font-medium transition-all"
-        render={<Link to={docsUrl} />}
-      >
-        <BookOpen className="text-muted-foreground/80 group-hover:text-foreground size-4 transition-colors" />
-        <span>{t("Docs")}</span>
-        <ArrowUpRight className="text-muted-foreground/60 group-hover:text-foreground size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-      </Button>
+      <Link to={docsUrl} className={className}>
+        {content}
+      </Link>
     )
   }
 
   return (
-    <section className="relative z-10 overflow-hidden px-6 pt-24 pb-14 md:pt-32 md:pb-20 lg:pt-36 lg:pb-24">
-      {/* Studio / Editorial Ambient Light Glows */}
+    <section className='relative z-10 flex min-h-[calc(100svh-4rem)] flex-col justify-between overflow-hidden px-6 pt-14 pb-6 sm:pt-16 md:pt-20 lg:pt-24'>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-30 dark:opacity-[0.14]"
+        className='pointer-events-none absolute inset-0 -z-10 opacity-20 dark:opacity-[0.1]'
         style={{
           background: [
-            "radial-gradient(ellipse 70% 50% at 15% 15%, oklch(0.75 0.19 150 / 60%) 0%, transparent 70%)",
-            "radial-gradient(ellipse 60% 45% at 85% 18%, oklch(0.65 0.18 240 / 55%) 0%, transparent 70%)",
-            "radial-gradient(ellipse 50% 40% at 50% 85%, oklch(0.70 0.16 280 / 35%) 0%, transparent 70%)",
-          ].join(", "),
+            'radial-gradient(ellipse 55% 42% at 12% 8%, oklch(0.75 0.12 160 / 45%) 0%, transparent 72%)',
+            'radial-gradient(ellipse 42% 36% at 88% 18%, oklch(0.62 0.08 240 / 28%) 0%, transparent 70%)',
+          ].join(', '),
         }}
       />
-      {/* Editorial Grid overlay */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_35%,black_25%,transparent_100%)] bg-[size:4rem_4rem] opacity-[0.07]"
+        className='absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_68%_55%_at_42%_32%,black_18%,transparent_100%)] bg-[size:4.5rem_4.5rem] opacity-[0.045]'
       />
 
-      <div className="mx-auto max-w-6xl">
-        <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-12 lg:gap-8">
-          {/* Left Column: Editorial Kicker, Brand Headline, Direct Action Bar */}
-          <div className="flex flex-col items-start text-left lg:col-span-6">
-            {/* Curatorial Kicker / System Wordmark */}
+      <div className='mx-auto my-auto w-full max-w-6xl'>
+        <div className='grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-8'>
+          <div className='flex flex-col items-start text-left lg:col-span-6'>
             <div
-              className="landing-animate-fade-up mb-4 inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/80 px-3.5 py-1 text-xs font-semibold tracking-wide backdrop-blur-md shadow-xs"
-              style={{ animationDelay: "0ms" }}
+              className='landing-animate-fade-up mb-7 inline-flex items-center gap-2.5'
+              style={{ animationDelay: '0ms' }}
             >
-              <span className="flex size-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20 animate-pulse" />
-              <span className="text-foreground/90 font-mono tracking-tight uppercase">
-                {systemName || "TuDouNi-API"}
+              <div className='flex size-7 shrink-0 items-center justify-center'>
+                {logo ? (
+                  <HeaderLogo
+                    src={logo}
+                    loading={loading}
+                    logoLoaded={logoLoaded}
+                    className='size-full object-contain'
+                  />
+                ) : (
+                  <div className='size-2 rounded-full bg-emerald-500' />
+                )}
+              </div>
+              <span className='text-foreground font-mono text-[13px] font-medium tracking-tight'>
+                oioi-api
               </span>
-              <span className="text-muted-foreground/60">/</span>
-              <span className="text-muted-foreground text-[11px] font-normal">
-                {t("Multi-protocol API Aggregation")}
+              <span className='bg-border h-3 w-px' />
+              <span className='text-muted-foreground text-[13px]'>
+                {t('hero_badge_tag')}
               </span>
             </div>
 
-            {/* Editorial Poetic Headline */}
             <h1
-              className="landing-animate-fade-up text-[clamp(2.4rem,4.8vw,3.6rem)] leading-[1.12] font-black tracking-tight"
-              style={{ animationDelay: "60ms" }}
+              className='landing-animate-fade-up text-foreground text-[clamp(2.8rem,5.5vw,4.5rem)] leading-[1.02] font-semibold tracking-[-0.045em]'
+              style={{ animationDelay: '60ms' }}
             >
-              <span>{t("Connect to Models.")}</span>
-              <br />
-              <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500 bg-clip-text text-transparent dark:from-emerald-400 dark:via-teal-300 dark:to-cyan-400">
-                {t("Unleash Creativity.")}
-              </span>
+              <span className='block'>{t('hero_title_p1')}</span>
+              <span className='mt-1 block'>{t('hero_title_p2')}</span>
             </h1>
 
-            {/* Description Lead */}
+            <div
+              aria-hidden
+              className='landing-animate-fade-up mt-6 h-px w-12 bg-emerald-500/80'
+              style={{ animationDelay: '100ms' }}
+            />
+
             <p
-              className="landing-animate-fade-up text-muted-foreground/90 mt-5 max-w-xl text-base leading-relaxed opacity-0 md:text-[15.5px]"
-              style={{ animationDelay: "120ms" }}
+              className='landing-animate-fade-up text-muted-foreground mt-5 max-w-[34rem] text-[15px] leading-7 sm:text-base'
+              style={{ animationDelay: '140ms' }}
             >
-              <span className="font-semibold text-foreground/95">
-                {t("Text, video, image, and voice — One-stop API aggregation.")}
-              </span>
-              <br className="hidden sm:inline" />
-              <span className="text-muted-foreground/80 mt-1 inline-block">
-                {t("Connect to your favorite applications, or start creating directly.")}
-              </span>
+              {t('hero_subtitle')}
             </p>
 
-            {/* Interactive Hero Action Area: Direct access to API & Console */}
-            <div
-              className="landing-animate-fade-up mt-8 flex w-full flex-wrap items-center gap-3.5 opacity-0"
-              style={{ animationDelay: "180ms" }}
-            >
-              {/* Primary: 接入 API (点击直接跳转控制台 /dashboard) */}
-              <Button
-                className="group relative h-11 bg-foreground text-background hover:bg-foreground/90 rounded-lg px-5 text-sm font-semibold shadow-md transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-                render={<Link to="/dashboard" />}
+            {gatewayBaseUrl ? (
+              <div
+                className='landing-animate-fade-up border-border/70 bg-background/70 mt-7 flex w-full max-w-md items-center gap-3 rounded-2xl border px-3.5 py-3 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] backdrop-blur-sm'
+                style={{ animationDelay: '170ms' }}
               >
-                <span>{t("Access API")}</span>
-                <ArrowUpRight className="ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                <div className='min-w-0 flex-1'>
+                  <div className='text-muted-foreground/70 font-mono text-[10px] tracking-[0.18em] uppercase'>
+                    {t('hero_endpoint_label')}
+                  </div>
+                  <div className='text-foreground mt-1 truncate font-mono text-[13px]'>
+                    {gatewayBaseUrl}
+                  </div>
+                </div>
+                <button
+                  type='button'
+                  onClick={() => {
+                    void copyToClipboard(gatewayBaseUrl)
+                  }}
+                  className='text-muted-foreground hover:text-foreground hover:bg-muted inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-colors'
+                >
+                  {endpointCopied ? (
+                    <Check className='size-3.5 text-emerald-500' />
+                  ) : (
+                    <Copy className='size-3.5' />
+                  )}
+                  <span>{endpointCopied ? t('Copied') : t('Copy')}</span>
+                </button>
+              </div>
+            ) : null}
+
+            <div
+              className='landing-animate-fade-up mt-7 flex flex-wrap items-center gap-3'
+              style={{ animationDelay: '200ms' }}
+            >
+              <Button
+                className='group bg-foreground text-background hover:bg-foreground/90 h-11 rounded-xl px-5 text-sm font-medium shadow-sm'
+                render={<Link to='/dashboard' />}
+              >
+                <span>{t('hero_cta_access')}</span>
+                <ArrowUpRight className='ml-1.5 size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
               </Button>
 
-              {/* Secondary: 游乐场 / 模型广场 */}
               {props.isAuthenticated ? (
                 <Button
-                  variant="outline"
-                  className="group border-border/70 hover:border-border hover:bg-muted/50 h-11 rounded-lg px-4.5 text-sm font-medium transition-all"
-                  render={<Link to="/playground" />}
+                  variant='outline'
+                  className='border-border/70 hover:bg-muted/50 h-11 rounded-xl px-4.5 text-sm font-medium'
+                  render={<Link to='/playground' />}
                 >
-                  <Sparkles className="text-muted-foreground/80 group-hover:text-foreground size-4 mr-1.5 transition-colors" />
-                  <span>{t("Open Playground")}</span>
+                  <span>{t('Open Playground')}</span>
                 </Button>
               ) : (
                 <Button
-                  variant="outline"
-                  className="group border-border/70 hover:border-border hover:bg-muted/50 h-11 rounded-lg px-4.5 text-sm font-medium transition-all"
-                  render={<Link to="/pricing" />}
+                  variant='outline'
+                  className='border-border/70 hover:bg-muted/50 h-11 rounded-xl px-4.5 text-sm font-medium'
+                  render={<Link to='/pricing' />}
                 >
-                  <span>{t("Model Square")}</span>
-                  <ArrowUpRight className="ml-1 size-3.5 text-muted-foreground/70 group-hover:text-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  <span>{t('hero_cta_models')}</span>
                 </Button>
               )}
 
               {renderDocsButton()}
             </div>
 
-            {/* Minimal Base URL Interactive Copy Widget */}
-            <div
-              className="landing-animate-fade-up mt-6 flex w-full max-w-xl items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 backdrop-blur-xs transition-colors hover:border-border/90 opacity-0"
-              style={{ animationDelay: "220ms" }}
+            <dl
+              className='landing-animate-fade-up border-border/60 mt-9 grid w-full max-w-lg grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-3'
+              style={{ animationDelay: '240ms' }}
             >
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono shrink-0 pl-1">
-                <Terminal className="size-3.5 text-emerald-500" />
-                <span>Base URL:</span>
-              </div>
-              <code className="text-foreground/80 select-all truncate font-mono text-xs flex-1">
-                {baseUrl}
-              </code>
-              <button
-                type="button"
-                onClick={handleCopyBaseUrl}
-                className="text-muted-foreground hover:text-foreground hover:bg-muted/60 flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer"
-                title={t("Copy Base URL")}
-              >
-                {copied ? (
-                  <>
-                    <Check className="size-3 text-emerald-500" />
-                    <span className="text-emerald-500 text-[11px]">{t("Base URL copied to clipboard")}</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="size-3" />
-                    <span>{t("Copy")}</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Supported Apps Section */}
-            <div
-              className="landing-animate-fade-up mt-8 w-full max-w-xl opacity-0"
-              style={{ animationDelay: "260ms" }}
-            >
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-muted-foreground/60 text-[11px] font-semibold tracking-wider uppercase font-mono">
-                  {t("Supported Applications")}
-                </span>
-                <span className="text-muted-foreground/50 text-[11px]">
-                  {t("Supports OpenAI, Claude, Gemini and other standard protocols.")}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2.5">
-                {/* Cherry Studio */}
-                <a
-                  href="https://cherry-ai.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group border-border/50 bg-muted/15 text-foreground/80 hover:border-border hover:bg-muted/30 hover:text-foreground flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium backdrop-blur-xs transition-all duration-200 hover:-translate-y-0.5"
-                >
-                  <CherryStudio.Color size={18} className="shrink-0" />
-                  <span>Cherry Studio</span>
-                  <ArrowUpRight className="text-muted-foreground/40 group-hover:text-foreground size-3 transition-colors" />
-                </a>
-
-                {/* CC Switch */}
-                <a
-                  href="https://ccswitch.io"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group border-border/50 bg-muted/15 text-foreground/80 hover:border-border hover:bg-muted/30 hover:text-foreground flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-medium backdrop-blur-xs transition-all duration-200 hover:-translate-y-0.5"
-                >
-                  <img
-                    src="https://ccswitch.io/favicon.png"
-                    alt="CC Switch"
-                    className="size-4 shrink-0 rounded-sm object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none"
-                      const fallback = e.currentTarget.nextSibling as HTMLElement
-                      if (fallback) fallback.style.display = "flex"
-                    }}
-                  />
-                  <span
-                    style={{ display: "none" }}
-                    className="size-4 shrink-0 items-center justify-center rounded bg-blue-500/10 text-[9px] font-bold text-blue-600 dark:bg-blue-400/10 dark:text-blue-400"
-                  >
-                    CC
-                  </span>
-                  <span>CC Switch</span>
-                  <ArrowUpRight className="text-muted-foreground/40 group-hover:text-foreground size-3 transition-colors" />
-                </a>
-
-                {/* More Apps */}
-                <div className="border-border/40 bg-muted/10 text-muted-foreground/70 flex cursor-default items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium">
-                  <MoreIcon />
-                  <span>{t("More Apps")}</span>
+              {specs.map(([labelKey, valueKey]) => (
+                <div key={labelKey}>
+                  <dt className='text-muted-foreground/60 font-mono text-[10px] tracking-[0.16em] uppercase'>
+                    {t(labelKey)}
+                  </dt>
+                  <dd className='text-foreground mt-1.5 text-[13px] leading-snug font-medium'>
+                    {t(valueKey)}
+                  </dd>
                 </div>
-              </div>
-            </div>
-
+              ))}
+            </dl>
           </div>
 
-          {/* Right Column: Hero Terminal API Demo */}
           <div
-            className="landing-animate-fade-up flex w-full justify-center opacity-0 lg:col-span-6"
-            style={{ animationDelay: "320ms" }}
+            className='landing-animate-fade-up flex w-full justify-center lg:col-span-6'
+            style={{ animationDelay: '280ms' }}
           >
-            <HeroTerminalDemo className="mt-4 lg:mt-0" />
+            <HeroAgentShowcase />
           </div>
         </div>
+      </div>
 
-        {/* Bottom Scroll Cue */}
-        <div className="mt-14 flex items-center justify-between border-t border-border/40 pt-6 text-xs text-muted-foreground">
-          <a
-            href="#features"
-            className="group flex items-center gap-2 font-mono text-[11px] hover:text-foreground transition-colors"
-          >
-            <ChevronDown className="size-3.5 animate-bounce text-emerald-500" />
-            <span>{t("Scroll to explore")}</span>
-            <span className="text-muted-foreground/40">/</span>
-            <span className="text-muted-foreground/80">{t("Explore Models")}</span>
-          </a>
-          <div className="hidden sm:flex items-center gap-6 font-mono text-[11px] text-muted-foreground/60">
-            <span>01 / {t("High-speed & Reliable")}</span>
-            <span>02 / {t("Multi-protocol Compatible")}</span>
-            <span>03 / {t("Full-category Matrix")}</span>
-          </div>
+      <div className='border-border/40 mx-auto mt-8 flex w-full max-w-6xl items-center justify-between border-t pt-4 text-xs'>
+        <a
+          href='#features'
+          className='text-muted-foreground hover:text-foreground group flex items-center gap-2 font-mono text-[11px] transition-colors'
+        >
+          <ChevronDown className='size-3.5 text-emerald-500/80' />
+          <span>{t('hero_scroll_cue')}</span>
+          <span className='text-muted-foreground/35'>/</span>
+          <span>{t('hero_scroll_aside')}</span>
+        </a>
+        <div className='text-muted-foreground/55 hidden items-center gap-5 font-mono text-[11px] sm:flex'>
+          <span>01 {t('hero_index_1')}</span>
+          <span>02 {t('hero_index_2')}</span>
+          <span>03 {t('hero_index_3')}</span>
         </div>
-
       </div>
     </section>
   )

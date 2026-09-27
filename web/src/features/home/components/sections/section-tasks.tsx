@@ -17,167 +17,127 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { ArrowUpRight, GitBranch, Shield, Zap, Terminal, Activity } from 'lucide-react'
+import { GitBranch, Shield, Terminal, Activity } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { AnimateInView } from '@/components/animate-in-view'
-import { Button } from '@/components/ui/button'
 
 export function SectionTasks() {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState(0)
+  const [activeStep, setActiveStep] = useState(0)
 
-  const capabilities = [
+  const steps = [
     {
-      title: t('Organize Solutions'),
+      step: '01',
+      title: t('Multi-node Upstream Routing'),
+      desc: t('Smart failover, weighted load balancing and millisecond health polling ensure request delivery across 40+ providers.'),
       icon: GitBranch,
-      desc: t('Transform abstract problems into structured dependency graphs.'),
-      steps: [
-        'Analyze Constraints & Edge Cases',
-        'Decompose into Sub-tasks',
-        'Map Data Flow & Interfaces'
-      ],
-      mockCode: '{\n  "phase": "Architecture Setup",\n  "dependencies": ["DB Design", "API Gateway"],\n  "status": "Ready to execute"\n}'
+      details: 'Automatic failover under 50ms with live latency tracking',
     },
     {
-      title: t('Write Logic'),
-      icon: Terminal,
-      desc: t('Generate production-grade code with error handling and types.'),
-      steps: [
-        'Scaffold Components & Services',
-        'Implement Business Logic',
-        'Write Unit Tests & Mocks'
-      ],
-      mockCode: 'async function fetchPipeline(id: string): Promise<Result> {\n  const res = await api.get(`/v1/pipelines/${id}`)\n  if (!res.ok) throw new Error("Pipeline fetch failed")\n  return res.json()\n}'
-    },
-    {
-      title: t('Refine Copywriting'),
+      step: '02',
+      title: t('Enterprise Quota & Shield'),
+      desc: t('Multi-tier token buckets, granular group rate limiting, and real-time defense against anomalous traffic surges.'),
       icon: Shield,
-      desc: t('Polish technical docs, commit messages, and user-facing copy.'),
-      steps: [
-        'Adjust Tone & Voice',
-        'Ensure Technical Accuracy',
-        'Format Markdown & Diagrams'
-      ],
-      mockCode: '## Pipeline API Reference\n\nRetrieves the execution status of a specific pipeline.\n\n### Authentication\nRequires a valid Bearer token.'
-    }
+      details: 'Sub-millisecond Redis counter evaluation per API Key',
+    },
+    {
+      step: '03',
+      title: t('Unified Data Plane & Observability'),
+      desc: t('Native support for OpenAI, Claude, and Gemini formats with structured real-time token tracking and analytics.'),
+      icon: Activity,
+      details: 'Standardized logs and usage telemetry for finance audits',
+    },
   ]
 
   return (
-    <section id='tasks' className='relative z-10 border-t border-border/40 px-6 py-20 md:py-28 bg-background'>
-      <div className='mx-auto max-w-6xl'>
-        {/* Curatorial Header */}
-        <AnimateInView className='mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6'>
-          <div>
-            <div className='mb-3 inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-emerald-500 uppercase'>
-              <span>04 /</span>
-              <span>{t('Logic & Disassembly')}</span>
+    <section className="relative z-10 border-t border-border/50 bg-background py-20 md:py-28">
+      <div className="mx-auto max-w-6xl px-6">
+        <AnimateInView animation="fade-up">
+          <div className="text-center md:text-left">
+            <div className="font-mono text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              04 / {t('High-availability Architecture')}
             </div>
-            <h2 className='text-3xl font-black tracking-tight sm:text-4xl md:text-5xl'>
-              {t('Systematic Logic & Code Refinement')}
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+              {t('Engineered for Mission-Critical Production.')}
             </h2>
-            <p className='text-muted-foreground/80 mt-3 max-w-xl text-sm leading-relaxed md:text-base'>
-              {t('Break down complex engineering tasks into executable steps. Model logic capabilities mapped to practical software development workflows.')}
+            <p className="mt-3 max-w-xl text-sm text-muted-foreground">
+              {t('From small developer prototypes to massive production concurrency, our distributed proxy layer provides resilient stability.')}
             </p>
-          </div>
-
-          <div className='flex items-center gap-3'>
-            <Button
-              variant='outline'
-              className='group h-10 rounded-lg border-border/60 hover:border-border text-xs font-medium'
-              render={<Link to='/dashboard' />}
-            >
-              <span>{t('Explore in Console')}</span>
-              <ArrowUpRight className='ml-1.5 size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
-            </Button>
           </div>
         </AnimateInView>
 
-        {/* Interactive Engineering Tabs */}
-        <div className='grid grid-cols-1 gap-12 lg:grid-cols-12 items-start'>
-          {/* Left: Tab List */}
-          <div className='flex flex-col gap-2 lg:col-span-5'>
-            {capabilities.map((cap, idx) => {
-              const Icon = cap.icon
-              const isSelected = activeTab === idx
-              return (
-                <button
-                  key={cap.title}
-                  onClick={() => setActiveTab(idx)}
-                  className={`group relative flex items-start gap-4 rounded-2xl border p-4 text-left transition-all duration-300 ${
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+          {steps.map((item, idx) => {
+            const Icon = item.icon
+            const isSelected = activeStep === idx
+            return (
+              <AnimateInView key={item.step} animation="fade-up" delay={idx * 120}>
+                <div
+                  onClick={() => setActiveStep(idx)}
+                  className={`group relative flex cursor-pointer flex-col justify-between rounded-2xl border p-6 transition-all duration-300 ${
                     isSelected
-                      ? 'border-emerald-500/50 bg-muted/40 shadow-sm'
-                      : 'border-border/40 bg-transparent hover:border-border/80 hover:bg-muted/20'
+                      ? 'border-emerald-500/80 bg-emerald-500/5 shadow-lg shadow-emerald-500/5 ring-1 ring-emerald-500/30'
+                      : 'border-border/70 bg-card/60 hover:border-border hover:bg-muted/20'
                   }`}
                 >
-                  <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border transition-colors ${
-                    isSelected ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500' : 'border-border/60 bg-muted text-muted-foreground group-hover:text-foreground'
-                  }`}>
-                    <Icon className='size-4' />
-                  </div>
                   <div>
-                    <h3 className={`text-base font-bold transition-colors ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>
-                      {cap.title}
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                        {item.step}
+                      </span>
+                      <div
+                        className={`flex size-10 items-center justify-center rounded-xl transition-colors ${
+                          isSelected
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-muted/40 text-muted-foreground group-hover:text-foreground'
+                        }`}
+                      >
+                        <Icon className="size-5" />
+                      </div>
+                    </div>
+
+                    <h3 className="mt-5 text-base font-semibold text-foreground">
+                      {item.title}
                     </h3>
-                    <p className='text-xs text-muted-foreground/80 mt-1 leading-relaxed'>
-                      {cap.desc}
+                    <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                      {item.desc}
                     </p>
                   </div>
-                </button>
-              )
-            })}
-          </div>
 
-          {/* Right: Code Execution Demo */}
-          <div className='lg:col-span-7'>
-            <div className='relative overflow-hidden rounded-2xl border border-border/60 bg-neutral-950 shadow-2xl'>
-              {/* Window Header */}
-              <div className='flex items-center gap-2 border-b border-white/10 bg-neutral-900/50 px-4 py-3'>
-                <div className='flex gap-1.5'>
-                  <div className='size-3 rounded-full bg-red-500/80' />
-                  <div className='size-3 rounded-full bg-amber-500/80' />
-                  <div className='size-3 rounded-full bg-emerald-500/80' />
+                  <div className="mt-6 border-t border-border/40 pt-4">
+                    <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/80">
+                      <Terminal className="size-3 text-emerald-500" />
+                      <span>{item.details}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className='ml-3 flex items-center gap-2 font-mono text-[10px] text-white/50'>
-                  <Activity className='size-3 text-emerald-400' />
-                  <span>task_runner_v2.sh</span>
-                </div>
-              </div>
+              </AnimateInView>
+            )
+          })}
+        </div>
 
-              {/* Window Content */}
-              <div className='flex flex-col md:flex-row'>
-                {/* Plan View */}
-                <div className='flex-1 border-b border-white/5 bg-neutral-900/30 p-5 md:border-b-0 md:border-r'>
-                  <div className='mb-4 font-mono text-[10px] font-bold tracking-wider text-white/40 uppercase'>
-                    EXECUTION PLAN
-                  </div>
-                  <ul className='space-y-4'>
-                    {capabilities[activeTab].steps.map((step, stepIdx) => (
-                      <li key={step} className='flex items-start gap-3'>
-                        <div className='mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 font-mono text-[9px]'>
-                          {stepIdx + 1}
-                        </div>
-                        <span className='font-mono text-[11px] text-white/70'>
-                          {step}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                {/* Editor View */}
-                <div className='flex-[1.5] p-5'>
-                  <div className='mb-4 font-mono text-[10px] font-bold tracking-wider text-white/40 uppercase'>
-                    OUTPUT BUFFER
-                  </div>
-                  <pre className='overflow-x-auto text-[11px] leading-relaxed text-emerald-400/90 font-mono'>
-                    {capabilities[activeTab].mockCode}
-                  </pre>
-                </div>
-              </div>
+        {/* Global SLA strip */}
+        <AnimateInView animation="fade-up" delay={400}>
+          <div className="mt-12 grid grid-cols-2 gap-4 rounded-2xl border border-border/60 bg-muted/15 p-6 backdrop-blur-xs sm:grid-cols-4">
+            <div className="text-center sm:text-left">
+              <div className="text-2xl font-bold font-mono tracking-tight text-foreground">99.98%</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">{t('Service Uptime SLA')}</div>
+            </div>
+            <div className="text-center sm:text-left">
+              <div className="text-2xl font-bold font-mono tracking-tight text-foreground">&lt; 35ms</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">{t('Average Gateway Overhead')}</div>
+            </div>
+            <div className="text-center sm:text-left">
+              <div className="text-2xl font-bold font-mono tracking-tight text-foreground">40+</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">{t('Upstream AI Providers')}</div>
+            </div>
+            <div className="text-center sm:text-left">
+              <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">100%</div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">{t('OpenAI / Anthropic Compatible')}</div>
             </div>
           </div>
-        </div>
+        </AnimateInView>
       </div>
     </section>
   )

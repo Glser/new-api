@@ -28,8 +28,6 @@ import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { cn } from '@/lib/utils'
 
-import { BrandImage } from './brand-image'
-
 type SystemBrandProps = {
   defaultName?: string
   defaultVersion?: string
@@ -63,11 +61,32 @@ export function SystemBrand(props: SystemBrandProps) {
         to='/'
         aria-label={t('Go to home')}
         className={cn(
-          'text-foreground inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium transition-colors outline-none select-none',
+          'text-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium transition-colors outline-none select-none',
           'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
         )}
       >
-        <BrandImage src={logo} alt={t('Logo')} className='h-5 w-14 shrink-0' />
+        <div className='flex size-5 items-center justify-center overflow-hidden rounded-md'>
+          {logo === '/logo.png' ? (
+            <>
+              <img
+                src='/logo.png'
+                alt={t('Logo')}
+                className='size-full rounded-md object-contain block dark:hidden'
+              />
+              <img
+                src='/logo-dark.png'
+                alt={t('Logo')}
+                className='size-full rounded-md object-contain hidden dark:block'
+              />
+            </>
+          ) : (
+            <img
+              src={logo}
+              alt={t('Logo')}
+              className='size-full rounded-md object-cover'
+            />
+          )}
+        </div>
         <span className='max-w-[12rem] truncate'>{name}</span>
       </Link>
     )
@@ -81,11 +100,28 @@ export function SystemBrand(props: SystemBrandProps) {
           className='hover:text-sidebar-foreground active:text-sidebar-foreground cursor-default hover:bg-transparent active:bg-transparent'
           render={<div />}
         >
-          <BrandImage
-            src={logo}
-            alt={t('Logo')}
-            className='h-8 w-24 shrink-0 group-data-[collapsible=icon]:w-8'
-          />
+          <div className='flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
+            {logo === '/logo.png' ? (
+              <>
+                <img
+                  src='/logo.png'
+                  alt={t('Logo')}
+                  className='size-full rounded-lg object-contain block dark:hidden'
+                />
+                <img
+                  src='/logo-dark.png'
+                  alt={t('Logo')}
+                  className='size-full rounded-lg object-contain hidden dark:block'
+                />
+              </>
+            ) : (
+              <img
+                src={logo}
+                alt={t('Logo')}
+                className='size-full rounded-lg object-cover'
+              />
+            )}
+          </div>
           <div className='grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden'>
             <span className='truncate font-semibold'>{name}</span>
             <span className='truncate text-xs'>{version}</span>
