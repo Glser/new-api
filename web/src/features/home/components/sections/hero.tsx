@@ -36,7 +36,10 @@ interface HeroProps {
 function readServerAddress(status: unknown): string {
   if (!status || typeof status !== 'object') return ''
   const record = status as Record<string, unknown>
-  if (typeof record.server_address === 'string' && record.server_address.trim()) {
+  if (
+    typeof record.server_address === 'string' &&
+    record.server_address.trim()
+  ) {
     return record.server_address.trim()
   }
   if (record.data && typeof record.data === 'object') {
