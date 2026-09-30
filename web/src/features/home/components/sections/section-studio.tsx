@@ -5,24 +5,13 @@ This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
 */
-import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { ArrowUpRight, Compass, Layers, Wand2, ArrowRight } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
+import { useState } from "react"
+import { Link } from "@tanstack/react-router"
+import { ArrowUpRight } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
-import { AnimateInView } from '@/components/animate-in-view'
-import { Button } from '@/components/ui/button'
+import { AnimateInView } from "@/components/animate-in-view"
 
 export function SectionStudio() {
   const { t } = useTranslation()
@@ -30,172 +19,139 @@ export function SectionStudio() {
 
   const steps = [
     {
-      num: '01',
-      title: t('Find the Starting Point'),
-      subtitle: t('Structured Inspiration & Prompts'),
-      desc: t('Start from curated industry templates, systemic system prompts, or multi-role personas to quickly shape concrete ideas.'),
-      icon: Compass,
-      tags: [t('System Prompt'), t('Role Persona'), t('Domain Template')],
-      demo: {
-        tag: 'PROMPT DRAFT',
-        title: 'Cinematic Cyberpunk Neon Alley',
-        code: `// Creative Directive\nRole: Lead Concept Artist\nScene: Neon-drenched subterranean alleyway\nAtmosphere: Volumetric fog, retro-futuristic rain, 85mm lens\nOutput: Ultra-dense prompt & lighting breakdown`,
-      },
+      num: "01",
+      stepLabel: t("sec_studio_step1_label"),
+      title: t("sec_studio_step1_title"),
+      desc: t("sec_studio_step1_desc"),
+      code: [
+        "// 01 · 灵感起点与角色指令",
+        "Role: 资深视觉概念架构师",
+        "Scene: 赛博雨夜霓虹纵深街区",
+        "Atmosphere: 丁达尔光束、潮湿反光沥青、85mm 景深",
+        "Output: 结构化分镜提示词与光影参数分解",
+      ].join("\n"),
     },
     {
-      num: '02',
-      title: t('Expand Thinking'),
-      subtitle: t('Multi-model Parallel Exploration'),
-      desc: t('Fan out one concept to multiple frontier models concurrently. Compare reasoning logic, framing varieties, and tone with zero friction.'),
-      icon: Layers,
-      tags: [t('Parallel Compare'), t('Branch Iteration'), t('Cross Validation')],
-      demo: {
-        tag: 'MULTI-BRANCH EXPLORATION',
-        title: 'Branch Analysis & Comparison',
-        code: `[Branch A / Claude 3.5]: Deep narrative script & character dialogue\n[Branch B / DeepSeek R1]: Complex plot consistency & logical timelines\n[Branch C / FLUX.1]: Visual moodboard & keyframe cues`,
-      },
+      num: "02",
+      stepLabel: t("sec_studio_step2_label"),
+      title: t("sec_studio_step2_title"),
+      desc: t("sec_studio_step2_desc"),
+      code: [
+        "// 02 · 多模型并行分发与对照",
+        "[Branch A / Claude 3.5]: 负责深度叙事台词与世界观严谨设定",
+        "[Branch B / DeepSeek R1]: 验证逻辑推导严密性与时序一致性",
+        "[Branch C / FLUX.1]: 实时渲染核心视觉情绪板与关键帧",
+      ].join("\n"),
     },
     {
-      num: '03',
-      title: t('Continuous Creation'),
-      subtitle: t('Full Lifecycle Pipeline Delivery'),
-      desc: t('From prompt to image, video motion simulation, and API deployment. Seamless pipeline to production ready services.'),
-      icon: Wand2,
-      tags: [t('Pipeline Automation'), t('High Concurrency'), t('Direct Integration')],
-      demo: {
-        tag: 'PRODUCTION DEPLOYMENT',
-        title: 'Production Ready API Endpoints',
-        code: `POST /v1/chat/completions (OpenAI Compatible)\nPOST /v1/messages (Claude Compatible)\nPOST /v1/images/generations\nStatus: 200 OK • Stream Latency: 18ms`,
-      },
+      num: "03",
+      stepLabel: t("sec_studio_step3_label"),
+      title: t("sec_studio_step3_title"),
+      desc: t("sec_studio_step3_desc"),
+      code: [
+        "// 03 · 标准化生产交付",
+        "POST /v1/chat/completions (OpenAI Compatible)",
+        "POST /v1/messages (Claude Native Protocol)",
+        "POST /v1/images/generations (FLUX / Midjourney)",
+        "Status: 200 OK • Gateway Stream Overhead: 18ms",
+      ].join("\n"),
     },
   ]
 
   return (
-    <section id='studio' className='relative z-10 border-t border-border/40 px-6 py-20 md:py-28 bg-muted/5'>
-      <div className='mx-auto max-w-6xl'>
-        {/* Curatorial Header */}
-        <AnimateInView className='mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6'>
+    <section id="studio" className="relative z-10 border-t border-border/40 px-6 py-20 md:py-28 bg-muted/5">
+      <div className="mx-auto max-w-6xl">
+        {/* Editorial Section Header */}
+        <AnimateInView className="mb-14 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <div className='mb-3 inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-emerald-500 uppercase'>
-              <span>02 /</span>
-              <span>{t('Inspiration Studio')}</span>
+            <div className="mb-3 font-mono text-xs font-semibold tracking-[0.2em] text-emerald-500 uppercase">
+              {t("sec_studio_kicker")}
             </div>
-            <h2 className='text-3xl font-black tracking-tight sm:text-4xl md:text-5xl'>
-              {t('Inspiration Studio & Creative Workflow')}
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              <span>{t("sec_studio_title_p1")}</span>
+              <br />
+              <span className="text-foreground/90">{t("sec_studio_title_p2")}</span>
             </h2>
-            <p className='text-muted-foreground/80 mt-3 max-w-xl text-sm leading-relaxed md:text-base'>
-              {t('A step-by-step workflow designed for creators and engineers: from prompt inception to high-performance production.')}
+            <div className="mt-4 h-0.5 w-10 rounded-full bg-emerald-500/80" />
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+              {t("sec_studio_desc")}
             </p>
           </div>
 
-          <div className='flex items-center gap-3'>
-            <Button
-              className='group h-10 rounded-lg text-xs font-semibold'
-              render={<Link to='/dashboard' />}
+          <div>
+            <Link
+              to="/dashboard"
+              className="group inline-flex items-center gap-1.5 font-mono text-xs font-semibold tracking-wider text-muted-foreground transition-colors hover:text-foreground"
             >
-              <span>{t('Access API')}</span>
-              <ArrowUpRight className='ml-1.5 size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
-            </Button>
+              <span>{t("sec_studio_action")}</span>
+              <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </Link>
           </div>
         </AnimateInView>
 
-        {/* 3 Step Interactive Workflow */}
-        <div className='grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10 items-stretch'>
+        {/* Interactive Steps Grid */}
+        <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-12 lg:gap-10">
           {/* Left Step Selectors */}
-          <div className='flex flex-col gap-4 lg:col-span-5'>
+          <div className="flex flex-col gap-3 lg:col-span-5">
             {steps.map((step, idx) => {
-              const Icon = step.icon
-              const isSelected = activeStep === idx
+              const isActive = activeStep === idx
               return (
                 <div
                   key={step.num}
                   onClick={() => setActiveStep(idx)}
-                  className={`group relative cursor-pointer rounded-2xl border p-5 transition-all duration-300 ${
-                    isSelected
-                      ? 'border-emerald-500/50 bg-background shadow-md'
-                      : 'border-border/50 bg-background/40 hover:border-border hover:bg-background/80'
+                  className={`group relative flex cursor-pointer flex-col rounded-xl border p-5 transition-all duration-300 ${
+                    isActive
+                      ? "border-foreground/40 bg-card/80 shadow-md ring-1 ring-border/80"
+                      : "border-border/40 bg-card/20 hover:border-border/70 hover:bg-card/40"
                   }`}
                 >
-                  <div className='flex items-start gap-4'>
-                    <div
-                      className={`flex size-10 shrink-0 items-center justify-center rounded-xl border text-sm font-mono font-bold transition-colors ${
-                        isSelected
-                          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
-                          : 'border-border/60 bg-muted/30 text-muted-foreground group-hover:text-foreground'
-                      }`}
-                    >
-                      {step.num}
-                    </div>
-                    <div className='flex-1 min-w-0'>
-                      <div className='flex items-center justify-between'>
-                        <h3 className={`text-base font-bold transition-colors ${isSelected ? 'text-foreground' : 'text-foreground/80'}`}>
-                          {step.title}
-                        </h3>
-                        <Icon className={`size-4 transition-colors ${isSelected ? 'text-emerald-500' : 'text-muted-foreground/60'}`} />
-                      </div>
-                      <p className='text-xs font-medium text-muted-foreground/70 mt-0.5'>
-                        {step.subtitle}
-                      </p>
-                      <p className='text-muted-foreground/80 mt-2 text-xs leading-relaxed'>
-                        {step.desc}
-                      </p>
-                      <div className='mt-3 flex flex-wrap gap-1.5'>
-                        {step.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className='inline-flex items-center rounded-md border border-border/40 bg-muted/20 px-2 py-0.5 text-[10px] text-muted-foreground'
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between font-mono text-xs">
+                    <span className={isActive ? "font-semibold text-emerald-500" : "text-muted-foreground"}>
+                      {step.stepLabel}
+                    </span>
                   </div>
+                  <h3 className="mt-2 text-base font-semibold text-foreground">
+                    {step.title}
+                  </h3>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    {step.desc}
+                  </p>
                 </div>
               )
             })}
           </div>
 
-          {/* Right Live Stage & Terminal Canvas */}
-          <div className='flex flex-col lg:col-span-7'>
-            <div className='relative flex flex-1 flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-xl'>
-              {/* Studio Canvas Header */}
-              <div className='flex items-center justify-between border-b border-border/50 bg-muted/20 px-4 py-3'>
-                <div className='flex items-center gap-2'>
-                  <span className='size-2.5 rounded-full bg-emerald-500/80 animate-pulse' />
-                  <span className='font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground'>
-                    {steps[activeStep].demo.tag}
+          {/* Right Preview Card - Clean Code Surface */}
+          <div className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/50 bg-neutral-950 p-6 shadow-xl lg:col-span-7">
+            <div>
+              <div className="flex items-center justify-between border-b border-white/10 pb-4 font-mono text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-emerald-500" />
+                  <span className="text-white/60 tracking-wider uppercase">
+                    {steps[activeStep].stepLabel}
                   </span>
                 </div>
-                <div className='font-mono text-[11px] text-muted-foreground/60'>
-                  STAGE 0{activeStep + 1} / 03
-                </div>
+                <span className="text-white/40 text-[11px]">
+                  {t("sec_studio_workflow_pipeline")}
+                </span>
               </div>
 
-              {/* Studio Live Board */}
-              <div className='flex-1 p-6 flex flex-col justify-between'>
-                <div>
-                  <h4 className='text-lg font-bold text-foreground mb-3'>
-                    {steps[activeStep].demo.title}
-                  </h4>
-                  <div className='relative rounded-xl border border-border/50 bg-muted/30 p-4 font-mono text-xs text-foreground/90'>
-                    <pre className='whitespace-pre-wrap leading-relaxed overflow-x-auto'>
-                      {steps[activeStep].demo.code}
-                    </pre>
-                  </div>
-                </div>
-
-                <div className='mt-6 flex items-center justify-between border-t border-border/40 pt-4 text-xs text-muted-foreground'>
-                  <span>{t('Instant execution via API')}</span>
-                  <Link
-                    to='/dashboard'
-                    className='inline-flex items-center gap-1 font-semibold text-emerald-500 hover:text-emerald-400 transition-colors'
-                  >
-                    <span>{t('Experience in Console')}</span>
-                    <ArrowRight className='size-3' />
-                  </Link>
-                </div>
+              <div className="mt-5 font-mono text-xs leading-relaxed text-white/80">
+                <pre className="overflow-x-auto whitespace-pre-wrap font-sans text-xs sm:text-[13px] sm:leading-7">
+                  <code>{steps[activeStep].code}</code>
+                </pre>
               </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-4 font-mono text-[11px] text-white/50">
+              <span>{t("sec_studio_ready")}</span>
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                <span>{t("sec_studio_run_now")}</span>
+                <ArrowUpRight className="size-3" />
+              </Link>
             </div>
           </div>
         </div>

@@ -27,7 +27,7 @@ interface HeaderLogoProps {
 }
 
 /**
- * Logo component for header with loading state
+ * Logo component for header and hero with loading state
  * Shows image only when fully loaded for smooth UX
  * Supports dark mode auto-switching when default /logo.png is used
  */
@@ -43,22 +43,22 @@ export function HeaderLogo({
   if (isDefaultLogo) {
     return (
       <>
-        {/* Light mode: default black letter logo */}
+        {/* Light mode: default oi logo */ }
         <img
-          src="/logo.png"
+          src='/logo.png'
           alt={alt}
           className={cn(
-            'h-6 w-6 rounded-full transition-opacity duration-200 block dark:hidden',
+            'size-full object-contain rounded-full transition-opacity duration-200 block dark:hidden',
             !loading && logoLoaded ? 'opacity-100' : 'opacity-0',
             className
           )}
         />
-        {/* Dark mode: white letter logo */}
+        {/* Dark mode: oi dark logo */ }
         <img
-          src="/logo-dark.png"
+          src='/logo-dark.png'
           alt={alt}
           className={cn(
-            'h-6 w-6 rounded-full transition-opacity duration-200 hidden dark:block',
+            'size-full object-contain rounded-full transition-opacity duration-200 hidden dark:block',
             !loading && logoLoaded ? 'opacity-100' : 'opacity-0',
             className
           )}
@@ -72,7 +72,7 @@ export function HeaderLogo({
       src={src}
       alt={alt}
       className={cn(
-        'h-6 w-6 rounded-full transition-opacity duration-200',
+        'size-full object-contain rounded-full transition-opacity duration-200',
         !loading && logoLoaded ? 'opacity-100' : 'opacity-0',
         className
       )}

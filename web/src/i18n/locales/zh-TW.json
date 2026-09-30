@@ -6476,6 +6476,27 @@
     "Zhipu": "智譜",
     "Zhipu GLM": "智譜GLM",
     "Zhipu V4": "智譜 V4",
-    "Zoom": "縮放"
+    "Zoom": "縮放",
+    "hero_badge_tag": "統一模型網關",
+    "hero_title_p1": "接通模型。",
+    "hero_title_p2": "放開創造。",
+    "hero_subtitle": "文字、視頻、圖片、語音，一站式 API 聚合。接入你熟悉的應用，讓每一次調用更簡單、穩定、快速。",
+    "hero_spec_protocol_label": "相容協議",
+    "hero_spec_protocol_value": "OpenAI / Claude / Gemini",
+    "hero_spec_routing_label": "智能路由",
+    "hero_spec_routing_value": "毫秒級故障轉移與負載均衡",
+    "hero_spec_control_label": "企業治理",
+    "hero_spec_control_value": "多級配額 · 審計 · 全鏈路觀測",
+    "hero_endpoint_label": "BASE URL / 接入位址",
+    "hero_cta_access": "進入控制台",
+    "hero_cta_models": "探索模型",
+    "hero_scroll_cue": "向下探索",
+    "hero_scroll_aside": "發現模型與能力",
+    "hero_index_1": "統一協議",
+    "hero_index_2": "智能路由",
+    "hero_index_3": "全鏈路觀測",
+    "hero_agent_via": "通過網關",
+    "hero_agent_open": "直達",
+    "hero_agent_footer": "同一接入位址，無縫支援 Cursor、Claude Code、Cherry Studio 等生態工具。"
   }
 }

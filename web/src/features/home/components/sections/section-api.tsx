@@ -5,192 +5,173 @@ This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
 */
-import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { ArrowUpRight, Terminal, Copy, Check, Code2 } from 'lucide-react'
-import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
+import { useState } from "react"
+import { Link } from "@tanstack/react-router"
+import { ArrowUpRight, Check, Copy } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
-import { AnimateInView } from '@/components/animate-in-view'
-import { Button } from '@/components/ui/button'
+import { AnimateInView } from "@/components/animate-in-view"
+import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
 
 export function SectionAPI() {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<'openai' | 'anthropic' | 'gemini'>('openai')
-  const [copied, setCopied] = useState(false)
+  const [activeTab, setActiveTab] = useState<"openai" | "anthropic">("openai")
+  const { copyToClipboard } = useCopyToClipboard({ notify: false })
+  const [codeCopied, setCodeCopied] = useState(false)
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://api.example.com'
+  const baseUrl = typeof window !== "undefined" ? `${window.location.origin}/v1` : "https://api.example.com/v1"
 
   const snippets = {
-    openai: `curl ${baseUrl}/v1/chat/completions \\
-  -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer $YOUR_API_KEY" \\
-  -d '{
-    "model": "gpt-4o",
-    "messages": [
-      {
-        "role": "system",
-        "content": "You are a helpful assistant."
-      },
-      {
-        "role": "user",
-        "content": "Hello!"
-      }
-    ]
-  }'`,
-    anthropic: `curl ${baseUrl}/v1/messages \\
-  -H "Content-Type: application/json" \\
-  -H "x-api-key: $YOUR_API_KEY" \\
-  -H "anthropic-version: 2023-06-01" \\
-  -d '{
-    "model": "claude-3-5-sonnet-20240620",
-    "max_tokens": 1024,
-    "messages": [
-      {
-        "role": "user",
-        "content": "Hello, Claude!"
-      }
-    ]
-  }'`,
-    gemini: `curl "${baseUrl}/v1beta/models/gemini-2.0-flash:generateContent?key=$YOUR_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "contents": [
-      {
-        "parts": [
-          {
-            "text": "Hello, Gemini!"
-          }
-        ]
-      }
-    ]
-  }'`
+    openai: [
+      `curl ${baseUrl}/chat/completions \\`,
+      "  -H \x22Content-Type: application/json\x22 \\",
+      "  -H \x22Authorization: Bearer $YOUR_API_KEY\x22 \\",
+      "  -d '{",
+      "    \x22model\x22: \x22claude-3-5-sonnet\x22,",
+      "    \x22messages\x22: [{\x22role\x22: \x22user\x22, \x22content\x22: \x22Hello\x22}]",
+      "  }'",
+    ].join("\n"),
+    anthropic: [
+      `curl ${baseUrl}/messages \\`,
+      "  -H \x22Content-Type: application/json\x22 \\",
+      "  -H \x22x-api-key: $YOUR_API_KEY\x22 \\",
+      "  -H \x22anthropic-version: 2023-06-01\x22 \\",
+      "  -d '{",
+      "    \x22model\x22: \x22claude-3-5-sonnet\x22,",
+      "    \x22max_tokens\x22: 1024,",
+      "    \x22messages\x22: [{\x22role\x22: \x22user\x22, \x22content\x22: \x22Hello\x22}]",
+      "  }'",
+    ].join("\n"),
   }
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(snippets[activeTab])
-    setCopied(true)
-    toast.success(t('Snippet copied to clipboard'))
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopyCode = async () => {
+    await copyToClipboard(snippets[activeTab])
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
   }
 
   return (
-    <section id='api' className='relative z-10 border-t border-border/40 px-6 py-20 md:py-28 bg-muted/5'>
-      <div className='mx-auto max-w-6xl'>
-        {/* Curatorial Header */}
-        <AnimateInView className='mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6'>
+    <section id="api" className="relative z-10 border-t border-border/40 px-6 py-20 md:py-28">
+      <div className="mx-auto max-w-6xl">
+        {/* Editorial Section Header */}
+        <AnimateInView className="mb-14 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
-            <div className='mb-3 inline-flex items-center gap-2 font-mono text-xs font-semibold tracking-widest text-emerald-500 uppercase'>
-              <span>05 /</span>
-              <span>{t('API Integration')}</span>
+            <div className="mb-3 font-mono text-xs font-semibold tracking-[0.2em] text-emerald-500 uppercase">
+              {t("sec_api_kicker")}
             </div>
-            <h2 className='text-3xl font-black tracking-tight sm:text-4xl md:text-5xl'>
-              {t('Standardized Protocol Gateway')}
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              <span>{t("sec_api_title_p1")}</span>
+              <br />
+              <span className="text-foreground/90">{t("sec_api_title_p2")}</span>
             </h2>
-            <p className='text-muted-foreground/80 mt-3 max-w-xl text-sm leading-relaxed md:text-base'>
-              {t('Fully compatible with OpenAI, Anthropic, and Gemini standard interfaces. Switch models without changing your application code.')}
+            <div className="mt-4 h-0.5 w-10 rounded-full bg-emerald-500/80" />
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+              {t("sec_api_desc")}
             </p>
           </div>
 
-          <div className='flex items-center gap-3'>
-            <Button
-              className='group h-11 bg-foreground text-background hover:bg-foreground/90 rounded-lg px-6 font-semibold shadow-md transition-all duration-200'
-              render={<Link to='/dashboard' />}
+          <div>
+            <Link
+              to="/dashboard"
+              className="group inline-flex items-center gap-1.5 font-mono text-xs font-semibold tracking-wider text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Code2 className='size-4 mr-2' />
-              <span>{t('Get API Key')}</span>
-              <ArrowUpRight className='ml-1.5 size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
-            </Button>
+              <span>{t("sec_api_action")}</span>
+              <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </Link>
           </div>
         </AnimateInView>
 
-        {/* API Snippet Playground */}
-        <div className='mx-auto max-w-4xl'>
-          <div className='relative overflow-hidden rounded-2xl border border-border/60 bg-neutral-950 shadow-2xl'>
-            
-            {/* Terminal Header & Tabs */}
-            <div className='flex items-center justify-between border-b border-white/10 bg-neutral-900/80 px-2 pr-4 backdrop-blur-sm'>
-              <div className='flex items-center'>
+        {/* Clean Terminal Box & 3-Step Guides */}
+        <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-12 lg:gap-10">
+          {/* Left: 3-Step Integration Flow */}
+          <div className="flex flex-col justify-between gap-4 lg:col-span-5">
+            <div className="flex flex-col gap-3">
+              {[
+                { step: t("sec_api_step1"), desc: "在控制台一键生成专属调用 Token，支持按渠道配额与模型白名单精细约束。" },
+                { step: t("sec_api_step2"), desc: "直接将你原有客户端的 Base URL 指向本网关，并配置对应模型标识符。" },
+                { step: t("sec_api_step3"), desc: "无需任何 SDK 迁移，立刻享受自动负载均衡、故障转移与用量统计。" },
+              ].map((item, idx) => (
+                <div key={idx} className="rounded-xl border border-border/40 bg-card/20 p-5">
+                  <div className="font-mono text-xs font-semibold text-emerald-500">
+                    {item.step}
+                  </div>
+                  <div className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                    {item.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-xl border border-border/30 bg-muted/10 p-4 font-mono text-[11px] text-muted-foreground/80">
+              <span>提示：{t("sec_api_copy_hint")}</span>
+            </div>
+          </div>
+
+          {/* Right: Clean Terminal Preview */}
+          <div className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/50 bg-neutral-950 p-6 shadow-xl lg:col-span-7">
+            <div>
+              {/* Terminal Tabs & Copy */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("openai")}
+                    className={`font-mono text-xs cursor-pointer ${
+                      activeTab === "openai" ? "font-semibold text-emerald-400" : "text-white/40 hover:text-white/70"
+                    }`}
+                  >
+                    OpenAI 兼容
+                  </button>
+                  <span className="text-white/20">/</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("anthropic")}
+                    className={`font-mono text-xs cursor-pointer ${
+                      activeTab === "anthropic" ? "font-semibold text-emerald-400" : "text-white/40 hover:text-white/70"
+                    }`}
+                  >
+                    Anthropic 原生
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setActiveTab('openai')}
-                  className={`px-4 py-3 text-xs font-mono font-medium transition-colors ${
-                    activeTab === 'openai' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-white/40 hover:text-white/70'
-                  }`}
+                  type="button"
+                  onClick={handleCopyCode}
+                  className="flex items-center gap-1.5 font-mono text-[11px] text-white/50 hover:text-white transition-colors cursor-pointer"
                 >
-                  OpenAI Format
-                </button>
-                <button
-                  onClick={() => setActiveTab('anthropic')}
-                  className={`px-4 py-3 text-xs font-mono font-medium transition-colors ${
-                    activeTab === 'anthropic' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-white/40 hover:text-white/70'
-                  }`}
-                >
-                  Anthropic Format
-                </button>
-                <button
-                  onClick={() => setActiveTab('gemini')}
-                  className={`px-4 py-3 text-xs font-mono font-medium transition-colors ${
-                    activeTab === 'gemini' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-white/40 hover:text-white/70'
-                  }`}
-                >
-                  Gemini Format
+                  {codeCopied ? (
+                    <>
+                      <Check className="size-3 text-emerald-400" />
+                      <span className="text-emerald-400">{t("sec_api_copied")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="size-3" />
+                      <span>{t("sec_api_copy_sample")}</span>
+                    </>
+                  )}
                 </button>
               </div>
 
-              <button
-                onClick={handleCopy}
-                className='flex items-center gap-1.5 text-white/50 hover:text-white transition-colors cursor-pointer'
-                title={t('Copy Snippet')}
+              {/* Terminal Snippet Body */}
+              <div className="mt-5 font-mono text-xs leading-loose text-white/80">
+                <pre className="overflow-x-auto whitespace-pre-wrap">
+                  <code>{snippets[activeTab]}</code>
+                </pre>
+              </div>
+            </div>
+
+            <div className="mt-8 flex items-center justify-between border-t border-white/10 pt-4 font-mono text-[11px] text-white/40">
+              <span>BASE URL: {baseUrl}</span>
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors"
               >
-                {copied ? (
-                  <>
-                    <Check className='size-3.5 text-emerald-500' />
-                    <span className='text-[11px] font-mono text-emerald-500'>COPIED</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className='size-3.5' />
-                    <span className='text-[11px] font-mono'>COPY</span>
-                  </>
-                )}
-              </button>
+                <span>{t("sec_api_go_config")}</span>
+                <ArrowUpRight className="size-3" />
+              </Link>
             </div>
-
-            {/* Terminal Code Area */}
-            <div className='p-6 relative'>
-              <div className='absolute right-6 top-6 flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 backdrop-blur-md'>
-                <Terminal className='size-3 text-white/40' />
-                <span className='font-mono text-[10px] text-white/40 uppercase tracking-widest'>cURL</span>
-              </div>
-              <pre className='overflow-x-auto text-[13px] leading-loose text-white/80 font-mono'>
-                <code>
-                  {snippets[activeTab].split('\n').map((line, i) => {
-                    const isCommand = line.startsWith('curl')
-                    const isFlag = line.trim().startsWith('-')
-                    return (
-                      <div key={i} className='table-row'>
-                        <span className='table-cell select-none pr-4 text-right text-white/20'>{i + 1}</span>
-                        <span className={`table-cell ${isCommand ? 'text-emerald-400' : isFlag ? 'text-blue-300' : 'text-white/80'}`}>
-                          {line}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </code>
-              </pre>
-            </div>
-
           </div>
         </div>
       </div>
