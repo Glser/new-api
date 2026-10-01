@@ -666,3 +666,88 @@ For commercial licensing, please contact support@quantumnous.com
   background-size: 200% auto;
   animation: gradient-shimmer 4s ease infinite;
 }
+
+/* Title Shimmer Sweep Effect */
+@keyframes title-shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Light Mode: dark text with subtle lighter shine */
+.hero-title-shine {
+  background-image: linear-gradient(
+    110deg,
+    #0f172a 0%,
+    #0f172a 40%,
+    #64748b 47%,
+    #94a3b8 50%,
+    #64748b 53%,
+    #0f172a 60%,
+    #0f172a 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  animation: title-shine 6s linear infinite;
+  display: inline-block;
+}
+
+/* Dark Mode: luminous light text with brilliant shine */
+.dark .hero-title-shine {
+  background-image: linear-gradient(
+    110deg,
+    #cbd5e1 0%,
+    #cbd5e1 40%,
+    #f8fafc 47%,
+    #ffffff 50%,
+    #f8fafc 53%,
+    #cbd5e1 60%,
+    #cbd5e1 100%
+  );
+}
+
+/* Light Mode Emerald: deep vivid emerald with luminous highlight */
+.hero-title-shine-emerald {
+  background-image: linear-gradient(
+    110deg,
+    #047857 0%,
+    #047857 40%,
+    #10b981 47%,
+    #34d399 50%,
+    #10b981 53%,
+    #047857 60%,
+    #047857 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  animation: title-shine 6s linear infinite;
+  display: inline-block;
+}
+
+/* Dark Mode Emerald: bright glowing mint-emerald with white-hot core */
+.dark .hero-title-shine-emerald {
+  background-image: linear-gradient(
+    110deg,
+    #10b981 0%,
+    #10b981 40%,
+    #6ee7b7 47%,
+    #ffffff 50%,
+    #6ee7b7 53%,
+    #10b981 60%,
+    #10b981 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-title-shine,
+  .hero-title-shine-emerald {
+    animation: none !important;
+  }
+}

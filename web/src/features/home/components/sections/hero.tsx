@@ -7,11 +7,13 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 */
 import { Link } from "@tanstack/react-router"
-import { ArrowUpRight, BookOpen, ChevronDown, Cpu, Film, ShieldCheck } from "lucide-react"
+import { ArrowUpRight, BookOpen, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
+import { HeaderLogo } from "@/components/layout/components/header-logo"
 import { Button } from "@/components/ui/button"
 import { useStatus } from "@/hooks/use-status"
+import { useSystemConfig } from "@/hooks/use-system-config"
 
 import { HeroAgentShowcase } from "../hero-agent-showcase"
 
@@ -23,6 +25,7 @@ interface HeroProps {
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
   const { status } = useStatus()
+  const { logo, loading, logoLoaded } = useSystemConfig()
 
   const docsUrl =
     (status?.docs_link as string | undefined) || "https://docs.newapi.pro"
@@ -56,7 +59,7 @@ export function Hero(props: HeroProps) {
   }
 
   return (
-    <section className="relative z-10 flex min-h-[calc(100svh-4.5rem)] flex-col justify-between overflow-hidden px-4 sm:px-6 lg:px-8 pt-8 pb-6 sm:pt-10 sm:pb-8 md:pt-12">
+    <section className="relative z-10 flex min-h-[calc(100svh-4.5rem)] flex-col justify-between overflow-hidden px-4 sm:px-6 lg:px-8 pt-16 pb-8 sm:pt-20 sm:pb-10 md:pt-24 md:pb-12">
       {/* Subtle atmospheric lighting */}
       <div
         aria-hidden
@@ -73,86 +76,62 @@ export function Hero(props: HeroProps) {
         className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_75%_65%_at_45%_35%,black_25%,transparent_100%)] bg-[size:4rem_4rem] opacity-[0.035]"
       />
 
-      <div className="mx-auto my-auto w-full max-w-7xl py-4 sm:py-6">
+      <div className="mx-auto my-auto w-full max-w-7xl py-6 sm:py-8 md:py-10">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12 xl:gap-16">
           {/* Left Column: Shifted leftwards */}
           <div className="flex flex-col items-start text-left lg:col-span-7 xl:col-span-7 lg:-ml-2 xl:-ml-4">
+            {/* Brand Logo & API Wordmark */}
+            <div
+              className="landing-animate-fade-up mb-8 sm:mb-10 inline-flex items-center gap-3 sm:gap-4.5"
+              style={{ animationDelay: "0ms" }}
+            >
+              <div className="flex size-18 sm:size-22 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105">
+                {logo ? (
+                  <HeaderLogo
+                    src={logo}
+                    loading={loading}
+                    logoLoaded={logoLoaded}
+                    className="size-full object-contain select-none drop-shadow-md"
+                  />
+                ) : (
+                  <div className="size-5 rounded-full bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.8)]" />
+                )}
+              </div>
+              <div className="flex items-center select-none">
+                <span className="font-sans text-[2.75rem] sm:text-[3.5rem] font-black leading-none tracking-tight text-foreground translate-y-1 sm:translate-y-1.5">
+                  API
+                </span>
+              </div>
+            </div>
+
             {/* High-impact Title with Nuanced Typography */}
-            <h1 className="landing-animate-fade-up tracking-tight" style={{ animationDelay: "30ms" }}>
-              <span className="block text-[clamp(2.1rem,4.2vw,3.2rem)] font-extrabold text-foreground leading-[1.12]">
-                {t("hero_title_p1")}
+            <h1 className="landing-animate-fade-up tracking-tight my-2 sm:my-3" style={{ animationDelay: "30ms" }}>
+              <span className="hero-title-shine block text-[clamp(2.2rem,4.4vw,3.4rem)] font-extrabold leading-[1.18]">
+                {t("hero_title_p1", "重塑思考的疆界")}
               </span>
-              <span className="mt-2 block bg-gradient-to-r from-foreground via-foreground/90 to-foreground/60 bg-clip-text text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold text-transparent leading-[1.18]">
-                {t("hero_title_p2")}
+              <span className="hero-title-shine-emerald mt-3 sm:mt-4 block text-[clamp(1.8rem,3.6vw,2.75rem)] font-black leading-[1.22] filter drop-shadow-[0_2px_18px_rgba(16,185,129,0.2)]">
+                {t("hero_title_p2", "让每一次API调用，皆有回响。")}
               </span>
             </h1>
 
             {/* Editorial Accent Gradient Bar */}
             <div
               aria-hidden
-              className="landing-animate-fade-up mt-5 h-0.5 w-14 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent"
+              className="landing-animate-fade-up mt-6 sm:mt-7 h-0.5 w-32 sm:w-48 md:w-56 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent"
               style={{ animationDelay: "70ms" }}
             />
 
             {/* Rich, Evocative Narrative Copy */}
             <p
-              className="landing-animate-fade-up mt-5 max-w-2xl text-[14px] leading-relaxed text-muted-foreground sm:text-[15px]"
+              className="landing-animate-fade-up mt-6 sm:mt-8 max-w-2xl text-[14.5px] leading-[1.75] text-muted-foreground sm:text-[16px] sm:leading-[1.8] whitespace-pre-line"
               style={{ animationDelay: "110ms" }}
             >
-              {t("hero_subtitle")}
+              {t("hero_subtitle", "聚合全球顶尖模型，覆盖文本、图像、音频、视频等一站式 API 聚合平台。\n一个接口即可调度全球顶尖模型能力，为构建者提供极致稳定的原生 API 服务。")}
             </p>
-
-            {/* Creative Micro-Pillars: Balanced, informative, aesthetic */}
-            <div
-              className="landing-animate-fade-up mt-6.5 grid w-full grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3"
-              style={{ animationDelay: "150ms" }}
-            >
-              <div className="group rounded-xl border border-border/50 bg-card/40 p-3 backdrop-blur-xs transition-all duration-200 hover:border-emerald-500/40 hover:bg-card/70 hover:shadow-xs">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-500">
-                    <Cpu className="size-3.5" />
-                  </div>
-                  <div className="text-xs font-semibold text-foreground tracking-tight">
-                    {t("hero_pill_1")}
-                  </div>
-                </div>
-                <div className="mt-2 text-[11px] leading-relaxed text-muted-foreground/80">
-                  {t("hero_pill_1_desc")}
-                </div>
-              </div>
-
-              <div className="group rounded-xl border border-border/50 bg-card/40 p-3 backdrop-blur-xs transition-all duration-200 hover:border-violet-500/40 hover:bg-card/70 hover:shadow-xs">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-6 items-center justify-center rounded-md bg-violet-500/10 text-violet-500">
-                    <Film className="size-3.5" />
-                  </div>
-                  <div className="text-xs font-semibold text-foreground tracking-tight">
-                    {t("hero_pill_2")}
-                  </div>
-                </div>
-                <div className="mt-2 text-[11px] leading-relaxed text-muted-foreground/80">
-                  {t("hero_pill_2_desc")}
-                </div>
-              </div>
-
-              <div className="group rounded-xl border border-border/50 bg-card/40 p-3 backdrop-blur-xs transition-all duration-200 hover:border-sky-500/40 hover:bg-card/70 hover:shadow-xs">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-6 items-center justify-center rounded-md bg-sky-500/10 text-sky-500">
-                    <ShieldCheck className="size-3.5" />
-                  </div>
-                  <div className="text-xs font-semibold text-foreground tracking-tight">
-                    {t("hero_pill_3")}
-                  </div>
-                </div>
-                <div className="mt-2 text-[11px] leading-relaxed text-muted-foreground/80">
-                  {t("hero_pill_3_desc")}
-                </div>
-              </div>
-            </div>
 
             {/* Action Buttons */}
             <div
-              className="landing-animate-fade-up mt-7 flex flex-wrap items-center gap-3"
+              className="landing-animate-fade-up mt-8 sm:mt-10 flex flex-wrap items-center gap-3.5"
               style={{ animationDelay: "190ms" }}
             >
               <Button
