@@ -11,7 +11,6 @@ import { ArrowUpRight, BookOpen, ChevronDown } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { HeaderLogo } from "@/components/layout/components/header-logo"
-import { Button } from "@/components/ui/button"
 import { useStatus } from "@/hooks/use-status"
 import { useSystemConfig } from "@/hooks/use-system-config"
 
@@ -32,10 +31,14 @@ export function Hero(props: HeroProps) {
 
   const renderDocsButton = () => {
     const className =
-      "text-muted-foreground hover:text-foreground inline-flex h-10 items-center gap-1.5 px-3 text-xs font-medium transition-colors cursor-pointer"
+      "group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl border border-border/70 bg-card/40 px-5 text-xs sm:text-sm font-medium text-muted-foreground/90 backdrop-blur-md transition-all duration-300 hover:border-foreground/25 hover:bg-card/80 hover:text-foreground hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
     const content = (
       <>
-        <BookOpen className="size-4" />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-foreground/5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+        />
+        <BookOpen className="size-4 text-muted-foreground transition-colors duration-200 group-hover:text-foreground" />
         <span>{t("Docs")}</span>
       </>
     )
@@ -131,35 +134,36 @@ export function Hero(props: HeroProps) {
 
             {/* Action Buttons */}
             <div
-              className="landing-animate-fade-up mt-8 sm:mt-10 flex flex-wrap items-center gap-3.5"
+              className="landing-animate-fade-up mt-8 sm:mt-10 flex flex-wrap items-center gap-3 sm:gap-4"
               style={{ animationDelay: "190ms" }}
             >
-              <Button
-                className="group h-10 rounded-lg bg-foreground px-5 text-xs font-semibold text-background shadow-xs hover:bg-foreground/90 cursor-pointer"
-                render={<Link to="/dashboard" />}
+              {/* Primary Access Button */}
+              <Link
+                to="/dashboard"
+                className="group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl bg-foreground px-6 text-xs sm:text-sm font-semibold text-background shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)] active:scale-[0.98] cursor-pointer"
               >
+                {/* Luminous overlay wave on hover */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+                />
                 <span>{t("hero_cta_access")}</span>
-                <ArrowUpRight className="ml-1.5 size-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              </Button>
+                <ArrowUpRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
 
-              {props.isAuthenticated ? (
-                <Button
-                  variant="outline"
-                  className="h-10 rounded-lg border-border/70 px-4 text-xs font-medium hover:bg-muted/50 cursor-pointer"
-                  render={<Link to="/playground" />}
-                >
-                  <span>{t("Open Playground")}</span>
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="h-10 rounded-lg border-border/70 px-4 text-xs font-medium hover:bg-muted/50 cursor-pointer"
-                  render={<Link to="/pricing" />}
-                >
-                  <span>{t("hero_cta_models")}</span>
-                </Button>
-              )}
+              {/* Secondary Explore Button */}
+              <Link
+                to={props.isAuthenticated ? "/playground" : "/pricing"}
+                className="group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl border border-border/70 bg-card/60 px-5 text-xs sm:text-sm font-medium text-foreground backdrop-blur-md transition-all duration-300 hover:border-foreground/25 hover:bg-card/90 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-foreground/5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+                />
+                <span>{props.isAuthenticated ? t("Open Playground") : t("hero_cta_models")}</span>
+              </Link>
 
+              {/* Tertiary Docs Button */}
               {renderDocsButton()}
             </div>
           </div>
