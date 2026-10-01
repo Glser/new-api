@@ -3,13 +3,12 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import { useEffect, useRef, useState } from "react"
 import {
-  CherryStudio,
   ClaudeCode,
-  Cline,
   CodeBuddy,
-  Cursor,
+  Codex,
+  DeepSeek,
+  HermesAgent,
   Trae,
-  Windsurf,
 } from "@lobehub/icons"
 import { ArrowUpRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
@@ -18,7 +17,8 @@ export interface AgentItem {
   id: string
   name: string
   tag: string
-  description: string
+  descKey: string
+  defaultDesc: string
   guideUrl: string
   accentColor: string
   glowColor: string
@@ -35,30 +35,17 @@ export function HeroAgentShowcase() {
 
   const agents: AgentItem[] = [
     {
-      id: "workbuddy",
-      name: "WorkBuddy",
-      tag: "Agent",
-      description: t("hero_agent_workbuddy_desc"),
-      guideUrl: DEFAULT_GUIDE_URL,
-      accentColor: "#3b82f6",
-      glowColor: "rgba(59, 130, 246, 0.32)",
+      id: "chatgpt",
+      name: "ChatGPT (codex)",
+      tag: "Codex Agent",
+      descKey: "hero_agent_chatgpt_desc",
+      defaultDesc: "官方架构原生驱动，深度支持 Codex 桌面与智能交互",
+      guideUrl: "https://api.oioi.lat/pages/codex-guide/#codex/start",
+      accentColor: "#10a37f",
+      glowColor: "rgba(16, 163, 127, 0.32)",
       icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 transition-transform duration-300 group-hover:scale-105 dark:text-blue-400">
-          <CodeBuddy.Color size={26} />
-        </div>
-      ),
-    },
-    {
-      id: "cursor",
-      name: "Cursor",
-      tag: "AI IDE",
-      description: t("hero_agent_cursor_desc"),
-      guideUrl: DEFAULT_GUIDE_URL,
-      accentColor: "#6366f1",
-      glowColor: "rgba(99, 102, 241, 0.32)",
-      icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 transition-transform duration-300 group-hover:scale-105 dark:text-indigo-400">
-          <Cursor size={26} />
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 transition-transform duration-300 group-hover:scale-105 dark:text-emerald-400">
+          <Codex.Color size={26} />
         </div>
       ),
     },
@@ -66,7 +53,8 @@ export function HeroAgentShowcase() {
       id: "claude-code",
       name: "Claude Code",
       tag: "CLI Agent",
-      description: t("hero_agent_claude_code_desc"),
+      descKey: "hero_agent_claude_code_desc",
+      defaultDesc: "命令行原生自主编程 Agent，全流程理解架构与推演",
       guideUrl: DEFAULT_GUIDE_URL,
       accentColor: "#d97706",
       glowColor: "rgba(217, 119, 6, 0.32)",
@@ -77,16 +65,32 @@ export function HeroAgentShowcase() {
       ),
     },
     {
-      id: "cherry-studio",
-      name: "Cherry Studio",
-      tag: "Client",
-      description: t("hero_agent_cherry_studio_desc"),
-      guideUrl: DEFAULT_GUIDE_URL,
+      id: "workbuddy",
+      name: "WorkBuddy",
+      tag: "Agent",
+      descKey: "hero_agent_workbuddy_desc",
+      defaultDesc: "企业协同研发与办公智能体，深度融入业务开发流",
+      guideUrl: "https://api.oioi.lat/pages/codex-guide/#agent/workbuddy",
+      accentColor: "#3b82f6",
+      glowColor: "rgba(59, 130, 246, 0.32)",
+      icon: (
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 transition-transform duration-300 group-hover:scale-105 dark:text-blue-400">
+          <CodeBuddy.Color size={26} />
+        </div>
+      ),
+    },
+    {
+      id: "hermes",
+      name: "Hermes",
+      tag: "Autonomous",
+      descKey: "hero_agent_hermes_desc",
+      defaultDesc: "高阶自主 Agent 与复杂工具调用核心，敏捷响应任务流",
+      guideUrl: "https://api.oioi.lat/pages/codex-guide/#agent/hermes",
       accentColor: "#ec4899",
       glowColor: "rgba(236, 72, 153, 0.32)",
       icon: (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-pink-500/10 text-pink-600 transition-transform duration-300 group-hover:scale-105 dark:text-pink-400">
-          <CherryStudio.Color size={26} />
+          <HermesAgent size={26} />
         </div>
       ),
     },
@@ -94,8 +98,9 @@ export function HeroAgentShowcase() {
       id: "trae",
       name: "Trae",
       tag: "AI IDE",
-      description: t("hero_agent_trae_desc"),
-      guideUrl: DEFAULT_GUIDE_URL,
+      descKey: "hero_agent_trae_desc",
+      defaultDesc: "原生智能化 AI IDE，深度集成多模态代码分析与上下文",
+      guideUrl: "https://api.oioi.lat/pages/codex-guide/#agent/trae",
       accentColor: "#10b981",
       glowColor: "rgba(16, 185, 129, 0.32)",
       icon: (
@@ -105,30 +110,17 @@ export function HeroAgentShowcase() {
       ),
     },
     {
-      id: "windsurf",
-      name: "Windsurf",
-      tag: "Flow Agent",
-      description: t("hero_agent_windsurf_desc"),
+      id: "deepseek-harness",
+      name: "DeepSeek Harness",
+      tag: "Reasoning",
+      descKey: "hero_agent_deepseek_harness_desc",
+      defaultDesc: "深度推理工程驾驭套件，全面激发 R1 满血思考链潜能",
       guideUrl: DEFAULT_GUIDE_URL,
-      accentColor: "#06b6d4",
-      glowColor: "rgba(6, 182, 212, 0.32)",
+      accentColor: "#0284c7",
+      glowColor: "rgba(2, 132, 199, 0.32)",
       icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-600 transition-transform duration-300 group-hover:scale-105 dark:text-cyan-400">
-          <Windsurf size={26} />
-        </div>
-      ),
-    },
-    {
-      id: "cline",
-      name: "Cline",
-      tag: "VSCode Extension",
-      description: t("hero_agent_cline_desc"),
-      guideUrl: DEFAULT_GUIDE_URL,
-      accentColor: "#8b5cf6",
-      glowColor: "rgba(139, 92, 246, 0.32)",
-      icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 transition-transform duration-300 group-hover:scale-105 dark:text-purple-400">
-          <Cline size={26} />
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-600 transition-transform duration-300 group-hover:scale-105 dark:text-sky-400">
+          <DeepSeek.Color size={26} />
         </div>
       ),
     },
@@ -233,7 +225,7 @@ export function HeroAgentShowcase() {
                   {agent.name}
                 </h4>
                 <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground/85">
-                  {agent.description}
+                  {t(agent.descKey, agent.defaultDesc)}
                 </p>
               </div>
 

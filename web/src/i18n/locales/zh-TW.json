@@ -6507,5 +6507,8 @@
   "hero_agent_trae_desc": "原生智慧化 AI IDE，深度整合多模態程式碼分析與上下文",
   "hero_agent_windsurf_desc": "深度心流式 AI 程式設計環境，Cascade 全流程協同編碼",
   "hero_agent_cline_desc": "VS Code 終端自主程式設計助手，具備命令執行與環境感知",
-  "hero_agent_footer": "統一 API 端點，支援無縫配置主流 AI Agent 與開發工具。"
+  "hero_agent_footer": "統一 API 端點，支援無縫配置主流 AI Agent 與開發工具。",
+  "hero_agent_chatgpt_desc": "官方架構原生驅動，深度支援 Codex 桌面與智慧交互",
+  "hero_agent_hermes_desc": "高階自主 Agent 與複雜工具調用核心，敏捷響應任務流",
+  "hero_agent_deepseek_harness_desc": "深度推理工程駕馭套件，全面激發 R1 滿血思考鏈潛能"
 }
