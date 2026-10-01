@@ -42,7 +42,7 @@ export function HeroAgentShowcase() {
       defaultDesc: "官方架构原生驱动，深度支持 Codex 桌面与智能交互",
       guideUrl: "https://api.oioi.lat/pages/codex-guide/#codex/start",
       accentColor: "#10a37f",
-      glowColor: "rgba(16, 163, 127, 0.32)",
+      glowColor: "rgba(16, 163, 127, 0.28)",
       icon: (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 transition-transform duration-300 group-hover:scale-105 dark:text-emerald-400">
           <Codex.Color size={26} />
@@ -57,7 +57,7 @@ export function HeroAgentShowcase() {
       defaultDesc: "命令行原生自主编程 Agent，全流程理解架构与推演",
       guideUrl: DEFAULT_GUIDE_URL,
       accentColor: "#d97706",
-      glowColor: "rgba(217, 119, 6, 0.32)",
+      glowColor: "rgba(217, 119, 6, 0.28)",
       icon: (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 transition-transform duration-300 group-hover:scale-105 dark:text-amber-400">
           <ClaudeCode.Color size={26} />
@@ -72,7 +72,7 @@ export function HeroAgentShowcase() {
       defaultDesc: "企业协同研发与办公智能体，深度融入业务开发流",
       guideUrl: "https://api.oioi.lat/pages/codex-guide/#agent/workbuddy",
       accentColor: "#3b82f6",
-      glowColor: "rgba(59, 130, 246, 0.32)",
+      glowColor: "rgba(59, 130, 246, 0.28)",
       icon: (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 transition-transform duration-300 group-hover:scale-105 dark:text-blue-400">
           <CodeBuddy.Color size={26} />
@@ -87,7 +87,7 @@ export function HeroAgentShowcase() {
       defaultDesc: "高阶自主 Agent 与复杂工具调用核心，敏捷响应任务流",
       guideUrl: "https://api.oioi.lat/pages/codex-guide/#agent/hermes",
       accentColor: "#ec4899",
-      glowColor: "rgba(236, 72, 153, 0.32)",
+      glowColor: "rgba(236, 72, 153, 0.28)",
       icon: (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-pink-500/10 text-pink-600 transition-transform duration-300 group-hover:scale-105 dark:text-pink-400">
           <HermesAgent size={26} />
@@ -102,7 +102,7 @@ export function HeroAgentShowcase() {
       defaultDesc: "原生智能化 AI IDE，深度集成多模态代码分析与上下文",
       guideUrl: "https://api.oioi.lat/pages/codex-guide/#agent/trae",
       accentColor: "#10b981",
-      glowColor: "rgba(16, 185, 129, 0.32)",
+      glowColor: "rgba(16, 185, 129, 0.28)",
       icon: (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 transition-transform duration-300 group-hover:scale-105 dark:text-emerald-400">
           <Trae.Color size={26} />
@@ -117,7 +117,7 @@ export function HeroAgentShowcase() {
       defaultDesc: "深度推理工程驾驭套件，全面激发 R1 满血思考链潜能",
       guideUrl: DEFAULT_GUIDE_URL,
       accentColor: "#0284c7",
-      glowColor: "rgba(2, 132, 199, 0.32)",
+      glowColor: "rgba(2, 132, 199, 0.28)",
       icon: (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-600 transition-transform duration-300 group-hover:scale-105 dark:text-sky-400">
           <DeepSeek.Color size={26} />
@@ -164,11 +164,12 @@ export function HeroAgentShowcase() {
           // Cards wrapping or further behind drop to 10 or 0.
           const zIndex = isCenter ? 40 : absOffset === 1 ? 20 : 10 - absOffset
 
+          // Exact pixel transforms to maintain 100% crisp vector font rendering on active card
           const translateX = offset * 135
           const translateY = isCenter ? 0 : 14 + absOffset * 4
-          const translateZ = isCenter ? 120 : -absOffset * 80
-          const rotateY = offset * -14
-          const scale = isCenter ? 1.02 : 0.88 - (absOffset - 1) * 0.1
+          const translateZ = isCenter ? 0 : -absOffset * 80
+          const rotateY = isCenter ? 0 : offset * -14
+          const scale = isCenter ? 1 : 0.88 - (absOffset - 1) * 0.1
           const opacity = isCenter ? 1 : absOffset === 1 ? 0.65 : 0
 
           return (
@@ -178,28 +179,30 @@ export function HeroAgentShowcase() {
                 if (!isCenter) setActiveIndex(index)
               }}
               style={{
-                transform: `translateX(${translateX}px) translateY(${translateY}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                transform: `translate3d(${translateX}px, ${translateY}px, ${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                 zIndex,
                 opacity: isVisible ? opacity : 0,
                 pointerEvents: isCenter ? "auto" : isVisible ? "auto" : "none",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
                 boxShadow: isCenter
-                  ? `0 24px 48px -20px ${agent.glowColor}, 0 12px 28px -12px rgba(0,0,0,0.2)`
-                  : "0 8px 24px -16px rgba(0,0,0,0.16)",
+                  ? `0 20px 45px -18px ${agent.glowColor}, 0 10px 24px -12px rgba(0,0,0,0.18)`
+                  : "0 8px 24px -16px rgba(0,0,0,0.14)",
                 transition:
                   "transform 560ms cubic-bezier(0.16, 1, 0.3, 1), opacity 450ms ease, box-shadow 450ms ease",
               }}
               className={
-                "group absolute top-2 flex w-[255px] sm:w-[270px] flex-col rounded-2xl border p-5 backdrop-blur-md select-none transition-colors " +
+                "group absolute top-2 flex w-[260px] sm:w-[275px] flex-col rounded-2xl border p-5 select-none transition-colors " +
                 (isCenter
-                  ? "border-border/95 bg-card shadow-lg ring-1 ring-border/50 cursor-default"
-                  : "border-border/60 bg-card/85 cursor-pointer hover:border-border/90 hover:opacity-85")
+                  ? "border-border bg-card shadow-lg ring-1 ring-border/50 cursor-default"
+                  : "border-border/60 bg-card/85 backdrop-blur-sm cursor-pointer hover:border-border/90 hover:opacity-85")
               }
             >
               {/* Header: Clean Icon & Status Indicator */}
               <div className="flex items-center justify-between">
                 {agent.icon}
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                  <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
                     {agent.tag}
                   </span>
                   <div
@@ -214,15 +217,15 @@ export function HeroAgentShowcase() {
 
               {/* Title & Description */}
               <div className="mt-4 flex flex-col">
-                <h4 className="text-[15px] font-semibold tracking-tight text-foreground sm:text-base">
+                <h4 className="text-[15px] sm:text-base font-semibold tracking-tight text-foreground antialiased">
                   {agent.name}
                 </h4>
-                <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/85 min-h-[36px]">
+                <p className="mt-1.5 line-clamp-2 text-xs sm:text-[13px] leading-relaxed text-muted-foreground antialiased min-h-[38px]">
                   {t(agent.descKey, agent.defaultDesc)}
                 </p>
               </div>
 
-              {/* Bottom Subtle Action Strip: 一键配置 (Matches "进入控制台" CTA button aesthetic) */}
+              {/* Bottom Subtle Action Strip: 一键配置 */}
               <div className="mt-5 flex items-center justify-end border-t border-border/40 pt-3.5">
                 <a
                   href={agent.guideUrl}
