@@ -6571,5 +6571,14 @@
     "hero_quote_note": "为构建者铺设坦途，让每一个念头长出实体。",
     "hero_eco_label": "原生适配主流创作与开发流",
     "hero_eco_tools": "Cursor · Claude Code · Cline · Cherry Studio · NextChat · LangChain"
-  }
+  },
+  "hero_agent_configure": "一键配置",
+  "hero_agent_workbuddy_desc": "企业协同研发与办公智能体，深度融入业务开发流",
+  "hero_agent_claude_code_desc": "命令行原生自主编程 Agent，全流程理解架构与推演",
+  "hero_agent_cursor_desc": "新一代 AI 优先代码编辑器，毫秒级跨文件补全与重构",
+  "hero_agent_cherry_studio_desc": "全能桌面多模型客户端，一站聚合主流 AI 思考与生图能力",
+  "hero_agent_trae_desc": "原生智能化 AI IDE，深度集成多模态代码分析与上下文",
+  "hero_agent_windsurf_desc": "深度心流式 AI 编程环境，Cascade 全流程协同编码",
+  "hero_agent_cline_desc": "VS Code 终端自主编程助手，具备命令执行与环境感知",
+  "hero_agent_footer": "统一 API 端点，支持无缝配置主流 AI Agent 与开发工具。"
 }

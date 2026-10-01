@@ -6571,5 +6571,14 @@
     "hero_quote_note": "Empowering creators to give thoughts tangible form.",
     "hero_eco_label": "Seamlessly integrated with modern builder stacks",
     "hero_eco_tools": "Cursor · Claude Code · Cline · Cherry Studio · NextChat · LangChain"
-  }
+  },
+  "hero_agent_configure": "Quick Setup",
+  "hero_agent_workbuddy_desc": "Enterprise collaborative AI agent tailored for developer productivity",
+  "hero_agent_claude_code_desc": "Terminal-native autonomous coding agent for architecture engineering",
+  "hero_agent_cursor_desc": "AI-first code editor with instant full-repo context and multi-file editing",
+  "hero_agent_cherry_studio_desc": "All-in-one desktop client unifying multimodal models and chat workflows",
+  "hero_agent_trae_desc": "Native AI IDE with deep contextual understanding and code intelligence",
+  "hero_agent_windsurf_desc": "Flow-state collaborative AI IDE powered by Cascade agentic engine",
+  "hero_agent_cline_desc": "Autonomous coding extension in VS Code with direct terminal execution",
+  "hero_agent_footer": "Single unified gateway, seamlessly configured across leading AI agents."
 }

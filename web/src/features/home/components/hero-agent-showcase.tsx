@@ -3,25 +3,29 @@ Copyright (C) 2023-2026 QuantumNous
 */
 import { useEffect, useRef, useState } from "react"
 import {
+  CherryStudio,
   ClaudeCode,
+  Cline,
   CodeBuddy,
-  DeepSeek,
-  HermesAgent,
-  OpenAI,
+  Cursor,
   Trae,
+  Windsurf,
 } from "@lobehub/icons"
-import { ArrowUpRight, Terminal } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 export interface AgentItem {
   id: string
   name: string
+  tag: string
   description: string
-  url: string
+  guideUrl: string
   accentColor: string
   glowColor: string
   icon: React.ReactNode
 }
+
+const DEFAULT_GUIDE_URL = "https://api.oioi.lat/pages/codex-guide/#agent/workbuddy"
 
 export function HeroAgentShowcase() {
   const { t } = useTranslation()
@@ -31,62 +35,11 @@ export function HeroAgentShowcase() {
 
   const agents: AgentItem[] = [
     {
-      id: "gpt-work",
-      name: "GPT-4o / Omni",
-      description: t("hero_agent_gpt_work_description"),
-      url: "https://chatgpt.com",
-      accentColor: "#10a37f",
-      glowColor: "rgba(16, 163, 127, 0.32)",
-      icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 transition-transform duration-300 group-hover:scale-105 dark:text-emerald-400">
-          <OpenAI size={26} />
-        </div>
-      ),
-    },
-    {
-      id: "claude-code",
-      name: "Claude 3.5 Sonnet",
-      description: t("hero_agent_claude_code_description"),
-      url: "https://claude.ai",
-      accentColor: "#d97706",
-      glowColor: "rgba(217, 119, 6, 0.32)",
-      icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 transition-transform duration-300 group-hover:scale-105 dark:text-amber-400">
-          <ClaudeCode.Color size={26} />
-        </div>
-      ),
-    },
-    {
-      id: "deepseek-harness",
-      name: "DeepSeek R1 / V3",
-      description: t("hero_agent_deepseek_description"),
-      url: "https://deepseek.com",
-      accentColor: "#0284c7",
-      glowColor: "rgba(2, 132, 199, 0.32)",
-      icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-600 transition-transform duration-300 group-hover:scale-105 dark:text-sky-400">
-          <DeepSeek.Color size={26} />
-        </div>
-      ),
-    },
-    {
-      id: "trae",
-      name: "Trae / Claude Code",
-      description: t("hero_agent_trae_description"),
-      url: "https://www.trae.ai",
-      accentColor: "#10b981",
-      glowColor: "rgba(16, 185, 129, 0.32)",
-      icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-teal-500/10 text-teal-600 transition-transform duration-300 group-hover:scale-105 dark:text-teal-400">
-          <Trae.Color size={26} />
-        </div>
-      ),
-    },
-    {
       id: "workbuddy",
-      name: "WorkBuddy Agent",
-      description: t("hero_agent_workbuddy_description"),
-      url: "https://workbuddy.ai",
+      name: "WorkBuddy",
+      tag: "Agent",
+      description: t("hero_agent_workbuddy_desc"),
+      guideUrl: DEFAULT_GUIDE_URL,
       accentColor: "#3b82f6",
       glowColor: "rgba(59, 130, 246, 0.32)",
       icon: (
@@ -96,28 +49,86 @@ export function HeroAgentShowcase() {
       ),
     },
     {
-      id: "hermes",
-      name: "Nous Hermes 3",
-      description: t("hero_agent_hermes_description"),
-      url: "https://nousresearch.com",
-      accentColor: "#ec4899",
-      glowColor: "rgba(236, 72, 153, 0.32)",
+      id: "cursor",
+      name: "Cursor",
+      tag: "AI IDE",
+      description: t("hero_agent_cursor_desc"),
+      guideUrl: DEFAULT_GUIDE_URL,
+      accentColor: "#6366f1",
+      glowColor: "rgba(99, 102, 241, 0.32)",
       icon: (
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-pink-500/10 text-pink-600 transition-transform duration-300 group-hover:scale-105 dark:text-pink-400">
-          <HermesAgent size={26} />
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-indigo-500/10 text-indigo-600 transition-transform duration-300 group-hover:scale-105 dark:text-indigo-400">
+          <Cursor size={26} />
         </div>
       ),
     },
     {
-      id: "zcode",
-      name: "Enterprise Agent",
-      description: t("hero_agent_zcode_description"),
-      url: "https://zcode.ai",
+      id: "claude-code",
+      name: "Claude Code",
+      tag: "CLI Agent",
+      description: t("hero_agent_claude_code_desc"),
+      guideUrl: DEFAULT_GUIDE_URL,
+      accentColor: "#d97706",
+      glowColor: "rgba(217, 119, 6, 0.32)",
+      icon: (
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 transition-transform duration-300 group-hover:scale-105 dark:text-amber-400">
+          <ClaudeCode.Color size={26} />
+        </div>
+      ),
+    },
+    {
+      id: "cherry-studio",
+      name: "Cherry Studio",
+      tag: "Client",
+      description: t("hero_agent_cherry_studio_desc"),
+      guideUrl: DEFAULT_GUIDE_URL,
+      accentColor: "#ec4899",
+      glowColor: "rgba(236, 72, 153, 0.32)",
+      icon: (
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-pink-500/10 text-pink-600 transition-transform duration-300 group-hover:scale-105 dark:text-pink-400">
+          <CherryStudio.Color size={26} />
+        </div>
+      ),
+    },
+    {
+      id: "trae",
+      name: "Trae",
+      tag: "AI IDE",
+      description: t("hero_agent_trae_desc"),
+      guideUrl: DEFAULT_GUIDE_URL,
+      accentColor: "#10b981",
+      glowColor: "rgba(16, 185, 129, 0.32)",
+      icon: (
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 transition-transform duration-300 group-hover:scale-105 dark:text-emerald-400">
+          <Trae.Color size={26} />
+        </div>
+      ),
+    },
+    {
+      id: "windsurf",
+      name: "Windsurf",
+      tag: "Flow Agent",
+      description: t("hero_agent_windsurf_desc"),
+      guideUrl: DEFAULT_GUIDE_URL,
+      accentColor: "#06b6d4",
+      glowColor: "rgba(6, 182, 212, 0.32)",
+      icon: (
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-600 transition-transform duration-300 group-hover:scale-105 dark:text-cyan-400">
+          <Windsurf size={26} />
+        </div>
+      ),
+    },
+    {
+      id: "cline",
+      name: "Cline",
+      tag: "VSCode Extension",
+      description: t("hero_agent_cline_desc"),
+      guideUrl: DEFAULT_GUIDE_URL,
       accentColor: "#8b5cf6",
       glowColor: "rgba(139, 92, 246, 0.32)",
       icon: (
         <div className="flex size-11 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 transition-transform duration-300 group-hover:scale-105 dark:text-purple-400">
-          <Terminal className="size-6" />
+          <Cline size={26} />
         </div>
       ),
     },
@@ -129,7 +140,7 @@ export function HeroAgentShowcase() {
     if (isPaused) return
     timerRef.current = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % total)
-    }, 3800)
+    }, 4000)
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
@@ -142,12 +153,9 @@ export function HeroAgentShowcase() {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Clean top kicker in tudouni aesthetic */}
-      
-
       {/* 3D Stack Stage */}
       <div
-        className="relative flex h-[290px] w-full items-center justify-center overflow-visible"
+        className="relative flex h-[300px] w-full items-center justify-center overflow-visible"
         style={{ perspective: "1200px" }}
       >
         {agents.map((agent, index) => {
@@ -159,7 +167,7 @@ export function HeroAgentShowcase() {
           const absOffset = Math.abs(offset)
           const isVisible = absOffset <= 2
 
-          const translateX = offset * 115
+          const translateX = offset * 118
           const translateY = Math.pow(offset, 2) * 8
           const translateZ = 120 - absOffset * 70
           const rotateY = offset * -12
@@ -172,49 +180,71 @@ export function HeroAgentShowcase() {
               key={agent.id}
               onClick={() => setActiveIndex(index)}
               style={{
-                transform: "translateX(" + translateX + "px) translateY(" + translateY + "px) translateZ(" + translateZ + "px) rotateY(" + rotateY + "deg) scale(" + scale + ")",
+                transform:
+                  "translateX(" +
+                  translateX +
+                  "px) translateY(" +
+                  translateY +
+                  "px) translateZ(" +
+                  translateZ +
+                  "px) rotateY(" +
+                  rotateY +
+                  "deg) scale(" +
+                  scale +
+                  ")",
                 zIndex,
                 opacity: isVisible ? opacity : 0,
                 pointerEvents: isVisible ? "auto" : "none",
                 boxShadow: isCenter
-                  ? "0 24px 48px -24px " + agent.glowColor + ", 0 12px 24px -16px rgba(0,0,0,0.25)"
-                  : "0 8px 20px -16px rgba(0,0,0,0.2)",
-                transition: "transform 520ms cubic-bezier(0.2, 0.85, 0.32, 1.05), opacity 420ms ease, box-shadow 420ms ease",
+                  ? "0 24px 48px -24px " +
+                    agent.glowColor +
+                    ", 0 12px 24px -16px rgba(0,0,0,0.22)"
+                  : "0 8px 20px -16px rgba(0,0,0,0.18)",
+                transition:
+                  "transform 520ms cubic-bezier(0.2, 0.85, 0.32, 1.05), opacity 420ms ease, box-shadow 420ms ease",
               }}
-              className={"group absolute top-4 flex w-[230px] sm:w-[245px] cursor-pointer flex-col rounded-2xl border border-border/60 bg-card/90 p-5 backdrop-blur-md select-none transition-colors " +
-                (isCenter ? "border-border/90 bg-card shadow-lg" : "hover:border-border/80")
+              className={
+                "group absolute top-4 flex w-[240px] sm:w-[255px] cursor-pointer flex-col rounded-2xl border border-border/70 bg-card/90 p-5 backdrop-blur-md select-none transition-colors " +
+                (isCenter
+                  ? "border-border/95 bg-card shadow-lg ring-1 ring-border/50"
+                  : "hover:border-border/85")
               }
             >
               {/* Header: Clean Icon & Status Indicator */}
               <div className="flex items-center justify-between">
                 {agent.icon}
-                <div
-                  className="size-2 rounded-full transition-all duration-300"
-                  style={{
-                    backgroundColor: isCenter ? agent.accentColor : "var(--border)",
-                    boxShadow: isCenter ? "0 0 8px " + agent.accentColor : "none",
-                  }}
-                />
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                    {agent.tag}
+                  </span>
+                  <div
+                    className="size-2 rounded-full transition-all duration-300"
+                    style={{
+                      backgroundColor: isCenter ? agent.accentColor : "var(--border)",
+                      boxShadow: isCenter ? "0 0 8px " + agent.accentColor : "none",
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* Clean Title & Description without noisy badges */}
-              <div className="mt-4 flex flex-col">
+              {/* Title & Description */}
+              <div className="mt-4.5 flex flex-col">
                 <h4 className="text-[15px] font-semibold tracking-tight text-foreground sm:text-base">
                   {agent.name}
                 </h4>
-                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80">
+                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground/85">
                   {agent.description}
                 </p>
               </div>
 
-              {/* Bottom Subtle Action Strip */}
-              <div className="mt-5 flex items-center justify-between border-t border-border/40 pt-3">
-                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/60 uppercase">
-                  MODEL AGENT
+              {/* Bottom Subtle Action Strip: 一键配置 */}
+              <div className="mt-5 flex items-center justify-between border-t border-border/40 pt-3.5">
+                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/50 uppercase">
+                  READY TO USE
                 </span>
                 <a
-                  href={agent.url}
-                  target={agent.url.startsWith("http") ? "_blank" : undefined}
+                  href={agent.guideUrl}
+                  target="_blank"
                   rel="noopener noreferrer"
                   onClick={(event) => {
                     if (!isCenter) {
@@ -222,14 +252,15 @@ export function HeroAgentShowcase() {
                       setActiveIndex(index)
                     }
                   }}
-                  className={"inline-flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition-all " +
+                  className={
+                    "group/btn relative inline-flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 " +
                     (isCenter
-                      ? "text-foreground hover:text-emerald-500"
-                      : "text-muted-foreground/60 hover:text-foreground")
+                      ? "bg-foreground text-background shadow-xs hover:bg-foreground/90 hover:shadow-sm"
+                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground")
                   }
                 >
-                  <span>{t("hero_agent_open")}</span>
-                  <ArrowUpRight className="size-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  <span>{t("hero_agent_configure", "一键配置")}</span>
+                  <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                 </a>
               </div>
             </div>
@@ -238,7 +269,7 @@ export function HeroAgentShowcase() {
       </div>
 
       {/* Indicator & Bottom Footnote */}
-      <div className="mt-3 flex w-full flex-col items-center gap-3.5">
+      <div className="mt-4 flex w-full flex-col items-center gap-3">
         <div className="flex items-center gap-1.5">
           {agents.map((agent, index) => (
             <button
@@ -246,7 +277,8 @@ export function HeroAgentShowcase() {
               type="button"
               onClick={() => setActiveIndex(index)}
               aria-label={agent.name}
-              className={"h-1.5 cursor-pointer rounded-full transition-all duration-300 " +
+              className={
+                "h-1.5 cursor-pointer rounded-full transition-all duration-300 " +
                 (index === activeIndex
                   ? "w-6 bg-foreground"
                   : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60")
