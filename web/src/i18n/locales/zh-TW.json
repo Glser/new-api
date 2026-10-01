@@ -6480,7 +6480,7 @@
     "hero_badge_tag": "統一模型網關",
     "hero_title_p1": "重塑思考的疆界",
     "hero_title_p2": "讓每一次API調用，皆有回響。",
-    "hero_subtitle": "聚合全球頂尖模型，覆蓋文本、圖像、音頻、視頻等一站式 API 聚合平台。\n一個接口即可調度全球頂尖模型能力，為構建者提供極致穩定的原生 API 服務。",
+    "hero_subtitle": "聚合文本、圖像、音頻、視頻等全球頂尖模型，構建統一API範式。\n一個接口即可調度全球頂尖模型能力，為構建者提供極致穩定的原生 API 服務。",
     "hero_spec_protocol_label": "相容協議",
     "hero_spec_protocol_value": "OpenAI / Claude / Gemini",
     "hero_spec_routing_label": "智能路由",

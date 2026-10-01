@@ -82,7 +82,7 @@ export function Hero(props: HeroProps) {
       <div className="mx-auto my-auto w-full max-w-7xl py-6 sm:py-8 md:py-10">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12 xl:gap-16">
           {/* Left Column: Shifted leftwards */}
-          <div className="flex flex-col items-start text-left lg:col-span-7 xl:col-span-7 lg:-ml-2 xl:-ml-4">
+          <div className="flex flex-col items-start text-left lg:col-span-7 xl:col-span-7 lg:pl-4 xl:pl-6">
             {/* Brand Logo & API Wordmark */}
             <div
               className="landing-animate-fade-up mb-8 sm:mb-10 inline-flex items-center gap-3 sm:gap-4.5"
@@ -129,7 +129,7 @@ export function Hero(props: HeroProps) {
               className="landing-animate-fade-up mt-6 sm:mt-8 max-w-2xl text-[14.5px] leading-[1.75] text-muted-foreground sm:text-[16px] sm:leading-[1.8] whitespace-pre-line"
               style={{ animationDelay: "110ms" }}
             >
-              {t("hero_subtitle", "聚合全球顶尖模型，覆盖文本、图像、音频、视频等一站式 API 聚合平台。\n一个接口即可调度全球顶尖模型能力，为构建者提供极致稳定的原生 API 服务。")}
+              {t("hero_subtitle", "聚合文本、图像、音频、视频等全球顶尖模型，构建统一API范式。\n一个接口即可调度全球顶尖模型能力，为构建者提供极致稳定的原生 API 服务。")}
             </p>
 
             {/* Action Buttons */}
@@ -179,21 +179,22 @@ export function Hero(props: HeroProps) {
       </div>
 
       {/* Clean Bottom Cue */}
-      <div className="mx-auto mt-4 flex w-full max-w-7xl items-center justify-between border-t border-border/40 pt-4 text-xs">
-        <a
-          href="#models"
-          className="group flex items-center gap-2 font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+      <div className="mx-auto mt-4 flex w-full max-w-7xl items-center justify-start pt-2 text-xs">
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById("models");
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+          className="group inline-flex items-center gap-2 font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer animate-bounce"
         >
           <ChevronDown className="size-3.5 text-emerald-500/80 transition-transform duration-200 group-hover:translate-y-0.5" />
           <span>{t("hero_scroll_cue")}</span>
           <span className="text-muted-foreground/35">/</span>
           <span>{t("hero_scroll_aside")}</span>
-        </a>
-        <div className="hidden items-center gap-5 font-mono text-[11px] text-muted-foreground/55 sm:flex">
-          <span>01 {t("hero_index_1")}</span>
-          <span>02 {t("hero_index_2")}</span>
-          <span>03 {t("hero_index_3")}</span>
-        </div>
+        </button>
       </div>
     </section>
   )
