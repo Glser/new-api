@@ -6497,18 +6497,18 @@
     "hero_index_3": "全鏈路觀測",
     "hero_agent_via": "通過網關",
     "hero_agent_open": "直達",
-    "hero_agent_footer": "同一接入位址，無縫支援 Cursor、Claude Code、Cherry Studio 等生態工具。"
-  },
-  "hero_agent_configure": "一鍵配置",
-  "hero_agent_workbuddy_desc": "企業協同研發與辦公智能體，深度融入業務開發流",
-  "hero_agent_claude_code_desc": "命令列原生自主程式設計 Agent，全流程理解架構與推演",
-  "hero_agent_cursor_desc": "新一代 AI 優先程式碼編輯器，毫秒級跨檔案補全與重構",
-  "hero_agent_cherry_studio_desc": "全能桌面多模型客戶端，一站聚合主流 AI 思考與生圖能力",
-  "hero_agent_trae_desc": "原生智慧化 AI IDE，深度整合多模態程式碼分析與上下文",
-  "hero_agent_windsurf_desc": "深度心流式 AI 程式設計環境，Cascade 全流程協同編碼",
-  "hero_agent_cline_desc": "VS Code 終端自主程式設計助手，具備命令執行與環境感知",
-  "hero_agent_footer": "統一 API 端點，支援無縫配置主流 AI Agent 與開發工具。",
-  "hero_agent_chatgpt_desc": "官方架構原生驅動，深度支援 Codex 桌面與智慧交互",
-  "hero_agent_hermes_desc": "高階自主 Agent 與複雜工具調用核心，敏捷響應任務流",
-  "hero_agent_deepseek_harness_desc": "深度推理工程駕馭套件，全面激發 R1 滿血思考鏈潛能"
+    "hero_agent_footer": "統一 API 端點，支援無縫配置主流 AI Agent 與開發工具。",
+    "hero_cta_playground": "進入測試場",
+    "hero_agent_configure": "一鍵配置",
+    "hero_agent_workbuddy_desc": "企業協同研發與辦公智能體，深度融入業務開發流",
+    "hero_agent_claude_code_desc": "命令列原生自主程式設計 Agent，全流程理解架構與推演",
+    "hero_agent_cursor_desc": "新一代 AI 優先程式碼編輯器，毫秒級跨檔案補全與重構",
+    "hero_agent_cherry_studio_desc": "全能桌面多模型客戶端，一站聚合主流 AI 思考與生圖能力",
+    "hero_agent_trae_desc": "原生智慧化 AI IDE，深度整合多模態程式碼分析與上下文",
+    "hero_agent_windsurf_desc": "深度心流式 AI 程式設計環境，Cascade 全流程協同編碼",
+    "hero_agent_cline_desc": "VS Code 終端自主程式設計助手，具備命令執行與環境感知",
+    "hero_agent_chatgpt_desc": "官方架構原生驅動，深度支援 Codex 桌面與智慧交互",
+    "hero_agent_hermes_desc": "高階自主 Agent 與複雜工具調用核心，敏捷響應任務流",
+    "hero_agent_deepseek_harness_desc": "深度推理工程駕馭套件，全面激發 R1 滿血思考鏈潛能"
+  }
 }

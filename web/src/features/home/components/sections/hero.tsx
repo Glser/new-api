@@ -160,7 +160,7 @@ export function Hero(props: HeroProps) {
                   aria-hidden
                   className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-foreground/5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
                 />
-                <span>{props.isAuthenticated ? t("Open Playground") : t("hero_cta_models")}</span>
+                <span>{props.isAuthenticated ? t("hero_cta_playground", "进入测试场") : t("hero_cta_models", "探索模型")}</span>
               </Link>
 
               {/* Tertiary Docs Button */}
@@ -168,9 +168,9 @@ export function Hero(props: HeroProps) {
             </div>
           </div>
 
-          {/* Right Column: 3D Agent Carousel Showcase (Preserved untouched) */}
+          {/* Right Column: 3D Agent Carousel Showcase */}
           <div
-            className="landing-animate-fade-up flex w-full justify-center lg:col-span-5"
+            className="landing-animate-fade-up flex w-full justify-center lg:col-span-5 lg:-ml-6 xl:-ml-10"
             style={{ animationDelay: "230ms" }}
           >
             <HeroAgentShowcase />

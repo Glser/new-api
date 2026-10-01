@@ -147,7 +147,7 @@ export function HeroAgentShowcase() {
     >
       {/* 3D Stack Stage */}
       <div
-        className="relative flex h-[300px] w-full items-center justify-center overflow-visible"
+        className="relative flex h-[310px] w-full items-center justify-center overflow-visible"
         style={{ perspective: "1200px" }}
       >
         {agents.map((agent, index) => {
@@ -159,47 +159,40 @@ export function HeroAgentShowcase() {
           const absOffset = Math.abs(offset)
           const isVisible = absOffset <= 2
 
-          const translateX = offset * 118
-          const translateY = Math.pow(offset, 2) * 8
-          const translateZ = 120 - absOffset * 70
-          const rotateY = offset * -12
-          const scale = isCenter ? 1.02 : Math.max(0.72, 1 - absOffset * 0.12)
-          const opacity = isCenter ? 1 : Math.max(0, 0.85 - absOffset * 0.35)
-          const zIndex = 20 - absOffset
+          // Center card stands firmly on top (z-index 40).
+          // Immediate adjacent cards (offset +-1) stay at z-index 20.
+          // Cards wrapping or further behind drop to 10 or 0.
+          const zIndex = isCenter ? 40 : absOffset === 1 ? 20 : 10 - absOffset
+
+          const translateX = offset * 135
+          const translateY = isCenter ? 0 : 14 + absOffset * 4
+          const translateZ = isCenter ? 120 : -absOffset * 80
+          const rotateY = offset * -14
+          const scale = isCenter ? 1.02 : 0.88 - (absOffset - 1) * 0.1
+          const opacity = isCenter ? 1 : absOffset === 1 ? 0.65 : 0
 
           return (
             <div
               key={agent.id}
-              onClick={() => setActiveIndex(index)}
+              onClick={() => {
+                if (!isCenter) setActiveIndex(index)
+              }}
               style={{
-                transform:
-                  "translateX(" +
-                  translateX +
-                  "px) translateY(" +
-                  translateY +
-                  "px) translateZ(" +
-                  translateZ +
-                  "px) rotateY(" +
-                  rotateY +
-                  "deg) scale(" +
-                  scale +
-                  ")",
+                transform: `translateX(${translateX}px) translateY(${translateY}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                 zIndex,
                 opacity: isVisible ? opacity : 0,
-                pointerEvents: isVisible ? "auto" : "none",
+                pointerEvents: isCenter ? "auto" : isVisible ? "auto" : "none",
                 boxShadow: isCenter
-                  ? "0 24px 48px -24px " +
-                    agent.glowColor +
-                    ", 0 12px 24px -16px rgba(0,0,0,0.22)"
-                  : "0 8px 20px -16px rgba(0,0,0,0.18)",
+                  ? `0 24px 48px -20px ${agent.glowColor}, 0 12px 28px -12px rgba(0,0,0,0.2)`
+                  : "0 8px 24px -16px rgba(0,0,0,0.16)",
                 transition:
-                  "transform 520ms cubic-bezier(0.2, 0.85, 0.32, 1.05), opacity 420ms ease, box-shadow 420ms ease",
+                  "transform 560ms cubic-bezier(0.16, 1, 0.3, 1), opacity 450ms ease, box-shadow 450ms ease",
               }}
               className={
-                "group absolute top-4 flex w-[240px] sm:w-[255px] cursor-pointer flex-col rounded-2xl border border-border/70 bg-card/90 p-5 backdrop-blur-md select-none transition-colors " +
+                "group absolute top-2 flex w-[255px] sm:w-[270px] flex-col rounded-2xl border p-5 backdrop-blur-md select-none transition-colors " +
                 (isCenter
-                  ? "border-border/95 bg-card shadow-lg ring-1 ring-border/50"
-                  : "hover:border-border/85")
+                  ? "border-border/95 bg-card shadow-lg ring-1 ring-border/50 cursor-default"
+                  : "border-border/60 bg-card/85 cursor-pointer hover:border-border/90 hover:opacity-85")
               }
             >
               {/* Header: Clean Icon & Status Indicator */}
@@ -213,27 +206,24 @@ export function HeroAgentShowcase() {
                     className="size-2 rounded-full transition-all duration-300"
                     style={{
                       backgroundColor: isCenter ? agent.accentColor : "var(--border)",
-                      boxShadow: isCenter ? "0 0 8px " + agent.accentColor : "none",
+                      boxShadow: isCenter ? `0 0 8px ${agent.accentColor}` : "none",
                     }}
                   />
                 </div>
               </div>
 
               {/* Title & Description */}
-              <div className="mt-4.5 flex flex-col">
+              <div className="mt-4 flex flex-col">
                 <h4 className="text-[15px] font-semibold tracking-tight text-foreground sm:text-base">
                   {agent.name}
                 </h4>
-                <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground/85">
+                <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/85 min-h-[36px]">
                   {t(agent.descKey, agent.defaultDesc)}
                 </p>
               </div>
 
-              {/* Bottom Subtle Action Strip: 一键配置 */}
-              <div className="mt-5 flex items-center justify-between border-t border-border/40 pt-3.5">
-                <span className="font-mono text-[10px] tracking-wider text-muted-foreground/50 uppercase">
-                  READY TO USE
-                </span>
+              {/* Bottom Subtle Action Strip: 一键配置 (Matches "进入控制台" CTA button aesthetic) */}
+              <div className="mt-5 flex items-center justify-end border-t border-border/40 pt-3.5">
                 <a
                   href={agent.guideUrl}
                   target="_blank"
@@ -245,12 +235,17 @@ export function HeroAgentShowcase() {
                     }
                   }}
                   className={
-                    "group/btn relative inline-flex cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 " +
+                    "group/btn relative inline-flex h-8 sm:h-8.5 items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:scale-[0.98] cursor-pointer " +
                     (isCenter
-                      ? "bg-foreground text-background shadow-xs hover:bg-foreground/90 hover:shadow-sm"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground")
+                      ? "bg-foreground text-background hover:scale-[1.03] hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]"
+                      : "bg-foreground/80 text-background opacity-90")
                   }
                 >
+                  {/* Luminous shimmer overlay on hover */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover/btn:translate-x-full"
+                  />
                   <span>{t("hero_agent_configure", "一键配置")}</span>
                   <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                 </a>
