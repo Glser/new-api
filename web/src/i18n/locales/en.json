@@ -6579,6 +6579,16 @@
     "hero_agent_deepseek_harness_desc": "Deep inference engineering suite unlocking full R1 reasoning chains",
     "sec_models_nav_prev": "Previous page",
     "sec_models_nav_next": "Next page",
-    "sec_models_auto_toggle": "Auto play"
+    "sec_models_auto_toggle": "Auto play",
+    "sec_models_badge": "MODEL MATRIX",
+    "sec_models_context": "Context Window",
+    "sec_models_pricing": "Reference Pricing",
+    "sec_models_scenarios": "Recommended Use Cases",
+    "sec_models_copy_id": "Copy Model ID",
+    "sec_models_copied": "Model ID Copied",
+    "sec_models_status_ready": "High Availability Ready",
+    "sec_models_performance": "Latency & Speed",
+    "sec_models_strengths": "Key Capabilities",
+    "sec_models_view_pricing": "View Full Pricing"
   }
 }

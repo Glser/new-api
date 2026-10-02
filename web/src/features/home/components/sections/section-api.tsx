@@ -52,20 +52,28 @@ export function SectionAPI() {
   }
 
   return (
-    <section id="api" className="relative z-10 border-t border-border/40 px-6 py-20 md:py-28">
-      <div className="mx-auto max-w-6xl">
+    <section id="api" className="relative z-10 border-t border-border/40 px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+      {/* Atmospheric lighting */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 opacity-25 dark:opacity-15"
+        style={{
+          background: "radial-gradient(ellipse 60% 40% at 15% 25%, rgba(16, 185, 129, 0.12) 0%, transparent 70%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_75%_65%_at_45%_35%,black_25%,transparent_100%)] bg-[size:4rem_4rem] opacity-[0.025]"
+      />
+      <div className="mx-auto max-w-7xl">
         {/* Editorial Section Header */}
-        <AnimateInView className="mb-14 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+        <AnimateInView className="mb-14 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end lg:pl-4 xl:pl-6">
           <div>
             <div className="mb-3 font-mono text-xs font-semibold tracking-[0.2em] text-emerald-500 uppercase">
               {t("sec_api_kicker")}
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-              <span>{t("sec_api_title_p1")}</span>
-              <br />
-              <span className="text-foreground/90">{t("sec_api_title_p2")}</span>
-            </h2>
-            <div className="mt-4 h-0.5 w-10 rounded-full bg-emerald-500/80" />
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl"><span className="hero-title-shine inline-block">{t("sec_api_title_p1")}</span><br /><span className="text-foreground/90">{t("sec_api_title_p2")}</span></h2>
+            <div className="mt-4 h-0.5 w-32 sm:w-48 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
               {t("sec_api_desc")}
             </p>
@@ -91,8 +99,7 @@ export function SectionAPI() {
                 { step: t("sec_api_step1"), desc: "在控制台一键生成专属调用 Token，支持按渠道配额与模型白名单精细约束。" },
                 { step: t("sec_api_step2"), desc: "直接将你原有客户端的 Base URL 指向本网关，并配置对应模型标识符。" },
                 { step: t("sec_api_step3"), desc: "无需任何 SDK 迁移，立刻享受自动负载均衡、故障转移与用量统计。" },
-              ].map((item, idx) => (
-                <div key={idx} className="rounded-xl border border-border/40 bg-card/20 p-5">
+              ].map((item) => (<div key={item.id} className="relative overflow-hidden rounded-2xl border border-border/40 bg-card/20 p-5">
                   <div className="font-mono text-xs font-semibold text-emerald-500">
                     {item.step}
                   </div>
@@ -175,6 +182,24 @@ export function SectionAPI() {
           </div>
         </div>
       </div>
+
+      {/* Section divider: layered center-glow line */}
+      <div aria-hidden className="pointer-events-none absolute bottom-0 inset-x-0 flex flex-col items-center overflow-hidden">
+        {/* Glow bloom */}
+        <div
+          className="h-[3px] w-64 sm:w-96 rounded-full blur-[4px]"
+          style={{ background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.7) 40%, rgba(16,185,129,0.7) 60%, transparent)" }}
+        />
+        {/* Sharp center line */}
+        <div
+          className="absolute bottom-0 h-px w-full"
+          style={{
+            background: "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.15) 20%, rgba(16,185,129,0.55) 42%, rgba(255,255,255,0.85) 50%, rgba(16,185,129,0.55) 58%, rgba(16,185,129,0.15) 80%, transparent 100%)",
+          }}
+        />
+      </div>
     </section>
   )
 }
+
+

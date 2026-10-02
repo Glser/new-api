@@ -6579,6 +6579,16 @@
     "hero_agent_deepseek_harness_desc": "深度推理工程驾驭套件，全面激发 R1 满血思考链潜能",
     "sec_models_nav_prev": "上一组",
     "sec_models_nav_next": "下一组",
-    "sec_models_auto_toggle": "自动轮播"
+    "sec_models_auto_toggle": "自动轮播",
+    "sec_models_badge": "旗舰模型矩阵",
+    "sec_models_context": "上下文容量",
+    "sec_models_pricing": "参考计费",
+    "sec_models_scenarios": "推荐适用场景",
+    "sec_models_copy_id": "复制模型标识",
+    "sec_models_copied": "已复制模型标识",
+    "sec_models_status_ready": "高可用通道就绪",
+    "sec_models_performance": "响应性能",
+    "sec_models_strengths": "核心架构优势",
+    "sec_models_view_pricing": "查看完整计费"
   }
 }

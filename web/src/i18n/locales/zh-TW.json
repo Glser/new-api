@@ -6514,6 +6514,16 @@
     "sec_models_title_p2": "讓創作直接發生",
     "sec_models_nav_prev": "上一組",
     "sec_models_nav_next": "下一組",
-    "sec_models_auto_toggle": "自動輪播"
+    "sec_models_auto_toggle": "自動輪播",
+    "sec_models_badge": "旗艦模型矩陣",
+    "sec_models_context": "上下文容量",
+    "sec_models_pricing": "參考計費",
+    "sec_models_scenarios": "推薦適用場景",
+    "sec_models_copy_id": "複製模型標識",
+    "sec_models_copied": "已複製模型標識",
+    "sec_models_status_ready": "高可用通道就緒",
+    "sec_models_performance": "響應效能",
+    "sec_models_strengths": "核心架構優勢",
+    "sec_models_view_pricing": "查看完整計費"
   }
 }

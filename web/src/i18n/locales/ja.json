@@ -6481,6 +6481,16 @@
     "sec_models_title_p2": "創造が直接生まれる場所",
     "sec_models_nav_prev": "前へ",
     "sec_models_nav_next": "次へ",
-    "sec_models_auto_toggle": "自動再生"
+    "sec_models_auto_toggle": "自動再生",
+    "sec_models_badge": "フラッグシップモデル",
+    "sec_models_context": "コンテキスト長",
+    "sec_models_pricing": "参考料金",
+    "sec_models_scenarios": "おすすめの用途",
+    "sec_models_copy_id": "モデルIDをコピー",
+    "sec_models_copied": "モデルIDをコピーしました",
+    "sec_models_status_ready": "高可用性稼働中",
+    "sec_models_performance": "レイテンシと速度",
+    "sec_models_strengths": "主な強み",
+    "sec_models_view_pricing": "料金詳細を見る"
   }
 }

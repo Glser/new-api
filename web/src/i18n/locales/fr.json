@@ -6481,6 +6481,16 @@
     "sec_models_title_p2": "Où la création prend forme",
     "sec_models_nav_prev": "Précédent",
     "sec_models_nav_next": "Suivant",
-    "sec_models_auto_toggle": "Défilement auto"
+    "sec_models_auto_toggle": "Défilement auto",
+    "sec_models_badge": "MATRICE DE MODÈLES",
+    "sec_models_context": "Fenêtre de contexte",
+    "sec_models_pricing": "Tarification indicative",
+    "sec_models_scenarios": "Cas d'usage recommandés",
+    "sec_models_copy_id": "Copier l'ID du modèle",
+    "sec_models_copied": "ID du modèle copié",
+    "sec_models_status_ready": "Haute disponibilité prête",
+    "sec_models_performance": "Latence et rapidité",
+    "sec_models_strengths": "Points forts clés",
+    "sec_models_view_pricing": "Voir toute la tarification"
   }
 }

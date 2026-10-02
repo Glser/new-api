@@ -6481,6 +6481,16 @@
     "sec_models_title_p2": "Где творчество рождается напрямую",
     "sec_models_nav_prev": "Предыдущая",
     "sec_models_nav_next": "Следующая",
-    "sec_models_auto_toggle": "Автопрокрутка"
+    "sec_models_auto_toggle": "Автопрокрутка",
+    "sec_models_badge": "МАТРИЦА МОДЕЛЕЙ",
+    "sec_models_context": "Контекстное окно",
+    "sec_models_pricing": "Ориентировочная цена",
+    "sec_models_scenarios": "Рекомендуемые сценарии",
+    "sec_models_copy_id": "Копировать ID модели",
+    "sec_models_copied": "ID модели скопирован",
+    "sec_models_status_ready": "Высокая доступность",
+    "sec_models_performance": "Задержка и скорость",
+    "sec_models_strengths": "Ключевые преимущества",
+    "sec_models_view_pricing": "Все тарифы"
   }
 }

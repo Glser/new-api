@@ -6481,6 +6481,16 @@
     "sec_models_title_p2": "Nơi sáng tạo trực tiếp diễn ra",
     "sec_models_nav_prev": "Trang trước",
     "sec_models_nav_next": "Trang sau",
-    "sec_models_auto_toggle": "Tự động phát"
+    "sec_models_auto_toggle": "Tự động phát",
+    "sec_models_badge": "MA TRẬN MÔ HÌNH",
+    "sec_models_context": "Độ dài ngữ cảnh",
+    "sec_models_pricing": "Giá tham khảo",
+    "sec_models_scenarios": "Kịch bản ứng dụng",
+    "sec_models_copy_id": "Sao chép ID mô hình",
+    "sec_models_copied": "Đã sao chép ID",
+    "sec_models_status_ready": "Kênh sẵn sàng cao",
+    "sec_models_performance": "Độ trễ và tốc độ",
+    "sec_models_strengths": "Điểm nổi bật cốt lõi",
+    "sec_models_view_pricing": "Xem bảng giá đầy đủ"
   }
 }
