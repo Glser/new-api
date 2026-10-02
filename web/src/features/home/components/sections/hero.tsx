@@ -139,7 +139,7 @@ export function Hero(props: HeroProps) {
             >
               {/* Primary Access Button */}
               <Link
-                to="/dashboard"
+                to={"/dashboard" as any}
                 className="group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl bg-foreground px-6 text-xs sm:text-sm font-semibold text-background shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)] active:scale-[0.98] cursor-pointer"
               >
                 {/* Luminous overlay wave on hover */}
@@ -153,7 +153,7 @@ export function Hero(props: HeroProps) {
 
               {/* Secondary Explore Button */}
               <Link
-                to={props.isAuthenticated ? "/playground" : "/pricing"}
+                to={(props.isAuthenticated ? "/playground" : "/pricing") as any}
                 className="group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl border border-border/70 bg-card/60 px-5 text-xs sm:text-sm font-medium text-foreground backdrop-blur-md transition-all duration-300 hover:border-foreground/25 hover:bg-card/90 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
               >
                 <span

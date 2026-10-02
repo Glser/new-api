@@ -6511,16 +6511,10 @@
     "hero_agent_zcode_category": "企业研发智能体",
     "hero_agent_zcode_badge": "Enterprise",
     "hero_agent_zcode_description": "集中审计、智能路由与团队高并发安全保障。",
-    "sec_models_kicker": "01 / 本期主推",
-    "sec_models_title_p1": "新模型。",
-    "sec_models_title_p2": "新的创作尺度。",
+    "sec_models_title_p1": "新模型，",
+    "sec_models_title_p2": "让创作直接发生",
     "sec_models_desc": "从深入思考，到图像与镜头。选一个主推型号，找到适合你下一项工作的能力。",
     "sec_models_view_all": "完整模型目录",
-    "sec_models_tab_all": "全部",
-    "sec_models_tab_reasoning": "逻辑与推理",
-    "sec_models_tab_video": "视频与运镜",
-    "sec_models_tab_image": "图像创作",
-    "sec_models_tab_speed": "极速与低延迟",
     "sec_models_explore": "探索这个模型",
     "sec_studio_kicker": "02 / 创作工作台",
     "sec_studio_title_p1": "灵感不必排队。",
@@ -6582,6 +6576,9 @@
     "hero_agent_cline_desc": "VS Code 终端自主编程助手，具备命令执行与环境感知",
     "hero_agent_chatgpt_desc": "官方架构原生驱动，深度支持 Codex 桌面与智能交互",
     "hero_agent_hermes_desc": "高阶自主 Agent 与复杂工具调用核心，敏捷响应任务流",
-    "hero_agent_deepseek_harness_desc": "深度推理工程驾驭套件，全面激发 R1 满血思考链潜能"
+    "hero_agent_deepseek_harness_desc": "深度推理工程驾驭套件，全面激发 R1 满血思考链潜能",
+    "sec_models_nav_prev": "上一组",
+    "sec_models_nav_next": "下一组",
+    "sec_models_auto_toggle": "自动轮播"
   }
 }

@@ -6476,6 +6476,11 @@
     "Zhipu": "Zhipu",
     "Zhipu GLM": "Zhipu GLM",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "sec_models_title_p1": "Nouveaux Modèles,",
+    "sec_models_title_p2": "Où la création prend forme",
+    "sec_models_nav_prev": "Précédent",
+    "sec_models_nav_next": "Suivant",
+    "sec_models_auto_toggle": "Défilement auto"
   }
 }

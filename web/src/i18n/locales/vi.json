@@ -6476,6 +6476,11 @@
     "Zhipu": "Zhipu",
     "Zhipu GLM": "Zhipu GLM",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "sec_models_title_p1": "Mô hình mới,",
+    "sec_models_title_p2": "Nơi sáng tạo trực tiếp diễn ra",
+    "sec_models_nav_prev": "Trang trước",
+    "sec_models_nav_next": "Trang sau",
+    "sec_models_auto_toggle": "Tự động phát"
   }
 }

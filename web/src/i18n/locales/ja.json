@@ -6476,6 +6476,11 @@
     "Zhipu": "Zhipu",
     "Zhipu GLM": "Zhipu GLM",
     "Zhipu V4": "Zhipu V 4",
-    "Zoom": "ズーム"
+    "Zoom": "ズーム",
+    "sec_models_title_p1": "新しいモデル、",
+    "sec_models_title_p2": "創造が直接生まれる場所",
+    "sec_models_nav_prev": "前へ",
+    "sec_models_nav_next": "次へ",
+    "sec_models_auto_toggle": "自動再生"
   }
 }
