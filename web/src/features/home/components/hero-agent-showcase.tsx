@@ -13,7 +13,7 @@ import {
 import { ArrowUpRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-export interface AgentItem {
+interface AgentItem {
   id: string
   name: string
   tag: string
@@ -162,7 +162,14 @@ export function HeroAgentShowcase() {
           // Center card stands firmly on top (z-index 40).
           // Immediate adjacent cards (offset +-1) stay at z-index 20.
           // Cards wrapping or further behind drop to 10 or 0.
-          const zIndex = isCenter ? 40 : absOffset === 1 ? 20 : 10 - absOffset
+          let zIndex: number
+          if (isCenter) {
+            zIndex = 40
+          } else if (absOffset === 1) {
+            zIndex = 20
+          } else {
+            zIndex = 10 - absOffset
+          }
 
           // Exact pixel transforms to maintain 100% crisp vector font rendering on active card
           const translateX = offset * 135
@@ -170,7 +177,14 @@ export function HeroAgentShowcase() {
           const translateZ = isCenter ? 0 : -absOffset * 80
           const rotateY = isCenter ? 0 : offset * -14
           const scale = isCenter ? 1 : 0.88 - (absOffset - 1) * 0.1
-          const opacity = isCenter ? 1 : absOffset === 1 ? 0.65 : 0
+          let opacity: number
+          if (isCenter) {
+            opacity = 1
+          } else if (absOffset === 1) {
+            opacity = 0.65
+          } else {
+            opacity = 0
+          }
 
           return (
             <div
@@ -182,7 +196,7 @@ export function HeroAgentShowcase() {
                 transform: `translate3d(${translateX}px, ${translateY}px, ${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                 zIndex,
                 opacity: isVisible ? opacity : 0,
-                pointerEvents: isCenter ? "auto" : isVisible ? "auto" : "none",
+                pointerEvents: (isCenter || isVisible) ? "auto" : "none",
                 backfaceVisibility: "hidden",
                 WebkitBackfaceVisibility: "hidden",
                 boxShadow: isCenter
@@ -192,10 +206,7 @@ export function HeroAgentShowcase() {
                   "transform 560ms cubic-bezier(0.16, 1, 0.3, 1), opacity 450ms ease, box-shadow 450ms ease",
               }}
               className={
-                "group absolute top-2 flex w-[260px] sm:w-[275px] flex-col rounded-2xl border p-5 select-none transition-colors " +
-                (isCenter
-                  ? "border-border bg-card shadow-lg ring-1 ring-border/50 cursor-default"
-                  : "border-border/60 bg-card/85 backdrop-blur-sm cursor-pointer hover:border-border/90 hover:opacity-85")
+                `group absolute top-2 flex w-[260px] sm:w-[275px] flex-col rounded-2xl border p-5 select-none transition-colors ${isCenter ? "border-border bg-card shadow-lg ring-1 ring-border/50 cursor-default" : "border-border/60 bg-card/85 backdrop-blur-sm cursor-pointer hover:border-border/90 hover:opacity-85"}`
               }
             >
               {/* Header: Clean Icon & Status Indicator */}
@@ -238,10 +249,7 @@ export function HeroAgentShowcase() {
                     }
                   }}
                   className={
-                    "group/btn relative inline-flex h-8 sm:h-8.5 items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:scale-[0.98] cursor-pointer " +
-                    (isCenter
-                      ? "bg-foreground text-background hover:scale-[1.03] hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]"
-                      : "bg-foreground/80 text-background opacity-90")
+                    `group/btn relative inline-flex h-8 sm:h-8.5 items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:scale-[0.98] cursor-pointer ${isCenter ? "bg-foreground text-background hover:scale-[1.03] hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]" : "bg-foreground/80 text-background opacity-90"}`
                   }
                 >
                   {/* Luminous shimmer overlay on hover */}
@@ -268,10 +276,7 @@ export function HeroAgentShowcase() {
               onClick={() => setActiveIndex(index)}
               aria-label={agent.name}
               className={
-                "h-1.5 cursor-pointer rounded-full transition-all duration-300 " +
-                (index === activeIndex
-                  ? "w-6 bg-foreground"
-                  : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60")
+                `h-1.5 cursor-pointer rounded-full transition-all duration-300 ${index === activeIndex ? "w-6 bg-foreground" : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60"}`
               }
             />
           ))}

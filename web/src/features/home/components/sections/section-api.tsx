@@ -99,7 +99,7 @@ export function SectionAPI() {
                 { step: t("sec_api_step1"), desc: "在控制台一键生成专属调用 Token，支持按渠道配额与模型白名单精细约束。" },
                 { step: t("sec_api_step2"), desc: "直接将你原有客户端的 Base URL 指向本网关，并配置对应模型标识符。" },
                 { step: t("sec_api_step3"), desc: "无需任何 SDK 迁移，立刻享受自动负载均衡、故障转移与用量统计。" },
-              ].map((item) => (<div key={item.id} className="relative overflow-hidden rounded-2xl border border-border/40 bg-card/20 p-5">
+              ].map((item) => (<div key={item.step} className="relative overflow-hidden rounded-2xl border border-border/40 bg-card/20 p-5">
                   <div className="font-mono text-xs font-semibold text-emerald-500">
                     {item.step}
                   </div>
@@ -201,5 +201,3 @@ export function SectionAPI() {
     </section>
   )
 }
-
-
