@@ -196,6 +196,21 @@ export function Hero(props: HeroProps) {
           <span>{t("hero_scroll_aside")}</span>
         </button>
       </div>
+      {/* Section divider: layered center-glow line */}
+      <div aria-hidden className="pointer-events-none absolute bottom-0 inset-x-0 flex flex-col items-center overflow-hidden">
+        {/* Glow bloom */}
+        <div
+          className="h-[3px] w-64 sm:w-96 rounded-full blur-[4px]"
+          style={{ background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.75) 35%, rgba(16,185,129,0.75) 65%, transparent)" }}
+        />
+        {/* Sharp center line */}
+        <div
+          className="absolute bottom-0 h-px w-full"
+          style={{
+            background: "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.12) 15%, rgba(16,185,129,0.55) 38%, rgba(255,255,255,0.9) 50%, rgba(16,185,129,0.55) 62%, rgba(16,185,129,0.12) 85%, transparent 100%)",
+          }}
+        />
+      </div>
     </section>
   )
 }
