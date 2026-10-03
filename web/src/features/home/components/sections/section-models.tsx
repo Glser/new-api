@@ -14,6 +14,7 @@ import { Link } from "@tanstack/react-router"
 import {
   ArrowUpRight,
   BoxSelect,
+  Layers,
   Check,
   CircleDollarSign,
   Copy,
@@ -43,6 +44,10 @@ interface ModelItem {
   pricingNote: string
   sitePrice: string
   sitePriceNote: string
+  officialInput: string
+  officialOutput: string
+  siteInput: string
+  siteOutput: string
   scenarios: string[]
   latency: string
   accentColor: string
@@ -64,6 +69,10 @@ const MODELS: ModelItem[] = [
     pricingNote: "输入 $15 · 输出 $75",
     sitePrice: "$12.00 / 1M",
     sitePriceNote: "输入 $12 · 输出 $60",
+    officialInput: "$15.00",
+    officialOutput: "$75.00",
+    siteInput: "$12.00",
+    siteOutput: "$60.00",
     scenarios: ["超长上下文代码架构", "科研级复杂推演", "自主 Agent 工作流编排"],
     latency: "深度思维链",
     accentColor: "rgb(249, 115, 22)",
@@ -83,6 +92,10 @@ const MODELS: ModelItem[] = [
     pricingNote: "输入 $10 · 输出 $40",
     sitePrice: "$8.00 / 1M",
     sitePriceNote: "输入 $8 · 输出 $32",
+    officialInput: "$10.00",
+    officialOutput: "$40.00",
+    siteInput: "$8.00",
+    siteOutput: "$32.00",
     scenarios: ["多模态实时感知交互", "超长跨模态文档理解", "高并发创意生成工作流"],
     latency: "< 600ms 首字",
     accentColor: "rgb(16, 185, 129)",
@@ -102,6 +115,10 @@ const MODELS: ModelItem[] = [
     pricingNote: "输入 $0.27 · 输出 $1.10",
     sitePrice: "$0.22 / 1M",
     sitePriceNote: "输入 $0.22 · 输出 $0.88",
+    officialInput: "$0.27",
+    officialOutput: "$1.10",
+    siteInput: "$0.22",
+    siteOutput: "$0.88",
     scenarios: ["高并发低成本推理任务", "实时数学与逻辑证明", "轻量 Agent 快速决策"],
     latency: "< 500ms 首字",
     accentColor: "rgb(59, 130, 246)",
@@ -121,6 +138,10 @@ const MODELS: ModelItem[] = [
     pricingNote: "输入 $3 · 输出 $15",
     sitePrice: "$2.40 / 1M",
     sitePriceNote: "输入 $2.4 · 输出 $12",
+    officialInput: "$3.00",
+    officialOutput: "$15.00",
+    siteInput: "$2.40",
+    siteOutput: "$12.00",
     scenarios: ["实时信息融合推理", "科学竞赛级数理证明", "深度战略分析与规划"],
     latency: "深度思维链",
     accentColor: "rgb(139, 92, 246)",
@@ -184,6 +205,8 @@ export function SectionModels() {
               ...model,
               sitePrice: `${inputPrice} / 1M`,
               sitePriceNote: `输入 ${inputPrice} · 输出 ${outputPrice}`,
+              siteInput: inputPrice,
+              siteOutput: outputPrice && outputPrice !== "-" ? outputPrice : model.siteOutput,
             }
           }
         } catch {
@@ -201,7 +224,7 @@ export function SectionModels() {
   const activeModel = displayModels[activeIndex] ?? displayModels[0]
 
   return (
-    <section id="models" className="relative overflow-hidden px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
+    <section id="models" className="relative overflow-hidden px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20 sm:pb-24">
       {/* Background glow and subtle grid */}
       <div
         aria-hidden
@@ -218,13 +241,13 @@ export function SectionModels() {
 
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
-        <AnimateInView className="mb-8 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end lg:pl-4 xl:pl-6">
+        <AnimateInView className="mb-6 sm:mb-7 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end lg:pl-4 xl:pl-6">
           <div>
             <h2 className="flex flex-wrap items-baseline gap-x-2 tracking-tight">
-              <span className="hero-title-shine text-[clamp(2rem,4vw,3.2rem)] font-extrabold leading-tight">
+              <span className="hero-title-shine text-[clamp(1.85rem,3.6vw,2.9rem)] font-extrabold leading-tight">
                 {t("sec_models_title_p1")}
               </span>
-              <span className="hero-title-shine-emerald text-[clamp(1.75rem,3.5vw,2.9rem)] font-bold leading-tight">
+              <span className="hero-title-shine-emerald text-[clamp(1.65rem,3.2vw,2.6rem)] font-bold leading-tight">
                 {t("sec_models_title_p2")}
               </span>
             </h2>
@@ -264,10 +287,10 @@ export function SectionModels() {
               <div className="landing-animate-fade-up mb-4 flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-background/80 shadow-sm"
-                    style={{ boxShadow: `0 0 24px ${activeModel.glowColor}` }}
+                    className="flex size-12 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105"
+                    style={{ filter: `drop-shadow(0 4px 12px ${activeModel.glowColor})` }}
                   >
-                    <ProviderGlyph iconKey={activeModel.iconKey} size={26} />
+                    <ProviderGlyph iconKey={activeModel.iconKey} size={30} />
                   </div>
                   <h3 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl leading-tight">
                     {activeModel.name}
@@ -305,69 +328,91 @@ export function SectionModels() {
                 {activeModel.description}
               </p>
 
-              {/* ── Params pill row ── */}
-              <div className="landing-animate-fade-up mb-5 flex flex-wrap gap-2">
+{/* ── Single slim specs strip (细长展示模型上下文、延迟、类别) ── */}
+              <div className="landing-animate-fade-up mb-4 flex flex-wrap items-center divide-x divide-border/50 rounded-xl border border-border/50 bg-muted/20 dark:bg-muted/10 px-3.5 py-2 text-xs shadow-2xs backdrop-blur-md">
                 {/* Context */}
-                <div
-                  className="flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-3 py-1.5"
-                  style={{ borderColor: `${activeModel.accentColor}33` }}
-                >
-                  <BoxSelect className="size-3.5" style={{ color: activeModel.accentColor }} />
-                  <span className="font-mono text-[11px] text-muted-foreground">{t("sec_models_context")}</span>
-                  <span className="text-[11px] font-semibold text-foreground">{activeModel.context}</span>
+                <div className="flex items-center gap-1.5 pr-3">
+                  <Layers className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
+                  <span className="text-[11px] text-muted-foreground">{t("sec_models_context")}</span>
+                  <span className="font-mono text-[11px] font-semibold text-foreground">{activeModel.context}</span>
                 </div>
                 {/* Latency */}
-                <div
-                  className="flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-3 py-1.5"
-                  style={{ borderColor: `${activeModel.accentColor}33` }}
-                >
-                  <Gauge className="size-3.5" style={{ color: activeModel.accentColor }} />
-                  <span className="font-mono text-[11px] text-muted-foreground">{t("sec_models_performance")}</span>
+                <div className="flex items-center gap-1.5 px-3">
+                  <Gauge className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
+                  <span className="text-[11px] text-muted-foreground">{t("sec_models_performance")}</span>
                   <span className="text-[11px] font-semibold text-foreground">{activeModel.latency}</span>
                 </div>
                 {/* Category */}
-                <div
-                  className="flex items-center gap-1.5 rounded-full border border-border/50 bg-background/60 px-3 py-1.5"
-                  style={{ borderColor: `${activeModel.accentColor}33` }}
-                >
-                  <Zap className="size-3.5" style={{ color: activeModel.accentColor }} />
+                <div className="flex items-center gap-1.5 pl-3">
+                  <Sparkles className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
                   <span className="text-[11px] font-semibold text-foreground">{activeModel.category}</span>
                 </div>
               </div>
 
-              {/* ── Pricing comparison ── */}
-              <div className="landing-animate-fade-up mb-5 overflow-hidden rounded-2xl border border-border/40 bg-background/30">
-                {/* Header */}
-                <div className="flex items-center gap-2 border-b border-border/30 px-4 py-2.5">
-                  <CircleDollarSign className="size-3.5 text-muted-foreground" />
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">{t("sec_models_pricing")}</span>
-                </div>
-                <div className="grid grid-cols-2 divide-x divide-border/30">
-                  {/* Official price */}
-                  <div className="px-4 py-3">
-                    <div className="mb-1 flex items-center gap-1.5">
-                      <Tag className="size-3 text-muted-foreground/60" />
-                      <span className="text-[10px] text-muted-foreground/70">官方定价</span>
-                    </div>
-                    <div className="text-base font-bold text-foreground/70 line-through decoration-muted-foreground/40">
-                      {activeModel.pricing}
-                    </div>
-                    <div className="mt-0.5 text-[10px] text-muted-foreground/60">{activeModel.pricingNote}</div>
+{/* ── Stacked horizontal pricing strips: Native Apple-style Glass Wells ── */}
+              <div className="landing-animate-fade-up mb-5 flex flex-col gap-2.5">
+                {/* 1. Official Price Strip: Native Apple-style Glass Well */}
+                <div className="group/official relative flex items-center justify-between rounded-xl border border-border/50 bg-muted/40 hover:bg-muted/60 px-4 py-2.5 backdrop-blur-md shadow-2xs transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground shadow-2xs">
+                      <Tag className="size-2.5 text-muted-foreground/80" />
+                      官方原价
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/70 hidden sm:inline font-mono">1M Tokens</span>
                   </div>
-                  {/* Site price */}
-                  <div className="relative px-4 py-3">
-                    <div
-                      className="pointer-events-none absolute inset-0 opacity-[0.06]"
-                      style={{ backgroundColor: activeModel.accentColor }}
-                    />
-                    <div className="relative mb-1 flex items-center gap-1.5">
-                      <Store className="size-3" style={{ color: activeModel.accentColor }} />
-                      <span className="text-[10px] font-medium" style={{ color: activeModel.accentColor }}>平台价格</span>
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-muted-foreground/75 line-through decoration-muted-foreground/40">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-[10px] text-muted-foreground no-underline font-semibold">入</span>
+                      <span className="font-medium text-foreground/70">{activeModel.officialInput}</span>
                     </div>
-                    <div className="relative text-base font-bold text-foreground" style={{ color: activeModel.accentColor }}>
-                      {activeModel.sitePrice}
+                    <span className="text-border no-underline">/</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-[10px] text-muted-foreground no-underline font-semibold">出</span>
+                      <span className="font-medium text-foreground/70">{activeModel.officialOutput}</span>
                     </div>
-                    <div className="relative mt-0.5 text-[10px] text-muted-foreground/70">{activeModel.sitePriceNote}</div>
+                  </div>
+                </div>
+
+                {/* 2. Platform Price Strip: Native Frosted Glass Lens with Store Icon */}
+                <div
+                  className="group/site relative flex items-center justify-between overflow-hidden rounded-xl border border-border/70 bg-card/90 dark:bg-card/80 px-4 py-2.5 backdrop-blur-xl transition-all shadow-sm"
+                  style={{
+                    borderColor: `${activeModel.accentColor}40`,
+                    boxShadow: `0 4px 16px -4px ${activeModel.glowColor}`,
+                  }}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-semibold text-white shadow-2xs"
+                      style={{
+                        background: activeModel.accentColor,
+                      }}
+                    >
+                      <Store className="size-3 shrink-0 text-white" />
+                      站内优惠
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/75 hidden sm:inline font-mono">1M Tokens</span>
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-4 text-xs font-mono">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-[10.5px] font-sans font-medium text-muted-foreground">入</span>
+                      <span
+                        className="text-base font-bold tracking-tight"
+                        style={{ color: activeModel.accentColor }}
+                      >
+                        {activeModel.siteInput}
+                      </span>
+                    </div>
+                    <span className="text-border">/</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-[10.5px] font-sans font-medium text-muted-foreground">出</span>
+                      <span
+                        className="text-base font-bold tracking-tight"
+                        style={{ color: activeModel.accentColor }}
+                      >
+                        {activeModel.siteOutput}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -437,58 +482,163 @@ export function SectionModels() {
                     key={model.id}
                     type="button"
                     onClick={() => setActiveIndex(index)}
-                    className={`group relative flex flex-col justify-between rounded-2xl border p-5 sm:p-5.5 text-left transition-all duration-300 cursor-pointer min-h-[190px] sm:min-h-[210px] ${
+                    style={
                       isActive
-                        ? "border-border bg-card shadow-xl ring-2 ring-border/80"
-                        : "border-border/60 bg-card/45 hover:border-border hover:bg-card/75 hover:shadow-md"
+                        ? {
+                            borderColor: `${model.accentColor}70`,
+                            boxShadow: `0 16px 32px -10px ${model.glowColor}, 0 0 0 1px ${model.accentColor}35`,
+                          }
+                        : {}
+                    }
+                    className={`group relative flex flex-col justify-between rounded-2xl border p-5 sm:p-5.5 text-left transition-all duration-300 cursor-pointer min-h-[225px] sm:min-h-[245px] ${
+                      isActive
+                        ? "bg-card/95 shadow-xl -translate-y-1.5"
+                        : "border-border/60 bg-card/50 hover:border-border hover:bg-card/80 hover:shadow-lg hover:-translate-y-1"
                     }`}
                   >
-                    {/* Top Row: Provider Icon + Model Name on left, Provider Pill on right */}
-                    <div className="relative flex items-center justify-between gap-3 mb-3.5">
-                      <div className="flex items-center gap-3 min-w-0">
+                    {/* Atmospheric hover glow */}
+                    <div
+                      className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                      style={{
+                        background: `radial-gradient(circle at 50% 0%, ${model.glowColor}, transparent 70%)`,
+                      }}
+                    />
+
+                    {/* Top Row: Provider Icon (No heavy background) + Model Name */}
+                    <div className="relative flex items-center justify-between gap-3 mb-2.5">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {/* 1. Icon without background */}
                         <div
-                          className="flex size-10 sm:size-11 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-background/80 shadow-sm transition-transform duration-300 group-hover:scale-105"
-                          style={isActive ? { boxShadow: `0 0 16px ${model.glowColor}` } : {}}
+                          className="flex size-7 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                          style={{ filter: `drop-shadow(0 2px 8px ${model.glowColor})` }}
                         >
                           <ProviderGlyph iconKey={model.iconKey} size={22} />
                         </div>
+
+                        {/* 2. Model Name */}
                         <h4
                           className={`text-[15px] sm:text-base font-bold leading-snug tracking-tight truncate transition-colors ${
-                            isActive ? "text-foreground" : "text-foreground/85 group-hover:text-foreground"
+                            isActive ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"
                           }`}
                         >
                           {model.name}
                         </h4>
                       </div>
 
-                      {/* Provider name replaces FLAGSHIP tag */}
+                      {/* Accent Dot/Tag */}
                       <span
-                        className="shrink-0 rounded-full px-2.5 py-1 font-mono text-[10px] sm:text-[11px] font-semibold tracking-wide"
-                        style={{ color: model.accentColor, backgroundColor: model.glowColor, border: `1px solid ${model.accentColor}33` }}
+                        className="shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wide"
+                        style={{
+                          color: model.accentColor,
+                          backgroundColor: `${model.accentColor}18`,
+                          border: `1px solid ${model.accentColor}30`,
+                        }}
                       >
-                        {model.provider}
+                        {model.badge}
                       </span>
                     </div>
 
-                    {/* Short description */}
-                    <p className="relative text-xs sm:text-[12.5px] leading-relaxed text-muted-foreground/80 line-clamp-3 flex-1 mb-3">
+                    {/* Short description - slightly pushed down */}
+                    <p className="relative text-xs sm:text-[12.5px] leading-relaxed text-muted-foreground/80 line-clamp-2 mb-3 mt-1">
                       {model.description}
                     </p>
 
-                    {/* Footer: context pill + site price badge */}
-                    <div className="relative mt-auto flex items-center justify-between border-t border-border/30 pt-3">
-                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
-                        <span
-                          className="inline-block size-1.5 rounded-full shrink-0"
-                          style={{ backgroundColor: model.accentColor, opacity: isActive ? 1 : 0.6 }}
-                        />
-                        {model.context}
+                    {/* Scheme B: Dual horizontal price strips (Theme native + frosted glass) */}
+                    <div className="relative mt-auto pt-2 mb-3 flex flex-col gap-1.5">
+                      {/* 1. Official Price Strip */}
+                      <div className="group/off relative flex items-center justify-between gap-2 overflow-hidden rounded-xl border border-border/50 bg-muted/40 hover:bg-muted/60 px-3 py-1.5 backdrop-blur-md shadow-2xs transition-colors">
+                        {/* Subtle pill badge (auto collapses text if squeezed) */}
+                        <div
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-2xs"
+                          title="官方原价"
+                        >
+                          <Tag className="size-2.5 shrink-0 text-muted-foreground/80" />
+                          <span className="hidden @[260px]:inline min-[400px]:inline lg:hidden xl:inline tracking-tight font-medium">官方</span>
+                        </div>
+
+                        {/* Price data: Strikethrough style */}
+                        <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums text-muted-foreground/75 line-through decoration-muted-foreground/40 shrink-0">
+                          <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                            <span className="text-[9.5px] font-sans text-muted-foreground no-underline font-semibold">入</span>
+                            <span className="font-medium text-foreground/70">{model.officialInput}</span>
+                            <span className="text-[9px] text-muted-foreground/70 no-underline">/1M</span>
+                          </span>
+                          <span className="text-border no-underline text-[10px]">·</span>
+                          <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                            <span className="text-[9.5px] font-sans text-muted-foreground no-underline font-semibold">出</span>
+                            <span className="font-medium text-foreground/70">{model.officialOutput}</span>
+                            <span className="text-[9px] text-muted-foreground/70 no-underline">/1M</span>
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-xs">
-                        <span className="text-[11px] text-muted-foreground">站内</span>
-                        <span className="font-bold tracking-tight" style={{ color: model.accentColor }}>
-                          {model.sitePrice}
+
+                      {/* 2. Platform Promotional Strip with Store Icon */}
+                      <div
+                        className="group/site relative flex items-center justify-between gap-2 overflow-hidden rounded-xl border border-border/70 bg-card/90 dark:bg-card/80 px-3 py-1.5 backdrop-blur-xl transition-all shadow-xs"
+                        style={{
+                          borderColor: `${model.accentColor}40`,
+                          boxShadow: `0 2px 10px -2px ${model.glowColor}`,
+                        }}
+                      >
+                        {/* Discount Pill with Store Icon (auto collapses text if squeezed) */}
+                        <div
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white shadow-2xs transition-transform group-hover:scale-105"
+                          style={{
+                            background: model.accentColor,
+                          }}
+                          title="站内优惠"
+                        >
+                          <Store className="size-2.5 shrink-0 text-white" />
+                          <span className="hidden @[260px]:inline min-[400px]:inline lg:hidden xl:inline tracking-wide font-bold">优惠</span>
+                        </div>
+
+                        {/* Price data: Bold & clear typography */}
+                        <div className="flex items-center gap-2 text-[11.5px] font-mono tabular-nums shrink-0">
+                          <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                            <span className="text-[10px] font-sans font-medium text-muted-foreground">入</span>
+                            <span
+                              className="font-bold tracking-tight text-[12.5px]"
+                              style={{ color: model.accentColor }}
+                            >
+                              {model.siteInput}
+                            </span>
+                            <span className="text-[9.5px] text-muted-foreground/75 font-normal">/1M</span>
+                          </span>
+                          <span className="text-border text-[10px]">·</span>
+                          <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
+                            <span className="text-[10px] font-sans font-medium text-muted-foreground">出</span>
+                            <span
+                              className="font-bold tracking-tight text-[12.5px]"
+                              style={{ color: model.accentColor }}
+                            >
+                              {model.siteOutput}
+                            </span>
+                            <span className="text-[9.5px] text-muted-foreground/75 font-normal">/1M</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer: Provider name on left, Context with Layers icon on right */}
+                    <div className="relative flex items-center justify-between gap-2 border-t border-border/40 pt-2.5">
+                      {/* Left: Provider with status dot */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="inline-block size-1.5 rounded-full shrink-0 transition-transform duration-300 group-hover:scale-125"
+                          style={{
+                            backgroundColor: model.accentColor,
+                            boxShadow: `0 0 6px ${model.accentColor}`,
+                          }}
+                        />
+                        <span className="font-mono text-xs font-semibold text-foreground/80 truncate">
+                          {model.provider}
                         </span>
+                      </div>
+
+                      {/* Right: Context Tokens indicator with Layers icon */}
+                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/85 shrink-0">
+                        <Layers className="size-3.5" style={{ color: model.accentColor }} />
+                        <span>{model.context}</span>
                       </div>
                     </div>
                   </button>

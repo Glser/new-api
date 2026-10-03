@@ -183,7 +183,7 @@ export function Hero(props: HeroProps) {
         <button
           type="button"
           onClick={() => {
-            const el = document.getElementById("models");
+            const el = document.querySelector("#models");
             if (el) {
               el.scrollIntoView({ behavior: "smooth" });
             }

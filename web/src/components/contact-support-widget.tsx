@@ -124,35 +124,35 @@ function announcementPlainText(raw: string): string {
   if (!trimmed) return ''
 
   const withBreaks = trimmed
-    .replace(/<\s*br\s*\/?>/gi, '\n')
-    .replace(/<\s*\/\s*p\s*>/gi, '\n')
-    .replace(/<\s*\/\s*div\s*>/gi, '\n')
-    .replace(/<\s*\/\s*h[1-6]\s*>/gi, '\n')
+    .replaceAll(/<\s*br\s*\/?>/gi, '\n')
+    .replaceAll(/<\s*\/\s*p\s*>/gi, '\n')
+    .replaceAll(/<\s*\/\s*div\s*>/gi, '\n')
+    .replaceAll(/<\s*\/\s*h[1-6]\s*>/gi, '\n')
 
   let text = withBreaks
   if (typeof document === 'undefined') {
-    text = withBreaks.replace(/<[^>]+>/g, ' ')
+    text = withBreaks.replaceAll(/<[^>]+>/g, ' ')
   } else {
     const box = document.createElement('div')
     box.innerHTML = withBreaks
     text = box.textContent || ''
   }
 
-  text = text.replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-  text = text.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-  text = text.replace(/https?:\/\/[^\s)]+/gi, '')
-  text = text.replace(/^#{1,6}\s+/gm, '')
-  text = text.replace(/^>\s+/gm, '')
-  text = text.replace(/^[-*+]\s+/gm, '')
-  text = text.replace(/^\d+\.\s+/gm, '')
-  text = text.replace(/`([^`]+)`/g, '$1')
-  text = text.replace(/\*\*([^*]+)\*\*/g, '$1')
-  text = text.replace(/__([^_]+)__/g, '$1')
-  text = text.replace(/\*([^*]+)\*/g, '$1')
-  text = text.replace(/_([^_]+)_/g, '$1')
-  text = text.replace(/~~([^~]+)~~/g, '$1')
-  text = text.replace(/[#*_~`>|\[\]()]+/g, '')
-  return text.replace(/\s+/g, ' ').trim()
+  text = text.replaceAll(/!\[[^\]]*\]\([^)]*\)/g, '')
+  text = text.replaceAll(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+  text = text.replaceAll(/https?:\/\/[^\s)]+/gi, '')
+  text = text.replaceAll(/^#{1,6}\s+/gm, '')
+  text = text.replaceAll(/^>\s+/gm, '')
+  text = text.replaceAll(/^[-*+]\s+/gm, '')
+  text = text.replaceAll(/^\d+\.\s+/gm, '')
+  text = text.replaceAll(/`([^`]+)`/g, '$1')
+  text = text.replaceAll(/\*\*([^*]+)\*\*/g, '$1')
+  text = text.replaceAll(/__([^_]+)__/g, '$1')
+  text = text.replaceAll(/\*([^*]+)\*/g, '$1')
+  text = text.replaceAll(/_([^_]+)_/g, '$1')
+  text = text.replaceAll(/~~([^~]+)~~/g, '$1')
+  text = text.replaceAll(/[#*_~`>|[\]()]+/g, '')
+  return text.replaceAll(/\s+/g, ' ').trim()
 }
 
 export function ContactSupportWidget() {
@@ -215,7 +215,7 @@ export function ContactSupportWidget() {
     const typeNext = () => {
       if (cancelled) return
       const line = speechLines[lineIndex] || ''
-      const chars = Array.from(line)
+      const chars = [...line]
       charIndex += 1
       setTypedText(chars.slice(0, charIndex).join(''))
       if (charIndex < chars.length) {

@@ -18,11 +18,11 @@
 (function () {
   'use strict';
 
-  var EB = (window.EmotionBall = window.EmotionBall || {});
-  var RD = window.EB_RINGS;
-  var EXPR = RD.EXPRESSIONS;
-  var TAU = Math.PI * 2;
-  var FALLBACK_ID = '02';
+  const EB = (window.EmotionBall = window.EmotionBall || {});
+  const RD = window.EB_RINGS;
+  const EXPR = RD.EXPRESSIONS;
+  const TAU = Math.PI * 2;
+  const FALLBACK_ID = '02';
 
   /* ---------------- 基础工具 ---------------- */
 
@@ -43,57 +43,57 @@
 
   /* 两组眼环逐点插值 */
   function lerpRing(a, b, t) {
-    var out = new Array(a.length);
-    for (var i = 0; i < a.length; i++) {
+    const out = new Array(a.length);
+    for (let i = 0; i < a.length; i++) {
       out[i] = [a[i][0] + (b[i][0] - a[i][0]) * t, a[i][1] + (b[i][1] - a[i][1]) * t];
     }
     return out;
   }
 
   /* 弹跳：4 段递减抛物线（高度 48/28/14/6，时长 0.5/0.382/0.27/0.177s） */
-  var BOUNCE_SEGS = [{ h: 48, d: 0.5 }, { h: 28, d: 0.382 }, { h: 14, d: 0.27 }, { h: 6, d: 0.177 }];
-  var BOUNCE_TOTAL = BOUNCE_SEGS.reduce(function (s, q) { return s + q.d; }, 0);
+  const BOUNCE_SEGS = [{ h: 48, d: 0.5 }, { h: 28, d: 0.382 }, { h: 14, d: 0.27 }, { h: 6, d: 0.177 }];
+  const BOUNCE_TOTAL = BOUNCE_SEGS.reduce(function (s, q) { return s + q.d; }, 0);
 
   function hexToRgb(hex) {
-    var h = hex.replace('#', '');
+    let h = hex.replace('#', '');
     if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
-    var n = parseInt(h, 16);
+    const n = parseInt(h, 16);
     return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
   }
   function rgbToHex(r, g, b) {
-    return '#' + [r, g, b].map(function (v) {
+    return `#${  [r, g, b].map(function (v) {
       return clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0');
-    }).join('');
+    }).join('')}`;
   }
   function lerpColor(a, b, t) {
     if (a === b) return b;
-    var A = hexToRgb(a), B = hexToRgb(b);
+    const A = hexToRgb(a), B = hexToRgb(b);
     return rgbToHex(lerp(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t));
   }
 
   /* ---------------- Pose：默认值 / 合并 / 插值 ---------------- */
 
-  var DEFAULT_BODY = {
+  const DEFAULT_BODY = {
     x: 0, y: 0, scale: 1, rotate: 0, color: '#F3F0EA', breathe: 0.01,
     ribbons: 0, confetti: 0, sketch: 0,
     zzz: 0,      /* 睡眠字母粒子（0~1） */
     orbit: 0     /* 常驻水平环带（0~1） */
   };
-  var DEFAULT_EYE = { x: 0, y: 0, scaleX: 1, scaleY: 1, rotate: 0, open: 1, color: '#1A1A1A', lookX: 0, lookY: 0 };
+  const DEFAULT_EYE = { x: 0, y: 0, scaleX: 1, scaleY: 1, rotate: 0, open: 1, color: '#1A1A1A', lookX: 0, lookY: 0 };
 
   /* 眼环数据自带左右不对称，默认姿态不叠加高低差 */
   function defaultPose() {
     return {
-      body: Object.assign({}, DEFAULT_BODY),
-      left: Object.assign({}, DEFAULT_EYE),
-      right: Object.assign({}, DEFAULT_EYE)
+      body: { ...DEFAULT_BODY},
+      left: { ...DEFAULT_EYE},
+      right: { ...DEFAULT_EYE}
     };
   }
   function clonePose(p) {
     return {
-      body: Object.assign({}, p.body),
-      left: Object.assign({}, p.left),
-      right: Object.assign({}, p.right)
+      body: { ...p.body},
+      left: { ...p.left},
+      right: { ...p.right}
     };
   }
 
@@ -101,7 +101,7 @@
   function applySpec(pose, spec) {
     if (!spec) return pose;
     if (spec.body) Object.assign(pose.body, spec.body);
-    var e = spec.eyes;
+    const e = spec.eyes;
     if (e) {
       if (e.both) { Object.assign(pose.left, e.both); Object.assign(pose.right, e.both); }
       if (e.left) Object.assign(pose.left, e.left);
@@ -111,11 +111,11 @@
   }
 
   function lerpPose(a, b, t) {
-    var out = defaultPose();
+    const out = defaultPose();
     ['body', 'left', 'right'].forEach(function (part) {
-      var pa = a[part], pb = b[part], po = out[part];
-      for (var k in pb) {
-        var vb = pb[k];
+      const pa = a[part], pb = b[part], po = out[part];
+      for (let k in pb) {
+        const vb = pb[k];
         if (typeof vb === 'number') po[k] = lerp(pa[k] != null ? pa[k] : vb, vb, t);
         else if (k === 'color') po[k] = lerpColor(pa[k] || vb, vb, t);
         else po[k] = vb;
@@ -126,7 +126,7 @@
 
   /* ---------------- 动画原语 ---------------- */
 
-  var ANIM_TYPES = {
+  const ANIM_TYPES = {
     /** 正弦漂移/呼吸/扫视 */
     sine: function (a, t) {
       return a.amp * Math.sin(TAU * t / (a.period || 2000) + (a.phase || 0));
@@ -168,16 +168,16 @@
   };
 
   function applyAnim(pose, a, t, eng) {
-    var fn = ANIM_TYPES[a.type];
+    const fn = ANIM_TYPES[a.type];
     if (!fn) return;
-    var v = fn(a, t, eng);
-    var targets =
+    const v = fn(a, t, eng);
+    const targets =
       a.target === 'eyes' ? [pose.left, pose.right] :
       a.target === 'body' ? [pose.body] :
       a.target === 'left' ? [pose.left] :
       a.target === 'right' ? [pose.right] : [];
-    for (var i = 0; i < targets.length; i++) {
-      var tg = targets[i];
+    for (let i = 0; i < targets.length; i++) {
+      const tg = targets[i];
       if (a.prop === 'scale') {
         if (tg === pose.body) tg.scale += v;
         else { tg.scaleX += v; tg.scaleY += v; }
@@ -189,31 +189,31 @@
 
   /* ---------------- 配置注册中心 ---------------- */
 
-  var GROUPS = (window.EMOTION_GROUPS || [
+  const GROUPS = (window.EMOTION_GROUPS || [
     { key: 'life', name: '生命周期' },
     { key: 'emotion', name: '情绪反应' },
     { key: 'agent', name: '代理工作状态' },
     { key: 'custom', name: '自定义' }
   ]).slice();
 
-  var registry = new Map();
-  var order = [];
+  const registry = new Map();
+  const order = [];
 
   function knownGroup(g) {
     return GROUPS.some(function (x) { return x.key === g; });
   }
 
   function validate(raw) {
-    var errs = [];
+    const errs = [];
     if (!raw || typeof raw !== 'object') { errs.push('配置必须是对象'); return errs; }
     if (typeof raw.id !== 'string' || !raw.id.trim()) errs.push('缺少合法的字符串 id');
     if (typeof raw.name !== 'string' || !raw.name.trim()) errs.push('缺少 name');
-    if (!knownGroup(raw.group)) errs.push('group 不合法：' + raw.group);
+    if (!knownGroup(raw.group)) errs.push(`group 不合法：${  raw.group}`);
     if (raw.anims != null) {
       if (!Array.isArray(raw.anims)) errs.push('anims 必须是数组');
-      else raw.anims.forEach(function (a, i) {
+      else {raw.anims.forEach(function (a, i) {
         if (!a || !ANIM_TYPES[a.type]) errs.push('anims[' + i + '] 未知动画类型：' + (a && a.type));
-      });
+      });}
     }
     if (raw.sequence != null && !Array.isArray(raw.sequence.frames)) {
       errs.push('sequence.frames 必须是数组');
@@ -223,10 +223,10 @@
 
   /** 归一化：深合并默认姿态，预生成 sequence 每帧的完整 pose */
   function normalize(raw) {
-    var base = applySpec(defaultPose(), raw);
-    var pool = (raw.pool || [0, 8]).filter(function (i) { return i >= 0 && i < EXPR.length; });
+    const base = applySpec(defaultPose(), raw);
+    let pool = (raw.pool || [0, 8]).filter(function (i) { return i >= 0 && i < EXPR.length; });
     if (!pool.length) pool = [0];
-    var def = {
+    const def = {
       id: raw.id, name: raw.name, group: raw.group,
       desc: raw.desc || '',
       en: raw.en || null,   /* 可选英文文案 { name, desc } */
@@ -247,37 +247,37 @@
       raw: raw
     };
     if (raw.sequence) {
-      var frames = raw.sequence.frames.map(function (f) {
+      const frames = raw.sequence.frames.map(function (f) {
         return { at: f.at || 0, pose: applySpec(clonePose(base), f) };
       }).sort(function (x, y) { return x.at - y.at; });
-      def.sequence = { frames: frames, settle: raw.sequence.settle || 'base' };
+      def.sequence = { frames, settle: raw.sequence.settle || 'base' };
     }
     return def;
   }
 
   function register(raw) {
-    var errs = validate(raw);
+    const errs = validate(raw);
     if (errs.length) return { ok: false, id: raw && raw.id, errors: errs };
-    var def = normalize(raw);
+    const def = normalize(raw);
     if (!registry.has(def.id)) order.push(def.id);
     registry.set(def.id, def);
     return { ok: true, id: def.id };
   }
 
   EB.config = {
-    register: register,
-    get: function (id) { return registry.get(id) || null; },
-    list: function (group) {
+    register,
+    get (id) { return registry.get(id) || null; },
+    list (group) {
       return order.map(function (id) { return registry.get(id); })
         .filter(function (d) { return !group || d.group === group; });
     },
-    groups: function () {
+    groups () {
       return GROUPS.map(function (g) { return { key: g.key, name: g.name, en: g.en || g.name }; });
     },
-    exportConfig: function () {
+    exportConfig () {
       return JSON.stringify(order.map(function (id) { return registry.get(id).raw; }), null, 2);
     },
-    importConfig: function (json) {
+    importConfig (json) {
       var data;
       try {
         data = typeof json === 'string' ? JSON.parse(json) : json;
@@ -297,7 +297,7 @@
 
   /* ---------------- 全局共享 rAF 时钟（多实例单循环） ---------------- */
 
-  var ticker = {
+  const ticker = {
     set: new Set(),
     raf: 0,
     add: function (e) {
@@ -316,12 +316,10 @@
 
   function Engine(target, opts) {
     opts = opts || {};
-    var el = typeof target === 'string' ? document.querySelector(target) : target;
+    const el = typeof target === 'string' ? document.querySelector(target) : target;
     if (!el) throw new Error('EmotionBall.create：找不到容器元素');
 
-    this.ball = EB.createBall(el, Object.assign({}, opts, {
-      lite: opts.lite != null ? opts.lite : opts.autostart === false
-    }));
+    this.ball = EB.createBall(el, { ...opts, lite: opts.lite != null ? opts.lite : opts.autostart === false});
     this._seed = Math.random() * 100;
     this._events = {};
     this._gaze = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -364,10 +362,10 @@
     this._lastActivity = performance.now();
 
     if (opts.idle) {
-      this._idle = Object.assign(
-        { standbyAfter: 60000, sleepAfter: 180000, standbyId: '02', sleepId: '00' },
-        opts.idle === true ? {} : opts.idle
-      );
+      this._idle = {
+        standbyAfter: 60000, sleepAfter: 180000, standbyId: '02', sleepId: '00',
+        ...(opts.idle === true ? {} : opts.idle)
+      };
     } else {
       this._idle = null;
     }
@@ -380,11 +378,11 @@
   Engine.prototype = {
 
     /* ---------- 事件 ---------- */
-    on: function (evt, cb) {
+    on (evt, cb) {
       (this._events[evt] = this._events[evt] || []).push(cb);
       return this;
     },
-    off: function (evt, cb) {
+    off (evt, cb) {
       var list = this._events[evt];
       if (list) {
         var i = list.indexOf(cb);
@@ -392,7 +390,7 @@
       }
       return this;
     },
-    _emit: function (evt, payload) {
+    _emit (evt, payload) {
       (this._events[evt] || []).slice().forEach(function (cb) {
         try { cb(payload); } catch (e) { console.error(e); }
       });
@@ -402,7 +400,7 @@
     get touring() { return this._touring; },
 
     /* ---------- 核心：切换表情（含兜底） ---------- */
-    setEmotion: function (id, o) {
+    setEmotion (id, o) {
       o = o || {};
       var def = EB.config.get(id);
       if (!def) {
@@ -445,7 +443,7 @@
     },
 
     /** AI 对接入口：接受对象或 JSON 字符串 { emotionId, tips } */
-    handleAIMessage: function (msg) {
+    handleAIMessage (msg) {
       var obj = msg;
       if (typeof msg === 'string') {
         try { obj = JSON.parse(msg); }
@@ -466,7 +464,7 @@
     },
 
     /* ---------- 自动巡演 ---------- */
-    startTour: function (ids, interval) {
+    startTour (ids, interval) {
       this.stopTour();
       if (!ids || !ids.length) return;
       interval = interval || 2500;
@@ -478,26 +476,26 @@
         self.setEmotion(ids[i], { auto: true });
       }, interval);
     },
-    stopTour: function () {
+    stopTour () {
       if (this._tourTimer) { clearInterval(this._tourTimer); this._tourTimer = 0; }
       this._touring = false;
       this._lastActivity = performance.now();
     },
 
-    resetIdle: function () { this._lastActivity = performance.now(); },
+    resetIdle () { this._lastActivity = performance.now(); },
 
     /* 注视目标：横向 ±24、纵向 ±15（viewBox 坐标），幅度克制以保持含蓄 */
-    setGaze: function (nx, ny) {
+    setGaze (nx, ny) {
       this._gaze.tx = clamp(nx, -1, 1) * 24;
       this._gaze.ty = clamp(ny, -1, 1) * 15;
       return this;
     },
-    clearGaze: function () {
+    clearGaze () {
       this._gaze.tx = 0;
       this._gaze.ty = 0;
       return this;
     },
-    setStyle: function (style) {
+    setStyle (style) {
       Object.assign(this._style, style || {});
       if (!this._active) this.renderStatic();
       return this;
@@ -505,25 +503,25 @@
 
     /* 自旋（点击交互）：弹簧追整数圈，达速后由渲染层甩出彩带；
      * 进行中的自旋不可打断，追加请求直接忽略 */
-    spin: function (turns, dir) {
+    spin (turns, dir) {
       if (this._spin) return this;
       var d = dir || (Math.random() < 0.5 ? -1 : 1);
       this._spin = { x: 0, v: 0, t: Math.max(1, Math.round(turns || 1)) * TAU * d };
       return this;
     },
     /* 撒花：一次性物理粒子爆发 */
-    burst: function (count) {
+    burst (count) {
       if (this.ball.burst) this.ball.burst(count);
       return this;
     },
     /* 弹跳（4 段递减抛物线） */
-    bounce: function () {
+    bounce () {
       if (this._bounceAt < 0) this._bounceAt = performance.now();
       return this;
     },
 
     /* 切换眼环目标：把当前插值冻结为新起点，弹簧从 0 重新弹向 1 */
-    _setExpr: function (idx, speed) {
+    _setExpr (idx, speed) {
       if (idx === this._exprIdx && this._ringSpring.x >= 0.999) return;
       var s = clamp(this._ringSpring.x, 0, 1);
       this._ringSrc = [
@@ -540,7 +538,7 @@
 
     /* 眨眼关键帧：合上 → 停 70ms → 睁到 1.08 过冲 → 300ms 落回 1，
      * 14% 概率追加第二次连眨 */
-    _blinkNow: function (t) {
+    _blinkNow (t) {
       this._blinkQ.push(
         { at: t, v: 0.05 }, { at: t + 70, v: 0.05 },
         { at: t + 150, v: 1.08 }, { at: t + 300, v: 1 }
@@ -550,20 +548,20 @@
       }
     },
 
-    registerEmotion: function (raw) { return EB.config.register(raw); },
+    registerEmotion (raw) { return EB.config.register(raw); },
 
     /* ---------- 生命周期 ---------- */
-    setActive: function (on) {
+    setActive (on) {
       if (on === this._active) return;
       this._active = on;
       if (on) ticker.add(this);
       else ticker.remove(this);
     },
-    replay: function () {
+    replay () {
       if (this._def) this.setEmotion(this._def.id, { auto: true });
     },
     /** 静态渲染一帧（缩略图用基础姿态，不播 sequence 第 0 帧；弹簧直接置终值） */
-    renderStatic: function () {
+    renderStatic () {
       this._transDur = 0;
       this._ringSpring.x = 1;
       this._ringSpring.v = 0;
@@ -574,7 +572,7 @@
       this._tick(performance.now());
       this._seq = seq;
     },
-    destroy: function () {
+    destroy () {
       this.stopTour();
       this.setActive(false);
       this._events = {};
@@ -582,7 +580,7 @@
     },
 
     /* ---------- 每帧 ---------- */
-    _tick: function (now) {
+    _tick (now) {
       this._dt = this._lastTick ? clamp((now - this._lastTick) / 1000, 0.001, 0.05) : 1 / 60;
       this._lastTick = now;
       if (this._idle && !this._touring) this._checkIdle(now);
@@ -591,7 +589,7 @@
       this._lastPose = pose;
     },
 
-    _checkIdle: function (now) {
+    _checkIdle (now) {
       var idle = this._idle;
       var elapsed = now - this._lastActivity;
       var cur = this.emotionId;
@@ -605,7 +603,7 @@
     },
 
     /** 合成当前帧姿态：base → sequence → animators → 过渡插值 */
-    _compose: function (now, depth) {
+    _compose (now, depth) {
       var def = this._def;
       var t = now - this._emoStart;
       var pose;
@@ -762,7 +760,7 @@
     },
 
     /** sequence 采样；播完按 settle 处理（hold / base / next） */
-    _seqPose: function (t, now) {
+    _seqPose (t, now) {
       var seq = this._seq;
       var frames = seq.frames;
       var last = frames[frames.length - 1];
@@ -808,7 +806,7 @@
   /* 载入种子配置（emotions.js 在本脚本之前加载） */
   if (Array.isArray(window.EMOTION_SEED)) {
     window.EMOTION_SEED.forEach(function (raw) {
-      var r = register(raw);
+      const r = register(raw);
       if (!r.ok) console.warn('[EmotionBall] 种子配置无效：', r.id, r.errors);
     });
   }
