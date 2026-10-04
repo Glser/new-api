@@ -13,16 +13,13 @@ import type { PricingModel } from "@/features/pricing/types"
 import { Link } from "@tanstack/react-router"
 import {
   ArrowUpRight,
-  BoxSelect,
-  Layers,
+  BadgePercent,
   Check,
-  CircleDollarSign,
+  Coins,
   Copy,
   Gauge,
+  Layers,
   Sparkles,
-  Store,
-  Tag,
-  Zap,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
@@ -157,6 +154,14 @@ function ProviderGlyph(props: { iconKey: string; size?: number; className?: stri
   )
 }
 
+function getDiscountPercent(officialStr: string, siteStr: string): string | null {
+  const off = Number.parseFloat(String(officialStr || "").replaceAll(/[^0-9.]/g, ""))
+  const site = Number.parseFloat(String(siteStr || "").replaceAll(/[^0-9.]/g, ""))
+  if (!off || !site || site >= off) return null
+  const pct = Math.round((1 - site / off) * 100)
+  return pct > 0 ? `-${pct}%` : null
+}
+
 export function SectionModels() {
   const { t } = useTranslation()
   const [activeIndex, setActiveIndex] = useState(0)
@@ -191,8 +196,8 @@ export function SectionModels() {
         return (
           bmName === mId ||
           bmName === mName ||
-          bmName.includes(mId.replace(/-/g, "")) ||
-          mId.includes(bmName.replace(/-/g, ""))
+          bmName.includes(mId.replaceAll("-", "")) ||
+          mId.includes(bmName.replaceAll("-", ""))
         )
       })
 
@@ -222,6 +227,9 @@ export function SectionModels() {
   })
 
   const activeModel = displayModels[activeIndex] ?? displayModels[0]
+  const activeInDiscount = getDiscountPercent(activeModel.officialInput, activeModel.siteInput)
+  const activeOutDiscount = getDiscountPercent(activeModel.officialOutput, activeModel.siteOutput)
+  const activeBestDiscount = activeInDiscount || activeOutDiscount
 
   return (
     <section id="models" className="relative overflow-hidden px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20 sm:pb-24">
@@ -349,69 +357,146 @@ export function SectionModels() {
                 </div>
               </div>
 
-{/* ── Stacked horizontal pricing strips: Native Apple-style Glass Wells ── */}
-              <div className="landing-animate-fade-up mb-5 flex flex-col gap-2.5">
-                {/* 1. Official Price Strip: Native Apple-style Glass Well */}
-                <div className="group/official relative flex items-center justify-between rounded-xl border border-border/50 bg-muted/40 hover:bg-muted/60 px-4 py-2.5 backdrop-blur-md shadow-2xs transition-colors">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground shadow-2xs">
-                      <Tag className="size-2.5 text-muted-foreground/80" />
-                      官方原价
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/70 hidden sm:inline font-mono">1M Tokens</span>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono text-muted-foreground/75 line-through decoration-muted-foreground/40">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-[10px] text-muted-foreground no-underline font-semibold">入</span>
-                      <span className="font-medium text-foreground/70">{activeModel.officialInput}</span>
-                    </div>
-                    <span className="text-border no-underline">/</span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-[10px] text-muted-foreground no-underline font-semibold">出</span>
-                      <span className="font-medium text-foreground/70">{activeModel.officialOutput}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Platform Price Strip: Native Frosted Glass Lens with Store Icon */}
-                <div
-                  className="group/site relative flex items-center justify-between overflow-hidden rounded-xl border border-border/70 bg-card/90 dark:bg-card/80 px-4 py-2.5 backdrop-blur-xl transition-all shadow-sm"
-                  style={{
-                    borderColor: `${activeModel.accentColor}40`,
-                    boxShadow: `0 4px 16px -4px ${activeModel.glowColor}`,
-                  }}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10.5px] font-semibold text-white shadow-2xs"
+{/* ── High-End Pricing Showcase Module (Dual Cockpit) ── */}
+              <div
+                className="landing-animate-fade-up mb-5 overflow-hidden rounded-2xl border bg-card/95 p-3.5 sm:p-4 backdrop-blur-xl shadow-md transition-all duration-300"
+                style={{
+                  borderColor: `${activeModel.accentColor}35`,
+                  boxShadow: `0 8px 30px -8px ${activeModel.glowColor}, inset 0 1px 0 rgba(255, 255, 255, 0.08)`,
+                }}
+              >
+                {/* Header status bar */}
+                <div className="mb-3 flex items-center justify-between border-b border-border/50 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="flex size-6 items-center justify-center rounded-lg shadow-2xs"
                       style={{
-                        background: activeModel.accentColor,
+                        background: `linear-gradient(135deg, ${activeModel.accentColor}, ${activeModel.accentColor}dd)`,
+                        color: "#ffffff",
                       }}
                     >
-                      <Store className="size-3 shrink-0 text-white" />
-                      站内优惠
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/75 hidden sm:inline font-mono">1M Tokens</span>
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-4 text-xs font-mono">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-[10.5px] font-sans font-medium text-muted-foreground">入</span>
-                      <span
-                        className="text-base font-bold tracking-tight"
-                        style={{ color: activeModel.accentColor }}
-                      >
-                        {activeModel.siteInput}
-                      </span>
+                      <Coins className="size-3.5" />
                     </div>
-                    <span className="text-border">/</span>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-[10.5px] font-sans font-medium text-muted-foreground">出</span>
-                      <span
-                        className="text-base font-bold tracking-tight"
-                        style={{ color: activeModel.accentColor }}
-                      >
-                        {activeModel.siteOutput}
-                      </span>
+                    <span className="text-xs font-bold tracking-tight text-foreground">
+                      {t("sec_models_pricing")}
+                    </span>
+                    <span className="rounded-md border border-border/60 bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                      / 1M Tokens
+                    </span>
+                  </div>
+
+                  {activeBestDiscount && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[11px] font-bold tracking-tight text-white shadow-xs"
+                      style={{
+                        background: activeModel.accentColor,
+                        boxShadow: `0 2px 8px ${activeModel.glowColor}`,
+                      }}
+                    >
+                      <BadgePercent className="size-3 text-white" />
+                      <span>{t("Discount")} {activeBestDiscount}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Dual-lane matrix: Input (入) vs Output (出) */}
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {/* Lane 1: Input (Prompt) */}
+                  <div className="group/lane relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/60 bg-muted/25 dark:bg-muted/15 p-3 transition-colors hover:bg-muted/40 hover:border-border">
+                    {/* Top row: Label & Official comparison */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="flex size-5 shrink-0 items-center justify-center rounded-md font-sans text-[11px] font-bold text-white shadow-2xs"
+                          style={{ background: activeModel.accentColor }}
+                        >
+                          入
+                        </span>
+                        <span className="text-[11.5px] font-semibold text-foreground/90">
+                          {t("Input")}
+                        </span>
+                      </div>
+
+                      {/* Official strike-through */}
+                      <div className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground/75">
+                        <span className="text-[10px] text-muted-foreground/60">{t("Official")}</span>
+                        <span className="line-through decoration-muted-foreground/50 font-medium">
+                          {activeModel.officialInput}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bottom row: Hero site price */}
+                    <div className="flex items-baseline justify-between gap-1 pt-0.5">
+                      <div className="flex items-baseline gap-1">
+                        <span
+                          className="font-mono text-xl sm:text-2xl font-black tracking-tight"
+                          style={{ color: activeModel.accentColor }}
+                        >
+                          {activeModel.siteInput}
+                        </span>
+                        <span className="text-[10.5px] font-mono text-muted-foreground/70">
+                          / 1M
+                        </span>
+                      </div>
+
+                      {activeInDiscount && (
+                        <span
+                          className="font-mono text-[10.5px] font-bold"
+                          style={{ color: activeModel.accentColor }}
+                        >
+                          {activeInDiscount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Lane 2: Output (Completion) */}
+                  <div className="group/lane relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/60 bg-muted/25 dark:bg-muted/15 p-3 transition-colors hover:bg-muted/40 hover:border-border">
+                    {/* Top row: Label & Official comparison */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="flex size-5 shrink-0 items-center justify-center rounded-md border border-border bg-background/90 font-sans text-[11px] font-bold text-foreground shadow-2xs"
+                        >
+                          出
+                        </span>
+                        <span className="text-[11.5px] font-semibold text-foreground/90">
+                          {t("Output")}
+                        </span>
+                      </div>
+
+                      {/* Official strike-through */}
+                      <div className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground/75">
+                        <span className="text-[10px] text-muted-foreground/60">{t("Official")}</span>
+                        <span className="line-through decoration-muted-foreground/50 font-medium">
+                          {activeModel.officialOutput}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bottom row: Hero site price */}
+                    <div className="flex items-baseline justify-between gap-1 pt-0.5">
+                      <div className="flex items-baseline gap-1">
+                        <span
+                          className="font-mono text-xl sm:text-2xl font-black tracking-tight"
+                          style={{ color: activeModel.accentColor }}
+                        >
+                          {activeModel.siteOutput}
+                        </span>
+                        <span className="text-[10.5px] font-mono text-muted-foreground/70">
+                          / 1M
+                        </span>
+                      </div>
+
+                      {activeOutDiscount && (
+                        <span
+                          className="font-mono text-[10.5px] font-bold"
+                          style={{ color: activeModel.accentColor }}
+                        >
+                          {activeOutDiscount}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -477,6 +562,9 @@ export function SectionModels() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 h-full">
               {displayModels.map((model, index) => {
                 const isActive = index === activeIndex
+                const modelInDiscount = getDiscountPercent(model.officialInput, model.siteInput)
+                const modelOutDiscount = getDiscountPercent(model.officialOutput, model.siteOutput)
+                const modelBestDiscount = modelInDiscount || modelOutDiscount
                 return (
                   <button
                     key={model.id}
@@ -543,78 +631,72 @@ export function SectionModels() {
                       {model.description}
                     </p>
 
-                    {/* Scheme B: Dual horizontal price strips (Theme native + frosted glass) */}
-                    <div className="relative mt-auto pt-2 mb-3 flex flex-col gap-1.5">
-                      {/* 1. Official Price Strip */}
-                      <div className="group/off relative flex items-center justify-between gap-2 overflow-hidden rounded-xl border border-border/50 bg-muted/40 hover:bg-muted/60 px-3 py-1.5 backdrop-blur-md shadow-2xs transition-colors">
-                        {/* Subtle pill badge (auto collapses text if squeezed) */}
-                        <div
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-background/80 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-2xs"
-                          title="官方原价"
-                        >
-                          <Tag className="size-2.5 shrink-0 text-muted-foreground/80" />
-                          <span className="hidden @[260px]:inline min-[400px]:inline lg:hidden xl:inline tracking-tight font-medium">官方</span>
+                    {/* High-contrast machined pricing chamber */}
+                    <div
+                      className="relative mt-auto pt-2 mb-3 overflow-hidden rounded-xl border bg-muted/30 dark:bg-muted/15 p-2 backdrop-blur-md transition-all"
+                      style={{
+                        borderColor: isActive ? `${model.accentColor}45` : undefined,
+                      }}
+                    >
+                      {/* Top micro row: label & optional discount badge */}
+                      <div className="flex items-center justify-between mb-1.5 px-0.5">
+                        <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
+                          <Coins className="size-2.5 shrink-0 opacity-70" />
+                          <span className="font-sans">{t("sec_models_pricing")}</span>
+                          <span className="font-mono text-[9.5px] opacity-60">· 1M</span>
                         </div>
 
-                        {/* Price data: Strikethrough style */}
-                        <div className="flex items-center gap-2 text-[11px] font-mono tabular-nums text-muted-foreground/75 line-through decoration-muted-foreground/40 shrink-0">
-                          <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-                            <span className="text-[9.5px] font-sans text-muted-foreground no-underline font-semibold">入</span>
-                            <span className="font-medium text-foreground/70">{model.officialInput}</span>
-                            <span className="text-[9px] text-muted-foreground/70 no-underline">/1M</span>
+                        {modelBestDiscount && (
+                          <span
+                            className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 font-mono text-[9.5px] font-bold text-white shadow-2xs"
+                            style={{ background: model.accentColor }}
+                          >
+                            <BadgePercent className="size-2.5 shrink-0" />
+                            {modelBestDiscount}
                           </span>
-                          <span className="text-border no-underline text-[10px]">·</span>
-                          <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-                            <span className="text-[9.5px] font-sans text-muted-foreground no-underline font-semibold">出</span>
-                            <span className="font-medium text-foreground/70">{model.officialOutput}</span>
-                            <span className="text-[9px] text-muted-foreground/70 no-underline">/1M</span>
-                          </span>
-                        </div>
+                        )}
                       </div>
 
-                      {/* 2. Platform Promotional Strip with Store Icon */}
-                      <div
-                        className="group/site relative flex items-center justify-between gap-2 overflow-hidden rounded-xl border border-border/70 bg-card/90 dark:bg-card/80 px-3 py-1.5 backdrop-blur-xl transition-all shadow-xs"
-                        style={{
-                          borderColor: `${model.accentColor}40`,
-                          boxShadow: `0 2px 10px -2px ${model.glowColor}`,
-                        }}
-                      >
-                        {/* Discount Pill with Store Icon (auto collapses text if squeezed) */}
-                        <div
-                          className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white shadow-2xs transition-transform group-hover:scale-105"
-                          style={{
-                            background: model.accentColor,
-                          }}
-                          title="站内优惠"
-                        >
-                          <Store className="size-2.5 shrink-0 text-white" />
-                          <span className="hidden @[260px]:inline min-[400px]:inline lg:hidden xl:inline tracking-wide font-bold">优惠</span>
-                        </div>
-
-                        {/* Price data: Bold & clear typography */}
-                        <div className="flex items-center gap-2 text-[11.5px] font-mono tabular-nums shrink-0">
-                          <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-                            <span className="text-[10px] font-sans font-medium text-muted-foreground">入</span>
+                      {/* 2-Column pricing cells: Input & Output */}
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {/* Input Cell */}
+                        <div className="flex flex-col justify-between rounded-lg border border-border/50 bg-background/70 dark:bg-background/50 px-2 py-1.5">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className="text-[9.5px] font-semibold text-muted-foreground">
+                              {t("Input")}
+                            </span>
+                            <span className="font-mono text-[9.5px] text-muted-foreground/60 line-through">
+                              {model.officialInput}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-0.5">
                             <span
-                              className="font-bold tracking-tight text-[12.5px]"
+                              className="font-mono text-[13.5px] font-extrabold tracking-tight"
                               style={{ color: model.accentColor }}
                             >
                               {model.siteInput}
                             </span>
-                            <span className="text-[9.5px] text-muted-foreground/75 font-normal">/1M</span>
-                          </span>
-                          <span className="text-border text-[10px]">·</span>
-                          <span className="inline-flex items-baseline gap-1 whitespace-nowrap">
-                            <span className="text-[10px] font-sans font-medium text-muted-foreground">出</span>
+                          </div>
+                        </div>
+
+                        {/* Output Cell */}
+                        <div className="flex flex-col justify-between rounded-lg border border-border/50 bg-background/70 dark:bg-background/50 px-2 py-1.5">
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className="text-[9.5px] font-semibold text-muted-foreground">
+                              {t("Output")}
+                            </span>
+                            <span className="font-mono text-[9.5px] text-muted-foreground/60 line-through">
+                              {model.officialOutput}
+                            </span>
+                          </div>
+                          <div className="flex items-baseline gap-0.5">
                             <span
-                              className="font-bold tracking-tight text-[12.5px]"
+                              className="font-mono text-[13.5px] font-extrabold tracking-tight"
                               style={{ color: model.accentColor }}
                             >
                               {model.siteOutput}
                             </span>
-                            <span className="text-[9.5px] text-muted-foreground/75 font-normal">/1M</span>
-                          </span>
+                          </div>
                         </div>
                       </div>
                     </div>
