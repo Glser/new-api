@@ -12,6 +12,8 @@ import { formatPrice } from "@/features/pricing/lib/price"
 import type { PricingModel } from "@/features/pricing/types"
 import { Link } from "@tanstack/react-router"
 import {
+  Activity,
+  ArrowRight,
   ArrowUpRight,
   BadgePercent,
   Check,
@@ -20,6 +22,7 @@ import {
   Gauge,
   Layers,
   Sparkles,
+  TrendingDown,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
@@ -249,7 +252,7 @@ export function SectionModels() {
 
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
-        <AnimateInView className="mb-6 sm:mb-7 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end lg:pl-4 xl:pl-6">
+        <AnimateInView className="mb-7 sm:mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end lg:pl-4 xl:pl-6">
           <div>
             <h2 className="flex flex-wrap items-baseline gap-x-2 tracking-tight">
               <span className="hero-title-shine text-[clamp(1.85rem,3.6vw,2.9rem)] font-extrabold leading-tight">
@@ -259,119 +262,134 @@ export function SectionModels() {
                 {t("sec_models_title_p2")}
               </span>
             </h2>
-            <div className="mt-4 h-0.5 w-32 sm:w-48 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+            <div className="mt-3.5 h-0.5 w-32 sm:w-48 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+            <p className="mt-3.5 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
               {t("sec_models_desc")}
             </p>
           </div>
 
           <Link
             to={"/pricing" as any}
-            className="group relative inline-flex h-9 items-center gap-2 overflow-hidden rounded-lg bg-emerald-500/10 px-4 text-xs font-semibold text-emerald-600 transition-all duration-300 hover:bg-emerald-500 hover:text-white hover:shadow-[0_4px_14px_rgba(16,185,129,0.25)] dark:text-emerald-400 dark:hover:bg-emerald-500 dark:hover:text-background cursor-pointer"
+            className="group relative inline-flex h-9.5 items-center gap-2 overflow-hidden rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 text-xs font-semibold text-emerald-600 transition-all duration-300 hover:bg-emerald-500 hover:text-white hover:shadow-[0_4px_16px_rgba(16,185,129,0.3)] dark:text-emerald-400 dark:hover:bg-emerald-500 dark:hover:text-background cursor-pointer"
           >
             <span>{t("sec_models_view_all")}</span>
             <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </AnimateInView>
 
-        {/* Main grid: left big card + right 2x2 small cards */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-6 xl:gap-8">
-          {/* Left: Featured active model detail card */}
-          <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/60 shadow-xl backdrop-blur-md transition-all duration-500 lg:col-span-6 xl:col-span-6">
-            {/* Atmospheric glow */}
+        {/* 12-Column Precision Grid: Left (7 cols Flagship Studio Panel) + Right (5 cols Model Selector Radar) */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-7">
+          {/* Left: Flagship Studio Cockpit Panel (去除套盒嵌套，一体化建筑感暗调面板) */}
+          <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-b from-card/90 via-card/75 to-card/60 shadow-2xl backdrop-blur-xl transition-all duration-500 lg:col-span-7">
+            {/* Dynamic ambient backdrop illumination */}
             <div
-              className="pointer-events-none absolute inset-0 opacity-20 transition-colors duration-700"
+              className="pointer-events-none absolute inset-0 opacity-25 transition-all duration-700"
               style={{
-                background: `radial-gradient(circle at 0% 0%, ${activeModel.accentColor}, transparent 58%), radial-gradient(circle at 100% 100%, ${activeModel.glowColor}, transparent 46%)`,
+                background: "radial-gradient(circle 320px at 0% 0%, " + activeModel.accentColor + "25, transparent 75%), radial-gradient(circle 380px at 100% 100%, " + activeModel.glowColor + ", transparent 70%)",
               }}
             />
             <div
-              className="pointer-events-none absolute -right-16 -top-16 size-48 rounded-full blur-3xl transition-colors duration-700"
+              className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full blur-3xl transition-all duration-700 opacity-60"
               style={{ backgroundColor: activeModel.glowColor }}
             />
 
-            <div className="relative flex flex-1 flex-col p-6 sm:p-8" key={activeModel.id}>
-              {/* Icon + Model name + badge row */}
-              <div className="landing-animate-fade-up mb-4 flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
+            {/* Inner Content Container */}
+            <div className="relative flex flex-1 flex-col p-6 sm:p-8 lg:p-9" key={activeModel.id}>
+              {/* Header: Provider Glyph + Name + Status Indicator */}
+              <div className="landing-animate-fade-up mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-center gap-3.5 min-w-0">
                   <div
-                    className="flex size-12 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-105"
-                    style={{ filter: `drop-shadow(0 4px 12px ${activeModel.glowColor})` }}
+                    className="flex size-13 shrink-0 items-center justify-center rounded-2xl border border-border/40 bg-background/60 shadow-md backdrop-blur-md transition-transform duration-300 hover:scale-105"
+                    style={{ filter: "drop-shadow(0 4px 14px " + activeModel.glowColor + ")" }}
                   >
-                    <ProviderGlyph iconKey={activeModel.iconKey} size={30} />
+                    <ProviderGlyph iconKey={activeModel.iconKey} size={32} />
                   </div>
-                  <h3 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl leading-tight">
-                    {activeModel.name}
-                  </h3>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                        {activeModel.provider}
+                      </span>
+                      <span className="text-muted-foreground/30 text-xs">·</span>
+                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/90">
+                        <span
+                          className="size-1.5 rounded-full animate-pulse"
+                          style={{
+                            backgroundColor: activeModel.accentColor,
+                            boxShadow: "0 0 8px " + activeModel.accentColor,
+                          }}
+                        />
+                        <span>{t("sec_models_status_ready")}</span>
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl leading-tight">
+                      {activeModel.name}
+                    </h3>
+                  </div>
                 </div>
+
                 <span
-                  className="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[10px] font-medium tracking-wide"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-semibold tracking-wide shadow-2xs"
                   style={{
-                    backgroundColor: activeModel.glowColor,
+                    backgroundColor: activeModel.accentColor + "15",
                     color: activeModel.accentColor,
-                    border: `1px solid ${activeModel.accentColor}`,
+                    border: "1px solid " + activeModel.accentColor + "35",
                   }}
                 >
+                  <Sparkles className="size-3" />
                   {activeModel.badge}
                 </span>
               </div>
 
-              {/* Provider + status row */}
-              <div className="landing-animate-fade-up mb-5 flex items-center gap-2">
-                <span className="text-xs font-semibold tracking-wide text-muted-foreground/80">
-                  {activeModel.provider}
-                </span>
-                <span className="text-muted-foreground/30 text-sm">·</span>
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <span
-                    className="size-1.5 rounded-full"
-                    style={{ backgroundColor: activeModel.accentColor, boxShadow: `0 0 6px ${activeModel.glowColor}` }}
-                  />
-                  {t("sec_models_status_ready")}
-                </div>
-              </div>
-
               {/* Description */}
-              <p className="landing-animate-fade-up mb-5 text-sm leading-relaxed text-muted-foreground">
+              <p className="landing-animate-fade-up mb-5 text-[13.5px] leading-relaxed text-muted-foreground sm:text-sm">
                 {activeModel.description}
               </p>
 
-{/* ── Single slim specs strip (细长展示模型上下文、延迟、类别) ── */}
-              <div className="landing-animate-fade-up mb-4 flex flex-wrap items-center divide-x divide-border/50 rounded-xl border border-border/50 bg-muted/20 dark:bg-muted/10 px-3.5 py-2 text-xs shadow-2xs backdrop-blur-md">
-                {/* Context */}
-                <div className="flex items-center gap-1.5 pr-3">
-                  <Layers className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
-                  <span className="text-[11px] text-muted-foreground">{t("sec_models_context")}</span>
-                  <span className="font-mono text-[11px] font-semibold text-foreground">{activeModel.context}</span>
+              {/* Specs Rail (精细无框分割流) */}
+              <div className="landing-animate-fade-up mb-6 grid grid-cols-3 gap-2 rounded-2xl border border-border/50 bg-muted/20 dark:bg-muted/10 p-2.5 backdrop-blur-md">
+                {/* Context Window */}
+                <div className="flex flex-col gap-0.5 px-2 py-1">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Layers className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
+                    <span>{t("sec_models_context")}</span>
+                  </div>
+                  <span className="font-mono text-xs sm:text-[13px] font-bold text-foreground tabular-nums">
+                    {activeModel.context}
+                  </span>
                 </div>
-                {/* Latency */}
-                <div className="flex items-center gap-1.5 px-3">
-                  <Gauge className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
-                  <span className="text-[11px] text-muted-foreground">{t("sec_models_performance")}</span>
-                  <span className="text-[11px] font-semibold text-foreground">{activeModel.latency}</span>
+
+                {/* Performance / Latency */}
+                <div className="flex flex-col gap-0.5 border-x border-border/40 px-2 py-1">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Gauge className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
+                    <span>{t("sec_models_performance")}</span>
+                  </div>
+                  <span className="font-mono text-xs sm:text-[13px] font-bold text-foreground">
+                    {activeModel.latency}
+                  </span>
                 </div>
-                {/* Category */}
-                <div className="flex items-center gap-1.5 pl-3">
-                  <Sparkles className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
-                  <span className="text-[11px] font-semibold text-foreground">{activeModel.category}</span>
+
+                {/* Capability Category */}
+                <div className="flex flex-col gap-0.5 px-2 py-1">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Activity className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
+                    <span>定位领域</span>
+                  </div>
+                  <span className="text-xs sm:text-[13px] font-bold text-foreground truncate">
+                    {activeModel.category}
+                  </span>
                 </div>
               </div>
 
-{/* ── High-End Pricing Showcase Module (Dual Cockpit) ── */}
-              <div
-                className="landing-animate-fade-up mb-5 overflow-hidden rounded-2xl border bg-card/95 p-3.5 sm:p-4 backdrop-blur-xl shadow-md transition-all duration-300"
-                style={{
-                  borderColor: `${activeModel.accentColor}35`,
-                  boxShadow: `0 8px 30px -8px ${activeModel.glowColor}, inset 0 1px 0 rgba(255, 255, 255, 0.08)`,
-                }}
-              >
-                {/* Header status bar */}
-                <div className="mb-3 flex items-center justify-between border-b border-border/50 pb-2.5">
+              {/* ── Precision Machined Pricing Cockpit (数字机甲级双轨测算台) ── */}
+              <div className="landing-animate-fade-up mb-6 relative overflow-hidden rounded-2xl border border-border/60 bg-background/50 dark:bg-background/40 p-4 sm:p-5 backdrop-blur-xl shadow-lg transition-all duration-300">
+                {/* Cockpit Header Status Bar */}
+                <div className="mb-3.5 flex items-center justify-between border-b border-border/40 pb-3">
                   <div className="flex items-center gap-2">
                     <div
                       className="flex size-6 items-center justify-center rounded-lg shadow-2xs"
                       style={{
-                        background: `linear-gradient(135deg, ${activeModel.accentColor}, ${activeModel.accentColor}dd)`,
+                        background: "linear-gradient(135deg, " + activeModel.accentColor + ", " + activeModel.accentColor + "dd)",
                         color: "#ffffff",
                       }}
                     >
@@ -380,152 +398,160 @@ export function SectionModels() {
                     <span className="text-xs font-bold tracking-tight text-foreground">
                       {t("sec_models_pricing")}
                     </span>
-                    <span className="rounded-md border border-border/60 bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                      / 1M Tokens
+                    <span className="rounded-md border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                      / 1,000,000 Tokens (1M)
                     </span>
                   </div>
 
                   {activeBestDiscount && (
                     <span
-                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[11px] font-bold tracking-tight text-white shadow-xs"
+                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-[11px] font-extrabold tracking-tight text-white shadow-xs animate-in fade-in"
                       style={{
                         background: activeModel.accentColor,
-                        boxShadow: `0 2px 8px ${activeModel.glowColor}`,
+                        boxShadow: "0 2px 10px " + activeModel.glowColor,
                       }}
                     >
-                      <BadgePercent className="size-3 text-white" />
+                      <BadgePercent className="size-3.5" />
                       <span>{t("Discount")} {activeBestDiscount}</span>
                     </span>
                   )}
                 </div>
 
-                {/* Dual-lane matrix: Input (入) vs Output (出) */}
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                {/* Dual-lane Data Cockpit: Input (Prompt) vs Output (Completion) */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {/* Lane 1: Input (Prompt) */}
-                  <div className="group/lane relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/60 bg-muted/25 dark:bg-muted/15 p-3 transition-colors hover:bg-muted/40 hover:border-border">
-                    {/* Top row: Label & Official comparison */}
+                  <div className="group/lane relative flex flex-col justify-between rounded-xl border border-border/50 bg-card/70 p-3.5 transition-all hover:border-border hover:bg-card/90">
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <span
-                          className="flex size-5 shrink-0 items-center justify-center rounded-md font-sans text-[11px] font-bold text-white shadow-2xs"
+                          className="flex size-5.5 shrink-0 items-center justify-center rounded-md font-mono text-[11px] font-bold text-white shadow-2xs"
                           style={{ background: activeModel.accentColor }}
                         >
                           入
                         </span>
-                        <span className="text-[11.5px] font-semibold text-foreground/90">
-                          {t("Input")}
-                        </span>
+                        <div>
+                          <div className="text-xs font-bold text-foreground">
+                            {t("Input")}
+                          </div>
+                          <div className="font-mono text-[10px] text-muted-foreground/75">
+                            Prompt Tokens
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Official strike-through */}
-                      <div className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground/75">
+                      <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground/80">
                         <span className="text-[10px] text-muted-foreground/60">{t("Official")}</span>
-                        <span className="line-through decoration-muted-foreground/50 font-medium">
+                        <span className="line-through decoration-muted-foreground/60 font-medium tabular-nums">
                           {activeModel.officialInput}
                         </span>
                       </div>
                     </div>
 
-                    {/* Bottom row: Hero site price */}
-                    <div className="flex items-baseline justify-between gap-1 pt-0.5">
+                    <div className="flex items-baseline justify-between gap-1 pt-1 border-t border-border/30">
                       <div className="flex items-baseline gap-1">
                         <span
-                          className="font-mono text-xl sm:text-2xl font-black tracking-tight"
+                          className="font-mono text-2xl sm:text-[26px] font-black tracking-tight tabular-nums leading-none"
                           style={{ color: activeModel.accentColor }}
                         >
                           {activeModel.siteInput}
                         </span>
-                        <span className="text-[10.5px] font-mono text-muted-foreground/70">
+                        <span className="font-mono text-[11px] text-muted-foreground/70">
                           / 1M
                         </span>
                       </div>
 
                       {activeInDiscount && (
-                        <span
-                          className="font-mono text-[10.5px] font-bold"
-                          style={{ color: activeModel.accentColor }}
-                        >
-                          {activeInDiscount}
+                        <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          立省 {activeInDiscount.replace("-", "")}
                         </span>
                       )}
                     </div>
                   </div>
 
                   {/* Lane 2: Output (Completion) */}
-                  <div className="group/lane relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/60 bg-muted/25 dark:bg-muted/15 p-3 transition-colors hover:bg-muted/40 hover:border-border">
-                    {/* Top row: Label & Official comparison */}
+                  <div className="group/lane relative flex flex-col justify-between rounded-xl border border-border/50 bg-card/70 p-3.5 transition-all hover:border-border hover:bg-card/90">
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="flex size-5 shrink-0 items-center justify-center rounded-md border border-border bg-background/90 font-sans text-[11px] font-bold text-foreground shadow-2xs"
-                        >
+                      <div className="flex items-center gap-2">
+                        <span className="flex size-5.5 shrink-0 items-center justify-center rounded-md border border-border bg-foreground text-background font-mono text-[11px] font-bold shadow-2xs">
                           出
                         </span>
-                        <span className="text-[11.5px] font-semibold text-foreground/90">
-                          {t("Output")}
-                        </span>
+                        <div>
+                          <div className="text-xs font-bold text-foreground">
+                            {t("Output")}
+                          </div>
+                          <div className="font-mono text-[10px] text-muted-foreground/75">
+                            Completion Tokens
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Official strike-through */}
-                      <div className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground/75">
+                      <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground/80">
                         <span className="text-[10px] text-muted-foreground/60">{t("Official")}</span>
-                        <span className="line-through decoration-muted-foreground/50 font-medium">
+                        <span className="line-through decoration-muted-foreground/60 font-medium tabular-nums">
                           {activeModel.officialOutput}
                         </span>
                       </div>
                     </div>
 
-                    {/* Bottom row: Hero site price */}
-                    <div className="flex items-baseline justify-between gap-1 pt-0.5">
+                    <div className="flex items-baseline justify-between gap-1 pt-1 border-t border-border/30">
                       <div className="flex items-baseline gap-1">
                         <span
-                          className="font-mono text-xl sm:text-2xl font-black tracking-tight"
+                          className="font-mono text-2xl sm:text-[26px] font-black tracking-tight tabular-nums leading-none"
                           style={{ color: activeModel.accentColor }}
                         >
                           {activeModel.siteOutput}
                         </span>
-                        <span className="text-[10.5px] font-mono text-muted-foreground/70">
+                        <span className="font-mono text-[11px] text-muted-foreground/70">
                           / 1M
                         </span>
                       </div>
 
                       {activeOutDiscount && (
-                        <span
-                          className="font-mono text-[10.5px] font-bold"
-                          style={{ color: activeModel.accentColor }}
-                        >
-                          {activeOutDiscount}
+                        <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                          立省 {activeOutDiscount.replace("-", "")}
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
+
+                {/* Sub-lane: Cost Advantage Benchmark Banner */}
+                <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground">
+                  <div className="flex items-center gap-1.5">
+                    <TrendingDown className="size-3.5 text-emerald-500" />
+                    <span>原生高可用节点直连 · 计费透明按量抵扣</span>
+                  </div>
+                  <span className="font-mono font-medium text-foreground/80">
+                    无预充值门槛
+                  </span>
+                </div>
               </div>
 
-              {/* ── Scenarios ── */}
+              {/* Scenarios capability pills */}
               <div className="landing-animate-fade-up mb-6">
-                <div className="mb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                <div className="mb-2.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
                   {t("sec_models_scenarios")}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {activeModel.scenarios.map((s) => (
                     <div
                       key={s}
-                      className="flex items-center gap-1.5 rounded-full border border-border/30 bg-background/40 px-2.5 py-1 text-[11px] text-foreground/80"
+                      className="flex items-center gap-2 rounded-xl border border-border/40 bg-background/50 px-3 py-1 text-xs text-foreground/85 transition-colors hover:border-border hover:bg-background"
                     >
-                      <span className="size-1 shrink-0 rounded-full" style={{ backgroundColor: activeModel.accentColor }} />
-                      {s}
+                      <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: activeModel.accentColor }} />
+                      <span>{s}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* ── Bottom bar: copy + CTA ── */}
-              <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/30 pt-4">
+              {/* Bottom bar: Copy ID + Call to Action */}
+              <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/40 pt-4">
                 <button
                   type="button"
                   onClick={() => copyToClipboard(activeModel.id)}
-                  className="flex items-center gap-2 rounded-xl border border-border/50 bg-background/50 px-3.5 py-2 font-mono text-xs text-muted-foreground transition-all duration-200 hover:border-foreground/30 hover:bg-background hover:text-foreground cursor-pointer"
+                  className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3.5 py-2 font-mono text-xs text-muted-foreground transition-all duration-200 hover:border-foreground/30 hover:bg-background hover:text-foreground cursor-pointer"
+                  title="点击复制模型 ID 用于代码调用"
                 >
                   {copiedText === activeModel.id ? (
                     <>
@@ -535,36 +561,37 @@ export function SectionModels() {
                   ) : (
                     <>
                       <Copy className="size-3.5" />
-                      <span className="font-semibold text-foreground/80">{activeModel.id}</span>
+                      <span className="font-semibold text-foreground/90">{activeModel.id}</span>
                     </>
                   )}
                 </button>
 
                 <Link
                   to={"/pricing" as any}
-                  className="group relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-xl px-4 text-xs font-semibold shadow-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  className="group relative inline-flex h-9.5 items-center gap-1.5 overflow-hidden rounded-xl px-4.5 text-xs font-semibold shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                   style={{
                     backgroundColor: activeModel.accentColor,
                     color: "#ffffff",
-                    boxShadow: `0 4px 14px ${activeModel.glowColor}`,
+                    boxShadow: "0 4px 16px " + activeModel.glowColor,
                   }}
                 >
                   <Sparkles className="size-3.5 transition-transform duration-300 group-hover:rotate-12" />
                   <span>前往模型广场</span>
-                  <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </Link>
               </div>
             </div>
           </div>
 
-          {/* Right: 2x2 clickable model cards grid */}
-          <div className="flex flex-col justify-between lg:col-span-6 xl:col-span-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 h-full">
+          {/* Right: 5-Column High-Clarity Model Selector Radar (精炼高效、高对比度选型矩阵) */}
+          <div className="flex flex-col justify-between lg:col-span-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-3.5 h-full">
               {displayModels.map((model, index) => {
                 const isActive = index === activeIndex
                 const modelInDiscount = getDiscountPercent(model.officialInput, model.siteInput)
                 const modelOutDiscount = getDiscountPercent(model.officialOutput, model.siteOutput)
                 const modelBestDiscount = modelInDiscount || modelOutDiscount
+
                 return (
                   <button
                     key={model.id}
@@ -573,154 +600,106 @@ export function SectionModels() {
                     style={
                       isActive
                         ? {
-                            borderColor: `${model.accentColor}70`,
-                            boxShadow: `0 16px 32px -10px ${model.glowColor}, 0 0 0 1px ${model.accentColor}35`,
+                            borderColor: model.accentColor + "80",
+                            boxShadow: "0 14px 28px -8px " + model.glowColor + ", 0 0 0 1px " + model.accentColor + "40",
                           }
                         : {}
                     }
-                    className={`group relative flex flex-col justify-between rounded-2xl border p-5 sm:p-5.5 text-left transition-all duration-300 cursor-pointer min-h-[225px] sm:min-h-[245px] ${
+                    className={"group relative flex flex-col justify-between rounded-2xl border p-4.5 sm:p-5 text-left transition-all duration-300 cursor-pointer " + (
                       isActive
-                        ? "bg-card/95 shadow-xl -translate-y-1.5"
-                        : "border-border/60 bg-card/50 hover:border-border hover:bg-card/80 hover:shadow-lg hover:-translate-y-1"
-                    }`}
+                        ? "bg-card/95 shadow-xl -translate-y-0.5"
+                        : "border-border/60 bg-card/40 hover:border-border/90 hover:bg-card/80 hover:shadow-md"
+                    )}
                   >
-                    {/* Atmospheric hover glow */}
-                    <div
-                      className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                      style={{
-                        background: `radial-gradient(circle at 50% 0%, ${model.glowColor}, transparent 70%)`,
-                      }}
-                    />
+                    {/* Active Edge Indicator Bar (左侧微光锚点) */}
+                    {isActive && (
+                      <div
+                        className="absolute inset-y-0 left-0 w-1 rounded-l-2xl"
+                        style={{ backgroundColor: model.accentColor }}
+                      />
+                    )}
 
-                    {/* Top Row: Provider Icon (No heavy background) + Model Name */}
-                    <div className="relative flex items-center justify-between gap-3 mb-2.5">
+                    {/* Top row: Provider Glyph + Name + Badge */}
+                    <div className="relative flex items-center justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        {/* 1. Icon without background */}
                         <div
-                          className="flex size-7 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                          style={{ filter: `drop-shadow(0 2px 8px ${model.glowColor})` }}
+                          className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-background/50 transition-transform duration-300 group-hover:scale-110"
+                          style={{ filter: "drop-shadow(0 2px 6px " + model.glowColor + ")" }}
                         >
                           <ProviderGlyph iconKey={model.iconKey} size={22} />
                         </div>
-
-                        {/* 2. Model Name */}
-                        <h4
-                          className={`text-[15px] sm:text-base font-bold leading-snug tracking-tight truncate transition-colors ${
-                            isActive ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"
-                          }`}
-                        >
-                          {model.name}
-                        </h4>
+                        <div className="min-w-0">
+                          <h4
+                            className={"text-[15px] font-bold leading-tight tracking-tight truncate transition-colors " + (
+                              isActive ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"
+                            )}
+                          >
+                            {model.name}
+                          </h4>
+                          <span className="font-mono text-[11px] text-muted-foreground/75 truncate block">
+                            {model.provider} · {model.category}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Accent Dot/Tag */}
                       <span
-                        className="shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold tracking-wide"
+                        className="shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold tracking-wide"
                         style={{
                           color: model.accentColor,
-                          backgroundColor: `${model.accentColor}18`,
-                          border: `1px solid ${model.accentColor}30`,
+                          backgroundColor: model.accentColor + "18",
+                          border: "1px solid " + model.accentColor + "30",
                         }}
                       >
                         {model.badge}
                       </span>
                     </div>
 
-                    {/* Short description - slightly pushed down */}
-                    <p className="relative text-xs sm:text-[12.5px] leading-relaxed text-muted-foreground/80 line-clamp-2 mb-3 mt-1">
-                      {model.description}
-                    </p>
-
-                    {/* High-contrast machined pricing chamber */}
-                    <div
-                      className="relative mt-auto pt-2 mb-3 overflow-hidden rounded-xl border bg-muted/30 dark:bg-muted/15 p-2 backdrop-blur-md transition-all"
-                      style={{
-                        borderColor: isActive ? `${model.accentColor}45` : undefined,
-                      }}
-                    >
-                      {/* Top micro row: label & optional discount badge */}
-                      <div className="flex items-center justify-between mb-1.5 px-0.5">
-                        <div className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground">
-                          <Coins className="size-2.5 shrink-0 opacity-70" />
-                          <span className="font-sans">{t("sec_models_pricing")}</span>
-                          <span className="font-mono text-[9.5px] opacity-60">· 1M</span>
-                        </div>
-
-                        {modelBestDiscount && (
-                          <span
-                            className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 font-mono text-[9.5px] font-bold text-white shadow-2xs"
-                            style={{ background: model.accentColor }}
-                          >
-                            <BadgePercent className="size-2.5 shrink-0" />
-                            {modelBestDiscount}
-                          </span>
-                        )}
+                    {/* Mid row: Clean Starting Price & Specs Highlight */}
+                    <div className="relative mt-2 flex items-center justify-between rounded-xl border border-border/40 bg-muted/20 dark:bg-muted/10 px-3 py-2">
+                      {/* Price Section */}
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[11px] font-medium text-muted-foreground">起步</span>
+                        <span
+                          className="font-mono text-base sm:text-lg font-black tracking-tight tabular-nums"
+                          style={{ color: model.accentColor }}
+                        >
+                          {model.siteInput}
+                        </span>
+                        <span className="font-mono text-[10px] text-muted-foreground/60 line-through tabular-nums">
+                          {model.officialInput}
+                        </span>
+                        <span className="font-mono text-[10px] text-muted-foreground/70">/ 1M</span>
                       </div>
 
-                      {/* 2-Column pricing cells: Input & Output */}
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {/* Input Cell */}
-                        <div className="flex flex-col justify-between rounded-lg border border-border/50 bg-background/70 dark:bg-background/50 px-2 py-1.5">
-                          <div className="flex items-center justify-between gap-1 mb-0.5">
-                            <span className="text-[9.5px] font-semibold text-muted-foreground">
-                              {t("Input")}
-                            </span>
-                            <span className="font-mono text-[9.5px] text-muted-foreground/60 line-through">
-                              {model.officialInput}
-                            </span>
-                          </div>
-                          <div className="flex items-baseline gap-0.5">
-                            <span
-                              className="font-mono text-[13.5px] font-extrabold tracking-tight"
-                              style={{ color: model.accentColor }}
-                            >
-                              {model.siteInput}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Output Cell */}
-                        <div className="flex flex-col justify-between rounded-lg border border-border/50 bg-background/70 dark:bg-background/50 px-2 py-1.5">
-                          <div className="flex items-center justify-between gap-1 mb-0.5">
-                            <span className="text-[9.5px] font-semibold text-muted-foreground">
-                              {t("Output")}
-                            </span>
-                            <span className="font-mono text-[9.5px] text-muted-foreground/60 line-through">
-                              {model.officialOutput}
-                            </span>
-                          </div>
-                          <div className="flex items-baseline gap-0.5">
-                            <span
-                              className="font-mono text-[13.5px] font-extrabold tracking-tight"
-                              style={{ color: model.accentColor }}
-                            >
-                              {model.siteOutput}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      {/* Best Discount Pill */}
+                      {modelBestDiscount && (
+                        <span
+                          className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-2xs"
+                          style={{ background: model.accentColor }}
+                        >
+                          <BadgePercent className="size-2.5 shrink-0" />
+                          {modelBestDiscount}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Footer: Provider name on left, Context with Layers icon on right */}
-                    <div className="relative flex items-center justify-between gap-2 border-t border-border/40 pt-2.5">
-                      {/* Left: Provider with status dot */}
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="inline-block size-1.5 rounded-full shrink-0 transition-transform duration-300 group-hover:scale-125"
-                          style={{
-                            backgroundColor: model.accentColor,
-                            boxShadow: `0 0 6px ${model.accentColor}`,
-                          }}
-                        />
-                        <span className="font-mono text-xs font-semibold text-foreground/80 truncate">
-                          {model.provider}
-                        </span>
+                    {/* Footer Row: Context Tokens & Active Trigger Status */}
+                    <div className="relative mt-3 flex items-center justify-between border-t border-border/30 pt-2.5 text-[11px]">
+                      <div className="flex items-center gap-1.5 font-mono text-muted-foreground/80">
+                        <Layers className="size-3" style={{ color: model.accentColor }} />
+                        <span>{model.context}</span>
                       </div>
 
-                      {/* Right: Context Tokens indicator with Layers icon */}
-                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/85 shrink-0">
-                        <Layers className="size-3.5" style={{ color: model.accentColor }} />
-                        <span>{model.context}</span>
+                      <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                        <span
+                          className={"size-1.5 rounded-full transition-transform duration-300 " + (
+                            isActive ? "scale-125" : "opacity-40"
+                          )}
+                          style={{ backgroundColor: model.accentColor }}
+                        />
+                        <span className={isActive ? "font-semibold text-foreground" : "text-muted-foreground/70"}>
+                          {isActive ? "当前聚焦" : "点击切换"}
+                        </span>
                       </div>
                     </div>
                   </button>
@@ -730,6 +709,7 @@ export function SectionModels() {
           </div>
         </div>
       </div>
+
 
       {/* Section divider: layered center-glow line */}
       <div aria-hidden className="pointer-events-none absolute bottom-0 inset-x-0 flex flex-col items-center overflow-hidden">
