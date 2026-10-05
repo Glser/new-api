@@ -17,12 +17,12 @@ import {
   ArrowUpRight,
   BadgePercent,
   Check,
-  Coins,
   Copy,
   Gauge,
   Layers,
   Sparkles,
   TrendingDown,
+  Zap,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
@@ -380,134 +380,125 @@ export function SectionModels() {
                   </span>
                 </div>
               </div>
-
-              {/* ── Precision Machined Pricing Cockpit (数字机甲级双轨测算台) ── */}
-              <div className="landing-animate-fade-up mb-6 relative overflow-hidden rounded-2xl border border-border/60 bg-background/50 dark:bg-background/40 p-4 sm:p-5 backdrop-blur-xl shadow-lg transition-all duration-300">
-                {/* Cockpit Header Status Bar */}
-                <div className="mb-3.5 flex items-center justify-between border-b border-border/40 pb-3">
-                  <div className="flex items-center gap-2">
+              {/* Scheme C: Modern Editorial High-Contrast Pricing Matrix */}
+              <div className="landing-animate-fade-up mb-6 relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-card/90 via-card/60 to-card/40 p-5 sm:p-6 backdrop-blur-2xl shadow-xl transition-all duration-300">
+                {/* Editorial Top Bar: Metric Label + Currency Unit + Highlight Tag */}
+                <div className="flex items-center justify-between pb-4 border-b border-border/40">
+                  <div className="flex items-center gap-2.5">
                     <div
-                      className="flex size-6 items-center justify-center rounded-lg shadow-2xs"
+                      className="flex size-7 items-center justify-center rounded-xl shadow-xs"
                       style={{
-                        background: "linear-gradient(135deg, " + activeModel.accentColor + ", " + activeModel.accentColor + "dd)",
+                        background: `linear-gradient(135deg, ${activeModel.accentColor}, ${activeModel.accentColor}cc)`,
                         color: "#ffffff",
                       }}
                     >
-                      <Coins className="size-3.5" />
+                      <Zap className="size-4" />
                     </div>
-                    <span className="text-xs font-bold tracking-tight text-foreground">
-                      {t("sec_models_pricing")}
-                    </span>
-                    <span className="rounded-md border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                      / 1,000,000 Tokens (1M)
-                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black uppercase tracking-wider text-foreground">
+                          {t("sec_models_pricing")}
+                        </span>
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/80">
+                          RATE MATRIX
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] text-muted-foreground/70">
+                        USD / 1,000,000 Tokens (1M)
+                      </span>
+                    </div>
                   </div>
 
                   {activeBestDiscount && (
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-mono text-[11px] font-extrabold tracking-tight text-white shadow-xs animate-in fade-in"
+                    <div
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-extrabold tracking-tight text-white shadow-xs"
                       style={{
                         background: activeModel.accentColor,
-                        boxShadow: "0 2px 10px " + activeModel.glowColor,
+                        boxShadow: `0 3px 12px ${activeModel.glowColor}`,
                       }}
                     >
                       <BadgePercent className="size-3.5" />
                       <span>{t("Discount")} {activeBestDiscount}</span>
-                    </span>
+                    </div>
                   )}
                 </div>
 
-                {/* Dual-lane Data Cockpit: Input (Prompt) vs Output (Completion) */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {/* Lane 1: Input (Prompt) */}
-                  <div className="group/lane relative flex flex-col justify-between rounded-xl border border-border/50 bg-card/70 p-3.5 transition-all hover:border-border hover:bg-card/90">
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                {/* Editorial Dual-Column High-Contrast Price Display */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-5">
+                  {/* Column 1: PROMPT / 输入 */}
+                  <div className="group/rate relative flex flex-col justify-between rounded-xl border border-border/40 bg-background/50 dark:bg-background/30 p-4 transition-all hover:border-border hover:bg-background/80">
+                    <div className="flex items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2">
-                        <span
-                          className="flex size-5.5 shrink-0 items-center justify-center rounded-md font-mono text-[11px] font-bold text-white shadow-2xs"
-                          style={{ background: activeModel.accentColor }}
-                        >
-                          入
+                        <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                          PROMPT
                         </span>
-                        <div>
-                          <div className="text-xs font-bold text-foreground">
-                            {t("Input")}
-                          </div>
-                          <div className="font-mono text-[10px] text-muted-foreground/75">
-                            Prompt Tokens
-                          </div>
-                        </div>
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-foreground/80 bg-muted/60">
+                          {t("Input")}
+                        </span>
                       </div>
-
-                      <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground/80">
-                        <span className="text-[10px] text-muted-foreground/60">{t("Official")}</span>
-                        <span className="line-through decoration-muted-foreground/60 font-medium tabular-nums">
+                      <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground/70">
+                        <span className="text-[10px]">{t("Official")}</span>
+                        <span className="line-through tabular-nums decoration-muted-foreground/60">
                           {activeModel.officialInput}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-baseline justify-between gap-1 pt-1 border-t border-border/30">
-                      <div className="flex items-baseline gap-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="flex items-baseline gap-1.5">
                         <span
-                          className="font-mono text-2xl sm:text-[26px] font-black tracking-tight tabular-nums leading-none"
+                          className="font-mono text-3xl sm:text-4xl lg:text-[42px] font-black tracking-tight tabular-nums leading-none"
                           style={{ color: activeModel.accentColor }}
                         >
                           {activeModel.siteInput}
                         </span>
-                        <span className="font-mono text-[11px] text-muted-foreground/70">
+                        <span className="font-mono text-xs text-muted-foreground/60 font-medium">
                           / 1M
                         </span>
                       </div>
 
                       {activeInDiscount && (
-                        <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <span className="shrink-0 font-mono text-xs font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                           立省 {activeInDiscount.replace("-", "")}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Lane 2: Output (Completion) */}
-                  <div className="group/lane relative flex flex-col justify-between rounded-xl border border-border/50 bg-card/70 p-3.5 transition-all hover:border-border hover:bg-card/90">
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                  {/* Column 2: COMPLETION / 输出 */}
+                  <div className="group/rate relative flex flex-col justify-between rounded-xl border border-border/40 bg-background/50 dark:bg-background/30 p-4 transition-all hover:border-border hover:bg-background/80">
+                    <div className="flex items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="flex size-5.5 shrink-0 items-center justify-center rounded-md border border-border bg-foreground text-background font-mono text-[11px] font-bold shadow-2xs">
-                          出
+                        <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                          COMPLETION
                         </span>
-                        <div>
-                          <div className="text-xs font-bold text-foreground">
-                            {t("Output")}
-                          </div>
-                          <div className="font-mono text-[10px] text-muted-foreground/75">
-                            Completion Tokens
-                          </div>
-                        </div>
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-foreground/80 bg-muted/60">
+                          {t("Output")}
+                        </span>
                       </div>
-
-                      <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground/80">
-                        <span className="text-[10px] text-muted-foreground/60">{t("Official")}</span>
-                        <span className="line-through decoration-muted-foreground/60 font-medium tabular-nums">
+                      <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground/70">
+                        <span className="text-[10px]">{t("Official")}</span>
+                        <span className="line-through tabular-nums decoration-muted-foreground/60">
                           {activeModel.officialOutput}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-baseline justify-between gap-1 pt-1 border-t border-border/30">
-                      <div className="flex items-baseline gap-1">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="flex items-baseline gap-1.5">
                         <span
-                          className="font-mono text-2xl sm:text-[26px] font-black tracking-tight tabular-nums leading-none"
+                          className="font-mono text-3xl sm:text-4xl lg:text-[42px] font-black tracking-tight tabular-nums leading-none"
                           style={{ color: activeModel.accentColor }}
                         >
                           {activeModel.siteOutput}
                         </span>
-                        <span className="font-mono text-[11px] text-muted-foreground/70">
+                        <span className="font-mono text-xs text-muted-foreground/60 font-medium">
                           / 1M
                         </span>
                       </div>
 
                       {activeOutDiscount && (
-                        <span className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <span className="shrink-0 font-mono text-xs font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                           立省 {activeOutDiscount.replace("-", "")}
                         </span>
                       )}
@@ -515,14 +506,14 @@ export function SectionModels() {
                   </div>
                 </div>
 
-                {/* Sub-lane: Cost Advantage Benchmark Banner */}
-                <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/30 px-3 py-1.5 text-[11px] text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
+                {/* Assurance & SLA Footer */}
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/20 px-3.5 py-2 text-xs text-muted-foreground border border-border/30">
+                  <div className="flex items-center gap-2">
                     <TrendingDown className="size-3.5 text-emerald-500" />
-                    <span>原生高可用节点直连 · 计费透明按量抵扣</span>
+                    <span>原生高可用节点直连 · 透明计量按量实时抵扣</span>
                   </div>
-                  <span className="font-mono font-medium text-foreground/80">
-                    无预充值门槛
+                  <span className="font-mono text-[11px] font-semibold text-foreground/90">
+                    无需预存巨额门槛
                   </span>
                 </div>
               </div>
