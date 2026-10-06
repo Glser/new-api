@@ -5,8 +5,16 @@ This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
-import { useState, useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { getPricing } from "@/features/pricing/api"
 import { formatPrice } from "@/features/pricing/lib/price"
 import type { PricingModel } from "@/features/pricing/types"
@@ -15,20 +23,20 @@ import {
   Activity,
   ArrowRight,
   ArrowUpRight,
-  BadgePercent,
-  Check,
-  Copy,
+  Building2,
   Gauge,
   Layers,
   Sparkles,
-  TrendingDown,
-  Zap,
+  type LucideIcon,
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { AnimateInView } from "@/components/animate-in-view"
-import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard"
+import { CopyButton } from "@/components/copy-button"
+import { Button } from "@/components/ui/button"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { getLobeIcon } from "@/lib/lobe-icon"
+import { cn } from "@/lib/utils"
 
 interface ModelItem {
   id: string
@@ -36,19 +44,15 @@ interface ModelItem {
   provider: string
   iconKey: string
   category: string
-  tag: string
   badge: string
   description: string
   context: string
-  pricing: string
-  pricingNote: string
-  sitePrice: string
-  sitePriceNote: string
   officialInput: string
   officialOutput: string
   siteInput: string
   siteOutput: string
   scenarios: string[]
+  tags: string[]
   latency: string
   accentColor: string
   glowColor: string
@@ -61,19 +65,16 @@ const MODELS: ModelItem[] = [
     provider: "Anthropic",
     iconKey: "Claude.Color",
     category: "Reasoning & Coding",
-    tag: "Flagship Opus",
     badge: "SOTA 推理",
-    description: "Anthropic 旗舰思维模型，具备扩展思维与深度推理能力，在复杂编程、科研分析与多轮 Agent 任务中全面领跑。",
+    description:
+      "Anthropic 旗舰思维模型，具备扩展思维与深度推理能力，在复杂编程、科研分析与多轮 Agent 任务中全面领跑。",
     context: "200K Tokens",
-    pricing: "$15.00 / 1M",
-    pricingNote: "输入 $15 · 输出 $75",
-    sitePrice: "$12.00 / 1M",
-    sitePriceNote: "输入 $12 · 输出 $60",
     officialInput: "$15.00",
     officialOutput: "$75.00",
     siteInput: "$12.00",
     siteOutput: "$60.00",
     scenarios: ["超长上下文代码架构", "科研级复杂推演", "自主 Agent 工作流编排"],
+    tags: ["Reasoning", "Coding", "Agent"],
     latency: "深度思维链",
     accentColor: "rgb(249, 115, 22)",
     glowColor: "rgba(249, 115, 22, 0.22)",
@@ -84,19 +85,16 @@ const MODELS: ModelItem[] = [
     provider: "OpenAI",
     iconKey: "Codex.Color",
     category: "Omni Multimodal",
-    tag: "Next-Gen Omni",
     badge: "全感知旗舰",
-    description: "OpenAI 下一代全模态模型，融合视觉、语音、实时交互与超长上下文，具备接近人类的感知推理与创作能力。",
+    description:
+      "OpenAI 下一代全模态模型，融合视觉、语音、实时交互与超长上下文，具备接近人类的感知推理与创作能力。",
     context: "256K Tokens",
-    pricing: "$10.00 / 1M",
-    pricingNote: "输入 $10 · 输出 $40",
-    sitePrice: "$8.00 / 1M",
-    sitePriceNote: "输入 $8 · 输出 $32",
     officialInput: "$10.00",
     officialOutput: "$40.00",
     siteInput: "$8.00",
     siteOutput: "$32.00",
     scenarios: ["多模态实时感知交互", "超长跨模态文档理解", "高并发创意生成工作流"],
+    tags: ["Multimodal", "Realtime", "Creative"],
     latency: "< 600ms 首字",
     accentColor: "rgb(16, 185, 129)",
     glowColor: "rgba(16, 185, 129, 0.22)",
@@ -107,19 +105,16 @@ const MODELS: ModelItem[] = [
     provider: "DeepSeek",
     iconKey: "DeepSeek.Color",
     category: "Fast Reasoning",
-    tag: "Speed Thinking",
     badge: "极速思考链",
-    description: "DeepSeek 新一代快速推理模型，保留完整思维链能力的同时大幅降低延迟，以极低成本实现顶级推理表现。",
+    description:
+      "DeepSeek 新一代快速推理模型，保留完整思维链能力的同时大幅降低延迟，以极低成本实现顶级推理表现。",
     context: "128K Tokens",
-    pricing: "$0.27 / 1M",
-    pricingNote: "输入 $0.27 · 输出 $1.10",
-    sitePrice: "$0.22 / 1M",
-    sitePriceNote: "输入 $0.22 · 输出 $0.88",
     officialInput: "$0.27",
     officialOutput: "$1.10",
     siteInput: "$0.22",
     siteOutput: "$0.88",
     scenarios: ["高并发低成本推理任务", "实时数学与逻辑证明", "轻量 Agent 快速决策"],
+    tags: ["Fast", "Reasoning", "Value"],
     latency: "< 500ms 首字",
     accentColor: "rgb(59, 130, 246)",
     glowColor: "rgba(59, 130, 246, 0.22)",
@@ -130,28 +125,34 @@ const MODELS: ModelItem[] = [
     provider: "xAI",
     iconKey: "Grok",
     category: "Frontier Reasoning",
-    tag: "Heavy Thinking",
     badge: "前沿推理",
-    description: "xAI Grok 系列旗舰，配备原生实时 X 平台信息接入与超强数理推理能力，在科学竞赛与复杂分析场景中表现卓越。",
+    description:
+      "xAI Grok 系列旗舰，配备原生实时 X 平台信息接入与超强数理推理能力，在科学竞赛与复杂分析场景中表现卓越。",
     context: "256K Tokens",
-    pricing: "$3.00 / 1M",
-    pricingNote: "输入 $3 · 输出 $15",
-    sitePrice: "$2.40 / 1M",
-    sitePriceNote: "输入 $2.4 · 输出 $12",
     officialInput: "$3.00",
     officialOutput: "$15.00",
     siteInput: "$2.40",
     siteOutput: "$12.00",
     scenarios: ["实时信息融合推理", "科学竞赛级数理证明", "深度战略分析与规划"],
+    tags: ["Realtime", "Science", "Analysis"],
     latency: "深度思维链",
     accentColor: "rgb(139, 92, 246)",
     glowColor: "rgba(139, 92, 246, 0.22)",
   },
 ]
 
-function ProviderGlyph(props: { iconKey: string; size?: number; className?: string }) {
+/* Surfaces are tuned per theme: a near-white card in light mode so the panel
+ * reads as raised against the page instead of dissolving into it, and a
+ * translucent white veil in dark mode so the accent glow behind it shows. */
+const glassPanelClassName =
+  "border-slate-900/[0.08] bg-white/85 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_50px_-30px_rgba(15,23,42,0.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.05] dark:shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.08)]"
+
+const glassCapsuleClassName =
+  "rounded-2xl border border-slate-900/[0.07] bg-slate-500/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl sm:rounded-full dark:border-white/10 dark:bg-white/[0.05] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+
+function ProviderGlyph(props: { iconKey: string; size?: number }) {
   return (
-    <span className={`flex shrink-0 items-center justify-center ${props.className ?? ""}`}>
+    <span className="flex shrink-0 items-center justify-center">
       {getLobeIcon(props.iconKey, props.size ?? 20)}
     </span>
   )
@@ -163,6 +164,412 @@ function getDiscountPercent(officialStr: string, siteStr: string): string | null
   if (!off || !site || site >= off) return null
   const pct = Math.round((1 - site / off) * 100)
   return pct > 0 ? `-${pct}%` : null
+}
+
+function hydrateModels(backendModels: PricingModel[]): ModelItem[] {
+  if (!backendModels.length) return MODELS
+
+  return MODELS.map((model) => {
+    const match = backendModels.find((bm) => {
+      const bmName = (bm.model_name || "").toLowerCase()
+      const mId = model.id.toLowerCase()
+      const mName = model.name.toLowerCase()
+      return (
+        bmName === mId ||
+        bmName === mName ||
+        bmName.includes(mId.replaceAll("-", "")) ||
+        mId.includes(bmName.replaceAll("-", ""))
+      )
+    })
+
+    if (!match) return model
+
+    try {
+      const inputPrice = formatPrice(match, "input", "M")
+      const outputPrice = formatPrice(match, "output", "M")
+      if (inputPrice && inputPrice !== "-") {
+        return {
+          ...model,
+          siteInput: inputPrice,
+          siteOutput: outputPrice && outputPrice !== "-" ? outputPrice : model.siteOutput,
+        }
+      }
+    } catch {
+      return model
+    }
+
+    return model
+  })
+}
+
+function PricePair(props: {
+  input: string
+  output: string
+  accent?: string
+  muted?: boolean
+}) {
+  const { t } = useTranslation()
+
+  const valueClassName = cn(
+    "font-semibold tabular-nums tracking-tight",
+    props.muted
+      ? "text-[13px] text-muted-foreground"
+      : "text-base sm:text-lg text-foreground",
+    props.accent ? "font-mono" : "font-mono text-[13px]"
+  )
+
+  return (
+    <div className="flex min-w-0 items-center gap-3 font-mono tabular-nums">
+      <span className="flex items-baseline gap-1.5">
+        <span className="text-[10px] font-medium text-muted-foreground/70">{t("Input")}</span>
+        <span
+          className={valueClassName}
+          style={props.accent ? { color: props.accent } : undefined}
+        >
+          {props.input}
+        </span>
+      </span>
+      <span aria-hidden className="h-3 w-px bg-slate-900/10 dark:bg-white/15" />
+      <span className="flex items-baseline gap-1.5">
+        <span className="text-[10px] font-medium text-muted-foreground/70">{t("Output")}</span>
+        <span
+          className={valueClassName}
+          style={props.accent ? { color: props.accent } : undefined}
+        >
+          {props.output}
+        </span>
+      </span>
+    </div>
+  )
+}
+
+/* One spec = icon + value. The label stays in the DOM as an `sr-only`
+ * definition term so the strip keeps its meaning for assistive tech while
+ * the small 10px label text is gone from the visual design. */
+function SpecChip(props: {
+  icon: LucideIcon
+  label: string
+  value: string
+  accent: string
+}) {
+  const Icon = props.icon
+
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <dt className="sr-only">{props.label}</dt>
+      <Icon className="size-4 shrink-0" style={{ color: props.accent }} aria-hidden />
+      <dd className="truncate text-xs font-semibold text-foreground">{props.value}</dd>
+    </div>
+  )
+}
+
+function PriceLedger(props: { model: ModelItem }) {
+  const { t } = useTranslation()
+  const model = props.model
+  const inDiscount = getDiscountPercent(model.officialInput, model.siteInput)
+  const outDiscount = getDiscountPercent(model.officialOutput, model.siteOutput)
+  const bestDiscount = inDiscount || outDiscount
+
+  return (
+    <div className={cn("relative px-4 py-3.5", glassCapsuleClassName)}>
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <span className="text-[11px] font-medium text-muted-foreground">
+          {t("sec_models_pricing")}
+        </span>
+        <span className="font-mono text-[10px] text-muted-foreground/70">
+          {t("sec_models_per_million")}
+        </span>
+      </div>
+
+      <dl className="grid gap-3 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-slate-900/[0.08] dark:sm:divide-white/10">
+        <div className="min-w-0 sm:pr-5">
+          <dt className="text-[11px] text-muted-foreground">{t("sec_models_official_rate")}</dt>
+          <dd className="mt-1.5">
+            <PricePair input={model.officialInput} output={model.officialOutput} muted />
+          </dd>
+        </div>
+
+        <div className="min-w-0 sm:pl-5">
+          <dt className="flex items-center gap-2 text-[11px] font-semibold text-foreground">
+            {t("sec_models_site_rate")}
+            {bestDiscount ? (
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 font-mono text-[10px] font-bold text-white shadow-sm",
+                  // Perched on the seam between the two lanes on desktop so it
+                  // reads as the delta between them, not as part of either label.
+                  "sm:absolute sm:left-1/2 sm:top-0 sm:-translate-x-1/2 sm:-translate-y-1/2"
+                )}
+                style={{ backgroundColor: model.accentColor }}
+              >
+                {bestDiscount}
+                <span className="sr-only">{t("sec_models_save")}</span>
+              </span>
+            ) : null}
+          </dt>
+          <dd className="mt-1.5">
+            <PricePair
+              input={model.siteInput}
+              output={model.siteOutput}
+              accent={model.accentColor}
+            />
+          </dd>
+        </div>
+      </dl>
+    </div>
+  )
+}
+
+function FeaturedModelCard(props: { model: ModelItem }) {
+  const { t } = useTranslation()
+  const model = props.model
+
+  return (
+    <article
+      className={cn(
+        "group relative flex h-full flex-col overflow-hidden rounded-3xl border",
+        glassPanelClassName
+      )}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-40 transition-opacity duration-500 dark:opacity-30"
+        style={{
+          background: `radial-gradient(ellipse 70% 55% at 0% 0%, ${model.glowColor}, transparent 62%), radial-gradient(ellipse 55% 45% at 100% 100%, ${model.glowColor}, transparent 68%)`,
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full blur-3xl opacity-50"
+        style={{ backgroundColor: model.glowColor }}
+      />
+
+      <div className="relative flex flex-1 flex-col p-5 sm:p-6 lg:p-7" key={model.id}>
+        {/* The provider name lives in the footer as provenance so the model
+         * name owns this hierarchy. */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <span
+              className="flex size-11 shrink-0 items-center justify-center"
+              style={{ filter: `drop-shadow(0 6px 14px ${model.glowColor})` }}
+            >
+              <ProviderGlyph iconKey={model.iconKey} size={30} />
+            </span>
+            <h3 className="min-w-0 text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-[1.7rem]">
+              {model.name}
+            </h3>
+          </div>
+
+          <span
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+            style={{
+              backgroundColor: `${model.accentColor}18`,
+              color: model.accentColor,
+              borderColor: `${model.accentColor}35`,
+            }}
+          >
+            <Sparkles className="size-3" aria-hidden />
+            {model.badge}
+          </span>
+        </div>
+
+        {/* Description owns the free vertical space and stays centered. */}
+        <div className="flex flex-1 items-center py-6 sm:py-8">
+          <p className="max-w-prose text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
+            {model.description}
+          </p>
+        </div>
+
+        <dl className={cn("mb-3 flex flex-wrap items-center gap-2 px-3 py-2.5", glassCapsuleClassName)}>
+          <SpecChip
+            icon={Layers}
+            label={t("sec_models_context")}
+            value={model.context}
+            accent={model.accentColor}
+          />
+          <span aria-hidden className="hidden h-5 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
+          <SpecChip
+            icon={Gauge}
+            label={t("sec_models_performance")}
+            value={model.latency}
+            accent={model.accentColor}
+          />
+          <span aria-hidden className="hidden h-5 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
+          <SpecChip
+            icon={Activity}
+            label={t("sec_models_category")}
+            value={model.category}
+            accent={model.accentColor}
+          />
+        </dl>
+
+        <PriceLedger model={model} />
+
+        <div className="mb-3 mt-4">
+          <div className="mb-2 text-[11px] text-muted-foreground">{t("sec_models_scenarios")}</div>
+          <ul className="flex flex-wrap gap-2">
+            {model.scenarios.map((scenario) => (
+              <li
+                key={scenario}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-900/[0.08] bg-white/60 px-3 py-1 text-xs text-foreground/85 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
+              >
+                <span
+                  className="size-1.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: model.accentColor }}
+                />
+                {scenario}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <ul className="mb-5 flex flex-wrap gap-1.5">
+          {model.tags.map((tag) => (
+            <li
+              key={tag}
+              className="rounded-full border border-slate-900/[0.08] bg-slate-500/[0.05] px-2.5 py-0.5 font-mono text-[10px] text-muted-foreground dark:border-white/10 dark:bg-white/[0.05]"
+            >
+              {tag}
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-900/[0.08] pt-4 dark:border-white/10">
+          <TooltipProvider delay={0}>
+            <CopyButton
+              value={model.id}
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 rounded-full border-slate-900/10 bg-white/60 px-3 font-mono text-xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
+              tooltip={t("sec_models_copy_id")}
+              successTooltip={t("sec_models_copied")}
+            >
+              <span className="max-w-[14rem] truncate">{model.id}</span>
+            </CopyButton>
+          </TooltipProvider>
+
+          <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <Building2 className="size-3.5 shrink-0" aria-hidden />
+            {model.provider}
+          </span>
+          <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90">
+            <span
+              className="size-1.5 shrink-0 rounded-full"
+              style={{
+                backgroundColor: model.accentColor,
+                boxShadow: `0 0 8px ${model.accentColor}`,
+              }}
+            />
+            {t("sec_models_status_ready")}
+          </span>
+
+          <Button
+            size="lg"
+            className="ml-auto h-9 rounded-full px-4"
+            render={<Link to="/pricing" search={{ search: model.id }} />}
+          >
+            {t("sec_models_view_model")}
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Button>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function CompactModelCard(props: {
+  model: ModelItem
+  selected: boolean
+  onSelect: () => void
+}) {
+  const { t } = useTranslation()
+  const model = props.model
+  const inDiscount = getDiscountPercent(model.officialInput, model.siteInput)
+  const outDiscount = getDiscountPercent(model.officialOutput, model.siteOutput)
+  const bestDiscount = inDiscount || outDiscount
+
+  return (
+    <button
+      type="button"
+      onClick={props.onSelect}
+      aria-pressed={props.selected}
+      aria-label={`${model.name}. ${props.selected ? t("sec_models_showing") : t("sec_models_show")}`}
+      className={cn(
+        "group relative flex h-full flex-col overflow-hidden rounded-2xl border p-4 text-left transition-[transform,box-shadow,border-color,background-color] duration-300",
+        glassPanelClassName,
+        // Selection and hover share one signal: the card lifts off the page.
+        "hover:-translate-y-1",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        props.selected && "-translate-y-1"
+      )}
+      style={
+        props.selected
+          ? {
+              borderColor: `${model.accentColor}66`,
+              boxShadow: `0 18px 36px -16px ${model.glowColor}, 0 0 0 1px ${model.accentColor}33`,
+            }
+          : undefined
+      }
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span style={{ filter: `drop-shadow(0 3px 8px ${model.glowColor})` }}>
+            <ProviderGlyph iconKey={model.iconKey} size={22} />
+          </span>
+          <h4 className="truncate text-sm font-semibold tracking-tight text-foreground">
+            {model.name}
+          </h4>
+        </div>
+        <span
+          className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          style={{
+            color: model.accentColor,
+            backgroundColor: `${model.accentColor}18`,
+          }}
+        >
+          {model.badge}
+        </span>
+      </div>
+
+      <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <Building2 className="size-3 shrink-0" aria-hidden />
+        {model.provider}
+      </p>
+
+      <p className="mt-2.5 line-clamp-2 text-[12px] leading-relaxed text-muted-foreground">
+        {model.description}
+      </p>
+
+      <dl className={cn("mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2", glassCapsuleClassName)}>
+        <SpecChip
+          icon={Layers}
+          label={t("sec_models_context")}
+          value={model.context}
+          accent={model.accentColor}
+        />
+        <span aria-hidden className="hidden h-4 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
+        <SpecChip
+          icon={Gauge}
+          label={t("sec_models_performance")}
+          value={model.latency}
+          accent={model.accentColor}
+        />
+      </dl>
+
+      <div className={cn("mt-2.5 flex items-center justify-between gap-2 px-3 py-2", glassCapsuleClassName)}>
+        <PricePair input={model.siteInput} output={model.siteOutput} accent={model.accentColor} />
+        {bestDiscount ? (
+          <span
+            className="shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white"
+            style={{ backgroundColor: model.accentColor }}
+          >
+            {bestDiscount}
+            <span className="sr-only">{t("sec_models_save")}</span>
+          </span>
+        ) : null}
+      </div>
+    </button>
+  )
 }
 
 export function SectionModels() {
@@ -186,57 +593,11 @@ export function SectionModels() {
     }
   }, [])
 
-  // Hydrate sitePrice dynamically from backend pricing data when matched
-  const displayModels = useMemo(() => {
-    if (!backendModels.length) return MODELS
-
-    return MODELS.map((model) => {
-      // Find matching model by id or name
-      const match = backendModels.find((bm) => {
-        const bmName = (bm.model_name || "").toLowerCase()
-        const mId = model.id.toLowerCase()
-        const mName = model.name.toLowerCase()
-        return (
-          bmName === mId ||
-          bmName === mName ||
-          bmName.includes(mId.replaceAll("-", "")) ||
-          mId.includes(bmName.replaceAll("-", ""))
-        )
-      })
-
-      if (match) {
-        try {
-          const inputPrice = formatPrice(match, "input", "M")
-          const outputPrice = formatPrice(match, "output", "M")
-          if (inputPrice && inputPrice !== "-") {
-            return {
-              ...model,
-              sitePrice: `${inputPrice} / 1M`,
-              sitePriceNote: `输入 ${inputPrice} · 输出 ${outputPrice}`,
-              siteInput: inputPrice,
-              siteOutput: outputPrice && outputPrice !== "-" ? outputPrice : model.siteOutput,
-            }
-          }
-        } catch {
-          // ignore formatting fallback
-        }
-      }
-      return model
-    })
-  }, [backendModels])
-  const { copiedText, copyToClipboard } = useCopyToClipboard({
-    notify: true,
-    successMessage: t("sec_models_copied"),
-  })
-
+  const displayModels = useMemo(() => hydrateModels(backendModels), [backendModels])
   const activeModel = displayModels[activeIndex] ?? displayModels[0]
-  const activeInDiscount = getDiscountPercent(activeModel.officialInput, activeModel.siteInput)
-  const activeOutDiscount = getDiscountPercent(activeModel.officialOutput, activeModel.siteOutput)
-  const activeBestDiscount = activeInDiscount || activeOutDiscount
 
   return (
-    <section id="models" className="relative overflow-hidden px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-20 sm:pb-24">
-      {/* Background glow and subtle grid */}
+    <section id="models" className="relative overflow-hidden px-4 pt-10 pb-20 sm:px-6 sm:pt-14 sm:pb-24 lg:px-8">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 opacity-30 dark:opacity-20"
@@ -251,8 +612,7 @@ export function SectionModels() {
       />
 
       <div className="mx-auto max-w-7xl">
-        {/* Section Header */}
-        <AnimateInView className="mb-7 sm:mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end lg:pl-4 xl:pl-6">
+        <AnimateInView className="mb-7 flex flex-col items-start justify-between gap-4 sm:mb-8 md:flex-row md:items-end lg:pl-4 xl:pl-6">
           <div>
             <h2 className="flex flex-wrap items-baseline gap-x-2 tracking-tight">
               <span className="hero-title-shine text-[clamp(1.85rem,3.6vw,2.9rem)] font-extrabold leading-tight">
@@ -262,490 +622,54 @@ export function SectionModels() {
                 {t("sec_models_title_p2")}
               </span>
             </h2>
-            <div className="mt-3.5 h-0.5 w-32 sm:w-48 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
+            <div className="mt-3.5 h-0.5 w-32 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent sm:w-48" />
             <p className="mt-3.5 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
               {t("sec_models_desc")}
             </p>
           </div>
 
-          <Link
-            to={"/pricing" as any}
-            className="group relative inline-flex h-9.5 items-center gap-2 overflow-hidden rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 text-xs font-semibold text-emerald-600 transition-all duration-300 hover:bg-emerald-500 hover:text-white hover:shadow-[0_4px_16px_rgba(16,185,129,0.3)] dark:text-emerald-400 dark:hover:bg-emerald-500 dark:hover:text-background cursor-pointer"
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-9 rounded-xl border-emerald-500/25 bg-emerald-500/10 px-4 text-xs font-semibold text-emerald-600 hover:bg-emerald-500 hover:text-white dark:text-emerald-400 dark:hover:bg-emerald-500 dark:hover:text-background"
+            render={<Link to="/pricing" />}
           >
-            <span>{t("sec_models_view_all")}</span>
-            <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </Link>
+            {t("sec_models_view_all")}
+            <ArrowUpRight className="size-3.5" aria-hidden />
+          </Button>
         </AnimateInView>
 
-                {/* 12-Column Precision Grid: Left (6 cols Flagship Studio Panel) + Right (6 cols 2x2 Model Grid) */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-6 xl:gap-8 items-stretch">
-          {/* Left: Flagship Studio Cockpit Panel (一体化建筑感暗调面板) */}
-          <div className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-b from-card/90 via-card/75 to-card/60 shadow-2xl backdrop-blur-xl transition-all duration-500 lg:col-span-6 xl:col-span-6">
-            {/* Dynamic ambient backdrop illumination */}
-            <div
-              className="pointer-events-none absolute inset-0 opacity-25 transition-all duration-700"
-              style={{
-                background: "radial-gradient(circle 320px at 0% 0%, " + activeModel.accentColor + "25, transparent 75%), radial-gradient(circle 380px at 100% 100%, " + activeModel.glowColor + ", transparent 70%)",
-              }}
-            />
-            <div
-              className="pointer-events-none absolute -right-20 -top-20 size-64 rounded-full blur-3xl transition-all duration-700 opacity-60"
-              style={{ backgroundColor: activeModel.glowColor }}
-            />
-
-            {/* Inner Content Container */}
-            <div className="relative flex flex-1 flex-col justify-between p-6 sm:p-7 lg:p-7.5" key={activeModel.id}>
-              {/* Top part: Header, Description, Specs, Price Matrix */}
-              <div>
-                {/* Header: Provider Glyph + Name + Status Indicator */}
-                <div className="landing-animate-fade-up mb-4 flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div
-                      className="flex size-12 sm:size-13 shrink-0 items-center justify-center rounded-2xl border border-border/40 bg-background/60 shadow-md backdrop-blur-md transition-transform duration-300 hover:scale-105"
-                      style={{ filter: "drop-shadow(0 4px 14px " + activeModel.glowColor + ")" }}
-                    >
-                      <ProviderGlyph iconKey={activeModel.iconKey} size={30} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
-                          {activeModel.provider}
-                        </span>
-                        <span className="text-muted-foreground/30 text-xs">·</span>
-                        <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground/90">
-                          <span
-                            className="size-1.5 rounded-full animate-pulse"
-                            style={{
-                              backgroundColor: activeModel.accentColor,
-                              boxShadow: "0 0 8px " + activeModel.accentColor,
-                            }}
-                          />
-                          <span>{t("sec_models_status_ready")}</span>
-                        </div>
-                      </div>
-                      <h3 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl leading-tight">
-                        {activeModel.name}
-                      </h3>
-                    </div>
-                  </div>
-
-                  <span
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-semibold tracking-wide shadow-2xs"
-                    style={{
-                      backgroundColor: activeModel.accentColor + "15",
-                      color: activeModel.accentColor,
-                      border: "1px solid " + activeModel.accentColor + "35",
-                    }}
-                  >
-                    <Sparkles className="size-3" />
-                    {activeModel.badge}
-                  </span>
-                </div>
-
-                {/* Description */}
-                <p className="landing-animate-fade-up mb-4.5 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
-                  {activeModel.description}
-                </p>
-
-                {/* Specs Rail (精细无框分割流) */}
-                <div className="landing-animate-fade-up mb-5 grid grid-cols-3 gap-2 rounded-2xl border border-border/50 bg-muted/20 dark:bg-muted/10 p-2.5 backdrop-blur-md">
-                  {/* Context Window */}
-                  <div className="flex flex-col gap-0.5 px-2 py-1">
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <Layers className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
-                      <span>{t("sec_models_context")}</span>
-                    </div>
-                    <span className="font-mono text-xs sm:text-[13px] font-bold text-foreground tabular-nums">
-                      {activeModel.context}
-                    </span>
-                  </div>
-
-                  {/* Performance / Latency */}
-                  <div className="flex flex-col gap-0.5 border-x border-border/40 px-2 py-1">
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <Gauge className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
-                      <span>{t("sec_models_performance")}</span>
-                    </div>
-                    <span className="font-mono text-xs sm:text-[13px] font-bold text-foreground">
-                      {activeModel.latency}
-                    </span>
-                  </div>
-
-                  {/* Capability Category */}
-                  <div className="flex flex-col gap-0.5 px-2 py-1">
-                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                      <Activity className="size-3.5 shrink-0" style={{ color: activeModel.accentColor }} />
-                      <span>定位领域</span>
-                    </div>
-                    <span className="text-xs sm:text-[13px] font-bold text-foreground truncate">
-                      {activeModel.category}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Scheme C: Modern Editorial High-Contrast Pricing Matrix */}
-                <div className="landing-animate-fade-up mb-5 relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-b from-card/90 via-card/60 to-card/40 p-4.5 sm:p-5 backdrop-blur-2xl shadow-xl transition-all duration-300">
-                  {/* Editorial Top Bar: Metric Label + Currency Unit + Highlight Tag */}
-                  <div className="flex items-center justify-between pb-3.5 border-b border-border/40">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className="flex size-7 items-center justify-center rounded-xl shadow-xs"
-                        style={{
-                          background: "linear-gradient(135deg, " + activeModel.accentColor + ", " + activeModel.accentColor + "cc)",
-                          color: "#ffffff",
-                        }}
-                      >
-                        <Zap className="size-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-black uppercase tracking-wider text-foreground">
-                            {t("sec_models_pricing")}
-                          </span>
-                          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/80">
-                            RATE MATRIX
-                          </span>
-                        </div>
-                        <span className="font-mono text-[11px] text-muted-foreground/70">
-                          USD / 1,000,000 Tokens (1M)
-                        </span>
-                      </div>
-                    </div>
-
-                    {activeBestDiscount && (
-                      <div
-                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-xs font-extrabold tracking-tight text-white shadow-xs"
-                        style={{
-                          background: activeModel.accentColor,
-                          boxShadow: "0 3px 12px " + activeModel.glowColor,
-                        }}
-                      >
-                        <BadgePercent className="size-3.5" />
-                        <span>{t("Discount")} {activeBestDiscount}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Editorial Dual-Column High-Contrast Price Display */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 py-4">
-                    {/* Column 1: PROMPT / 输入 */}
-                    <div className="group/rate relative flex flex-col justify-between rounded-xl border border-border/40 bg-background/50 dark:bg-background/30 p-3.5 sm:p-4 transition-all hover:border-border hover:bg-background/80">
-                      <div className="flex items-center justify-between gap-2 mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                            PROMPT
-                          </span>
-                          <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-foreground/80 bg-muted/60">
-                            {t("Input")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground/70">
-                          <span className="text-[10px]">{t("Official")}</span>
-                          <span className="line-through tabular-nums decoration-muted-foreground/60">
-                            {activeModel.officialInput}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-baseline justify-between gap-2">
-                        <div className="flex items-baseline gap-1.5">
-                          <span
-                            className="font-mono text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight tabular-nums leading-none"
-                            style={{ color: activeModel.accentColor }}
-                          >
-                            {activeModel.siteInput}
-                          </span>
-                          <span className="font-mono text-xs text-muted-foreground/60 font-medium">
-                            / 1M
-                          </span>
-                        </div>
-
-                        {activeInDiscount && (
-                          <span className="shrink-0 font-mono text-xs font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            立省 {activeInDiscount.replace("-", "")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Column 2: COMPLETION / 输出 */}
-                    <div className="group/rate relative flex flex-col justify-between rounded-xl border border-border/40 bg-background/50 dark:bg-background/30 p-3.5 sm:p-4 transition-all hover:border-border hover:bg-background/80">
-                      <div className="flex items-center justify-between gap-2 mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                            COMPLETION
-                          </span>
-                          <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-foreground/80 bg-muted/60">
-                            {t("Output")}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 font-mono text-xs text-muted-foreground/70">
-                          <span className="text-[10px]">{t("Official")}</span>
-                          <span className="line-through tabular-nums decoration-muted-foreground/60">
-                            {activeModel.officialOutput}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-baseline justify-between gap-2">
-                        <div className="flex items-baseline gap-1.5">
-                          <span
-                            className="font-mono text-3xl sm:text-4xl lg:text-[40px] font-black tracking-tight tabular-nums leading-none"
-                            style={{ color: activeModel.accentColor }}
-                          >
-                            {activeModel.siteOutput}
-                          </span>
-                          <span className="font-mono text-xs text-muted-foreground/60 font-medium">
-                            / 1M
-                          </span>
-                        </div>
-
-                        {activeOutDiscount && (
-                          <span className="shrink-0 font-mono text-xs font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            立省 {activeOutDiscount.replace("-", "")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Assurance & SLA Footer */}
-                  <div className="mt-1 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/20 px-3.5 py-2 text-xs text-muted-foreground border border-border/30">
-                    <div className="flex items-center gap-2">
-                      <TrendingDown className="size-3.5 text-emerald-500" />
-                      <span>原生高可用节点直连 · 透明计量按量实时抵扣</span>
-                    </div>
-                    <span className="font-mono text-[11px] font-semibold text-foreground/90">
-                      无需预存巨额门槛
-                    </span>
-                  </div>
-                </div>
-
-                {/* Scenarios capability pills */}
-                <div className="landing-animate-fade-up mb-5">
-                  <div className="mb-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
-                    {t("sec_models_scenarios")}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {activeModel.scenarios.map((s) => (
-                      <div
-                        key={s}
-                        className="flex items-center gap-2 rounded-xl border border-border/40 bg-background/50 px-3 py-1 text-xs text-foreground/85 transition-colors hover:border-border hover:bg-background"
-                      >
-                        <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: activeModel.accentColor }} />
-                        <span>{s}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom bar: Copy ID + Call to Action */}
-              <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/40 pt-4">
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(activeModel.id)}
-                  className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/60 px-3.5 py-2 font-mono text-xs text-muted-foreground transition-all duration-200 hover:border-foreground/30 hover:bg-background hover:text-foreground cursor-pointer"
-                  title="点击复制模型 ID 用于代码调用"
-                >
-                  {copiedText === activeModel.id ? (
-                    <>
-                      <Check className="size-3.5 text-emerald-500" />
-                      <span className="text-emerald-500 font-semibold">{t("sec_models_copied")}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="size-3.5" />
-                      <span className="font-semibold text-foreground/90">{activeModel.id}</span>
-                    </>
-                  )}
-                </button>
-
-                <Link
-                  to={"/pricing" as any}
-                  className="group relative inline-flex h-9.5 items-center gap-1.5 overflow-hidden rounded-xl px-4.5 text-xs font-semibold shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                  style={{
-                    backgroundColor: activeModel.accentColor,
-                    color: "#ffffff",
-                    boxShadow: "0 4px 16px " + activeModel.glowColor,
-                  }}
-                >
-                  <Sparkles className="size-3.5 transition-transform duration-300 group-hover:rotate-12" />
-                  <span>前往模型广场</span>
-                  <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12 lg:gap-6">
+          <div className="lg:col-span-6">
+            <FeaturedModelCard model={activeModel} />
           </div>
 
-          {/* Right: 6-Column 2x2 High-Clarity Model Matrix (四宫格矩阵卡片) */}
-          <div className="flex flex-col justify-between lg:col-span-6 xl:col-span-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 h-full">
-              {displayModels.map((model, index) => {
-                const isActive = index === activeIndex
-                const modelInDiscount = getDiscountPercent(model.officialInput, model.siteInput)
-                const modelOutDiscount = getDiscountPercent(model.officialOutput, model.siteOutput)
-                const modelBestDiscount = modelInDiscount || modelOutDiscount
-
-                return (
-                  <button
-                    key={model.id}
-                    type="button"
-                    onClick={() => setActiveIndex(index)}
-                    style={
-                      isActive
-                        ? {
-                            borderColor: model.accentColor + "90",
-                            boxShadow: "0 14px 28px -8px " + model.glowColor + ", 0 0 0 1px " + model.accentColor + "50",
-                          }
-                        : {}
-                    }
-                    className={"group relative flex flex-col justify-between rounded-2xl border p-4 sm:p-4.5 text-left transition-all duration-300 cursor-pointer overflow-hidden " + (
-                      isActive
-                        ? "bg-card/95 shadow-xl -translate-y-0.5"
-                        : "border-border/60 bg-card/40 hover:border-border/90 hover:bg-card/80 hover:shadow-md"
-                    )}
-                  >
-                    {/* Active Edge Indicator Bar (左侧微光锚点) */}
-                    {isActive && (
-                      <div
-                        className="absolute inset-y-0 left-0 w-1 rounded-l-2xl"
-                        style={{ backgroundColor: model.accentColor }}
-                      />
-                    )}
-
-                    {/* Top Row: Provider Glyph + Name + Badge */}
-                    <div>
-                      <div className="relative flex items-center justify-between gap-2.5 mb-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div
-                            className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-background/60 shadow-xs transition-transform duration-300 group-hover:scale-105"
-                            style={{ filter: "drop-shadow(0 2px 6px " + model.glowColor + ")" }}
-                          >
-                            <ProviderGlyph iconKey={model.iconKey} size={22} />
-                          </div>
-                          <div className="min-w-0">
-                            <h4
-                              className={"text-[14px] sm:text-[15px] font-bold leading-tight tracking-tight truncate transition-colors " + (
-                                isActive ? "text-foreground" : "text-foreground/90 group-hover:text-foreground"
-                              )}
-                            >
-                              {model.name}
-                            </h4>
-                            <span className="font-mono text-[11px] text-muted-foreground/75 truncate block">
-                              {model.provider} · {model.tag}
-                            </span>
-                          </div>
-                        </div>
-
-                        <span
-                          className="shrink-0 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold tracking-wide"
-                          style={{
-                            color: model.accentColor,
-                            backgroundColor: model.accentColor + "18",
-                            border: "1px solid " + model.accentColor + "30",
-                          }}
-                        >
-                          {model.badge}
-                        </span>
-                      </div>
-
-                      {/* Brief description */}
-                      <p className="text-[11.5px] leading-relaxed text-muted-foreground/80 line-clamp-2 my-2">
-                        {model.description}
-                      </p>
-                    </div>
-
-                    {/* Mid Section: High-Contrast Pricing Box */}
-                    <div className="relative my-2 rounded-xl border border-border/40 bg-muted/25 dark:bg-muted/15 p-2.5">
-                      <div className="flex items-center justify-between gap-1 mb-1.5 pb-1 border-b border-border/30">
-                        <span className="font-mono text-[10px] uppercase font-bold text-muted-foreground/80">
-                          参考计费 (1M TOKENS)
-                        </span>
-                        {modelBestDiscount && (
-                          <span
-                            className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.2 font-mono text-[9.5px] font-bold text-white shadow-2xs"
-                            style={{ background: model.accentColor }}
-                          >
-                            <BadgePercent className="size-2.5 shrink-0" />
-                            {modelBestDiscount}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* Input */}
-                        <div className="flex flex-col">
-                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                            <span>{t("Input")}</span>
-                            <span className="line-through opacity-60 tabular-nums">{model.officialInput}</span>
-                          </div>
-                          <span
-                            className="font-mono text-[13px] sm:text-sm font-black tabular-nums leading-tight mt-0.5"
-                            style={{ color: model.accentColor }}
-                          >
-                            {model.siteInput}
-                          </span>
-                        </div>
-
-                        {/* Output */}
-                        <div className="flex flex-col border-l border-border/30 pl-2">
-                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                            <span>{t("Output")}</span>
-                            <span className="line-through opacity-60 tabular-nums">{model.officialOutput}</span>
-                          </div>
-                          <span
-                            className="font-mono text-[13px] sm:text-sm font-black tabular-nums leading-tight mt-0.5"
-                            style={{ color: model.accentColor }}
-                          >
-                            {model.siteOutput}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Footer Row: Context Tokens & Active Status */}
-                    <div className="relative mt-1 flex items-center justify-between border-t border-border/30 pt-2 text-[11px]">
-                      <div className="flex items-center gap-1.5 font-mono text-muted-foreground/80 text-[10.5px]">
-                        <Layers className="size-3 shrink-0" style={{ color: model.accentColor }} />
-                        <span>{model.context}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                        <span
-                          className={"size-1.5 rounded-full transition-transform duration-300 " + (
-                            isActive ? "scale-125" : "opacity-40"
-                          )}
-                          style={{
-                            backgroundColor: model.accentColor,
-                            boxShadow: isActive ? "0 0 6px " + model.accentColor : undefined,
-                          }}
-                        />
-                        <span className={isActive ? "font-bold text-foreground" : "text-muted-foreground/70"}>
-                          {isActive ? "当前聚焦" : "点击切换"}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:col-span-6">
+            {displayModels.map((model, index) => (
+              <CompactModelCard
+                key={model.id}
+                model={model}
+                selected={index === activeIndex}
+                onSelect={() => setActiveIndex(index)}
+              />
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Section divider: layered center-glow line */}
-      <div aria-hidden className="pointer-events-none absolute bottom-0 inset-x-0 flex flex-col items-center overflow-hidden">
-        {/* Glow bloom */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center overflow-hidden">
         <div
-          className="h-[3px] w-64 sm:w-96 rounded-full blur-[4px]"
-          style={{ background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.7) 40%, rgba(16,185,129,0.7) 60%, transparent)" }}
+          className="h-[3px] w-64 rounded-full blur-[4px] sm:w-96"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(16,185,129,0.7) 40%, rgba(16,185,129,0.7) 60%, transparent)",
+          }}
         />
-        {/* Sharp center line */}
         <div
           className="absolute bottom-0 h-px w-full"
           style={{
-            background: "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.15) 20%, rgba(16,185,129,0.55) 42%, rgba(255,255,255,0.85) 50%, rgba(16,185,129,0.55) 58%, rgba(16,185,129,0.15) 80%, transparent 100%)",
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.15) 20%, rgba(16,185,129,0.55) 42%, rgba(255,255,255,0.85) 50%, rgba(16,185,129,0.55) 58%, rgba(16,185,129,0.15) 80%, transparent 100%)",
           }}
         />
       </div>

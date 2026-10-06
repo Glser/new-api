@@ -34,6 +34,7 @@
   "sec_lens_title_p2": "Its Next Second.",
   "sec_models_desc": "From deep reasoning to photorealistic visual synthesis. Pick a flagship model that empowers your next project.",
   "sec_models_view_all": "All Supported Models",
+  "sec_models_per_million": "/ 1M tokens",
   "sec_studio_action": "Open Studio",
   "sec_studio_desc": "Start from domain templates, derive prompts from references, and advance thoughts with natural language. Organize images, video, and ideas cohesively.",
   "sec_studio_kicker": "02 / Creative Studio",
