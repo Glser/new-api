@@ -52,7 +52,6 @@ interface ModelItem {
   siteInput: string
   siteOutput: string
   scenarios: string[]
-  tags: string[]
   latency: string
   accentColor: string
   glowColor: string
@@ -74,7 +73,6 @@ const MODELS: ModelItem[] = [
     siteInput: "$12.00",
     siteOutput: "$60.00",
     scenarios: ["超长上下文代码架构", "科研级复杂推演", "自主 Agent 工作流编排"],
-    tags: ["Reasoning", "Coding", "Agent"],
     latency: "深度思维链",
     accentColor: "rgb(249, 115, 22)",
     glowColor: "rgba(249, 115, 22, 0.22)",
@@ -94,7 +92,6 @@ const MODELS: ModelItem[] = [
     siteInput: "$8.00",
     siteOutput: "$32.00",
     scenarios: ["多模态实时感知交互", "超长跨模态文档理解", "高并发创意生成工作流"],
-    tags: ["Multimodal", "Realtime", "Creative"],
     latency: "< 600ms 首字",
     accentColor: "rgb(16, 185, 129)",
     glowColor: "rgba(16, 185, 129, 0.22)",
@@ -114,7 +111,6 @@ const MODELS: ModelItem[] = [
     siteInput: "$0.22",
     siteOutput: "$0.88",
     scenarios: ["高并发低成本推理任务", "实时数学与逻辑证明", "轻量 Agent 快速决策"],
-    tags: ["Fast", "Reasoning", "Value"],
     latency: "< 500ms 首字",
     accentColor: "rgb(59, 130, 246)",
     glowColor: "rgba(59, 130, 246, 0.22)",
@@ -134,7 +130,6 @@ const MODELS: ModelItem[] = [
     siteInput: "$2.40",
     siteOutput: "$12.00",
     scenarios: ["实时信息融合推理", "科学竞赛级数理证明", "深度战略分析与规划"],
-    tags: ["Realtime", "Science", "Analysis"],
     latency: "深度思维链",
     accentColor: "rgb(139, 92, 246)",
     glowColor: "rgba(139, 92, 246, 0.22)",
@@ -202,26 +197,42 @@ function hydrateModels(backendModels: PricingModel[]): ModelItem[] {
   })
 }
 
+/* One price pair = micro label + value, repeated for input and output.
+ * The label is deliberately tiny and wide-tracked so the numeral carries all
+ * the visual weight. `showLabels` keeps them visible on the official reference
+ * row, where the pair is the only thing worth reading. */
 function PricePair(props: {
   input: string
   output: string
   accent?: string
   muted?: boolean
+  large?: boolean
+  showLabels?: boolean
 }) {
   const { t } = useTranslation()
 
+  let sizeClassName = "text-sm sm:text-base text-foreground"
+  if (props.large) {
+    sizeClassName = "text-base sm:text-lg lg:text-[1.35rem]"
+  } else if (props.muted) {
+    sizeClassName = "text-xs sm:text-sm text-muted-foreground"
+  }
+
+  const labelClassName = cn(
+    "text-[9px] font-semibold uppercase tracking-[0.16em] leading-none text-muted-foreground/65",
+    !props.showLabels && "sr-only"
+  )
+
   const valueClassName = cn(
-    "font-semibold tabular-nums tracking-tight",
-    props.muted
-      ? "text-[13px] text-muted-foreground"
-      : "text-base sm:text-lg text-foreground",
-    props.accent ? "font-mono" : "font-mono text-[13px]"
+    "font-mono font-semibold tabular-nums leading-none tracking-tighter transition-colors",
+    sizeClassName,
+    props.muted && "text-muted-foreground/80"
   )
 
   return (
-    <div className="flex min-w-0 items-center gap-3 font-mono tabular-nums">
-      <span className="flex items-baseline gap-1.5">
-        <span className="text-[10px] font-medium text-muted-foreground/70">{t("Input")}</span>
+    <div className="flex min-w-0 items-stretch justify-center gap-2.5 sm:gap-3.5">
+      <span className="flex min-w-0 items-baseline gap-1.5">
+        <span className={labelClassName}>{t("Input")}</span>
         <span
           className={valueClassName}
           style={props.accent ? { color: props.accent } : undefined}
@@ -229,9 +240,9 @@ function PricePair(props: {
           {props.input}
         </span>
       </span>
-      <span aria-hidden className="h-3 w-px bg-slate-900/10 dark:bg-white/15" />
-      <span className="flex items-baseline gap-1.5">
-        <span className="text-[10px] font-medium text-muted-foreground/70">{t("Output")}</span>
+      <span aria-hidden className="w-px self-stretch bg-slate-900/10 dark:bg-white/15" />
+      <span className="flex min-w-0 items-baseline gap-1.5">
+        <span className={labelClassName}>{t("Output")}</span>
         <span
           className={valueClassName}
           style={props.accent ? { color: props.accent } : undefined}
@@ -255,67 +266,100 @@ function SpecChip(props: {
   const Icon = props.icon
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 items-center justify-center gap-2">
       <dt className="sr-only">{props.label}</dt>
-      <Icon className="size-4 shrink-0" style={{ color: props.accent }} aria-hidden />
-      <dd className="truncate text-xs font-semibold text-foreground">{props.value}</dd>
+      <span
+        className="flex size-6 shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: `${props.accent}14` }}
+      >
+        <Icon className="size-3.5 shrink-0" style={{ color: props.accent }} aria-hidden />
+      </span>
+      <dd className="truncate text-xs font-semibold tracking-tight text-foreground">
+        {props.value}
+      </dd>
     </div>
   )
 }
 
-function PriceLedger(props: { model: ModelItem }) {
+/** 官方参考价格（大卡上半部分）：基准行，浅色下靠实底撑起存在感 */
+function OfficialPriceCard(props: { model: ModelItem }) {
   const { t } = useTranslation()
-  const model = props.model
+  const { model } = props
+
+  return (
+    <div
+      className={cn(
+        "relative flex flex-col gap-1.5 overflow-hidden px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3",
+        glassCapsuleClassName,
+        "border-solid",
+        // Light mode gets a real surface so the reference row still reads as a
+        // distinct lane; dark mode keeps the misty veil so the card glow shows.
+        "bg-white dark:bg-white/[0.03]"
+      )}
+    >
+      <div className="flex shrink-0 items-center gap-1.5 text-[10px] text-muted-foreground/80">
+        <span className="font-semibold uppercase tracking-[0.14em]">
+          {t("sec_models_official_rate")}
+        </span>
+        <span className="font-mono text-[9px] opacity-60">{t("sec_models_per_million")}</span>
+      </div>
+      <div className="flex items-center justify-end">
+        <PricePair
+          input={model.officialInput}
+          output={model.officialOutput}
+          muted
+          showLabels
+        />
+      </div>
+    </div>
+  )
+}
+
+/** 站内成交价（大卡下半部分）：实心渐变胶囊 + 强调色价格，唯一视觉焦点 */
+function SitePriceCard(props: { model: ModelItem }) {
+  const { t } = useTranslation()
+  const { model } = props
   const inDiscount = getDiscountPercent(model.officialInput, model.siteInput)
   const outDiscount = getDiscountPercent(model.officialOutput, model.siteOutput)
   const bestDiscount = inDiscount || outDiscount
 
   return (
-    <div className={cn("relative px-4 py-3.5", glassCapsuleClassName)}>
-      <div className="mb-3 flex items-baseline justify-between gap-2">
-        <span className="text-[11px] font-medium text-muted-foreground">
-          {t("sec_models_pricing")}
+    <div
+      className={cn(
+        "relative flex flex-col gap-2 overflow-hidden px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3.5",
+        glassCapsuleClassName,
+        "border-solid"
+      )}
+      style={{
+        borderColor: `${model.accentColor}33`,
+        background: `linear-gradient(135deg, ${model.accentColor}12 0%, rgba(255,255,255,0.04) 55%, ${model.accentColor}08 100%)`,
+        boxShadow: `0 2px 16px -10px ${model.glowColor}, inset 0 1px 0 rgba(255,255,255,0.55)`,
+      }}
+    >
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-xs font-bold tracking-tight text-foreground">
+          {t("sec_models_site_rate")}
         </span>
-        <span className="font-mono text-[10px] text-muted-foreground/70">
-          {t("sec_models_per_million")}
-        </span>
+        {bestDiscount ? (
+          <span
+            className="inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[10px] font-bold text-white shadow-sm"
+            style={{ backgroundColor: model.accentColor }}
+          >
+            {bestDiscount}
+            <span className="sr-only">{t("sec_models_save")}</span>
+          </span>
+        ) : null}
+        <span className="sr-only">{t("sec_models_pricing")}</span>
       </div>
-
-      <dl className="grid gap-3 sm:grid-cols-2 sm:gap-0 sm:divide-x sm:divide-slate-900/[0.08] dark:sm:divide-white/10">
-        <div className="min-w-0 sm:pr-5">
-          <dt className="text-[11px] text-muted-foreground">{t("sec_models_official_rate")}</dt>
-          <dd className="mt-1.5">
-            <PricePair input={model.officialInput} output={model.officialOutput} muted />
-          </dd>
-        </div>
-
-        <div className="min-w-0 sm:pl-5">
-          <dt className="flex items-center gap-2 text-[11px] font-semibold text-foreground">
-            {t("sec_models_site_rate")}
-            {bestDiscount ? (
-              <span
-                className={cn(
-                  "rounded-full px-2 py-0.5 font-mono text-[10px] font-bold text-white shadow-sm",
-                  // Perched on the seam between the two lanes on desktop so it
-                  // reads as the delta between them, not as part of either label.
-                  "sm:absolute sm:left-1/2 sm:top-0 sm:-translate-x-1/2 sm:-translate-y-1/2"
-                )}
-                style={{ backgroundColor: model.accentColor }}
-              >
-                {bestDiscount}
-                <span className="sr-only">{t("sec_models_save")}</span>
-              </span>
-            ) : null}
-          </dt>
-          <dd className="mt-1.5">
-            <PricePair
-              input={model.siteInput}
-              output={model.siteOutput}
-              accent={model.accentColor}
-            />
-          </dd>
-        </div>
-      </dl>
+      <div className="flex items-center justify-end">
+        <PricePair
+          input={model.siteInput}
+          output={model.siteOutput}
+          accent={model.accentColor}
+          large
+          showLabels
+        />
+      </div>
     </div>
   )
 }
@@ -335,29 +379,37 @@ function FeaturedModelCard(props: { model: ModelItem }) {
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-40 transition-opacity duration-500 dark:opacity-30"
         style={{
-          background: `radial-gradient(ellipse 70% 55% at 0% 0%, ${model.glowColor}, transparent 62%), radial-gradient(ellipse 55% 45% at 100% 100%, ${model.glowColor}, transparent 68%)`,
+          background: `radial-gradient(ellipse 70% 55% at 50% 0%, ${model.glowColor}, transparent 62%), radial-gradient(ellipse 55% 45% at 50% 100%, ${model.glowColor}, transparent 68%)`,
         }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full blur-3xl opacity-50"
+        className="pointer-events-none absolute left-1/2 top-0 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl opacity-50"
         style={{ backgroundColor: model.glowColor }}
       />
 
-      <div className="relative flex flex-1 flex-col p-5 sm:p-6 lg:p-7" key={model.id}>
-        {/* The provider name lives in the footer as provenance so the model
-         * name owns this hierarchy. */}
+      <div className="relative flex flex-1 flex-col p-5 sm:p-6 lg:p-8" key={model.id}>
+        {/* 头部：供应商图标、模型名称、Badge 同排；名称与供应商形成主次两级 */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3.5">
             <span
-              className="flex size-11 shrink-0 items-center justify-center"
-              style={{ filter: `drop-shadow(0 6px 14px ${model.glowColor})` }}
+              className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/40 p-2 shadow-sm backdrop-blur-md dark:bg-white/10"
+              style={{
+                filter: `drop-shadow(0 6px 14px ${model.glowColor})`,
+                border: `1px solid ${model.accentColor}30`,
+              }}
             >
-              <ProviderGlyph iconKey={model.iconKey} size={30} />
+              <ProviderGlyph iconKey={model.iconKey} size={32} />
             </span>
-            <h3 className="min-w-0 text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-[1.7rem]">
-              {model.name}
-            </h3>
+            <div className="min-w-0">
+              <h3 className="truncate text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground sm:text-[1.85rem]">
+                {model.name}
+              </h3>
+              <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
+                <Building2 className="size-3 shrink-0" aria-hidden />
+                <span className="truncate">{model.provider}</span>
+              </p>
+            </div>
           </div>
 
           <span
@@ -373,45 +425,60 @@ function FeaturedModelCard(props: { model: ModelItem }) {
           </span>
         </div>
 
-        {/* Description owns the free vertical space and stays centered. */}
-        <div className="flex flex-1 items-center py-6 sm:py-8">
-          <p className="max-w-prose text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
-            {model.description}
-          </p>
+        {/* 描述：限制阅读宽度并做断行优化，长段落更均匀 */}
+        <div className="flex flex-1 items-center py-5 sm:py-6">
+          <div className="mx-auto w-full max-w-xl px-2 sm:px-4">
+            <p className="text-pretty text-left text-sm leading-[1.85] text-muted-foreground sm:text-[0.95rem]">
+              {model.description}
+            </p>
+          </div>
         </div>
 
-        <dl className={cn("mb-3 flex flex-wrap items-center gap-2 px-3 py-2.5", glassCapsuleClassName)}>
-          <SpecChip
-            icon={Layers}
-            label={t("sec_models_context")}
-            value={model.context}
-            accent={model.accentColor}
-          />
-          <span aria-hidden className="hidden h-5 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
-          <SpecChip
-            icon={Gauge}
-            label={t("sec_models_performance")}
-            value={model.latency}
-            accent={model.accentColor}
-          />
-          <span aria-hidden className="hidden h-5 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
-          <SpecChip
-            icon={Activity}
-            label={t("sec_models_category")}
-            value={model.category}
-            accent={model.accentColor}
-          />
-        </dl>
+        {/* 规格参数胶囊：居中容器 */}
+        <div className="mx-auto mb-4 w-full max-w-xl">
+          <dl className={cn("flex flex-wrap items-center justify-center gap-3 px-4 py-2.5", glassCapsuleClassName)}>
+            <SpecChip
+              icon={Layers}
+              label={t("sec_models_context")}
+              value={model.context}
+              accent={model.accentColor}
+            />
+            <span aria-hidden className="hidden h-5 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
+            <SpecChip
+              icon={Gauge}
+              label={t("sec_models_performance")}
+              value={model.latency}
+              accent={model.accentColor}
+            />
+            <span aria-hidden className="hidden h-5 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
+            <SpecChip
+              icon={Activity}
+              label={t("sec_models_category")}
+              value={model.category}
+              accent={model.accentColor}
+            />
+          </dl>
+        </div>
 
-        <PriceLedger model={model} />
+        {/* 价格组件拆分为两个：官方价格在上，站内特权价格在下 */}
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-2.5">
+          <OfficialPriceCard model={model} />
+          <SitePriceCard model={model} />
+        </div>
 
-        <div className="mb-3 mt-4">
-          <div className="mb-2 text-[11px] text-muted-foreground">{t("sec_models_scenarios")}</div>
-          <ul className="flex flex-wrap gap-2">
+        {/* 推荐适用场景：分组标题 + 场景胶囊 */}
+        <div className="mx-auto mb-3.5 mt-5 w-full max-w-xl flex-col items-center">
+          <div className="mb-2.5 flex items-center gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
+              {t("sec_models_scenarios")}
+            </span>
+            <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-slate-900/10 to-transparent dark:from-white/15" />
+          </div>
+          <ul className="flex flex-wrap justify-center gap-2">
             {model.scenarios.map((scenario) => (
               <li
                 key={scenario}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-900/[0.08] bg-white/60 px-3 py-1 text-xs text-foreground/85 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-900/[0.08] bg-white/60 px-3 py-1 text-xs font-medium text-foreground/85 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
               >
                 <span
                   className="size-1.5 shrink-0 rounded-full"
@@ -423,54 +490,49 @@ function FeaturedModelCard(props: { model: ModelItem }) {
           </ul>
         </div>
 
-        <ul className="mb-5 flex flex-wrap gap-1.5">
-          {model.tags.map((tag) => (
-            <li
-              key={tag}
-              className="rounded-full border border-slate-900/[0.08] bg-slate-500/[0.05] px-2.5 py-0.5 font-mono text-[10px] text-muted-foreground dark:border-white/10 dark:bg-white/[0.05]"
-            >
-              {tag}
-            </li>
-          ))}
-        </ul>
+        {/* 底部操作项 */}
+        <div className="mt-auto flex w-full flex-wrap items-center justify-between gap-3 border-t border-slate-900/[0.08] pt-4 dark:border-white/10">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <TooltipProvider delay={0}>
+              <CopyButton
+                value={model.id}
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 rounded-full border-slate-900/10 bg-white/60 px-3 font-mono text-xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
+                tooltip={t("sec_models_copy_id")}
+                successTooltip={t("sec_models_copied")}
+              >
+                <span className="max-w-[12rem] truncate">{model.id}</span>
+              </CopyButton>
+            </TooltipProvider>
 
-        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-900/[0.08] pt-4 dark:border-white/10">
-          <TooltipProvider delay={0}>
-            <CopyButton
-              value={model.id}
-              variant="outline"
-              size="sm"
-              className="h-9 gap-1.5 rounded-full border-slate-900/10 bg-white/60 px-3 font-mono text-xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
-              tooltip={t("sec_models_copy_id")}
-              successTooltip={t("sec_models_copied")}
-            >
-              <span className="max-w-[14rem] truncate">{model.id}</span>
-            </CopyButton>
-          </TooltipProvider>
+            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90">
+              <span
+                className="size-1.5 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: model.accentColor,
+                  boxShadow: `0 0 8px ${model.accentColor}`,
+                }}
+              />
+              {t("sec_models_status_ready")}
+            </span>
+          </div>
 
-          <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Building2 className="size-3.5 shrink-0" aria-hidden />
-            {model.provider}
-          </span>
-          <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90">
-            <span
-              className="size-1.5 shrink-0 rounded-full"
-              style={{
-                backgroundColor: model.accentColor,
-                boxShadow: `0 0 8px ${model.accentColor}`,
-              }}
-            />
-            {t("sec_models_status_ready")}
-          </span>
-
-          <Button
-            size="lg"
-            className="ml-auto h-9 rounded-full px-4"
-            render={<Link to="/pricing" search={{ search: model.id }} />}
+          <Link
+            to="/pricing"
+            search={{ search: model.id }}
+            className="group relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-xl border border-border/70 bg-card/60 px-4 text-xs font-medium text-foreground backdrop-blur-md transition-all duration-300 hover:border-foreground/25 hover:bg-card/90 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:scale-[1.02] active:scale-[0.98]"
           >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-foreground/5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+            />
             {t("sec_models_view_model")}
-            <ArrowRight className="size-3.5" aria-hidden />
-          </Button>
+            <ArrowRight
+              className="size-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5"
+              aria-hidden
+            />
+          </Link>
         </div>
       </div>
     </article>
@@ -495,7 +557,7 @@ function CompactModelCard(props: {
       aria-pressed={props.selected}
       aria-label={`${model.name}. ${props.selected ? t("sec_models_showing") : t("sec_models_show")}`}
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-2xl border p-4 text-left transition-[transform,box-shadow,border-color,background-color] duration-300",
+        "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-[transform,box-shadow,border-color,background-color] duration-300",
         glassPanelClassName,
         // Selection and hover share one signal: the card lifts off the page.
         "hover:-translate-y-1",
@@ -511,62 +573,98 @@ function CompactModelCard(props: {
           : undefined
       }
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <span style={{ filter: `drop-shadow(0 3px 8px ${model.glowColor})` }}>
-            <ProviderGlyph iconKey={model.iconKey} size={22} />
+      {/* 头部：图标 + 模型名称，右侧徽章 */}
+      <div className="w-full">
+        <div className="flex items-start justify-between gap-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span
+              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/50 p-1.5 shadow-xs backdrop-blur-sm dark:bg-white/10"
+              style={{
+                filter: `drop-shadow(0 3px 8px ${model.glowColor})`,
+                border: `1px solid ${model.accentColor}25`,
+              }}
+            >
+              <ProviderGlyph iconKey={model.iconKey} size={22} />
+            </span>
+            <div className="min-w-0">
+              <h4 className="truncate text-[0.95rem] font-bold leading-tight tracking-[-0.01em] text-foreground">
+                {model.name}
+              </h4>
+            </div>
+          </div>
+
+          <span
+            className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{
+              color: model.accentColor,
+              backgroundColor: `${model.accentColor}18`,
+              border: `1px solid ${model.accentColor}30`,
+            }}
+          >
+            {model.badge}
           </span>
-          <h4 className="truncate text-sm font-semibold tracking-tight text-foreground">
-            {model.name}
-          </h4>
         </div>
-        <span
-          className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-          style={{
-            color: model.accentColor,
-            backgroundColor: `${model.accentColor}18`,
-          }}
-        >
-          {model.badge}
-        </span>
       </div>
 
-      <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <Building2 className="size-3 shrink-0" aria-hidden />
-        {model.provider}
-      </p>
+      {/* 描述：两行截断，行高略放大以改善密集度 */}
+      <div className="my-3.5 w-full">
+        <p className="line-clamp-2 text-left text-[12px] leading-[1.75] text-muted-foreground/90">
+          {model.description}
+        </p>
+      </div>
 
-      <p className="mt-2.5 line-clamp-2 text-[12px] leading-relaxed text-muted-foreground">
-        {model.description}
-      </p>
+      {/* 规格参数胶囊 */}
+      <div className="mb-2.5 w-full">
+        <dl className={cn("flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-3 py-1.5", glassCapsuleClassName)}>
+          <SpecChip
+            icon={Layers}
+            label={t("sec_models_context")}
+            value={model.context}
+            accent={model.accentColor}
+          />
+          <span aria-hidden className="hidden h-5 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
+          <SpecChip
+            icon={Gauge}
+            label={t("sec_models_performance")}
+            value={model.latency}
+            accent={model.accentColor}
+          />
+        </dl>
+      </div>
 
-      <dl className={cn("mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2", glassCapsuleClassName)}>
-        <SpecChip
-          icon={Layers}
-          label={t("sec_models_context")}
-          value={model.context}
+      {/* 价格栏：accent 玻璃胶囊 + 折扣徽章 */}
+      <div
+        className={cn(
+          "mb-3 flex w-full items-center justify-center gap-2.5 px-3 py-2",
+          glassCapsuleClassName
+        )}
+        style={{
+          borderColor: `${model.accentColor}30`,
+          background: `linear-gradient(120deg, ${model.accentColor}12 0%, rgba(255,255,255,0.05) 100%)`,
+          boxShadow: `0 2px 12px -8px ${model.glowColor}`,
+        }}
+      >
+        <PricePair
+          input={model.siteInput}
+          output={model.siteOutput}
           accent={model.accentColor}
+          showLabels
         />
-        <span aria-hidden className="hidden h-4 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
-        <SpecChip
-          icon={Gauge}
-          label={t("sec_models_performance")}
-          value={model.latency}
-          accent={model.accentColor}
-        />
-      </dl>
-
-      <div className={cn("mt-2.5 flex items-center justify-between gap-2 px-3 py-2", glassCapsuleClassName)}>
-        <PricePair input={model.siteInput} output={model.siteOutput} accent={model.accentColor} />
         {bestDiscount ? (
           <span
-            className="shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white"
+            className="shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-xs"
             style={{ backgroundColor: model.accentColor }}
           >
             {bestDiscount}
             <span className="sr-only">{t("sec_models_save")}</span>
           </span>
         ) : null}
+      </div>
+
+      {/* 供应商：固定在左下角，降为次要层级 */}
+      <div className="mt-auto flex w-full items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground/70">
+        <Building2 className="size-3 shrink-0" aria-hidden />
+        <span className="truncate">{model.provider}</span>
       </div>
     </button>
   )

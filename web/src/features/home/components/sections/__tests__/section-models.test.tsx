@@ -49,6 +49,12 @@ function modelDetailsHref(anchor: HTMLElement): string {
   return anchor.getAttribute('href') ?? ''
 }
 
+function featuredDetailsLink(featured: HTMLElement): HTMLElement {
+  return within(featured).getByRole('link', {
+    name: 'sec_models_view_model',
+  })
+}
+
 function renderSection() {
   const rootRoute = createRootRoute({ component: SectionModels })
   const pricingRoute = createRoute({
@@ -98,16 +104,39 @@ it('shows the featured model details, spec capsule, and split price capsules', a
   expect(within(featured).getByText('$15.00')).toBeInTheDocument()
   expect(within(featured).getByText('$12.00')).toBeInTheDocument()
   expect(within(featured).getByText('超长上下文代码架构')).toBeInTheDocument()
-  expect(within(featured).getByText('Reasoning')).toBeInTheDocument()
+})
+
+it('keeps the featured card free of the tag row and keeps the official price labels readable', async () => {
+  renderSection()
+
+  const featured = await screen.findByRole('article')
+  // The reasoning/coding/agent tag row was removed from the featured card.
+  expect(within(featured).queryByText('Reasoning')).not.toBeInTheDocument()
+  expect(within(featured).queryByText('Coding')).not.toBeInTheDocument()
+  expect(within(featured).queryByText('Agent')).not.toBeInTheDocument()
+  // Both official price lanes show their input/output micro labels.
+  const inputLabels = within(featured).getAllByText('Input')
+  const outputLabels = within(featured).getAllByText('Output')
+  expect(inputLabels).toHaveLength(2)
+  expect(outputLabels).toHaveLength(2)
+  for (const label of [...inputLabels, ...outputLabels]) {
+    expect(label).not.toHaveClass('sr-only')
+  }
+})
+
+it('labels the input and output prices on the compact cards', async () => {
+  renderSection()
+
+  const grokCard = await screen.findByRole('button', { name: /Grok 4\.7/ })
+  expect(within(grokCard).getByText('Input')).not.toHaveClass('sr-only')
+  expect(within(grokCard).getByText('Output')).not.toHaveClass('sr-only')
 })
 
 it('links the featured model action to the pricing plaza with that model as search', async () => {
   renderSection()
 
   const featured = await screen.findByRole('article')
-  const details = within(featured).getByRole('button', {
-    name: 'sec_models_view_model',
-  })
+  const details = featuredDetailsLink(featured)
   expect(modelDetailsHref(details)).toContain('search=claude-opus-5-5')
 })
 
@@ -137,11 +166,7 @@ it('keeps compact cards as a brief description-and-price grid and updates the fe
     })
   ).toBeInTheDocument()
   expect(
-    modelDetailsHref(
-      within(screen.getByRole('article')).getByRole('button', {
-        name: 'sec_models_view_model',
-      })
-    )
+    modelDetailsHref(featuredDetailsLink(screen.getByRole('article')))
   ).toContain('search=grok-4-7')
 })
 
