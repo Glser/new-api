@@ -23,10 +23,12 @@ import {
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
+import { STATUS_STORAGE_KEY } from '@/lib/status-query'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 import { SectionModels } from '../section-models'
@@ -56,6 +58,13 @@ function featuredDetailsLink(featured: HTMLElement): HTMLElement {
 }
 
 function renderSection() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  })
   const rootRoute = createRootRoute({ component: SectionModels })
   const pricingRoute = createRoute({
     getParentRoute: () => rootRoute,
@@ -71,18 +80,26 @@ function renderSection() {
   })
 
   return render(
-    <TooltipProvider>
-      <RouterProvider router={router} />
-    </TooltipProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <RouterProvider router={router} />
+      </TooltipProvider>
+    </QueryClientProvider>
   )
 }
 
 beforeEach(() => {
   vi.stubGlobal('IntersectionObserver', IntersectionObserverMock)
+  // 汇率由组件从缓存的 /api/status 快照读取，这里写入确定的汇率使价格断言稳定
+  window.localStorage.setItem(
+    STATUS_STORAGE_KEY,
+    JSON.stringify({ usd_exchange_rate: 7.2 })
+  )
 })
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  window.localStorage.removeItem(STATUS_STORAGE_KEY)
 })
 
 it('shows the featured model details, spec capsule, and split price capsules', async () => {
@@ -101,8 +118,10 @@ it('shows the featured model details, spec capsule, and split price capsules', a
   expect(within(featured).getByText('Reasoning & Coding')).toBeInTheDocument()
   expect(within(featured).getByText('sec_models_official_rate')).toBeInTheDocument()
   expect(within(featured).getByText('sec_models_site_rate')).toBeInTheDocument()
+  // Anthropic is an overseas vendor, so the official reference price is USD
+  // while the site price is CNY converted with the configured exchange rate.
   expect(within(featured).getByText('$15.00')).toBeInTheDocument()
-  expect(within(featured).getByText('$12.00')).toBeInTheDocument()
+  expect(within(featured).getByText('¥86.40')).toBeInTheDocument()
   expect(within(featured).getByText('超长上下文代码架构')).toBeInTheDocument()
 })
 
@@ -152,7 +171,8 @@ it('keeps compact cards as a brief description-and-price grid and updates the fe
   const grokCard = screen.getByRole('button', { name: /Grok 4\.7/ })
   expect(grokCard).toHaveAttribute('aria-pressed', 'false')
   expect(within(grokCard).getByText(/原生实时 X 平台/)).toBeInTheDocument()
-  expect(within(grokCard).getByText('$2.40')).toBeInTheDocument()
+  // xAI is overseas: the site price is the CNY-converted lowest group price.
+  expect(within(grokCard).getByText('¥17.28')).toBeInTheDocument()
   expect(within(grokCard).queryByText('sec_models_official_rate')).not.toBeInTheDocument()
   expect(within(grokCard).queryByText('科学竞赛级数理证明')).not.toBeInTheDocument()
 
@@ -227,3 +247,60 @@ it('uses a 1+4 split layout with a two-by-two compact grid from the sm breakpoin
   expect(split?.lastElementChild).toHaveClass('sm:grid-cols-2')
   expect(split?.lastElementChild).toHaveClass('lg:col-span-6')
 })
+
+it('prioritizes models with the featured tag from backend pricing API', async () => {
+  const { getPricing } = await import('@/features/pricing/api')
+  vi.mocked(getPricing).mockResolvedValueOnce({
+    success: true,
+    data: [
+      {
+        id: 1,
+        model_name: 'custom-featured-model',
+        description: 'Custom featured model description',
+        tags: 'chat,featured,hot',
+        vendor_id: 1,
+        quota_type: 0,
+        model_ratio: 2.5,
+        completion_ratio: 2.0,
+        enable_groups: ['default'],
+      },
+      {
+        id: 2,
+        model_name: 'custom-normal-model',
+        description: 'Custom normal model description',
+        tags: 'chat',
+        vendor_id: 1,
+        quota_type: 0,
+        model_ratio: 1.0,
+        completion_ratio: 1.0,
+        enable_groups: ['default'],
+      },
+    ],
+    vendors: [
+      {
+        id: 1,
+        name: 'anthropic',
+      },
+    ],
+    group_ratio: {
+      default: 0.8,
+    },
+    usable_group: {
+      default: { desc: 'default', ratio: 1 },
+    },
+    supported_endpoint: {},
+    auto_groups: [],
+  })
+
+  renderSection()
+
+  const featured = await screen.findByRole('article')
+  expect(
+    within(featured).getByRole('heading', {
+      level: 3,
+      name: 'custom-featured-model',
+    })
+  ).toBeInTheDocument()
+  expect(within(featured).getByText('Anthropic')).toBeInTheDocument()
+})
+
