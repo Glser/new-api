@@ -6555,6 +6555,8 @@
     "Zhipu": "智譜",
     "Zhipu GLM": "智譜GLM",
     "Zhipu V4": "智譜 V4",
-    "Zoom": "縮放"
+    "Zoom": "縮放",
+    "Featured on Home": "首頁推薦展示",
+    "Feature this model on the homepage showcase section.": "在首頁「新模型」精選卡片中優先展示該模型。"
   }
 }
