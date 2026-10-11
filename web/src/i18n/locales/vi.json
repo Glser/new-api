@@ -4992,6 +4992,8 @@
     "sec_models_site_rate": "Giá trên nền tảng",
     "sec_models_per_million": "/ 1M tokens",
     "sec_models_view_model": "Xem chi tiết mô hình",
+    "sec_models_price_see_pricing": "Xem giá",
+    "sec_models_no_description": "Chưa có mô tả.",
     "sec_models_copy_id": "Sao chép ID mô hình",
     "sec_models_showing": "Đang hiển thị",
     "sec_models_show": "Hiện mô hình này",

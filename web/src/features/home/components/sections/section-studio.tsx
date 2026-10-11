@@ -5,13 +5,34 @@ This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
 */
 import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import { ArrowUpRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-import { AnimateInView } from "@/components/animate-in-view"
+import {
+  SectionBackdrop,
+  SectionDivider,
+  SectionHeader,
+  SectionPrimaryLink,
+} from "@/features/home/components/section-primitives"
+import {
+ACCENT_PALETTE,
+compactPanelClassName,
+} from "@/features/home/components/section-styles"
+
+import { cn } from "@/lib/utils"
 
 export function SectionStudio() {
   const { t } = useTranslation()
@@ -59,91 +80,98 @@ export function SectionStudio() {
   ]
 
   return (
-    <section id="studio" className="relative z-10 border-t border-border/40 px-4 sm:px-6 lg:px-8 py-20 md:py-28 bg-muted/5">
-      {/* Atmospheric lighting */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-25 dark:opacity-15"
-        style={{
-          background: "radial-gradient(ellipse 60% 40% at 15% 25%, rgba(16, 185, 129, 0.12) 0%, transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_75%_65%_at_45%_35%,black_25%,transparent_100%)] bg-[size:4rem_4rem] opacity-[0.025]"
-      />
+    <section
+      id="studio"
+      className="relative z-10 overflow-hidden border-t border-border/40 px-4 py-20 sm:px-6 md:py-28 lg:px-8"
+    >
+      <SectionBackdrop />
+
       <div className="mx-auto max-w-7xl">
-        {/* Editorial Section Header */}
-        <AnimateInView className="mb-14 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end lg:pl-4 xl:pl-6">
-          <div>
-            <div className="mb-3 font-mono text-xs font-semibold tracking-[0.2em] text-emerald-500 uppercase">
-              {t("sec_studio_kicker")}
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl"><span className="hero-title-shine inline-block">{t("sec_studio_title_p1")}</span><br /><span className="text-foreground/90">{t("sec_studio_title_p2")}</span></h2>
-            <div className="mt-4 h-0.5 w-32 sm:w-48 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent" />
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              {t("sec_studio_desc")}
-            </p>
-          </div>
-
-          <div>
-            <Link
+        <SectionHeader
+          titlePrimary={t("sec_studio_title_p1")}
+          titleSecondary={t("sec_studio_title_p2")}
+          description={t("sec_studio_desc")}
+          action={
+            <SectionPrimaryLink
               to="/dashboard"
-              className="group inline-flex items-center gap-1.5 font-mono text-xs font-semibold tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <span>{t("sec_studio_action")}</span>
-              <ArrowUpRight className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
-          </div>
-        </AnimateInView>
+              label={t("sec_studio_action")}
+            />
+          }
+        />
 
-        {/* Interactive Steps Grid */}
-        <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-12 lg:gap-10">
-          {/* Left Step Selectors */}
-          <div className="flex flex-col gap-3 lg:col-span-5">
+        {/* 左：步骤选择；右：预览面板 */}
+        <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12 lg:gap-6">
+          <div className="flex flex-col gap-3.5 lg:col-span-5">
             {steps.map((step, idx) => {
               const isActive = activeStep === idx
+              const palette = ACCENT_PALETTE[idx % ACCENT_PALETTE.length]
               return (
-                <div
+                <button
                   key={step.num}
+                  type="button"
                   onClick={() => setActiveStep(idx)}
-                  className={`group relative flex cursor-pointer flex-col rounded-xl border p-5 transition-all duration-300 ${
-                    isActive ? "border-foreground/40 bg-card/80 shadow-md ring-1 ring-border/80" : "border-border/40 bg-card/20 hover:border-border/70 hover:bg-card/40"
-                  }`}
+                  aria-pressed={isActive}
+                  className={cn(
+                    "group relative flex w-full flex-col items-start gap-2 rounded-2xl p-5 text-left transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]",
+                    compactPanelClassName,
+                    isActive
+                      ? "-translate-y-1 scale-[1.01]"
+                      : "hover:-translate-y-1 hover:scale-[1.01]"
+                  )}
+                  style={
+                    isActive
+                      ? {
+                          borderColor: `${palette.accentColor}66`,
+                          boxShadow: `0 18px 36px -16px ${palette.glowColor}, 0 0 0 1px ${palette.accentColor}33`,
+                        }
+                      : undefined
+                  }
                 >
-                  <div className="flex items-center justify-between font-mono text-xs">
-                    <span className={isActive ? "font-semibold text-emerald-500" : "text-muted-foreground"}>
-                      {step.stepLabel}
-                    </span>
-                  </div>
-                  <h3 className="mt-2 text-base font-semibold text-foreground">
+                  <span
+                    className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em]"
+                    style={{
+                      color: isActive
+                        ? palette.accentColor
+                        : "var(--muted-foreground)",
+                    }}
+                  >
+                    {step.stepLabel}
+                  </span>
+                  <span className="text-base font-bold tracking-tight text-foreground">
                     {step.title}
-                  </h3>
-                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                  </span>
+                  <span className="text-xs leading-relaxed text-muted-foreground">
                     {step.desc}
-                  </p>
-                </div>
+                  </span>
+                </button>
               )
             })}
           </div>
 
-          {/* Right Preview Card - Clean Code Surface */}
-          <div className="relative flex flex-col justify-between overflow-hidden rounded-xl border border-border/50 bg-neutral-950 p-6 shadow-xl lg:col-span-7">
+          {/* 右侧预览：暗色终端面板 */}
+          <div className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-neutral-950 p-6 shadow-[0_24px_50px_-30px_rgba(0,0,0,0.6)] lg:col-span-7">
             <div>
               <div className="flex items-center justify-between border-b border-white/10 pb-4 font-mono text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="size-2 rounded-full bg-emerald-500" />
-                  <span className="text-white/60 tracking-wider uppercase">
+                  <div
+                    className="size-2 rounded-full"
+                    style={{
+                      backgroundColor:
+                        ACCENT_PALETTE[activeStep % ACCENT_PALETTE.length]
+                          .accentColor,
+                    }}
+                  />
+                  <span className="tracking-wider text-white/60 uppercase">
                     {steps[activeStep].stepLabel}
                   </span>
                 </div>
-                <span className="text-white/40 text-[11px]">
+                <span className="text-[11px] text-white/40">
                   {t("sec_studio_workflow_pipeline")}
                 </span>
               </div>
 
               <div className="mt-5 font-mono text-xs leading-relaxed text-white/80">
-                <pre className="overflow-x-auto whitespace-pre-wrap font-sans text-xs sm:text-[13px] sm:leading-7">
+                <pre className="overflow-x-auto font-sans text-xs whitespace-pre-wrap sm:text-[13px] sm:leading-7">
                   <code>{steps[activeStep].code}</code>
                 </pre>
               </div>
@@ -153,7 +181,7 @@ export function SectionStudio() {
               <span>{t("sec_studio_ready")}</span>
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition-colors"
+                className="inline-flex items-center gap-1 text-emerald-400 transition-colors hover:text-emerald-300"
               >
                 <span>{t("sec_studio_run_now")}</span>
                 <ArrowUpRight className="size-3" />
@@ -163,21 +191,7 @@ export function SectionStudio() {
         </div>
       </div>
 
-      {/* Section divider: layered center-glow line */}
-      <div aria-hidden className="pointer-events-none absolute bottom-0 inset-x-0 flex flex-col items-center overflow-hidden">
-        {/* Glow bloom */}
-        <div
-          className="h-[3px] w-64 sm:w-96 rounded-full blur-[4px]"
-          style={{ background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.7) 40%, rgba(16,185,129,0.7) 60%, transparent)" }}
-        />
-        {/* Sharp center line */}
-        <div
-          className="absolute bottom-0 h-px w-full"
-          style={{
-            background: "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.15) 20%, rgba(16,185,129,0.55) 42%, rgba(255,255,255,0.85) 50%, rgba(16,185,129,0.55) 58%, rgba(16,185,129,0.15) 80%, transparent 100%)",
-          }}
-        />
-      </div>
+      <SectionDivider />
     </section>
   )
 }

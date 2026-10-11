@@ -4992,6 +4992,8 @@
     "sec_models_site_rate": "当サイト価格",
     "sec_models_per_million": "/ 1M tokens",
     "sec_models_view_model": "モデル詳細を見る",
+    "sec_models_price_see_pricing": "料金を見る",
+    "sec_models_no_description": "説明がありません。",
     "sec_models_copy_id": "モデル ID をコピー",
     "sec_models_showing": "表示中",
     "sec_models_show": "クリックして表示",
