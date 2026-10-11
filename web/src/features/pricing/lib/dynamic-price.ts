@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 
-import { TOKEN_UNIT_DIVISORS } from '../constants'
+import { DEFAULT_TOKEN_UNIT, QUOTA_TYPE_VALUES, TOKEN_UNIT_DIVISORS } from '../constants'
 import type {
   BillingUsageSchema,
   BillingUsageUnit,
@@ -622,4 +622,165 @@ export function getCardExamplePrice(
     label: firstExample.label,
     formatted: formatTaskUsageUnitPrice(result.total, options),
   }
+}
+
+export type ModelTokenPrices = {
+  /** USD price per 1M tokens at the lowest group ratio, or null when absent. */
+  inputUSD: number | null
+  outputUSD: number | null
+  /** USD price per 1M tokens before any group discount (ratio 1.0). */
+  officialInputUSD: number | null
+  officialOutputUSD: number | null
+  isDynamic: boolean
+  hasTokenPrices: boolean
+}
+
+export type ModelTokenPricesOptions = {
+  tokenUnit?: TokenUnit
+  usdExchangeRate?: number
+  /**
+   * Group ratios keyed by group name. The backend only sends the top-level
+   * `group_ratio` map, so consumers pass it here instead of relying on a
+   * per-model field the API never populates.
+   */
+  groupRatio?: Record<string, number>
+  now?: Date
+}
+
+/**
+ * Resolve a model's per-1M-token prices in USD.
+ *
+ * `officialInputUSD` / `officialOutputUSD` are the undiscounted list prices at
+ * group ratio 1.0. `inputUSD` / `outputUSD` apply the lowest group ratio the
+ * model is enabled for, which is what a viewer would actually be charged.
+ *
+ * Dynamic (expression-driven) models read the first tier's base input/output
+ * price, matching the model square's card view. Ratio models keep the
+ * `model_ratio * 2` derivation. Models billed per request or per task expose no
+ * token price and report `hasTokenPrices: false` so callers can degrade instead
+ * of inventing a number.
+ */
+export function getModelTokenPrices(
+  model: PricingModel,
+  options: ModelTokenPricesOptions = {}
+): ModelTokenPrices {
+  const tokenUnit = options.tokenUnit ?? DEFAULT_TOKEN_UNIT
+  const groupRatioMultiplier = resolveGroupRatioMultiplier(
+    model,
+    options.groupRatio
+  )
+
+  if (isDynamicPricingModel(model)) {
+    const summary = getDynamicPricingSummary(model, {
+      tokenUnit,
+      usdExchangeRate: options.usdExchangeRate,
+      groupRatioMultiplier,
+      now: options.now,
+    })
+
+    if (!summary || summary.isSpecialExpression) {
+      return {
+        inputUSD: null,
+        outputUSD: null,
+        officialInputUSD: null,
+        officialOutputUSD: null,
+        isDynamic: true,
+        hasTokenPrices: false,
+      }
+    }
+
+    const entries = summary.isTaskUsage
+      ? summary.entries
+      : summary.primaryEntries
+    const inputEntry = entries.find((entry) => entry.field === 'inputPrice')
+    const outputEntry = entries.find((entry) => entry.field === 'outputPrice')
+    // `entry.value` is the raw expression price: the group ratio is only applied
+    // when the entry is formatted, so it has to be applied here explicitly.
+    const officialInputUSD = readTokenPrice(inputEntry)
+    const officialOutputUSD = readTokenPrice(outputEntry)
+    const inputUSD =
+      officialInputUSD === null ? null : officialInputUSD * groupRatioMultiplier
+    const outputUSD =
+      officialOutputUSD === null
+        ? null
+        : officialOutputUSD * groupRatioMultiplier
+
+    return {
+      inputUSD,
+      outputUSD,
+      officialInputUSD,
+      officialOutputUSD,
+      isDynamic: true,
+      hasTokenPrices: inputUSD !== null || outputUSD !== null,
+    }
+  }
+
+  // Per-request and task-usage models never expose a per-token price.
+  if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) {
+    return {
+      inputUSD: null,
+      outputUSD: null,
+      officialInputUSD: null,
+      officialOutputUSD: null,
+      isDynamic: false,
+      hasTokenPrices: false,
+    }
+  }
+
+  const ratio = Number(model.model_ratio)
+  if (!Number.isFinite(ratio) || ratio <= 0) {
+    return {
+      inputUSD: null,
+      outputUSD: null,
+      officialInputUSD: null,
+      officialOutputUSD: null,
+      isDynamic: false,
+      hasTokenPrices: false,
+    }
+  }
+
+  const officialInputUSD = ratio * 2
+  const completionRatio = Number(model.completion_ratio)
+  const officialOutputUSD =
+    officialInputUSD * (Number.isFinite(completionRatio) ? completionRatio : 1)
+
+  return {
+    inputUSD: officialInputUSD * groupRatioMultiplier,
+    outputUSD: officialOutputUSD * groupRatioMultiplier,
+    officialInputUSD,
+    officialOutputUSD,
+    isDynamic: false,
+    hasTokenPrices: true,
+  }
+}
+
+function readTokenPrice(entry: DynamicPriceEntry | undefined): number | null {
+  if (!entry) return null
+  const value = Number(entry.value)
+  return Number.isFinite(value) && value >= 0 ? value : null
+}
+
+/**
+ * Lowest group ratio across the model's enabled groups, defaulting to 1.
+ * Mirrors `getDisplayGroupRatio` without a selected group, but reads ratios from
+ * the caller-supplied map because the pricing API has no per-model ratios.
+ */
+function resolveGroupRatioMultiplier(
+  model: PricingModel,
+  groupRatio?: Record<string, number>
+): number {
+  const enableGroups = Array.isArray(model.enable_groups)
+    ? model.enable_groups
+    : []
+  const ratios = groupRatio ?? {}
+
+  let minRatio = Number.POSITIVE_INFINITY
+  for (const group of enableGroups) {
+    const ratio = ratios[group]
+    if (typeof ratio === 'number' && Number.isFinite(ratio) && ratio < minRatio) {
+      minRatio = ratio
+    }
+  }
+
+  return minRatio === Number.POSITIVE_INFINITY ? 1 : minRatio
 }

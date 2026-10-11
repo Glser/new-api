@@ -27,6 +27,7 @@ import {
   getDynamicPriceUnitLabelKey,
   getDynamicPricingSummary,
   getDynamicPricingTiers,
+  getModelTokenPrices,
   getTaskUsagePriceUnitLabelKey,
   hasTaskUsageSchema,
   isUnconfiguredTaskUsageModel,
@@ -795,5 +796,146 @@ describe('shared plugin price summaries', () => {
       label: 'Beta sample',
       formatted: '$3',
     })
+  })
+})
+
+describe('getModelTokenPrices', () => {
+  test('reads the base input/output price from a tiered billing expression', () => {
+    const model = pricingModel({
+      model_name: 'claude-opus-5-5',
+      model_ratio: 37.5,
+      completion_ratio: 1,
+      billing_mode: 'tiered_expr',
+      billing_expr:
+        'len <= 200000 ? tier("standard", p * 3 + c * 15) : tier("long_context", p * 6 + c * 22.5)',
+    })
+
+    const prices = getModelTokenPrices(model)
+
+    expect(prices.isDynamic).toBe(true)
+    expect(prices.hasTokenPrices).toBe(true)
+    expect(prices.inputUSD).toBe(3)
+    expect(prices.outputUSD).toBe(15)
+    // No group discount applies, so the list price equals the platform price.
+    expect(prices.officialInputUSD).toBe(3)
+    expect(prices.officialOutputUSD).toBe(15)
+  })
+
+  test('separates the discounted site price from the undiscounted list price', () => {
+    const model = pricingModel({
+      model_ratio: 5,
+      completion_ratio: 2,
+      enable_groups: ['default', 'vip'],
+    })
+
+    const prices = getModelTokenPrices(model, {
+      groupRatio: { default: 1, vip: 0.5 },
+    })
+
+    // model_ratio 5 -> $10 per 1M at ratio 1.0, halved by the vip group.
+    expect(prices.officialInputUSD).toBe(10)
+    expect(prices.officialOutputUSD).toBe(20)
+    expect(prices.inputUSD).toBe(5)
+    expect(prices.outputUSD).toBe(10)
+  })
+
+  test('derives the list price from the same expression tier for dynamic models', () => {
+    const model = pricingModel({
+      billing_mode: 'tiered_expr',
+      billing_expr: 'tier("standard", p * 4 + c * 8)',
+      enable_groups: ['default'],
+    })
+
+    const prices = getModelTokenPrices(model, {
+      groupRatio: { default: 0.25 },
+    })
+
+    expect(prices.officialInputUSD).toBe(4)
+    expect(prices.officialOutputUSD).toBe(8)
+    expect(prices.inputUSD).toBe(1)
+    expect(prices.outputUSD).toBe(2)
+  })
+
+  test('does not derive a dynamic price from model_ratio', () => {
+    const model = pricingModel({
+      model_ratio: 37.5,
+      completion_ratio: 1,
+      billing_mode: 'tiered_expr',
+      billing_expr: 'tier("standard", p * 3 + c * 15)',
+    })
+
+    expect(getModelTokenPrices(model).inputUSD).not.toBe(75)
+  })
+
+  test('falls back to the model ratio derivation for ratio models', () => {
+    const model = pricingModel({
+      model_ratio: 2,
+      completion_ratio: 3,
+      enable_groups: ['default'],
+    })
+
+    const prices = getModelTokenPrices(model)
+
+    expect(prices.isDynamic).toBe(false)
+    expect(prices.hasTokenPrices).toBe(true)
+    expect(prices.inputUSD).toBe(4)
+    expect(prices.outputUSD).toBe(12)
+  })
+
+  test('applies the lowest group ratio from the supplied group ratio map', () => {
+    const model = pricingModel({
+      model_ratio: 2,
+      completion_ratio: 1,
+      enable_groups: ['default', 'vip'],
+    })
+
+    const prices = getModelTokenPrices(model, {
+      groupRatio: { default: 1, vip: 0.5 },
+    })
+
+    expect(prices.inputUSD).toBe(2)
+    expect(prices.outputUSD).toBe(2)
+  })
+
+  test('reports no token prices for per-request models', () => {
+    const model = pricingModel({
+      quota_type: 1,
+      model_price: 0.5,
+      model_ratio: 0,
+      completion_ratio: 0,
+    })
+
+    const prices = getModelTokenPrices(model)
+
+    expect(prices.hasTokenPrices).toBe(false)
+    expect(prices.inputUSD).toBeNull()
+    expect(prices.outputUSD).toBeNull()
+  })
+
+  test('reports no token prices when the ratio fields are missing', () => {
+    const model = pricingModel({
+      model_ratio: Number.NaN,
+      completion_ratio: Number.NaN,
+    })
+
+    const prices = getModelTokenPrices(model)
+
+    expect(prices.hasTokenPrices).toBe(false)
+    expect(prices.inputUSD).toBeNull()
+    expect(prices.outputUSD).toBeNull()
+  })
+
+  test('reports no token prices for a special billing expression', () => {
+    const model = pricingModel({
+      billing_mode: 'tiered_expr',
+      billing_expr: 'len > 0 ? p * 0 : 0',
+    })
+
+    const prices = getModelTokenPrices(model)
+
+    expect(prices.isDynamic).toBe(true)
+    expect(prices.hasTokenPrices).toBe(false)
+    expect(prices.inputUSD).toBeNull()
+    expect(prices.outputUSD).toBeNull()
   })
 })
