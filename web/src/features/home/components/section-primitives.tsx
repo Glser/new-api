@@ -30,13 +30,6 @@ import { cn } from "@/lib/utils"
  * 光泽渐变、发光分隔线、实底主按钮）在其余 section 复用，避免各节各写一套。
  */
 
-/** 标题首行的流光效果，配合 hero-title-shine 使用 */
-export function SectionTitle(props: { children: ReactNode }) {
-  return (
-    <span className="hero-title-shine inline-block">{props.children}</span>
-  )
-}
-
 /**
  * 统一的 section 头部：双行大标题 + 渐变短线 + 描述 + 右侧操作。
  * 眉题（kicker）可选，当前各节均未使用。

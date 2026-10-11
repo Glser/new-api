@@ -48,11 +48,3 @@ export const ACCENT_PALETTE: { accentColor: string; glowColor: string }[] = [
   { accentColor: "rgb(236, 72, 153)", glowColor: "rgba(236, 72, 153, 0.22)" },
   { accentColor: "rgb(20, 184, 166)", glowColor: "rgba(20, 184, 166, 0.22)" },
 ]
-
-/** 把 rgb(...) 颜色加上透明度，返回合法的 rgba(...) 字符串 */
-export function withAlpha(rgbColor: string, alpha: number): string {
-  const match = rgbColor.match(/\d+(\.\d+)?/g)
-  if (!match || match.length < 3) return rgbColor
-  const [r, g, b] = match
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
