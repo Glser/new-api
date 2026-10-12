@@ -17,12 +17,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 import { useMemo, useState, useEffect } from "react"
 import { getPricing } from "@/features/pricing/api"
 import type { PricingModel, PricingVendor } from "@/features/pricing/types"
-import { readCachedStatus } from "@/lib/status-query"
+import { getModelTokenPrices } from "@/features/pricing/lib/dynamic-price"
+import { parseModelTags } from "@/features/models/lib/model-utils"
 import { Link } from "@tanstack/react-router"
 import {
   Activity,
   ArrowRight,
-  ArrowUpRight,
   Building2,
   Coins,
   Gauge,
@@ -34,9 +34,20 @@ import {
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-import { AnimateInView } from "@/components/animate-in-view"
+import {
+  SectionBackdrop,
+  SectionHeader,
+  SectionPrimaryLink,
+  SectionDivider,
+} from "@/features/home/components/section-primitives"
+import {
+ACCENT_PALETTE,
+glassCapsuleClassName,
+glassPanelClassName,
+compactPanelClassName,
+} from "@/features/home/components/section-styles"
+
 import { CopyButton } from "@/components/copy-button"
-import { Button } from "@/components/ui/button"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { getLobeIcon } from "@/lib/lobe-icon"
 import { cn } from "@/lib/utils"
@@ -46,20 +57,26 @@ interface ModelItem {
   name: string
   provider: string
   iconKey: string
-  category: string
   badge: string
   description: string
-  context: string
+  /** 规格胶囊固定三个槽位，值依次取后台 tags，未配时为空 */
+  specs: [string, string, string]
+  /** 超出三个槽位的多余标签，展示在「推荐适用场景」中 */
+  extraTags: string[]
   officialInput: string
   officialOutput: string
   siteInput: string
   siteOutput: string
-  officialInputUSD?: number
-  officialOutputUSD?: number
-  siteInputUSD?: number
-  siteOutputUSD?: number
-  scenarios: string[]
-  latency: string
+  siteInputUSD?: number | null
+  siteOutputUSD?: number | null
+  officialInputUSD?: number | null
+  officialOutputUSD?: number | null
+  /** 后台配置的标签，用于卡片底部标签行 */
+  tags: string[]
+  /** 分组最低倍率相对 1.0 的节省比例，无折扣时为 null */
+  discountPercent: number | null
+  /** 是否取不到 token 价格（按次/任务计费、特殊表达式等），此时不展示价格数值 */
+  priceUnavailable: boolean
   accentColor: string
   glowColor: string
 }
@@ -85,17 +102,22 @@ const VENDOR_NAME_MAP: Record<string, string> = {
   doubao: "Doubao",
 }
 
-/** 供应商调色盘 */
-const ACCENT_PALETTE: { accentColor: string; glowColor: string }[] = [
-  { accentColor: "rgb(249, 115, 22)", glowColor: "rgba(249, 115, 22, 0.22)" },
-  { accentColor: "rgb(16, 185, 129)", glowColor: "rgba(16, 185, 129, 0.22)" },
-  { accentColor: "rgb(59, 130, 246)", glowColor: "rgba(59, 130, 246, 0.22)" },
-  { accentColor: "rgb(139, 92, 246)", glowColor: "rgba(139, 92, 246, 0.22)" },
-  { accentColor: "rgb(236, 72, 153)", glowColor: "rgba(236, 72, 153, 0.22)" },
-  { accentColor: "rgb(20, 184, 166)", glowColor: "rgba(20, 184, 166, 0.22)" },
-]
 
-// 国内供应商集合（用于判断官方价格展示货币）
+/**
+ * 格式化供应商名称为规范品牌大小写（如 Anthropic, OpenAI）
+ */
+function formatProviderName(raw?: string): string {
+  if (!raw) return "Anthropic"
+  const clean = raw.trim()
+  const lower = clean.toLowerCase()
+  if (VENDOR_NAME_MAP[lower]) {
+    return VENDOR_NAME_MAP[lower]
+  }
+  // Title Case: 每个单词首字母大写
+  return clean.replaceAll(/\b([a-z])/g, (c) => c.toUpperCase())
+}
+
+/* 国内供应商集合：官方价按人民币展示，国外供应商按美元展示 */
 const DOMESTIC_PROVIDERS = new Set([
   "deepseek",
   "zhipu",
@@ -127,18 +149,110 @@ function isDomesticProvider(providerName?: string, modelName?: string): boolean 
   return false
 }
 
+/* 站内价固定人民币展示：这是「用户实际支付」的口径，不随后台显示设置变化 */
+const SITE_CURRENCY_SYMBOL = "¥"
+
 /**
- * 格式化供应商名称为规范品牌大小写（如 Anthropic, OpenAI）
+ * 美元兑人民币汇率，写死为 7.2。
+ *
+ * 刻意不读后台的 `usd_exchange_rate`：那个字段服务于控制台的配额展示，运营可能
+ * 按展示需要调整；而首页的「官方价 vs 站内价」要的是一把稳定的尺子，让折扣比例
+ * 可解释、不随后台配置漂移。
  */
-function formatProviderName(raw?: string): string {
-  if (!raw) return "Anthropic"
-  const clean = raw.trim()
-  const lower = clean.toLowerCase()
-  if (VENDOR_NAME_MAP[lower]) {
-    return VENDOR_NAME_MAP[lower]
+const USD_TO_CNY_RATE = 7.2
+
+/**
+ * 去掉二进制浮点的累计误差：3 * 0.2 会得到 0.6000000000000001，
+ * 直接展示会让用户看到一串无意义的小数。最多保留 4 位，再清掉末尾多余的 0。
+ */
+function formatPriceAmount(value: number): string {
+  if (!Number.isFinite(value)) return "-"
+  const rounded = Number(value.toFixed(4))
+  return String(rounded)
+}
+
+/**
+ * 官方价按供应商所在地区选择货币：国外模型展示美元，国内模型本身就是人民币报价。
+ *
+ * 这里刻意不走 `formatBillingCurrencyFromUSD`：那个函数跟随管理员配置的展示货币
+ * （可能是 USD / CNY / 自定义 / 积分），而官方价是一行「原产地标价」，必须按模型
+ * 所属地区固定货币，不受后台显示设置影响。
+ */
+function formatOfficialPrice(valueUSD: number | null | undefined, isDomestic: boolean): string {
+  if (valueUSD === null || valueUSD === undefined) return "-"
+  if (!isDomestic) {
+    return `$${formatPriceAmount(valueUSD)}`
   }
-  // Title Case: 每个单词首字母大写
-  return clean.replaceAll(/\b([a-z])/g, (c) => c.toUpperCase())
+  // 国内厂商在后台配的就是人民币价，无需再折算
+  return `${SITE_CURRENCY_SYMBOL}${formatPriceAmount(valueUSD)}`
+}
+
+/**
+ * 站内价：面向中国区的报价，以人民币展示。
+ *
+ * 在后台配置的标价基础上乘分组最低倍率——运营在后台调分组价格，这里随之变化。
+ * 汇率不参与站内价计算：后台填的 3 就是人民币口径的 3 元，倍率 0.2 即 ¥0.6。
+ */
+function formatSitePrice(
+  valueUSD: number | null | undefined,
+  groupRatioMultiplier: number
+): string {
+  if (valueUSD === null || valueUSD === undefined) return "-"
+  return `${SITE_CURRENCY_SYMBOL}${formatPriceAmount(valueUSD * groupRatioMultiplier)}`
+}
+
+/** 模型可用分组中的最低倍率，取不到时按 1.0 处理 */
+function resolveLowestGroupRatio(
+  model: PricingModel,
+  groupRatio: Record<string, number>
+): number {
+  const enableGroups = Array.isArray(model.enable_groups) ? model.enable_groups : []
+  let minRatio = Number.POSITIVE_INFINITY
+  for (const group of enableGroups) {
+    const ratio = groupRatio[group]
+    if (typeof ratio === "number" && Number.isFinite(ratio) && ratio < minRatio) {
+      minRatio = ratio
+    }
+  }
+  return minRatio === Number.POSITIVE_INFINITY ? 1 : minRatio
+}
+
+/** 卡片右上角的亮点徽章，按展示位置轮换，与具体模型无关 */
+const BADGES = ["SOTA 推理", "旗舰精选", "高性能模型", "前沿推理"]
+
+function resolveBadge(index: number): string {
+  return BADGES[index % BADGES.length]
+}
+
+/**
+ * 计算折扣：把官方价与站内价换算到同一货币后比较。
+ *
+ * 官方价是美元、站内价是人民币，按 `USD_TO_CNY_RATE` 把美元折算成人民币再比；
+ * 差额同时包含汇率优势与后台分组倍率优惠。国内外厂商同币种时无汇率优势，返回 null。
+ */
+function resolveExchangeRateDiscount(
+  officialInputUSD: number | null | undefined,
+  officialOutputUSD: number | null | undefined,
+  groupRatioMultiplier: number,
+  isDomestic: boolean
+): number | null {
+  if (isDomestic) return null
+  if (officialInputUSD == null || officialOutputUSD == null) return null
+
+  const officialInputCNY = officialInputUSD * USD_TO_CNY_RATE
+  const officialOutputCNY = officialOutputUSD * USD_TO_CNY_RATE
+  if (officialInputCNY <= 0 || officialOutputCNY <= 0) return null
+
+  const siteInput = officialInputUSD * groupRatioMultiplier
+  const siteOutput = officialOutputUSD * groupRatioMultiplier
+  const inputDiscount = 1 - siteInput / officialInputCNY
+  const outputDiscount = 1 - siteOutput / officialOutputCNY
+  // 取输入/输出中较小的折扣，避免用较优的一侧夸大优惠力度
+  const discount = Math.min(inputDiscount, outputDiscount)
+  if (discount <= 0) return null
+
+  const pct = Math.round(discount * 100)
+  return pct > 0 ? pct : null
 }
 
 const MODELS: ModelItem[] = [
@@ -147,17 +261,18 @@ const MODELS: ModelItem[] = [
     name: "Claude Opus 5.5",
     provider: "Anthropic",
     iconKey: "Claude.Color",
-    category: "Reasoning & Coding",
+    specs: ["", "", ""],
+    extraTags: [],
     badge: "SOTA 推理",
     description:
       "Anthropic 旗舰思维模型，具备扩展思维与深度推理能力，在复杂编程、科研分析与多轮 Agent 任务中全面领跑。",
-    context: "200K Tokens",
-    officialInput: "$15.00",
-    officialOutput: "$75.00",
-    siteInput: "$12.00",
-    siteOutput: "$60.00",
-    scenarios: ["超长上下文代码架构", "科研级复杂推演", "自主 Agent 工作流编排"],
-    latency: "深度思维链",
+    officialInput: "-",
+    officialOutput: "-",
+    siteInput: "-",
+    siteOutput: "-",
+    tags: [],
+    discountPercent: null,
+    priceUnavailable: true,
     accentColor: "rgb(249, 115, 22)",
     glowColor: "rgba(249, 115, 22, 0.22)",
   },
@@ -166,17 +281,18 @@ const MODELS: ModelItem[] = [
     name: "ChatGPT 6 Astra",
     provider: "OpenAI",
     iconKey: "Codex.Color",
-    category: "Omni Multimodal",
+    specs: ["", "", ""],
+    extraTags: [],
     badge: "全感知旗舰",
     description:
       "OpenAI 下一代全模态模型，融合视觉、语音、实时交互与超长上下文，具备接近人类的感知推理与创作能力。",
-    context: "256K Tokens",
-    officialInput: "$10.00",
-    officialOutput: "$40.00",
-    siteInput: "$8.00",
-    siteOutput: "$32.00",
-    scenarios: ["多模态实时感知交互", "超长跨模态文档理解", "高并发创意生成工作流"],
-    latency: "< 600ms 首字",
+    officialInput: "-",
+    officialOutput: "-",
+    siteInput: "-",
+    siteOutput: "-",
+    tags: [],
+    discountPercent: null,
+    priceUnavailable: true,
     accentColor: "rgb(16, 185, 129)",
     glowColor: "rgba(16, 185, 129, 0.22)",
   },
@@ -185,17 +301,18 @@ const MODELS: ModelItem[] = [
     name: "DeepSeek v4.1 Flash",
     provider: "DeepSeek",
     iconKey: "DeepSeek.Color",
-    category: "Fast Reasoning",
+    specs: ["", "", ""],
+    extraTags: [],
     badge: "极速思考链",
     description:
       "DeepSeek 新一代快速推理模型，保留完整思维链能力的同时大幅降低延迟，以极低成本实现顶级推理表现。",
-    context: "128K Tokens",
-    officialInput: "$0.27",
-    officialOutput: "$1.10",
-    siteInput: "$0.22",
-    siteOutput: "$0.88",
-    scenarios: ["高并发低成本推理任务", "实时数学与逻辑证明", "轻量 Agent 快速决策"],
-    latency: "< 500ms 首字",
+    officialInput: "-",
+    officialOutput: "-",
+    siteInput: "-",
+    siteOutput: "-",
+    tags: [],
+    discountPercent: null,
+    priceUnavailable: true,
     accentColor: "rgb(59, 130, 246)",
     glowColor: "rgba(59, 130, 246, 0.22)",
   },
@@ -204,36 +321,24 @@ const MODELS: ModelItem[] = [
     name: "Grok 4.7",
     provider: "xAI",
     iconKey: "Grok",
-    category: "Frontier Reasoning",
+    specs: ["", "", ""],
+    extraTags: [],
     badge: "前沿推理",
     description:
       "xAI Grok 系列旗舰，配备原生实时 X 平台信息接入与超强数理推理能力，在科学竞赛与复杂分析场景中表现卓越。",
-    context: "256K Tokens",
-    officialInput: "$3.00",
-    officialOutput: "$15.00",
-    siteInput: "$2.40",
-    siteOutput: "$12.00",
-    scenarios: ["实时信息融合推理", "科学竞赛级数理证明", "深度战略分析与规划"],
-    latency: "深度思维链",
+    officialInput: "-",
+    officialOutput: "-",
+    siteInput: "-",
+    siteOutput: "-",
+    tags: [],
+    discountPercent: null,
+    priceUnavailable: true,
     accentColor: "rgb(139, 92, 246)",
     glowColor: "rgba(139, 92, 246, 0.22)",
   },
 ]
 
-/* Surfaces are tuned per theme: a near-white card in light mode so the panel
- * reads as raised against the page instead of dissolving into it, and a
- * translucent white veil in dark mode so the accent glow behind it shows. */
-const glassPanelClassName =
-  "border-slate-900/[0.08] bg-white/85 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_50px_-30px_rgba(15,23,42,0.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.05] dark:shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.08)]"
-
-/* 右侧小卡使用完全不透明的表面：半透明层 + 模糊叠加会让小字号文字发虚，
- * 这里从卡片到内部胶囊一律用实底，保证选中与否都清晰可读。 */
-const compactPanelClassName =
-  "border-slate-900/[0.08] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_16px_36px_-24px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-slate-900 dark:shadow-[0_16px_40px_-24px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)]"
-
-const glassCapsuleClassName =
-  "rounded-2xl border border-slate-900/[0.07] bg-slate-500/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-xl sm:rounded-full dark:border-white/10 dark:bg-white/[0.05] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-
+/* 卡片表面与胶囊样式统一从 section-primitives 引入 */
 /* 小卡内部胶囊：实底，无模糊（背景色由调用方按需覆盖） */
 const compactCapsuleClassName =
   "rounded-2xl border border-slate-900/[0.07] shadow-none sm:rounded-full dark:border-white/10"
@@ -254,32 +359,20 @@ function withAlpha(rgbColor: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-function getDiscountPercent(
-  officialStr: string,
-  siteStr: string,
-  officialUSD?: number,
-  siteUSD?: number
-): string | null {
-  if (
-    typeof officialUSD === "number" &&
-    typeof siteUSD === "number" &&
-    officialUSD > 0 &&
-    siteUSD > 0 &&
-    siteUSD < officialUSD
-  ) {
-    const pct = Math.round((1 - siteUSD / officialUSD) * 100)
-    return pct > 0 ? `-${pct}%` : null
-  }
-  const off = Number.parseFloat(String(officialStr || "").replaceAll(/[^0-9.]/g, ""))
-  const site = Number.parseFloat(String(siteStr || "").replaceAll(/[^0-9.]/g, ""))
-  if (!off || !site || site >= off) return null
-  const pct = Math.round((1 - site / off) * 100)
-  return pct > 0 ? `-${pct}%` : null
-}
-
 /** 辅助获取模型图标 key */
-function resolveIconKey(model: PricingModel, vendorName?: string): string {
+/**
+ * 解析模型图标：后台给模型配的图标优先，否则按模型名推断。
+ *
+ * 刻意不继承关联供应商的图标：供应商与模型并非一对一（一个供应商下可以挂不同
+ * 厂商的模型），继承会让配错的关联把错误图标放大到卡片上。供应商名只参与推断
+ * 的兜底分支。
+ */
+function resolveIconKey(
+  model: PricingModel,
+  vendor?: PricingVendor
+): string {
   if (model.icon) return model.icon
+
   const name = (model.model_name || "").toLowerCase()
   if (name.includes("claude")) return "Claude.Color"
   if (name.includes("gpt") || name.includes("o1") || name.includes("o3") || name.includes("chatgpt")) {
@@ -294,7 +387,7 @@ function resolveIconKey(model: PricingModel, vendorName?: string): string {
   if (name.includes("moonshot") || name.includes("kimi")) return "Moonshot"
   if (name.includes("mistral")) return "Mistral.Color"
 
-  const v = (vendorName || "").toLowerCase()
+  const v = (vendor?.name || "").toLowerCase()
   if (v.includes("anthropic")) return "Claude.Color"
   if (v.includes("openai")) return "OpenAI"
   if (v.includes("deepseek")) return "DeepSeek.Color"
@@ -303,169 +396,62 @@ function resolveIconKey(model: PricingModel, vendorName?: string): string {
   return "Sparkles"
 }
 
-/** 辅助获取分类与亮点 Badge */
-function resolveCategoryAndBadge(
-  model: PricingModel,
-  index: number
-): { category: string; badge: string; latency: string; context: string; scenarios: string[] } {
-  const name = (model.model_name || "").toLowerCase()
-  if (name.includes("claude") || name.includes("opus") || name.includes("sonnet")) {
-    return {
-      category: "Reasoning & Coding",
-      badge: "SOTA 推理",
-      latency: "深度思维链",
-      context: "200K Tokens",
-      scenarios: ["超长上下文代码架构", "科研级复杂推演", "自主 Agent 工作流编排"],
-    }
-  }
-  if (name.includes("gpt") || name.includes("o1") || name.includes("o3") || name.includes("astra")) {
-    return {
-      category: "Omni Multimodal",
-      badge: "全感知旗舰",
-      latency: "< 600ms 首字",
-      context: "256K Tokens",
-      scenarios: ["多模态实时感知交互", "超长跨模态文档理解", "高并发创意生成工作流"],
-    }
-  }
-  if (name.includes("deepseek") || name.includes("flash") || name.includes("r1")) {
-    return {
-      category: "Fast Reasoning",
-      badge: "极速思考链",
-      latency: "< 500ms 首字",
-      context: "128K Tokens",
-      scenarios: ["高并发低成本推理任务", "实时数学与逻辑证明", "轻量 Agent 快速决策"],
-    }
-  }
-  if (name.includes("grok")) {
-    return {
-      category: "Frontier Reasoning",
-      badge: "前沿推理",
-      latency: "深度思维链",
-      context: "256K Tokens",
-      scenarios: ["实时信息融合推理", "科学竞赛级数理证明", "深度战略分析与规划"],
-    }
-  }
-  const defaults = [
-    {
-      category: "General Intelligence",
-      badge: "高性能模型",
-      latency: "< 800ms 首字",
-      context: "128K Tokens",
-      scenarios: ["高并发文本处理", "创意辅助生成", "轻量智能助手"],
-    },
-    {
-      category: "Advanced Language",
-      badge: "旗舰精选",
-      latency: "高并发响应",
-      context: "200K Tokens",
-      scenarios: ["知识库问答构建", "长文档阅读分析", "跨语言即时翻译"],
-    },
-  ]
-  return defaults[index % defaults.length]
-}
-
-/**
- * 格式化数值为干净的货币字符串
- * - 大于等于 1 的值保留 2 位小数（如 $15.00 / ¥86.40）
- * - 小于 1 的值保留最多 4 位小数并去掉无意义的末尾 0（如 $0.27 / $0.5）
- */
-function formatCurrencyValue(val: number, symbol: string): string {
-  if (!Number.isFinite(val)) return "-"
-  if (val >= 1) {
-    return `${symbol}${val.toFixed(2)}`
-  }
-  const formatted = val.toFixed(4)
-  const trimmed = formatted.replace(/\.?0+$/, "") || "0"
-  return `${symbol}${trimmed}`
-}
 
 /**
  * 将 PricingModel 转换为展示用的 ModelItem
- * 规则：
- * 1. 官方价格：国内模型使用人民币（¥），国外模型使用美元（$），按 group_ratio = 1.0 的未打折基准计算。
- * 2. 站内价格：全平台统一为人民币（¥），基于各可用分组中的最低倍率计算，若为国外模型则按汇率 (usdExchangeRate) 折算为人民币。
- * 3. 折扣率：统一步调为同一基准（人民币总价 vs 官方折算人民币价格）计算真实节省比例。
+ *
+ * 价格统一走定价广场的 `getModelTokenPrices`：动态计费模型取表达式首个 tier 的
+ * 输入/输出单价，倍率模型走 model_ratio 推导。官方价按模型所属地区定货币（国外美元、
+ * 国内人民币），站内价直接取同一数值以人民币展示（面向中国区运营）。折扣徽章是二者
+ * 换算到同一货币后的差额，即汇率带来的优势。取不到 token 价格时不编造数值。
  */
 function convertPricingModelToItem(
   model: PricingModel,
   vendors: PricingVendor[],
   groupRatio: Record<string, number>,
-  usdExchangeRate: number,
   index: number
 ): ModelItem {
   const vendorObj = vendors.find((v) => v.id === model.vendor_id)
   const rawVendorName = vendorObj?.name || model.vendor_name || (model.model_name.split(/[-_/]/)[0] ?? "AI")
   const provider = formatProviderName(rawVendorName)
   const palette = ACCENT_PALETTE[index % ACCENT_PALETTE.length]
+
+  const prices = getModelTokenPrices(model, { groupRatio })
   const isDomestic = isDomesticProvider(rawVendorName, model.model_name)
+  const groupRatioMultiplier = resolveLowestGroupRatio(model, groupRatio)
+  const officialInput = formatOfficialPrice(prices.officialInputUSD, isDomestic)
+  const officialOutput = formatOfficialPrice(prices.officialOutputUSD, isDomestic)
+  const siteInput = formatSitePrice(prices.officialInputUSD, groupRatioMultiplier)
+  const siteOutput = formatSitePrice(prices.officialOutputUSD, groupRatioMultiplier)
 
-  // 基础 token 美元单价（按 1M tokens 计算）: model_ratio * 2
-  const baseInputUSD = (model.model_ratio || 0) * 2
-  const baseOutputUSD = baseInputUSD * (model.completion_ratio || 1)
-  const rate = Math.max(usdExchangeRate || 7.0, 0.001)
-
-  // 1. 官方原价：国内厂商显示人民币 (¥)，国外厂商显示美元 ($)
-  let officialInputVal: number
-  let officialOutputVal: number
-  let officialSymbol: string
-  if (isDomestic) {
-    officialSymbol = "¥"
-    officialInputVal = baseInputUSD * rate
-    officialOutputVal = baseOutputUSD * rate
-  } else {
-    officialSymbol = "$"
-    officialInputVal = baseInputUSD
-    officialOutputVal = baseOutputUSD
-  }
-
-  // 2. 站内价格：统一为人民币 (¥)，取各可用分组中的最低倍率
-  const enableGroups = Array.isArray(model.enable_groups) ? model.enable_groups : []
-  let minRatio = Number.POSITIVE_INFINITY
-  for (const group of enableGroups) {
-    const r = groupRatio[group]
-    if (typeof r === "number" && Number.isFinite(r) && r < minRatio) {
-      minRatio = r
-    }
-  }
-  const effectiveRatio = minRatio === Number.POSITIVE_INFINITY ? 1.0 : minRatio
-
-  // 站内人民币单价 (¥ / 1M tokens)
-  const siteInputVal = baseInputUSD * effectiveRatio * rate
-  const siteOutputVal = baseOutputUSD * effectiveRatio * rate
-  const siteSymbol = "¥"
-
-  const officialInput = formatCurrencyValue(officialInputVal, officialSymbol)
-  const officialOutput = formatCurrencyValue(officialOutputVal, officialSymbol)
-  const siteInput = formatCurrencyValue(siteInputVal, siteSymbol)
-  const siteOutput = formatCurrencyValue(siteOutputVal, siteSymbol)
-
-  const { category, badge, latency, context, scenarios } = resolveCategoryAndBadge(model, index)
-
-  // 价格缺失时的兜底值：官方价跟随货币，站内价统一人民币
-  const officialInputFallback = isDomestic ? "¥10.00" : "$10.00"
-  const officialOutputFallback = isDomestic ? "¥30.00" : "$30.00"
+  const discountPercent = resolveExchangeRateDiscount(
+    prices.officialInputUSD,
+    prices.officialOutputUSD,
+    groupRatioMultiplier,
+    isDomestic
+  )
+  const tags = parseModelTags(model.tags).filter((tag) => tag.toLowerCase() !== "featured")
 
   return {
     id: model.model_name,
     name: model.model_name,
     provider,
-    iconKey: resolveIconKey(model, rawVendorName),
-    category,
-    badge,
-    description:
-      model.description ||
-      `${provider} 旗舰高性能模型，具备先进的语言理解与多场景处理能力，提供高可用稳定调用体验。`,
-    context,
-    officialInput: officialInput !== "-" ? officialInput : officialInputFallback,
-    officialOutput: officialOutput !== "-" ? officialOutput : officialOutputFallback,
-    siteInput: siteInput !== "-" ? siteInput : "¥8.00",
-    siteOutput: siteOutput !== "-" ? siteOutput : "¥24.00",
-    officialInputUSD: baseInputUSD,
-    officialOutputUSD: baseOutputUSD,
-    siteInputUSD: baseInputUSD * effectiveRatio,
-    siteOutputUSD: baseOutputUSD * effectiveRatio,
-    scenarios,
-    latency,
+    iconKey: resolveIconKey(model, vendorObj),
+    specs: [tags[0] ?? "", tags[1] ?? "", tags[2] ?? ""],
+    extraTags: tags.slice(3),
+    badge: resolveBadge(index),
+    description: model.description || "",
+    officialInput,
+    officialOutput,
+    siteInput,
+    siteOutput,
+    siteInputUSD: prices.inputUSD,
+    siteOutputUSD: prices.outputUSD,
+    officialInputUSD: prices.officialInputUSD,
+    officialOutputUSD: prices.officialOutputUSD,
+    tags,
+    discountPercent,
+    priceUnavailable: !prices.hasTokenPrices,
     accentColor: palette.accentColor,
     glowColor: palette.glowColor,
   }
@@ -481,45 +467,11 @@ function isFeaturedModel(model: PricingModel): boolean {
 function hydrateModels(
   backendModels: PricingModel[],
   vendors: PricingVendor[] = [],
-  groupRatio: Record<string, number> = {},
-  usdExchangeRate = 7.0
+  groupRatio: Record<string, number> = {}
 ): ModelItem[] {
   if (!backendModels.length) {
-    // 静态 fallback 根据汇率和国内/国外规则适配
-    return MODELS.map((m) => {
-      const isDomestic = isDomesticProvider(m.provider, m.id)
-      const offInUSD = Number.parseFloat(m.officialInput.replaceAll(/[^0-9.]/g, "")) || 10
-      const offOutUSD = Number.parseFloat(m.officialOutput.replaceAll(/[^0-9.]/g, "")) || 30
-      const siteInUSD = Number.parseFloat(m.siteInput.replaceAll(/[^0-9.]/g, "")) || 8
-      const siteOutUSD = Number.parseFloat(m.siteOutput.replaceAll(/[^0-9.]/g, "")) || 24
-      const rate = Math.max(usdExchangeRate || 7.0, 0.001)
-
-      // 国内厂商官方价用人民币，国外厂商官方价用美元；站内价统一人民币
-      let officialInput: string
-      let officialOutput: string
-      if (isDomestic) {
-        officialInput = formatCurrencyValue(offInUSD * rate, "¥")
-        officialOutput = formatCurrencyValue(offOutUSD * rate, "¥")
-      } else {
-        officialInput = formatCurrencyValue(offInUSD, "$")
-        officialOutput = formatCurrencyValue(offOutUSD, "$")
-      }
-      const siteInput = formatCurrencyValue(siteInUSD * rate, "¥")
-      const siteOutput = formatCurrencyValue(siteOutUSD * rate, "¥")
-
-      return {
-        ...m,
-        provider: formatProviderName(m.provider),
-        officialInput,
-        officialOutput,
-        siteInput,
-        siteOutput,
-        officialInputUSD: offInUSD,
-        officialOutputUSD: offOutUSD,
-        siteInputUSD: siteInUSD,
-        siteOutputUSD: siteOutUSD,
-      }
-    })
+    // 后端不可用时退回静态预设，价格一律标记为不可用，不展示推导数值
+    return MODELS
   }
 
   // 1. 优先筛选后台勾选了 "Featured on Home"（tags 包含 featured）的模型
@@ -547,7 +499,7 @@ function hydrateModels(
 
       if (!match) return preset
 
-      const converted = convertPricingModelToItem(match, vendors, groupRatio, usdExchangeRate, idx)
+      const converted = convertPricingModelToItem(match, vendors, groupRatio, idx)
       return {
         ...preset,
         provider: formatProviderName(preset.provider),
@@ -555,10 +507,15 @@ function hydrateModels(
         officialOutput: converted.officialOutput,
         siteInput: converted.siteInput,
         siteOutput: converted.siteOutput,
-        officialInputUSD: converted.officialInputUSD,
-        officialOutputUSD: converted.officialOutputUSD,
         siteInputUSD: converted.siteInputUSD,
         siteOutputUSD: converted.siteOutputUSD,
+        officialInputUSD: converted.officialInputUSD,
+        officialOutputUSD: converted.officialOutputUSD,
+        tags: converted.tags,
+        specs: converted.specs,
+        extraTags: converted.extraTags,
+        discountPercent: converted.discountPercent,
+        priceUnavailable: converted.priceUnavailable,
       }
     })
     return matchedPresets
@@ -569,14 +526,13 @@ function hydrateModels(
   if (selected.length === 0) return MODELS
 
   return selected.map((model, idx) =>
-    convertPricingModelToItem(model, vendors, groupRatio, usdExchangeRate, idx)
+    convertPricingModelToItem(model, vendors, groupRatio, idx)
   )
 }
 
 /* One price pair = micro label + value, repeated for input and output.
  * The label is deliberately tiny and wide-tracked so the numeral carries all
- * the visual weight. `showLabels` keeps them visible on the official reference
- * row, where the pair is the only thing worth reading. */
+ * the visual weight. `showLabels` keeps them visible on the price lane. */
 function PricePair(props: {
   input: string
   output: string
@@ -657,10 +613,79 @@ function SpecChip(props: {
   )
 }
 
-/** 官方参考价格（大卡上半部分）：基准行，浅色下靠实底撑起存在感 */
+/* 规格胶囊固定三个槽位，保持原有三列布局：值依次取后台 tags，
+ * 某个位置没配到时显示占位符，避免布局塌陷。 */
+const SPEC_SLOTS: { icon: LucideIcon; labelKey: string }[] = [
+  { icon: Layers, labelKey: "sec_models_context" },
+  { icon: Gauge, labelKey: "sec_models_performance" },
+  { icon: Activity, labelKey: "sec_models_category" },
+]
+
+function SpecChips(props: { model: ModelItem }) {
+  const { t } = useTranslation()
+
+  return (
+    <dl
+      className={cn(
+        "grid grid-cols-3 items-center px-3 py-2.5 sm:px-4",
+        glassCapsuleClassName
+      )}
+    >
+      {SPEC_SLOTS.map((slot, index) => (
+        <div
+          key={slot.labelKey}
+          className={cn(
+            "flex min-w-0 items-center justify-center",
+            index > 0 && "border-l border-slate-900/10 px-1.5 dark:border-white/15"
+          )}
+        >
+          <SpecChip
+            icon={slot.icon}
+            label={t(slot.labelKey)}
+            value={props.model.specs[index] || "-"}
+            accent={props.model.accentColor}
+          />
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+/** 官方参考价格（大卡上半部分）：倍率 1.0 的标价，与站内价同源，仅折扣不同。
+ *  取不到 token 价格时同样降级为跳转定价页，两行保持一致的观感。 */
 function OfficialPriceCard(props: { model: ModelItem }) {
   const { t } = useTranslation()
   const { model } = props
+
+  if (model.priceUnavailable) {
+    return (
+      <div
+        className={cn(
+          "relative flex flex-col gap-1 overflow-hidden px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3",
+          glassCapsuleClassName,
+          "border-solid",
+          "bg-white dark:bg-white/[0.03]"
+        )}
+      >
+        <div className="flex shrink-0 items-center gap-1.5 text-[10px] text-muted-foreground/80">
+          <span className="flex size-5 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
+            <Tag className="size-3" aria-hidden />
+          </span>
+          <span className="font-semibold tracking-[0.06em]">
+            {t("sec_models_official_rate")}
+          </span>
+        </div>
+        <Link
+          to="/pricing"
+          search={{ search: model.id }}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground/80 underline-offset-4 hover:underline"
+        >
+          {t("sec_models_price_see_pricing")}
+          <ArrowRight className="size-3.5 shrink-0" aria-hidden />
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -697,23 +722,48 @@ function OfficialPriceCard(props: { model: ModelItem }) {
   )
 }
 
-/** 站内成交价（大卡下半部分）：实心渐变胶囊 + 强调色价格，唯一视觉焦点 */
+/** 站内成交价：实心渐变胶囊 + 强调色价格，唯一视觉焦点。
+ *  取不到 token 价格时降级为跳转定价页的说明，不展示推导数值。 */
 function SitePriceCard(props: { model: ModelItem }) {
   const { t } = useTranslation()
   const { model } = props
-  const inDiscount = getDiscountPercent(
-    model.officialInput,
-    model.siteInput,
-    model.officialInputUSD,
-    model.siteInputUSD
-  )
-  const outDiscount = getDiscountPercent(
-    model.officialOutput,
-    model.siteOutput,
-    model.officialOutputUSD,
-    model.siteOutputUSD
-  )
-  const bestDiscount = inDiscount || outDiscount
+  const discount = model.discountPercent
+
+  if (model.priceUnavailable) {
+    return (
+      <div
+        className={cn(
+          "relative flex flex-col gap-1 overflow-hidden px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5",
+          glassCapsuleClassName,
+          "border-solid"
+        )}
+        style={{
+          borderColor: `${model.accentColor}33`,
+          background: `linear-gradient(135deg, ${model.accentColor}12 0%, rgba(255,255,255,0.04) 55%, ${model.accentColor}08 100%)`,
+        }}
+      >
+        <div className="flex shrink-0 items-center gap-2">
+          <span
+            className="flex size-5 items-center justify-center rounded-md text-white shadow-2xs"
+            style={{ backgroundColor: model.accentColor }}
+          >
+            <Coins className="size-3" aria-hidden />
+          </span>
+          <span className="text-xs font-bold tracking-tight text-foreground">
+            {t("sec_models_site_rate")}
+          </span>
+        </div>
+        <Link
+          to="/pricing"
+          search={{ search: model.id }}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground/80 underline-offset-4 hover:underline"
+        >
+          {t("sec_models_price_see_pricing")}
+          <ArrowRight className="size-3.5 shrink-0" aria-hidden />
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -738,17 +788,21 @@ function SitePriceCard(props: { model: ModelItem }) {
         <span className="text-xs font-bold tracking-tight text-foreground">
           {t("sec_models_site_rate")}
         </span>
-        {bestDiscount ? (
+        {discount ? (
           <span
             className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold text-white shadow-sm"
             style={{ backgroundColor: model.accentColor }}
           >
             <TrendingDown className="size-2.5" aria-hidden />
-            {bestDiscount}
+            -{discount}%
             <span className="sr-only">{t("sec_models_save")}</span>
           </span>
         ) : null}
         <span className="sr-only">{t("sec_models_pricing")}</span>
+        {/* "/ 1M tokens" 单位说明在窄屏时隐藏，宽屏再显示 */}
+        <span className="hidden font-mono text-[9px] opacity-60 sm:inline">
+          {t("sec_models_per_million")}
+        </span>
       </div>
       <div className="flex items-center justify-end">
         <PricePair
@@ -827,70 +881,47 @@ function FeaturedModelCard(props: { model: ModelItem }) {
         <div className="flex flex-1 items-center py-5 sm:py-6">
           <div className="mx-auto w-full max-w-xl px-2 sm:px-4">
             <p className="text-pretty text-left text-sm leading-[1.85] text-muted-foreground sm:text-[0.95rem]">
-              {model.description}
+              {model.description || t("sec_models_no_description")}
             </p>
           </div>
         </div>
 
-        {/* 规格参数胶囊：三列均匀分布，左侧留白更紧凑细腻，左右端点留空适度 */}
+        {/* 规格胶囊：固定三列，值依次取后台 tags */}
         <div className="mx-auto mb-4 w-full max-w-xl">
-          <dl className={cn("grid grid-cols-3 items-center px-3 py-2.5 sm:px-4", glassCapsuleClassName)}>
-            <div className="flex min-w-0 items-center justify-center">
-              <SpecChip
-                icon={Layers}
-                label={t("sec_models_context")}
-                value={model.context}
-                accent={model.accentColor}
-              />
-            </div>
-            <div className="flex min-w-0 items-center justify-center border-x border-slate-900/10 px-1.5 dark:border-white/15">
-              <SpecChip
-                icon={Gauge}
-                label={t("sec_models_performance")}
-                value={model.latency}
-                accent={model.accentColor}
-              />
-            </div>
-            <div className="flex min-w-0 items-center justify-center">
-              <SpecChip
-                icon={Activity}
-                label={t("sec_models_category")}
-                value={model.category}
-                accent={model.accentColor}
-              />
-            </div>
-          </dl>
+          <SpecChips model={model} />
         </div>
 
-        {/* 价格组件拆分为两个：官方价格在上，站内特权价格在下 */}
+        {/* 价格组件拆分为两个：官方标价在上，站内特权价在下，二者同源仅折扣不同 */}
         <div className="mx-auto flex w-full max-w-xl flex-col gap-2.5">
           <OfficialPriceCard model={model} />
           <SitePriceCard model={model} />
         </div>
 
-        {/* 推荐适用场景：分组标题 + 场景胶囊（窄屏时整体收起，避免拥挤） */}
-        <div className="mx-auto mb-3.5 mt-5 hidden w-full max-w-xl flex-col items-center sm:flex">
-          <div className="mb-2.5 flex items-center gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
-              {t("sec_models_scenarios")}
-            </span>
-            <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-slate-900/10 to-transparent dark:from-white/15" />
+        {/* 推荐适用场景：展示超出三个规格槽位的多余标签，没有则不占位 */}
+        {model.extraTags.length > 0 && (
+          <div className="mx-auto mb-3.5 mt-5 hidden w-full max-w-xl flex-col items-center sm:flex">
+            <div className="mb-2.5 flex items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
+                {t("sec_models_scenarios")}
+              </span>
+              <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-slate-900/10 to-transparent dark:from-white/15" />
+            </div>
+            <ul className="flex flex-wrap justify-center gap-2">
+              {model.extraTags.map((tag) => (
+                <li
+                  key={tag}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-900/[0.08] bg-white/60 px-3 py-1 text-xs font-medium text-foreground/85 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
+                >
+                  <span
+                    className="size-1.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: model.accentColor }}
+                  />
+                  {tag}
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="flex flex-wrap justify-center gap-2">
-            {model.scenarios.map((scenario) => (
-              <li
-                key={scenario}
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-900/[0.08] bg-white/60 px-3 py-1 text-xs font-medium text-foreground/85 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
-              >
-                <span
-                  className="size-1.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: model.accentColor }}
-                />
-                {scenario}
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
 
         {/* 底部操作项 */}
         <div className="mt-auto flex w-full flex-wrap items-center justify-between gap-3 border-t border-slate-900/[0.08] pt-4 dark:border-white/10">
@@ -955,19 +986,7 @@ function CompactModelCard(props: {
 }) {
   const { t } = useTranslation()
   const model = props.model
-  const inDiscount = getDiscountPercent(
-    model.officialInput,
-    model.siteInput,
-    model.officialInputUSD,
-    model.siteInputUSD
-  )
-  const outDiscount = getDiscountPercent(
-    model.officialOutput,
-    model.siteOutput,
-    model.officialOutputUSD,
-    model.siteOutputUSD
-  )
-  const bestDiscount = inDiscount || outDiscount
+  const discount = model.discountPercent
 
   return (
     <button
@@ -1031,34 +1050,33 @@ function CompactModelCard(props: {
       {/* 描述：两行截断，行高略放大以改善密集度 */}
       <div className="my-3.5 w-full">
         <p className="line-clamp-2 text-left text-[12px] leading-[1.75] text-muted-foreground/90">
-          {model.description}
+          {model.description || t("sec_models_no_description")}
         </p>
       </div>
 
-      {/* 规格参数胶囊 */}
+      {/* 规格胶囊：小卡固定展示前三个标签，三等分排列，未配到时显示占位符 */}
       <div className="mb-2.5 w-full">
-        <dl
-          className={cn(
-            "flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-2xl border border-slate-900/[0.07] bg-slate-100 px-3 py-1.5 shadow-none sm:rounded-full dark:border-white/10 dark:bg-white/[0.07]",
-          )}
-        >
-          <SpecChip
-            icon={Layers}
-            label={t("sec_models_context")}
-            value={model.context}
-            accent={model.accentColor}
-          />
-          <span aria-hidden className="hidden h-5 w-px bg-slate-900/10 dark:bg-white/15 sm:block" />
-          <SpecChip
-            icon={Gauge}
-            label={t("sec_models_performance")}
-            value={model.latency}
-            accent={model.accentColor}
-          />
+        <dl className="grid grid-cols-3 items-center rounded-2xl border border-slate-900/[0.07] bg-slate-100 px-2 py-1.5 dark:border-white/10 dark:bg-white/[0.07]">
+          {SPEC_SLOTS.map((slot, index) => (
+            <div
+              key={slot.labelKey}
+              className={cn(
+                "flex min-w-0 items-center justify-center",
+                index > 0 && "border-l border-slate-900/10 dark:border-white/15"
+              )}
+            >
+              <SpecChip
+                icon={slot.icon}
+                label={t(slot.labelKey)}
+                value={model.specs[index] || "-"}
+                accent={model.accentColor}
+              />
+            </div>
+          ))}
         </dl>
       </div>
 
-      {/* 价格栏：实底 accent 胶囊 + 折扣徽章 */}
+      {/* 价格栏：实底 accent 胶囊 + 折扣徽章；无 token 价格时引导去定价页查看 */}
       <div
         className={cn(
           "mb-3 flex w-full items-center justify-center gap-2.5 px-3 py-2",
@@ -1070,21 +1088,33 @@ function CompactModelCard(props: {
           boxShadow: `0 2px 12px -8px ${model.glowColor}`,
         }}
       >
-        <PricePair
-          input={model.siteInput}
-          output={model.siteOutput}
-          accent={model.accentColor}
-          showLabels
-        />
-        {bestDiscount ? (
-          <span
-            className="shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-xs"
-            style={{ backgroundColor: model.accentColor }}
+        {model.priceUnavailable ? (
+          <Link
+            to="/pricing"
+            search={{ search: model.id }}
+            className="text-xs font-semibold text-foreground/80 underline-offset-4 hover:underline"
           >
-            {bestDiscount}
-            <span className="sr-only">{t("sec_models_save")}</span>
-          </span>
-        ) : null}
+            {t("sec_models_price_see_pricing")}
+          </Link>
+        ) : (
+          <>
+            <PricePair
+              input={model.siteInput}
+              output={model.siteOutput}
+              accent={model.accentColor}
+              showLabels
+            />
+            {discount ? (
+              <span
+                className="shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-xs"
+                style={{ backgroundColor: model.accentColor }}
+              >
+                -{discount}%
+                <span className="sr-only">{t("sec_models_save")}</span>
+              </span>
+            ) : null}
+          </>
+        )}
       </div>
       {/* 供应商：固定在左下角，降为次要层级（保持 Anthropic 品牌大小写格式） */}
       <div className="mt-auto flex w-full items-center gap-1.5 text-[11px] font-medium tracking-wide text-muted-foreground/70">
@@ -1106,11 +1136,6 @@ export function SectionModels() {
     vendors: PricingVendor[]
     groupRatio: Record<string, number>
   }>({ models: [], vendors: [], groupRatio: {} })
-  // 汇率从缓存的 /api/status 快照读取，避免首页额外请求
-  const cachedStatus = readCachedStatus() as { usd_exchange_rate?: number } | null
-  const usdExchangeRate =
-    typeof cachedStatus?.usd_exchange_rate === "number" ? cachedStatus.usd_exchange_rate : 7.2
-
   useEffect(() => {
     let mounted = true
     getPricing()
@@ -1132,8 +1157,8 @@ export function SectionModels() {
   }, [])
 
   const displayModels = useMemo(
-    () => hydrateModels(backendData.models, backendData.vendors, backendData.groupRatio, usdExchangeRate),
-    [backendData, usdExchangeRate]
+    () => hydrateModels(backendData.models, backendData.vendors, backendData.groupRatio),
+    [backendData]
   )
   const activeModel = displayModels[activeIndex] ?? displayModels[0]
 
@@ -1159,46 +1184,20 @@ export function SectionModels() {
       onFocusCapture={() => setIsPaused(true)}
       onBlurCapture={() => setIsPaused(false)}
     >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-30 dark:opacity-20"
-        style={{
-          background:
-            "radial-gradient(ellipse 65% 50% at 50% 30%, rgba(16, 185, 129, 0.12) 0%, transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_75%_65%_at_45%_35%,black_25%,transparent_100%)] bg-[size:4rem_4rem] opacity-[0.025]"
-      />
+      <SectionBackdrop />
 
       <div className="mx-auto max-w-7xl">
-        <AnimateInView className="mb-7 flex flex-col items-start justify-between gap-4 sm:mb-8 md:flex-row md:items-end lg:pl-4 xl:pl-6">
-          <div>
-            <h2 className="flex flex-wrap items-baseline gap-x-2 tracking-tight">
-              <span className="hero-title-shine text-[clamp(1.85rem,3.6vw,2.9rem)] font-extrabold leading-tight">
-                {t("sec_models_title_p1")}
-              </span>
-              <span className="hero-title-shine-emerald text-[clamp(1.65rem,3.2vw,2.6rem)] font-bold leading-tight">
-                {t("sec_models_title_p2")}
-              </span>
-            </h2>
-            <div className="mt-3.5 h-0.5 w-32 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-transparent sm:w-48" />
-            <p className="mt-3.5 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              {t("sec_models_desc")}
-            </p>
-          </div>
-
-          <Button
-            variant="outline"
-            size="lg"
-            className="h-9 rounded-xl border-emerald-500/25 bg-emerald-500/10 px-4 text-xs font-semibold text-emerald-600 hover:bg-emerald-500 hover:text-white dark:text-emerald-400 dark:hover:bg-emerald-500 dark:hover:text-background"
-            render={<Link to="/pricing" />}
-          >
-            {t("sec_models_view_all")}
-            <ArrowUpRight className="size-3.5" aria-hidden />
-          </Button>
-        </AnimateInView>
+        <SectionHeader
+          titlePrimary={t("sec_models_title_p1")}
+          titleSecondary={t("sec_models_title_p2")}
+          description={t("sec_models_desc")}
+          action={
+            <SectionPrimaryLink
+              to="/pricing"
+              label={t("sec_models_view_all")}
+            />
+          }
+        />
 
         <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12 lg:gap-6">
           <div className="lg:col-span-6">
@@ -1220,22 +1219,7 @@ export function SectionModels() {
         </div>
       </div>
 
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center overflow-hidden">
-        <div
-          className="h-[3px] w-64 rounded-full blur-[4px] sm:w-96"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(16,185,129,0.7) 40%, rgba(16,185,129,0.7) 60%, transparent)",
-          }}
-        />
-        <div
-          className="absolute bottom-0 h-px w-full"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.15) 20%, rgba(16,185,129,0.55) 42%, rgba(255,255,255,0.85) 50%, rgba(16,185,129,0.55) 58%, rgba(16,185,129,0.15) 80%, transparent 100%)",
-          }}
-        />
-      </div>
+      <SectionDivider />
     </section>
   )
 }

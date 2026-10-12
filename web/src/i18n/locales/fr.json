@@ -4992,6 +4992,8 @@
     "sec_models_site_rate": "Prix sur la plateforme",
     "sec_models_per_million": "/ 1M tokens",
     "sec_models_view_model": "Voir le modèle",
+    "sec_models_price_see_pricing": "Voir les prix",
+    "sec_models_no_description": "Aucune description disponible.",
     "sec_models_copy_id": "Copier l'ID du modèle",
     "sec_models_showing": "Affiché",
     "sec_models_show": "Afficher ce modèle",

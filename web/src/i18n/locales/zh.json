@@ -4992,6 +4992,8 @@
     "sec_models_site_rate": "站内价格",
     "sec_models_per_million": "/ 1M tokens",
     "sec_models_view_model": "查看模型详情",
+    "sec_models_price_see_pricing": "查看价格",
+    "sec_models_no_description": "暂无描述。",
     "sec_models_copy_id": "复制模型 ID",
     "sec_models_showing": "当前展示",
     "sec_models_show": "点击展示",
