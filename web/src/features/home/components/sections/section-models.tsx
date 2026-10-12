@@ -39,6 +39,7 @@ import {
   SectionHeader,
   SectionPrimaryLink,
   SectionDivider,
+  SectionScrollCue,
 } from "@/features/home/components/section-primitives"
 import {
 ACCENT_PALETTE,
@@ -824,7 +825,7 @@ function FeaturedModelCard(props: { model: ModelItem }) {
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-3xl border transition-colors duration-500",
+        "group relative flex h-full flex-col overflow-hidden rounded-3xl border transition-all duration-500 hover:-translate-y-1",
         glassPanelClassName
       )}
     >
@@ -997,10 +998,8 @@ function CompactModelCard(props: {
       className={cn(
         "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left",
         compactPanelClassName,
-        // 只过渡实际变化的属性：transition-all + 常驻 will-change 会把小卡提升为
-        // 独立合成层，Windows 上层内文字会被降采样而发虚。
-        "transition-[transform,box-shadow,border-color] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]",
-        "hover:-translate-y-1 hover:scale-[1.01] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.12)] hover:border-foreground/20 dark:hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]",
+        // 与「让一张画面」卡片同一套悬浮：整体过渡 + 500ms + 仅抬起。
+        "transition-all duration-500 hover:-translate-y-1",
         "active:scale-[0.99]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         props.selected && "-translate-y-1 scale-[1.01]"
@@ -1219,6 +1218,11 @@ export function SectionModels() {
         </div>
       </div>
 
+      <SectionScrollCue
+        target="studio"
+        cue={t("sec_models_scroll_cue")}
+        aside={t("sec_models_scroll_aside")}
+      />
       <SectionDivider />
     </section>
   )

@@ -76,10 +76,10 @@ function FooterLinkItem(props: { link: FooterLink }) {
   )
 }
 
-// Renders User Agreement / Privacy Policy links inline with the parent's
-// copyright row when either is configured in System Settings → Site. Emits
-// fragmented siblings so the parent flex container's gap controls spacing.
-function LegalLinks(props: { leadingSeparator?: boolean }) {
+// Renders User Agreement / Privacy Policy links, shown on their own row below
+// the brand row when configured in System Settings → Site. Emits fragmented
+// siblings so the parent flex container's gap controls spacing.
+function LegalLinks(props: { className?: string }) {
   const { t } = useTranslation()
   const { status } = useStatus()
   const items: { key: string; label: string; href: string }[] = []
@@ -101,10 +101,15 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
     return null
   }
   return (
-    <>
+    <div
+      className={cn(
+        'text-muted-foreground/40 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs',
+        props.className
+      )}
+    >
       {items.map((item, index) => (
         <Fragment key={item.key}>
-          {(props.leadingSeparator || index > 0) && (
+          {index > 0 && (
             <span aria-hidden='true' className='text-muted-foreground/30'>
               ·
             </span>
@@ -117,7 +122,7 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
           </Link>
         </Fragment>
       ))}
-    </>
+    </div>
   )
 }
 
@@ -248,8 +253,31 @@ export function Footer(props: FooterProps) {
 
   return (
     <footer
+      id="site-footer"
       className={cn('border-border/40 relative z-10 border-t', props.className)}
     >
+      {/* 页尾顶部沿用首页的淡出渐变，与上一节柔和衔接 */}
+      <div
+        aria-hidden='true'
+        className='pointer-events-none absolute inset-x-0 top-0 flex items-start justify-center overflow-hidden'
+      >
+        <div
+          className='h-16 w-[70%] max-w-3xl opacity-70'
+          style={{
+            background:
+              'radial-gradient(ellipse 42% 100% at 50% 0%, rgba(16,185,129,0.16) 0%, rgba(16,185,129,0.06) 45%, transparent 75%)',
+            filter: 'blur(12px)',
+          }}
+        />
+        <div
+          className='absolute top-0 h-px w-full'
+          style={{
+            background:
+              'linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--border) 55%, transparent) 22%, color-mix(in oklab, var(--foreground) 10%, transparent) 50%, color-mix(in oklab, var(--border) 55%, transparent) 78%, transparent 100%)',
+          }}
+        />
+      </div>
+
       <div className='mx-auto max-w-6xl px-6 py-12 md:py-16'>
         <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
           {/* Brand column */}
@@ -279,9 +307,20 @@ export function Footer(props: FooterProps) {
                 {displayName}
               </span>
             </Link>
-            <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
-              {t('Powerful API Management Platform')}
-            </p>
+            {/* Tagline and copyright share one baseline on wide screens */}
+            <div className='mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4'>
+              <p className='text-muted-foreground/60 max-w-[200px] text-xs leading-relaxed'>
+                {t('Powerful API Management Platform')}
+              </p>
+              <span
+                aria-hidden='true'
+                className='bg-border/60 hidden h-3 w-px sm:block'
+              />
+              <p className='text-muted-foreground/40 text-xs whitespace-nowrap'>
+                &copy; {currentYear} {displayName}.{' '}
+                {props.copyright ?? t('footer.defaultCopyright')}
+              </p>
+            </div>
           </div>
 
           {/* Links columns */}
@@ -305,18 +344,8 @@ export function Footer(props: FooterProps) {
           )}
         </div>
 
-        {/* Copyright + optional legal links inline on the left, project
-            attribution on the right; wraps on narrow screens. */}
-        <div className='border-border/30 mt-12 flex flex-col items-center justify-between gap-x-3 gap-y-2 border-t pt-6 sm:flex-row'>
-          <div className='text-muted-foreground/40 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:justify-start'>
-            <span>
-              &copy; {currentYear} {displayName}.{' '}
-              {props.copyright ?? t('footer.defaultCopyright')}
-            </span>
-            <LegalLinks leadingSeparator />
-          </div>
-          <ProjectAttribution currentYear={currentYear} />
-        </div>
+        {/* Optional legal links, centred on their own row below the brand row */}
+        <LegalLinks />
       </div>
     </footer>
   )

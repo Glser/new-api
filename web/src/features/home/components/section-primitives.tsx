@@ -17,8 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ReactNode } from "react"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowDown, ArrowUpRight } from "lucide-react"
 import { Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 
 import { AnimateInView } from "@/components/animate-in-view"
 import { cn } from "@/lib/utils"
@@ -117,27 +118,76 @@ export function SectionTextLink(props: {
   )
 }
 
-/** section 底部的发光分隔线 */
+/**
+ * section 之间的分隔线：刻意做成「若隐若现」的淡出渐变，
+ * 两端透明、中央仅有一丝微光，不构成视觉断点。
+ */
 export function SectionDivider() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center overflow-hidden"
+      className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-center overflow-hidden"
     >
+      {/* 中央微光：低透明度 + 大范围模糊，只在正中心留一点亮 */}
       <div
-        className="h-[3px] w-64 rounded-full blur-[4px] sm:w-96"
+        className="h-16 w-[70%] max-w-3xl opacity-70"
         style={{
           background:
-            "linear-gradient(90deg, transparent, rgba(16,185,129,0.7) 40%, rgba(16,185,129,0.7) 60%, transparent)",
+            "radial-gradient(ellipse 42% 100% at 50% 100%, rgba(16,185,129,0.16) 0%, rgba(16,185,129,0.06) 45%, transparent 75%)",
+          filter: "blur(12px)",
         }}
       />
+      {/* 发丝线：两端完全透明，中央最亮处也只是极淡的一线 */}
       <div
         className="absolute bottom-0 h-px w-full"
         style={{
           background:
-            "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.15) 20%, rgba(16,185,129,0.55) 42%, rgba(255,255,255,0.85) 50%, rgba(16,185,129,0.55) 58%, rgba(16,185,129,0.15) 80%, transparent 100%)",
+            "linear-gradient(90deg, transparent 0%, color-mix(in oklab, var(--border) 55%, transparent) 22%, color-mix(in oklab, var(--foreground) 10%, transparent) 50%, color-mix(in oklab, var(--border) 55%, transparent) 78%, transparent 100%)",
         }}
       />
+    </div>
+  )
+}
+
+/** section 之间的滚动提示：与 hero 底部同款的「动作 / 说明」样式 */
+export function SectionScrollCue(props: {
+  /** 目标 section 的 id；点击后平滑滚动过去 */
+  target: string
+  /** 动作文案，默认沿用 hero 的「向下探索」 */
+  cue?: string
+  /** 说明文案，默认沿用 hero 的「发现模型与能力」 */
+  aside?: string
+  className?: string
+}) {
+  const { t } = useTranslation()
+  const cue = props.cue ?? t("hero_scroll_cue", "向下探索")
+  const aside = props.aside ?? t("hero_scroll_aside", "发现模型与能力")
+
+  return (
+    <div
+      className={cn(
+        // 坐在分隔线之上：分隔线本身只有 1px，中央微光约 24px 高，
+        // 这里抬到微光之上，避免和 divider 抢同一行视觉。
+        // 左侧对齐，与 hero 底部同款位置。
+        "pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-start px-4 pb-9 sm:px-6 lg:px-8",
+        props.className
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          const el = document.querySelector(`#${props.target}`)
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" })
+          }
+        }}
+        className="group pointer-events-auto inline-flex animate-bounce items-center gap-2 font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer motion-reduce:animate-none"
+      >
+        <ArrowDown className="size-3.5 text-emerald-500/80 transition-transform duration-200 group-hover:translate-y-0.5 motion-reduce:transition-none" />
+        <span>{cue}</span>
+        <span className="text-muted-foreground/35">/</span>
+        <span>{aside}</span>
+      </button>
     </div>
   )
 }

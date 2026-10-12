@@ -7,7 +7,7 @@ published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 */
 import { Link } from "@tanstack/react-router"
-import { ArrowUpRight, BookOpen, ChevronDown } from "lucide-react"
+import { ArrowUpRight, BookOpen } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 import { HeaderLogo } from "@/components/layout/components/header-logo"
@@ -15,6 +15,7 @@ import { useStatus } from "@/hooks/use-status"
 import { useSystemConfig } from "@/hooks/use-system-config"
 
 import { HeroAgentShowcase } from "../hero-agent-showcase"
+import { SectionDivider, SectionScrollCue } from "../section-primitives"
 
 interface HeroProps {
   className?: string
@@ -179,38 +180,9 @@ export function Hero(props: HeroProps) {
       </div>
 
       {/* Clean Bottom Cue */}
-      <div className="mx-auto mt-4 flex w-full max-w-7xl items-center justify-start pt-2 text-xs">
-        <button
-          type="button"
-          onClick={() => {
-            const el = document.querySelector("#models");
-            if (el) {
-              el.scrollIntoView({ behavior: "smooth" });
-            }
-          }}
-          className="group inline-flex items-center gap-2 font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer animate-bounce"
-        >
-          <ChevronDown className="size-3.5 text-emerald-500/80 transition-transform duration-200 group-hover:translate-y-0.5" />
-          <span>{t("hero_scroll_cue")}</span>
-          <span className="text-muted-foreground/35">/</span>
-          <span>{t("hero_scroll_aside")}</span>
-        </button>
-      </div>
+      <SectionScrollCue target="models" />
       {/* Section divider: layered center-glow line */}
-      <div aria-hidden className="pointer-events-none absolute bottom-0 inset-x-0 flex flex-col items-center overflow-hidden">
-        {/* Glow bloom */}
-        <div
-          className="h-[3px] w-64 sm:w-96 rounded-full blur-[4px]"
-          style={{ background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.75) 35%, rgba(16,185,129,0.75) 65%, transparent)" }}
-        />
-        {/* Sharp center line */}
-        <div
-          className="absolute bottom-0 h-px w-full"
-          style={{
-            background: "linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.12) 15%, rgba(16,185,129,0.55) 38%, rgba(255,255,255,0.9) 50%, rgba(16,185,129,0.55) 62%, rgba(16,185,129,0.12) 85%, transparent 100%)",
-          }}
-        />
-      </div>
+      <SectionDivider />
     </section>
   )
 }

@@ -93,7 +93,7 @@ export function SectionAPI() {
   return (
     <section
       id="api"
-      className="relative z-10 overflow-hidden border-t border-border/40 px-4 py-20 sm:px-6 md:py-28 lg:px-8"
+      className="relative z-10 overflow-hidden px-4 py-20 sm:px-6 md:py-28 lg:px-8"
     >
       <SectionBackdrop />
 

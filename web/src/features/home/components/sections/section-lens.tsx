@@ -24,6 +24,7 @@ import {
   SectionDivider,
   SectionHeader,
   SectionPrimaryLink,
+  SectionScrollCue,
 } from "@/features/home/components/section-primitives"
 import {
 ACCENT_PALETTE,
@@ -62,7 +63,7 @@ export function SectionLens() {
   return (
     <section
       id="lens"
-      className="relative z-10 overflow-hidden border-t border-border/40 px-4 py-20 sm:px-6 md:py-28 lg:px-8"
+      className="relative z-10 overflow-hidden px-4 py-20 sm:px-6 md:py-28 lg:px-8"
     >
       <SectionBackdrop />
 
@@ -128,6 +129,11 @@ export function SectionLens() {
         </div>
       </div>
 
+      <SectionScrollCue
+        target="engineering"
+        cue={t("sec_lens_scroll_cue")}
+        aside={t("sec_lens_scroll_aside")}
+      />
       <SectionDivider />
     </section>
   )

@@ -25,6 +25,7 @@ import {
   RouterProvider,
 } from '@tanstack/react-router'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -32,6 +33,7 @@ import {
   SectionDivider,
   SectionHeader,
   SectionPrimaryLink,
+  SectionScrollCue,
   SectionTextLink,
 } from '../section-primitives'
 
@@ -161,6 +163,101 @@ describe('SectionBackdrop and SectionDivider', () => {
     const decorations = container.querySelectorAll('[aria-hidden="true"]')
     expect(decorations.length).toBeGreaterThanOrEqual(3)
     expect(container.querySelector('.bg-\\[size\\:4rem_4rem\\]')).not.toBeNull()
-    expect(container.querySelector('.blur-\\[4px\\]')).not.toBeNull()
+    // The glow is a soft radial wash, blurred well past a hairline so it reads
+    // as ambient light rather than a painted band.
+    const glow = container.querySelector<HTMLElement>(
+      'div[aria-hidden="true"] > div:first-child'
+    )
+    expect(glow?.style.filter).toContain('blur(12px)')
+  })
+
+  it('fades the divider out at both ends instead of drawing a hard rule', async () => {
+    const { container } = await renderAtRoute('/', <SectionDivider />)
+
+    const hairline = container.querySelector<HTMLElement>(
+      'div[aria-hidden="true"] > div:last-child'
+    )
+    expect(hairline).not.toBeNull()
+    // A hairline, not a band: the old design painted a 3px blurred bar.
+    expect(hairline?.className).toContain('h-px')
+    // Both ends are fully transparent, so no section boundary is drawn.
+    const background = hairline?.style.background ?? ''
+    expect(background).toContain('linear-gradient')
+    expect(background).toContain('transparent 0%')
+    expect(background).toContain('transparent 100%')
+  })
+})
+
+describe('SectionScrollCue', () => {
+  it('scrolls to the target section when clicked', async () => {
+    const user = userEvent.setup()
+    const target = document.createElement('div')
+    target.id = 'studio'
+    const scrollIntoView = vi.fn()
+    // src/test-setup.ts installs a no-op scrollIntoView; replace it with a spy
+    // so the call and its options can be asserted.
+    const spy = vi
+      .spyOn(HTMLElement.prototype, 'scrollIntoView')
+      .mockImplementation(scrollIntoView)
+    document.body.appendChild(target)
+
+    try {
+      await renderAtRoute(
+        '/',
+        <SectionScrollCue target='studio' cue='Keep going' aside='Open the studio' />
+      )
+
+      const cue = screen.getByRole('button', { name: /Keep going/ })
+      await user.click(cue)
+
+      expect(scrollIntoView).toHaveBeenCalledTimes(1)
+      expect(scrollIntoView.mock.calls[0][0]).toMatchObject({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    } finally {
+      spy.mockRestore()
+      target.remove()
+    }
+  })
+
+  it('falls back to the hero scroll copy when no cue text is given', async () => {
+    await renderAtRoute('/', <SectionScrollCue target='models' />)
+
+    // Defaults come from the hero keys, so every section reads the same way.
+    expect(screen.getByRole('button', { name: /向下探索/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /发现模型与能力/ })
+    ).toBeInTheDocument()
+  })
+
+  it('sits at the bottom-left and keeps the hero bounce affordance', async () => {
+    const { container } = await renderAtRoute(
+      '/',
+      <SectionScrollCue target='models' />
+    )
+
+    const cue = screen.getByRole('button', { name: /向下探索/ })
+    // The cue is anchored to the section's bottom-left, not centred.
+    expect(cue.className).toContain('animate-bounce')
+    const wrapper = cue.parentElement
+    expect(wrapper?.className).toContain('justify-start')
+    expect(wrapper?.className).toContain('bottom-0')
+    expect(container.querySelector('.animate-bounce')).not.toBeNull()
+  })
+
+  it('stops bouncing when the visitor prefers reduced motion', async () => {
+    await renderAtRoute('/', <SectionScrollCue target='models' />)
+
+    const cue = screen.getByRole('button', { name: /向下探索/ })
+    expect(cue.className).toContain('motion-reduce:animate-none')
+  })
+
+  it('does nothing when the target section is absent', async () => {
+    const user = userEvent.setup()
+    await renderAtRoute('/', <SectionScrollCue target='missing-section' />)
+
+    const cue = screen.getByRole('button')
+    await expect(user.click(cue)).resolves.not.toThrow()
   })
 })
