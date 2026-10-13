@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Image, Layers, MessageSquare, Video, type LucideIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { ModelCard } from '@/features/pricing/components/model-card'
@@ -24,9 +25,17 @@ import { DEFAULT_TOKEN_UNIT } from '@/features/pricing/constants'
 import type { PricingModel, TokenUnit } from '@/features/pricing/types'
 
 import {
+  PLAZA_CATEGORIES,
   PLAZA_CATEGORY_LABEL_KEYS,
   type PlazaCategory,
 } from '../lib/categories'
+
+const CATEGORY_ICONS: Record<PlazaCategory, LucideIcon> = {
+  [PLAZA_CATEGORIES.CHAT]: MessageSquare,
+  [PLAZA_CATEGORIES.IMAGE]: Image,
+  [PLAZA_CATEGORIES.VIDEO]: Video,
+  [PLAZA_CATEGORIES.OTHER]: Layers,
+}
 
 export function PlazaCategorySection(props: {
   category: PlazaCategory
@@ -46,22 +55,27 @@ export function PlazaCategorySection(props: {
   }
 
   const categoryLabel = t(PLAZA_CATEGORY_LABEL_KEYS[props.category])
+  const CategoryIcon = CATEGORY_ICONS[props.category]
 
   return (
     <section
       aria-labelledby={`plaza-category-${props.category}`}
       className='flex flex-col gap-4'
     >
-      <div className='flex items-baseline justify-between gap-3'>
+      <div className='flex items-center gap-2'>
+        <CategoryIcon
+          aria-hidden='true'
+          className='text-muted-foreground size-4 shrink-0'
+        />
         <h2
           id={`plaza-category-${props.category}`}
           className='text-lg font-semibold tracking-tight sm:text-xl'
         >
           {categoryLabel}
         </h2>
-        <p className='text-muted-foreground text-sm tabular-nums'>
-          {t('{{count}} models', { count: props.models.length })}
-        </p>
+        <span className='bg-emerald-500/12 text-emerald-700 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums dark:text-emerald-400'>
+          {t('{{count}} types', { count: props.models.length })}
+        </span>
       </div>
       <div className='grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3'>
         {props.models.map((model) => (

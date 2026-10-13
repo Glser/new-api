@@ -19,29 +19,33 @@ For commercial licensing, please contact support@quantumnous.com
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
+import {
+  plazaFilterRowClassName,
+  plazaFilterRowChipsClassName,
+} from './filter-row'
+
 export function PlazaLoadingSkeleton() {
   return (
     <div aria-busy='true' className='flex flex-col gap-8'>
       <Skeleton className='mx-auto h-10 w-full max-w-2xl' />
-      <div className='flex flex-col gap-3'>
-        <Skeleton className='h-3 w-16' />
-        <div className='flex gap-2'>
-          <Skeleton className='h-8 w-24 rounded-full' />
-          <Skeleton className='h-8 w-28 rounded-full' />
-          <Skeleton className='h-8 w-20 rounded-full' />
-          <Skeleton className='h-8 w-32 rounded-full' />
+      {Array.from({ length: 2 }, (_, row) => (
+        <div key={row} className={plazaFilterRowClassName}>
+          <Skeleton className='h-8 w-12 shrink-0' />
+          <div className={plazaFilterRowChipsClassName}>
+            <Skeleton className='h-8 w-24 rounded-full' />
+            <Skeleton className='h-8 w-28 rounded-full' />
+            <Skeleton className='h-8 w-20 rounded-full' />
+            <Skeleton className='h-8 w-32 rounded-full' />
+          </div>
         </div>
-      </div>
-      <div className='flex flex-col gap-3'>
-        <Skeleton className='h-3 w-16' />
-        <div className='flex gap-2'>
-          <Skeleton className='h-8 w-24 rounded-full' />
-          <Skeleton className='h-8 w-20 rounded-full' />
-        </div>
-      </div>
+      ))}
       {Array.from({ length: 2 }, (_, section) => (
         <section key={section} className='flex flex-col gap-4'>
-          <Skeleton className='h-7 w-24' />
+          <div className='flex items-center gap-2'>
+            <Skeleton className='size-4 rounded-sm' />
+            <Skeleton className='h-7 w-24' />
+            <Skeleton className='h-5 w-10 rounded-full' />
+          </div>
           <div className='grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3'>
             {Array.from({ length: 3 }, (_, index) => (
               <Card key={index} className='gap-3'>

@@ -38,6 +38,7 @@ import {
   PlazaCategorySection,
   PlazaGroupRow,
   PlazaLoadingSkeleton,
+  PlazaScaleFrame,
   PlazaVendorRow,
 } from './components'
 import { usePlazaFilters } from './hooks/use-plaza-filters'
@@ -121,16 +122,18 @@ export function Plaza() {
   if (isLoading) {
     return (
       <PublicLayout showMainContainer={false}>
-        <div className='mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <PlazaLoadingSkeleton />
-        </div>
+        <PlazaScaleFrame>
+          <div className='mx-auto w-full max-w-[1440px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+            <PlazaLoadingSkeleton />
+          </div>
+        </PlazaScaleFrame>
       </PublicLayout>
     )
   }
 
   return (
     <PublicLayout showMainContainer={false}>
-      <div className='relative'>
+      <PlazaScaleFrame className='relative'>
         <div
           aria-hidden
           className='pointer-events-none absolute inset-x-0 top-0 h-[480px] opacity-20 dark:opacity-[0.10]'
@@ -145,7 +148,7 @@ export function Plaza() {
               'linear-gradient(to bottom, black 40%, transparent 100%)',
           }}
         />
-        <PageTransition className='relative mx-auto w-full max-w-[1800px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+        <PageTransition className='relative mx-auto w-full max-w-[1440px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <header className='mx-auto mb-6 max-w-3xl pt-5 sm:mb-8 sm:pt-8'>
             <SearchBar
               value={searchInput}
@@ -167,6 +170,7 @@ export function Plaza() {
             />
             <PlazaGroupRow
               groups={availableGroups}
+              models={models}
               groupRatios={groupRatio}
               value={groupFilter}
               onChange={setGroupFilter}
@@ -218,7 +222,7 @@ export function Plaza() {
             />
           )}
         </PageTransition>
-      </div>
+      </PlazaScaleFrame>
     </PublicLayout>
   )
 }

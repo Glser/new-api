@@ -26,6 +26,7 @@ import {
   PlazaFilterChip,
   type PlazaFilterChipOption,
 } from './filter-chip'
+import { PlazaFilterRow } from './filter-row'
 
 function countByVendor(models: PricingModel[], vendorName: string): number {
   return models.reduce(
@@ -41,42 +42,40 @@ export function PlazaVendorRow(props: {
   onChange: (value: string) => void
 }) {
   const { t } = useTranslation()
+  const label = t('Provider')
 
   const options: PlazaFilterChipOption[] = [
     {
       value: FILTER_ALL,
-      label: t('All Vendors'),
-      count: props.models.length,
+      label: t('All'),
+      countLabel: t('{{count}} models short', { count: props.models.length }),
     },
-    ...props.vendors
-      .map((vendor) => ({
-        value: vendor.name,
-        label: vendor.name,
-        count: countByVendor(props.models, vendor.name),
-        icon: vendor.icon ? getLobeIcon(vendor.icon, 14) : undefined,
-      }))
-      .filter((vendor) => vendor.count > 0),
+    ...props.vendors.flatMap((vendor) => {
+      const count = countByVendor(props.models, vendor.name)
+      if (count === 0) {
+        return []
+      }
+      return [
+        {
+          value: vendor.name,
+          label: vendor.name,
+          countLabel: t('{{count}} models short', { count }),
+          icon: vendor.icon ? getLobeIcon(vendor.icon, 14) : undefined,
+        },
+      ]
+    }),
   ]
 
   return (
-    <div className='flex flex-col gap-2'>
-      <p className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
-        {t('Provider')}
-      </p>
-      <div
-        role='group'
-        aria-label={t('All Vendors')}
-        className='hover-scrollbar flex gap-2 overflow-x-auto pb-1'
-      >
-        {options.map((option) => (
-          <PlazaFilterChip
-            key={option.value}
-            option={option}
-            active={props.value === option.value}
-            onClick={() => props.onChange(option.value)}
-          />
-        ))}
-      </div>
-    </div>
+    <PlazaFilterRow label={label}>
+      {options.map((option) => (
+        <PlazaFilterChip
+          key={option.value}
+          option={option}
+          active={props.value === option.value}
+          onClick={() => props.onChange(option.value)}
+        />
+      ))}
+    </PlazaFilterRow>
   )
 }

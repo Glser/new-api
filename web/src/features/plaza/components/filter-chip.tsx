@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils'
 export type PlazaFilterChipOption = {
   value: string
   label: string
-  count?: number
+  countLabel?: string
   suffix?: string
   icon?: ReactNode
 }
@@ -37,7 +37,7 @@ export function PlazaFilterChip(props: {
   return (
     <Button
       type='button'
-      variant={props.active ? 'secondary' : 'outline'}
+      variant={props.active ? 'default' : 'outline'}
       size='sm'
       onClick={props.onClick}
       aria-pressed={props.active}
@@ -48,16 +48,26 @@ export function PlazaFilterChip(props: {
         <span className='shrink-0'>{props.option.icon}</span>
       )}
       <span className='truncate'>{props.option.label}</span>
-      {(props.option.suffix || props.option.count != null) && (
+      {props.option.suffix && (
         <span
           className={cn(
-            'rounded-full px-1.5 py-0.5 text-[11px] tabular-nums',
+            'rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums',
             props.active
-              ? 'bg-background text-foreground'
-              : 'bg-muted text-muted-foreground'
+              ? 'bg-primary-foreground/15 text-primary-foreground'
+              : 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
           )}
         >
-          {props.option.suffix ?? props.option.count}
+          {props.option.suffix}
+        </span>
+      )}
+      {props.option.countLabel && (
+        <span
+          className={cn(
+            'text-[11px] tabular-nums',
+            props.active ? 'text-primary-foreground/80' : 'text-muted-foreground'
+          )}
+        >
+          {props.option.countLabel}
         </span>
       )}
     </Button>

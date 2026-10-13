@@ -19,52 +19,58 @@ For commercial licensing, please contact support@quantumnous.com
 import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
+import type { PricingModel } from '@/features/pricing/types'
 
 import { formatGroupRatio } from '../lib/group-ratio'
 import {
   PlazaFilterChip,
   type PlazaFilterChipOption,
 } from './filter-chip'
+import { PlazaFilterRow } from './filter-row'
+
+function countByGroup(models: PricingModel[], group: string): number {
+  return models.reduce(
+    (count, model) => count + (model.enable_groups?.includes(group) ? 1 : 0),
+    0
+  )
+}
 
 export function PlazaGroupRow(props: {
   groups: string[]
+  models: PricingModel[]
   groupRatios?: Record<string, number>
   value: string
   onChange: (value: string) => void
 }) {
   const { t } = useTranslation()
+  const label = t('Price')
 
   const options: PlazaFilterChipOption[] = [
     {
       value: FILTER_ALL,
-      label: t('All Groups'),
+      label: t('All'),
+      countLabel: t('{{count}} available', { count: props.models.length }),
     },
     ...props.groups.map((group) => ({
       value: group,
       label: group,
       suffix: formatGroupRatio(props.groupRatios?.[group]),
+      countLabel: t('{{count}} available', {
+        count: countByGroup(props.models, group),
+      }),
     })),
   ]
 
   return (
-    <div className='flex flex-col gap-2'>
-      <p className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
-        {t('Groups')}
-      </p>
-      <div
-        role='group'
-        aria-label={t('Groups')}
-        className='hover-scrollbar flex gap-2 overflow-x-auto pb-1'
-      >
-        {options.map((option) => (
-          <PlazaFilterChip
-            key={option.value}
-            option={option}
-            active={props.value === option.value}
-            onClick={() => props.onChange(option.value)}
-          />
-        ))}
-      </div>
-    </div>
+    <PlazaFilterRow label={label}>
+      {options.map((option) => (
+        <PlazaFilterChip
+          key={option.value}
+          option={option}
+          active={props.value === option.value}
+          onClick={() => props.onChange(option.value)}
+        />
+      ))}
+    </PlazaFilterRow>
   )
 }

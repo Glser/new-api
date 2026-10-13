@@ -193,7 +193,7 @@ describe('plaza page', () => {
     renderPlaza()
 
     const vendorGroup = await screen.findByRole('group', {
-      name: 'All Vendors',
+      name: 'Provider',
     })
     await user.click(within(vendorGroup).getByRole('button', { name: /OpenAI/ }))
 
@@ -213,7 +213,7 @@ describe('plaza page', () => {
     const user = userEvent.setup()
     renderPlaza()
 
-    const groupRow = await screen.findByRole('group', { name: 'Groups' })
+    const groupRow = await screen.findByRole('group', { name: 'Price' })
     await user.click(within(groupRow).getByRole('button', { name: /vip/ }))
 
     await waitFor(() => {
@@ -240,5 +240,45 @@ describe('plaza page', () => {
       ).not.toBeInTheDocument()
     })
     expect(screen.getByRole('heading', { name: 'claude-opus' })).toBeVisible()
+  })
+
+  it('places the provider and price labels on the same row as their chips', async () => {
+    renderPlaza()
+
+    const vendorGroup = await screen.findByRole('group', { name: 'Provider' })
+    const vendorRow = vendorGroup.parentElement
+    expect(vendorRow).not.toBeNull()
+    expect(vendorRow).toHaveClass('flex')
+    expect(vendorRow).not.toHaveClass('flex-col')
+    expect(vendorRow?.querySelector('p')).toHaveTextContent('Provider')
+    expect(vendorRow?.querySelector('p')).toHaveClass('h-8')
+
+    const priceGroup = screen.getByRole('group', { name: 'Price' })
+    const priceRow = priceGroup.parentElement
+    expect(priceRow).not.toBeNull()
+    expect(priceRow).toHaveClass('flex')
+    expect(priceRow).not.toHaveClass('flex-col')
+    expect(priceRow?.querySelector('p')).toHaveTextContent('Price')
+  })
+
+  it('scales the page from the current viewport width', async () => {
+    const originalWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1296,
+    })
+
+    try {
+      renderPlaza()
+
+      const frame = await screen.findByTestId('plaza-scale-frame')
+      expect(frame).toHaveAttribute('data-plaza-scale', '0.9')
+      expect(frame).toHaveStyle({ zoom: '0.9' })
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: originalWidth,
+      })
+    }
   })
 })
