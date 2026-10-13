@@ -1,5 +1,6 @@
 export { Hero } from './sections/hero'
 export { HeroAgentShowcase } from './hero-agent-showcase'
+export { HomeScaleFrame } from './scale-frame'
 export { SectionModels } from './sections/section-models'
 export { SectionStudio } from './sections/section-studio'
 export { SectionLens } from './sections/section-lens'

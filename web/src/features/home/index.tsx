@@ -28,6 +28,7 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { 
   Hero, 
+  HomeScaleFrame,
   SectionModels, 
   SectionStudio, 
   SectionLens, 
@@ -129,13 +130,15 @@ export function Home() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <Hero isAuthenticated={isAuthenticated} />
-      <SectionModels />
-      <SectionStudio />
-      <SectionLens />
-      <SectionTasks />
-      <SectionAPI />
-      <Footer />
+      <HomeScaleFrame>
+        <Hero isAuthenticated={isAuthenticated} />
+        <SectionModels />
+        <SectionStudio />
+        <SectionLens />
+        <SectionTasks />
+        <SectionAPI />
+        <Footer />
+      </HomeScaleFrame>
     </PublicLayout>
   )
 }
