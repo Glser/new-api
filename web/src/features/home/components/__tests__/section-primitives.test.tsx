@@ -238,11 +238,13 @@ describe('SectionScrollCue', () => {
     )
 
     const cue = screen.getByRole('button', { name: /向下探索/ })
-    // The cue is anchored to the section's bottom-left, not centred.
+    // The cue is anchored to the section's bottom-left, aligned with max-w-7xl content.
     expect(cue.className).toContain('animate-bounce')
-    const wrapper = cue.parentElement
-    expect(wrapper?.className).toContain('justify-start')
-    expect(wrapper?.className).toContain('bottom-0')
+    const inner = cue.parentElement
+    expect(inner?.className).toContain('justify-start')
+    expect(inner?.className).toContain('max-w-7xl')
+    const outer = inner?.parentElement
+    expect(outer?.className).toContain('bottom-0')
     expect(container.querySelector('.animate-bounce')).not.toBeNull()
   })
 

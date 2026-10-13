@@ -168,26 +168,28 @@ export function SectionScrollCue(props: {
       className={cn(
         // 坐在分隔线之上：分隔线本身只有 1px，中央微光约 24px 高，
         // 这里抬到微光之上，避免和 divider 抢同一行视觉。
-        // 左侧对齐，与 hero 底部同款位置。
+        // 外层撑满 section 宽度并保持基础横向内边距。
         "pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-start px-4 pb-9 sm:px-6 lg:px-8",
         props.className
       )}
     >
-      <button
-        type="button"
-        onClick={() => {
-          const el = document.querySelector(`#${props.target}`)
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "start" })
-          }
-        }}
-        className="group pointer-events-auto inline-flex animate-bounce items-center gap-2 font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer motion-reduce:animate-none"
-      >
-        <ArrowDown className="size-3.5 text-emerald-500/80 transition-transform duration-200 group-hover:translate-y-0.5 motion-reduce:transition-none" />
-        <span>{cue}</span>
-        <span className="text-muted-foreground/35">/</span>
-        <span>{aside}</span>
-      </button>
+      <div className="mx-auto flex w-full max-w-7xl justify-start lg:pl-4 xl:pl-6">
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.querySelector(`#${props.target}`)
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          }}
+          className="group pointer-events-auto inline-flex animate-bounce items-center gap-2 font-mono text-[11px] text-muted-foreground transition-colors hover:text-foreground cursor-pointer motion-reduce:animate-none"
+        >
+          <ArrowDown className="size-3.5 text-emerald-500/80 transition-transform duration-200 group-hover:translate-y-0.5 motion-reduce:transition-none" />
+          <span>{cue}</span>
+          <span className="text-muted-foreground/35">/</span>
+          <span>{aside}</span>
+        </button>
+      </div>
     </div>
   )
 }
