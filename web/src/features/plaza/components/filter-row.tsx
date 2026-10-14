@@ -18,12 +18,13 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { ReactNode } from 'react'
 
+import { IconBadge } from '@/components/ui/icon-badge'
 import { cn } from '@/lib/utils'
 
 export const plazaFilterRowClassName =
   'flex flex-wrap items-start gap-x-2 gap-y-2 px-3.5 py-3 sm:gap-x-3 sm:px-4'
 export const plazaFilterRowLabelClassName =
-  'flex h-8 w-full shrink-0 items-center gap-2 text-sm font-medium whitespace-nowrap text-foreground/80 sm:w-24'
+  'flex h-8 w-full shrink-0 items-center gap-2 text-xs font-medium whitespace-nowrap text-foreground/75 sm:w-24'
 export const plazaFilterRowChipsClassName =
   'flex min-w-0 flex-1 flex-wrap content-start gap-2'
 
@@ -48,7 +49,7 @@ export function PlazaFilterRow(props: {
   return (
     <div className={cn(plazaFilterRowClassName, props.className)}>
       <p className={plazaFilterRowLabelClassName}>
-        {props.icon}
+        {props.icon && <IconBadge size='xs'>{props.icon}</IconBadge>}
         {props.label}
       </p>
       <div

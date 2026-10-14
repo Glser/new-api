@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { PlazaBackdrop } from './backdrop'
 import { PlazaCategorySection } from './category-section'
 import { PlazaFilterChip } from './filter-chip'
 import { PlazaFilterPanel, PlazaFilterRow } from './filter-row'
@@ -25,6 +26,7 @@ import { PlazaScaleFrame } from './scale-frame'
 import { PlazaVendorRow } from './vendor-row'
 
 export {
+  PlazaBackdrop,
   PlazaCategorySection,
   PlazaFilterChip,
   PlazaFilterPanel,

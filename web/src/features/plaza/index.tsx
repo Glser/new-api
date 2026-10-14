@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
-import { useCallback, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
@@ -37,6 +37,7 @@ import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
 import {
+  PlazaBackdrop,
   PlazaCategorySection,
   PlazaFilterPanel,
   PlazaGroupRow,
@@ -46,20 +47,6 @@ import {
 } from './components'
 import { usePlazaFilters } from './hooks/use-plaza-filters'
 import { groupModelsByCategory, PLAZA_CATEGORY_ORDER } from './lib/categories'
-
-/**
- * 页面顶部装饰：一层极淡的中性点阵，向下淡出。
- * 用网点代替彩色光晕，既让页面不至于太白，也不抢模型卡片。
- */
-const plazaBackdropStyle: CSSProperties = {
-  backgroundImage:
-    'radial-gradient(circle, var(--border) 1px, transparent 1px)',
-  backgroundSize: '24px 24px',
-  maskImage:
-    'radial-gradient(ellipse 75% 100% at 50% 0%, black, transparent 78%)',
-  WebkitMaskImage:
-    'radial-gradient(ellipse 75% 100% at 50% 0%, black, transparent 78%)',
-}
 
 export function Plaza() {
   const { t } = useTranslation()
@@ -144,8 +131,9 @@ export function Plaza() {
   if (isLoading) {
     return (
       <PublicLayout showMainContainer={false}>
-        <PlazaScaleFrame>
-          <div className='mx-auto w-full max-w-[1440px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+        <PlazaScaleFrame className='relative'>
+          <PlazaBackdrop />
+          <div className='relative mx-auto w-full max-w-[1440px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
             <PlazaLoadingSkeleton />
           </div>
         </PlazaScaleFrame>
@@ -156,11 +144,7 @@ export function Plaza() {
   return (
     <PublicLayout showMainContainer={false}>
       <PlazaScaleFrame className='relative'>
-        <div
-          aria-hidden='true'
-          className='pointer-events-none absolute inset-x-0 top-0 h-[420px]'
-          style={plazaBackdropStyle}
-        />
+        <PlazaBackdrop />
         <PageTransition className='relative mx-auto w-full max-w-[1440px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
           <header className='mx-auto mb-5 max-w-3xl pt-5 sm:mb-6 sm:pt-8'>
             <div className='flex items-center gap-2'>

@@ -193,7 +193,7 @@ describe('plaza page', () => {
     renderPlaza()
 
     const vendorGroup = await screen.findByRole('group', {
-      name: 'Provider',
+      name: 'Vendor',
     })
     await user.click(
       within(vendorGroup).getByRole('button', { name: /OpenAI/ })
@@ -244,15 +244,15 @@ describe('plaza page', () => {
     expect(screen.getByRole('heading', { name: 'claude-opus' })).toBeVisible()
   })
 
-  it('places the provider and price labels on the same row as their chips', async () => {
+  it('places the vendor and price labels on the same row as their chips', async () => {
     renderPlaza()
 
-    const vendorGroup = await screen.findByRole('group', { name: 'Provider' })
+    const vendorGroup = await screen.findByRole('group', { name: 'Vendor' })
     const vendorRow = vendorGroup.parentElement
     expect(vendorRow).not.toBeNull()
     expect(vendorRow).toHaveClass('flex')
     expect(vendorRow).not.toHaveClass('flex-col')
-    expect(vendorRow?.querySelector('p')).toHaveTextContent('Provider')
+    expect(vendorRow?.querySelector('p')).toHaveTextContent('Vendor')
     expect(vendorRow?.querySelector('p')).toHaveClass('h-8')
 
     const priceGroup = screen.getByRole('group', { name: 'Price' })
@@ -263,11 +263,26 @@ describe('plaza page', () => {
     expect(priceRow?.querySelector('p')).toHaveTextContent('Price')
   })
 
-  it('omits the all-providers chip from the provider row', async () => {
+  it('wraps the filter row icons in a decorative icon badge', async () => {
+    renderPlaza()
+
+    const vendorGroup = await screen.findByRole('group', { name: 'Vendor' })
+    expect(
+      vendorGroup.parentElement?.querySelector('p > span')
+    ).toHaveAttribute('aria-hidden', 'true')
+
+    const priceGroup = screen.getByRole('group', { name: 'Price' })
+    expect(priceGroup.parentElement?.querySelector('p > span')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    )
+  })
+
+  it('omits the all-vendors chip from the vendor row', async () => {
     renderPlaza()
 
     const vendorGroup = await screen.findByRole('group', {
-      name: 'Provider',
+      name: 'Vendor',
     })
     expect(
       within(vendorGroup).queryByRole('button', { name: /All/ })
@@ -279,7 +294,7 @@ describe('plaza page', () => {
     renderPlaza()
 
     const vendorGroup = await screen.findByRole('group', {
-      name: 'Provider',
+      name: 'Vendor',
     })
     const openAI = within(vendorGroup).getByRole('button', { name: /OpenAI/ })
     await user.click(openAI)
@@ -290,6 +305,28 @@ describe('plaza page', () => {
       expect(openAI).toHaveAttribute('aria-pressed', 'false')
     })
     expect(screen.getByRole('heading', { name: 'claude-opus' })).toBeVisible()
+  })
+
+  it('keeps the decorative backdrop layers out of the accessibility tree', async () => {
+    renderPlaza()
+
+    expect(await screen.findByTestId('plaza-ambient-wash')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    )
+    expect(screen.getByTestId('plaza-dot-grid')).toHaveAttribute(
+      'aria-hidden',
+      'true'
+    )
+  })
+
+  it('paints the same backdrop while the catalog is still loading', async () => {
+    vi.mocked(getPricing).mockReturnValue(new Promise<PricingData>(() => {}))
+
+    renderPlaza()
+
+    expect(await screen.findByTestId('plaza-ambient-wash')).toBeInTheDocument()
+    expect(screen.getByTestId('plaza-dot-grid')).toBeInTheDocument()
   })
   it('scales the page from the current viewport width', async () => {
     const originalWidth = window.innerWidth

@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Building } from 'lucide-react'
+import { Store } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
@@ -34,7 +34,7 @@ function countByVendor(models: PricingModel[], vendorName: string): number {
 }
 
 /**
- * 提供商行不放「全部」胶囊：默认状态就是全部。
+ * 供应商行不放「全部」胶囊：默认状态就是全部。
  * 点一下选中某个提供商，再点一次同一个胶囊即取消选择。
  */
 export function PlazaVendorRow(props: {
@@ -44,7 +44,7 @@ export function PlazaVendorRow(props: {
   onChange: (value: string) => void
 }) {
   const { t } = useTranslation()
-  const label = t('Provider')
+  const label = t('Vendor')
 
   const options: PlazaFilterChipOption[] = props.vendors.flatMap((vendor) => {
     const count = countByVendor(props.models, vendor.name)
@@ -62,10 +62,7 @@ export function PlazaVendorRow(props: {
   })
 
   return (
-    <PlazaFilterRow
-      label={label}
-      icon={<Building aria-hidden='true' className='size-4' />}
-    >
+    <PlazaFilterRow label={label} icon={<Store aria-hidden='true' />}>
       {options.map((option) => (
         <PlazaFilterChip
           key={option.value}

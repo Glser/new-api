@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Coins } from 'lucide-react'
+import { Percent } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
@@ -53,7 +53,7 @@ export function PlazaGroupRow(props: {
     {
       value: FILTER_ALL,
       label: t('All'),
-      countLabel: t('{{count}} available', { count: props.models.length }),
+      countLabel: t('{{count}} models short', { count: props.models.length }),
     },
     // 价格行只保留「分组名 + 倍率」，计数交给「全部」胶囊，避免一粒胶囊里堆三组信息
     ...props.groups.flatMap((group) => {
@@ -77,10 +77,7 @@ export function PlazaGroupRow(props: {
   ]
 
   return (
-    <PlazaFilterRow
-      label={label}
-      icon={<Coins aria-hidden='true' className='size-4' />}
-    >
+    <PlazaFilterRow label={label} icon={<Percent aria-hidden='true' />}>
       {options.map((option) => (
         <PlazaFilterChip
           key={option.value}

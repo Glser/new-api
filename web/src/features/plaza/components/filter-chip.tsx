@@ -49,7 +49,13 @@ const shineClassName =
   'pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-transform duration-700 ease-out group-hover/button:translate-x-full'
 
 /**
- * 筛选胶囊：未选中是白底细边框，选中是实底墨色 + 投影。
+ * 筛选胶囊：未选中是「浅面 + 发丝边框」，选中是实底墨色 + 投影。
+ *
+ * 深色模式下筛选面板本身就是一层压暗的灰，未选中胶囊若还用 bg-background
+ * 就会和面板糊成一片、只剩选中态一枚白 pill 飘着，选中/未选中看不出是
+ * 同一排按钮的两种状态。所以深色下给未选中态垫一层 10% 的前景色表面，
+ * 并加深边框与文字，让它先成为「一颗按钮」，再用实底白 pill 表达选中。
+ *
  * 悬停上浮、按下回弹与光泽都沿用首页「进入控制台」那枚按钮的反馈，
  * 让筛选器摸起来像一排真的按钮，而不是标签。
  */
@@ -73,7 +79,7 @@ export function PlazaFilterChip(props: {
         'transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
         active
           ? 'border-transparent bg-foreground text-background shadow-[0_4px_14px_rgba(0,0,0,0.12)] hover:bg-foreground hover:text-background hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)]'
-          : 'border-border/70 bg-background text-foreground/75 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-border hover:bg-background hover:text-foreground hover:shadow-[0_4px_14px_rgba(0,0,0,0.10)] dark:shadow-none'
+          : 'border-border/70 bg-background text-foreground/75 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-border hover:bg-background hover:text-foreground hover:shadow-[0_4px_14px_rgba(0,0,0,0.10)] dark:border-foreground/20 dark:bg-foreground/[0.10] dark:text-foreground/85 dark:shadow-none dark:hover:border-foreground/35 dark:hover:bg-foreground/[0.16] dark:hover:text-foreground'
       )}
     >
       <span
