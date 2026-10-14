@@ -83,7 +83,7 @@ export function SectionStudio() {
   return (
     <section
       id="studio"
-      className="relative z-10 overflow-hidden px-4 py-20 sm:px-6 md:py-28 lg:px-8"
+      className="home-section-offscreen relative z-10 overflow-hidden px-4 py-20 sm:px-6 md:py-28 lg:px-8"
     >
       <SectionBackdrop />
 
@@ -201,3 +201,4 @@ export function SectionStudio() {
     </section>
   )
 }
+

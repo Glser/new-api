@@ -36,11 +36,11 @@ export function HeroAgentShowcase() {
   const agents: AgentItem[] = [
     {
       id: "chatgpt",
-      name: "ChatGPT (codex)",
+      name: "ChatGPT Work(Codex)",
       tag: "Codex Agent",
       descKey: "hero_agent_chatgpt_desc",
       defaultDesc: "OpenAI 官方编程智能体，终端与云端任务一站调度",
-      guideUrl: "https://api.oioi.lat/pages/codex-guide/#codex/start",
+      guideUrl: "https://api.oioi.lat/pages/codex-guide/#codex/install",
       accentColor: "#10a37f",
       glowColor: "rgba(16, 163, 127, 0.28)",
       icon: (

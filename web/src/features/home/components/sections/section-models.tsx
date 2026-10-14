@@ -1241,7 +1241,7 @@ export function SectionModels() {
   return (
     <section
       id="models"
-      className="relative overflow-hidden px-4 pt-16 pb-24 sm:px-6 sm:pt-20 sm:pb-28 lg:px-8"
+      className="home-section-offscreen relative overflow-hidden px-4 pt-16 pb-24 sm:px-6 sm:pt-20 sm:pb-28 lg:px-8"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocusCapture={() => setIsPaused(true)}
@@ -1291,3 +1291,4 @@ export function SectionModels() {
     </section>
   )
 }
+

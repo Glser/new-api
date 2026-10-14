@@ -94,6 +94,14 @@ For commercial licensing, please contact support@quantumnous.com
   html {
     @apply overflow-x-hidden font-sans;
   }
+  @media (prefers-reduced-motion: no-preference) {
+    html:not(.lenis) {
+      scroll-behavior: smooth;
+    }
+  }
+  section[id] {
+    scroll-margin-top: 5rem;
+  }
   body {
     @apply bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full;
     /* Font is driven by the theme's font axis via `--font-body`
@@ -750,4 +758,33 @@ For commercial licensing, please contact support@quantumnous.com
   .hero-title-shine-emerald {
     animation: none !important;
   }
+}
+
+/* Lenis smooth scrolling integration & hardware acceleration */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis:not(.lenis-autoToggle).lenis-stopped {
+  overflow: clip;
+}
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical],
+.lenis [data-lenis-prevent-horizontal] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* Home landing page scroll performance & layer composition optimizations */
+.home-scroll-frame {
+  transform: translateZ(0);
+}
+
+.home-section-offscreen {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 900px;
 }

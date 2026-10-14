@@ -38,10 +38,11 @@ export function HomeScaleFrame(props: {
     <div
       data-testid="home-scale-frame"
       data-home-scale={String(scale)}
-      className={cn("w-full", props.className)}
+      className={cn("home-scroll-frame w-full", props.className)}
       style={style}
     >
       {props.children}
     </div>
   )
 }
+

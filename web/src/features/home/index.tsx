@@ -35,7 +35,7 @@ import {
   SectionTasks, 
   SectionAPI 
 } from './components'
-import { useHomePageContent } from './hooks'
+import { useHomePageContent, useLenis } from './hooks'
 
 export function Home() {
   const { i18n, t } = useTranslation()
@@ -44,6 +44,9 @@ export function Home() {
   const { auth } = useAuthStore()
   const isAuthenticated = !!auth.user
   const { content, isLoaded, isUrl } = useHomePageContent()
+
+  // 启用丝滑物理惯性平滑滚动
+  useLenis()
 
   const syncIframePreferences = useCallback(() => {
     try {

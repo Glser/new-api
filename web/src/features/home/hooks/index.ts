@@ -18,3 +18,4 @@ For commercial licensing, please contact support@quantumnous.com
 */
 export { useHomePageContent } from './use-home-page-content'
 export { useHomeScale } from './use-home-scale'
+export { useLenis } from './use-lenis'

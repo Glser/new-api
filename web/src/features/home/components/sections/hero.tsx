@@ -27,8 +27,7 @@ export function Hero(props: HeroProps) {
   const { status } = useStatus()
   const { logo, loading, logoLoaded } = useSystemConfig()
 
-  const docsUrl =
-    (status?.docs_link as string | undefined) || "https://docs.newapi.pro"
+  const docsUrl = "https://api.oioi.lat/pages/codex-guide/#install" 
 
   const renderDocsButton = () => {
     const className =
@@ -154,14 +153,14 @@ export function Hero(props: HeroProps) {
 
               {/* Secondary Explore Button */}
               <Link
-                to={(props.isAuthenticated ? "/playground" : "/pricing") as any}
+                to={"/pricing" as any}
                 className="group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl border border-border/70 bg-card/60 px-5 text-xs sm:text-sm font-medium text-foreground backdrop-blur-md transition-all duration-300 hover:border-foreground/25 hover:bg-card/90 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
               >
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-foreground/5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
                 />
-                <span>{props.isAuthenticated ? t("hero_cta_playground", "进入测试场") : t("hero_cta_models", "探索模型")}</span>
+                <span>{t("Model Square", "模型广场")}</span>
               </Link>
 
               {/* Tertiary Docs Button */}
