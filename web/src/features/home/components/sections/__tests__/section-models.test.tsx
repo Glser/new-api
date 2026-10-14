@@ -29,11 +29,20 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
+import type { PerfSummaryAllData } from '@/features/performance-metrics/types'
 
 import { SectionModels } from '../section-models'
 
 vi.mock('@/features/pricing/api', () => ({
   getPricing: vi.fn(() => Promise.resolve({ success: true, data: [] })),
+}))
+
+vi.mock('@/features/performance-metrics/api', () => ({
+  getPerfMetricsSummary: vi.fn(
+    (): Promise<PerfSummaryAllData> =>
+      Promise.resolve({ success: true, data: { models: [] } })
+  ),
 }))
 
 vi.mock('@/lib/lobe-icon', () => ({
@@ -552,7 +561,7 @@ it('shows backend tags and the no-description fallback', async () => {
 
   const featured = await screen.findByRole('article')
   // `featured` is an internal marker and must not surface as a user-facing tag.
-  // The remaining tags fill the spec capsules first, then the tag row.
+  // The first remaining tag becomes the badge; the rest fill the spec capsules, then the tag row.
   expect(within(featured).getAllByText('chat').length).toBeGreaterThan(0)
   expect(within(featured).getAllByText('hot').length).toBeGreaterThan(0)
   expect(within(featured).queryByText('featured')).not.toBeInTheDocument()
@@ -588,8 +597,10 @@ it('moves tags beyond the three spec slots into the scenarios row', async () => 
   renderSection()
 
   const featured = await screen.findByRole('article')
-  // The first three tags fill the fixed spec capsules.
+  // The first tag becomes the badge; the next three fill the fixed spec capsules.
   expect(within(featured).getByText('first')).toBeInTheDocument()
+  // The badge consumes the first tag, so it must not repeat inside a spec capsule.
+  expect(within(featured).getAllByText('first')).toHaveLength(1)
   expect(within(featured).getByText('second')).toBeInTheDocument()
   expect(within(featured).getByText('third')).toBeInTheDocument()
   // The remaining tags surface in the scenarios row instead.
@@ -796,4 +807,61 @@ it('prefers the model icon over any name-based inference', async () => {
   await screen.findByRole('article')
   expect(getLobeIcon).toHaveBeenCalledWith('Sparkles', expect.anything())
   vi.mocked(getLobeIcon).mockClear()
+})
+
+it('shows the 24h success rate from the perf metrics monitoring when available', async () => {
+  const { getPricing } = await import('@/features/pricing/api')
+  vi.mocked(getPricing).mockResolvedValueOnce({
+    success: true,
+    data: [
+      {
+        id: 1,
+        model_name: 'claude-opus-5-5',
+        tags: 'featured',
+        vendor_id: 1,
+        quota_type: 0,
+        model_ratio: 2,
+        completion_ratio: 1,
+        enable_groups: ['default'],
+      },
+    ],
+    vendors: [{ id: 1, name: 'anthropic' }],
+    group_ratio: { default: 1 },
+    usable_group: { default: { desc: 'default', ratio: 1 } },
+    supported_endpoint: {},
+    auto_groups: [],
+  })
+  vi.mocked(getPerfMetricsSummary).mockResolvedValueOnce({
+    success: true,
+    data: {
+      models: [
+        {
+          model_name: 'claude-opus-5-5',
+          avg_latency_ms: 820,
+          success_rate: 99.42,
+          avg_tps: 48.2,
+        },
+      ],
+    },
+  })
+
+  renderSection()
+
+  const featured = await screen.findByRole('article')
+  await waitFor(() => {
+    expect(within(featured).getByText('99.4%')).toBeInTheDocument()
+  })
+  expect(
+    within(featured).getByText('sec_models_availability')
+  ).toBeInTheDocument()
+})
+
+it('falls back to a placeholder when the perf monitoring has no data', async () => {
+  renderSection()
+
+  const featured = await screen.findByRole('article')
+  expect(
+    within(featured).getByText('sec_models_availability')
+  ).toBeInTheDocument()
+  expect(within(featured).getByText('—')).toBeInTheDocument()
 })

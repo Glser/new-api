@@ -16,9 +16,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 
 import { AnimateInView } from "@/components/animate-in-view"
+import { getUptimeStatus } from "@/features/dashboard/api"
+import { getPerfMetricsSummary } from "@/features/performance-metrics/api"
+import {
+  formatLatency,
+  formatUptimePct,
+} from "@/features/performance-metrics/lib/format"
+import { getPricing } from "@/features/pricing/api"
 import {
   SectionBackdrop,
   SectionDivider,
@@ -34,19 +42,74 @@ glassPanelClassName,
 export function SectionTasks() {
   const { t } = useTranslation()
 
+  /**
+   * 指标全部取自真实数据源，取不到时展示占位符：
+   * - 可用性：数据看板 uptime 监控的均值，未配置监控时回退到性能监控的请求成功率均值
+   * - 时延：数据看板性能监控的平均时延
+   * - 供应商数量：模型广场 pricing 数据里的供应商
+   */
+  const [stats, setStats] = useState<{
+    uptimePct: number | null
+    avgLatencyMs: number | null
+    vendorCount: number | null
+  }>({ uptimePct: null, avgLatencyMs: null, vendorCount: null })
+
+  useEffect(() => {
+    let mounted = true
+    Promise.all([
+      getUptimeStatus().catch(() => null),
+      getPerfMetricsSummary(24).catch(() => null),
+      getPricing().catch(() => null),
+    ]).then(([uptimeRes, perfRes, pricingRes]) => {
+      if (!mounted) return
+      const average = (values: number[]) =>
+        values.reduce((sum, value) => sum + value, 0) / values.length
+      // uptime 监控的值是 0~1 小数，需换算成百分数
+      const monitorRates = (uptimeRes?.data ?? [])
+        .flatMap((group) => group.monitors ?? [])
+        .map((monitor) => Number(monitor.uptime))
+        .filter((rate) => Number.isFinite(rate))
+      const models = perfRes?.data?.models ?? []
+      const successRates = models
+        .map((model) => Number(model.success_rate))
+        .filter((rate) => Number.isFinite(rate))
+      const latencies = models
+        .map((model) => Number(model.avg_latency_ms))
+        .filter((ms) => Number.isFinite(ms) && ms > 0)
+      const vendors =
+        pricingRes && Array.isArray(pricingRes.vendors)
+          ? pricingRes.vendors
+          : []
+      setStats({
+        uptimePct:
+          monitorRates.length > 0
+            ? average(monitorRates) * 100
+            : successRates.length > 0
+              ? average(successRates)
+              : null,
+        avgLatencyMs: latencies.length > 0 ? average(latencies) : null,
+        vendorCount: vendors.length > 0 ? vendors.length : null,
+      })
+    })
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   const metrics = [
     {
-      value: "99.98%",
+      value: stats.uptimePct != null ? formatUptimePct(stats.uptimePct) : "—",
       label: t("sec_tasks_sla_uptime"),
       detail: "多活容灾与秒级主备切换",
     },
     {
-      value: "< 25ms",
+      value:
+        stats.avgLatencyMs != null ? formatLatency(stats.avgLatencyMs) : "—",
       label: t("sec_tasks_sla_latency"),
       detail: "零冷启动代理损耗",
     },
     {
-      value: "50+",
+      value: stats.vendorCount != null ? String(stats.vendorCount) : "—",
       label: t("sec_tasks_sla_providers"),
       detail: "全网主流大模型供应商接入",
     },

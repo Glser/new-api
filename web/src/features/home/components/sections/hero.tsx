@@ -63,7 +63,7 @@ export function Hero(props: HeroProps) {
   }
 
   return (
-    <section className="relative z-10 flex min-h-[calc(100svh-4.5rem)] flex-col justify-between overflow-hidden px-4 sm:px-6 lg:px-8 pt-16 pb-8 sm:pt-20 sm:pb-10 md:pt-24 md:pb-12">
+    <section className="relative z-10 flex min-h-[calc(100svh/var(--home-scale,1))] flex-col justify-between overflow-hidden px-4 sm:px-6 lg:px-8 pt-16 pb-8 sm:pt-20 sm:pb-10 md:pt-24 md:pb-12">
       {/* Subtle atmospheric lighting */}
       <div
         aria-hidden

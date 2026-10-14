@@ -27,8 +27,12 @@ export function HomeScaleFrame(props: {
   className?: string
 }) {
   const scale = useHomeScale()
-  const style: CSSProperties | undefined =
-    scale === 1 ? undefined : { zoom: scale }
+  // 暴露缩放比例给子树：zoom 会连同视口单位一起放大（100svh 会被放大 scale 倍），
+  // 首屏 hero 需要除以它，才能把「设计画布高度」精确换算回渲染像素。
+  const style = {
+    ...(scale === 1 ? null : { zoom: scale }),
+    '--home-scale': String(scale),
+  } as CSSProperties
 
   return (
     <div

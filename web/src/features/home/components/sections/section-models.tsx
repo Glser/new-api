@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
 import { useMemo, useState, useEffect } from "react"
 import { getPricing } from "@/features/pricing/api"
+import { getPerfMetricsSummary } from "@/features/performance-metrics/api"
+import { getSuccessRateDotClass } from "@/features/performance-metrics/lib/format"
 import type { PricingModel, PricingVendor } from "@/features/pricing/types"
 import { getModelTokenPrices } from "@/features/pricing/lib/dynamic-price"
 import { parseModelTags } from "@/features/models/lib/model-utils"
@@ -58,11 +60,12 @@ interface ModelItem {
   name: string
   provider: string
   iconKey: string
+  /** 右上角徽章：取后台 tags 的第一个，无标签时回退到轮换兜底文案 */
   badge: string
   description: string
-  /** 规格胶囊固定三个槽位，值依次取后台 tags，未配时为空 */
+  /** 规格胶囊固定三个槽位，值依次取后台 tags 的第 2~4 个（首个已用作徽章），未配时为空 */
   specs: [string, string, string]
-  /** 超出三个槽位的多余标签，展示在「推荐适用场景」中 */
+  /** 超出徽章与三个规格槽位的多余标签，展示在「推荐适用场景」中 */
   extraTags: string[]
   officialInput: string
   officialOutput: string
@@ -78,6 +81,8 @@ interface ModelItem {
   discountPercent: number | null
   /** 是否取不到 token 价格（按次/任务计费、特殊表达式等），此时不展示价格数值 */
   priceUnavailable: boolean
+  /** 最近 24h 请求成功率（可用率），取自模型广场同源的性能监控；无监控数据时为 null */
+  successRate: number | null
   accentColor: string
   glowColor: string
 }
@@ -218,7 +223,10 @@ function resolveLowestGroupRatio(
   return minRatio === Number.POSITIVE_INFINITY ? 1 : minRatio
 }
 
-/** 卡片右上角的亮点徽章，按展示位置轮换，与具体模型无关 */
+/**
+ * 徽章兜底文案：模型没有配置标签时按展示位置轮换。
+ * 配了标签时徽章取第一个标签，见 convertPricingModelToItem。
+ */
 const BADGES = ["SOTA 推理", "旗舰精选", "高性能模型", "前沿推理"]
 
 function resolveBadge(index: number): string {
@@ -274,6 +282,7 @@ const MODELS: ModelItem[] = [
     tags: [],
     discountPercent: null,
     priceUnavailable: true,
+    successRate: null,
     accentColor: "rgb(249, 115, 22)",
     glowColor: "rgba(249, 115, 22, 0.22)",
   },
@@ -294,6 +303,7 @@ const MODELS: ModelItem[] = [
     tags: [],
     discountPercent: null,
     priceUnavailable: true,
+    successRate: null,
     accentColor: "rgb(16, 185, 129)",
     glowColor: "rgba(16, 185, 129, 0.22)",
   },
@@ -314,6 +324,7 @@ const MODELS: ModelItem[] = [
     tags: [],
     discountPercent: null,
     priceUnavailable: true,
+    successRate: null,
     accentColor: "rgb(59, 130, 246)",
     glowColor: "rgba(59, 130, 246, 0.22)",
   },
@@ -334,6 +345,7 @@ const MODELS: ModelItem[] = [
     tags: [],
     discountPercent: null,
     priceUnavailable: true,
+    successRate: null,
     accentColor: "rgb(139, 92, 246)",
     glowColor: "rgba(139, 92, 246, 0.22)",
   },
@@ -410,7 +422,8 @@ function convertPricingModelToItem(
   model: PricingModel,
   vendors: PricingVendor[],
   groupRatio: Record<string, number>,
-  index: number
+  index: number,
+  perfRates: Map<string, number>
 ): ModelItem {
   const vendorObj = vendors.find((v) => v.id === model.vendor_id)
   const rawVendorName = vendorObj?.name || model.vendor_name || (model.model_name.split(/[-_/]/)[0] ?? "AI")
@@ -438,9 +451,10 @@ function convertPricingModelToItem(
     name: model.model_name,
     provider,
     iconKey: resolveIconKey(model, vendorObj),
-    specs: [tags[0] ?? "", tags[1] ?? "", tags[2] ?? ""],
-    extraTags: tags.slice(3),
-    badge: resolveBadge(index),
+    // 徽章取第一个标签；规格胶囊与推荐场景从第二个开始取，避免同一标签重复占槽
+    badge: tags[0] || resolveBadge(index),
+    specs: [tags[1] ?? "", tags[2] ?? "", tags[3] ?? ""],
+    extraTags: tags.slice(4),
     description: model.description || "",
     officialInput,
     officialOutput,
@@ -453,6 +467,7 @@ function convertPricingModelToItem(
     tags,
     discountPercent,
     priceUnavailable: !prices.hasTokenPrices,
+    successRate: perfRates.get(model.model_name) ?? null,
     accentColor: palette.accentColor,
     glowColor: palette.glowColor,
   }
@@ -468,7 +483,8 @@ function isFeaturedModel(model: PricingModel): boolean {
 function hydrateModels(
   backendModels: PricingModel[],
   vendors: PricingVendor[] = [],
-  groupRatio: Record<string, number> = {}
+  groupRatio: Record<string, number> = {},
+  perfRates: Map<string, number> = new Map()
 ): ModelItem[] {
   if (!backendModels.length) {
     // 后端不可用时退回静态预设，价格一律标记为不可用，不展示推导数值
@@ -500,10 +516,11 @@ function hydrateModels(
 
       if (!match) return preset
 
-      const converted = convertPricingModelToItem(match, vendors, groupRatio, idx)
+      const converted = convertPricingModelToItem(match, vendors, groupRatio, idx, perfRates)
       return {
         ...preset,
         provider: formatProviderName(preset.provider),
+        badge: converted.badge,
         officialInput: converted.officialInput,
         officialOutput: converted.officialOutput,
         siteInput: converted.siteInput,
@@ -517,6 +534,7 @@ function hydrateModels(
         extraTags: converted.extraTags,
         discountPercent: converted.discountPercent,
         priceUnavailable: converted.priceUnavailable,
+        successRate: converted.successRate,
       }
     })
     return matchedPresets
@@ -527,7 +545,7 @@ function hydrateModels(
   if (selected.length === 0) return MODELS
 
   return selected.map((model, idx) =>
-    convertPricingModelToItem(model, vendors, groupRatio, idx)
+    convertPricingModelToItem(model, vendors, groupRatio, idx, perfRates)
   )
 }
 
@@ -866,15 +884,15 @@ function FeaturedModelCard(props: { model: ModelItem }) {
           </div>
 
           <span
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+            className="inline-flex max-w-[10rem] shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
             style={{
               backgroundColor: `${model.accentColor}18`,
               color: model.accentColor,
               borderColor: `${model.accentColor}35`,
             }}
           >
-            <Sparkles className="size-3" aria-hidden />
-            {model.badge}
+            <Sparkles className="size-3 shrink-0" aria-hidden />
+            <span className="min-w-0 truncate">{model.badge}</span>
           </span>
         </div>
 
@@ -946,16 +964,32 @@ function FeaturedModelCard(props: { model: ModelItem }) {
               </CopyButton>
             </TooltipProvider>
 
-            {/* 可用性状态：窄屏时隐藏文字，仅保留状态色点 */}
-            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90">
+            {/* 可用率：与模型广场同源的 24h 性能监控，无监控数据时展示占位符 */}
+            <span
+              className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90"
+              title={
+                model.successRate != null
+                  ? t("Availability (last 24h)")
+                  : undefined
+              }
+            >
               <span
-                className="size-1.5 shrink-0 rounded-full"
-                style={{
-                  backgroundColor: model.accentColor,
-                  boxShadow: `0 0 8px ${model.accentColor}`,
-                }}
+                aria-hidden
+                className={cn(
+                  "size-1.5 shrink-0 rounded-full",
+                  model.successRate != null
+                    ? getSuccessRateDotClass(model.successRate)
+                    : "bg-muted-foreground/40"
+                )}
               />
-              <span className="hidden sm:inline">{t("sec_models_status_ready")}</span>
+              <span className="hidden sm:inline">
+                {t("sec_models_availability")}
+              </span>
+              <span className="font-mono tabular-nums">
+                {model.successRate != null
+                  ? `${model.successRate.toFixed(1)}%`
+                  : "—"}
+              </span>
             </span>
           </div>
 
@@ -1034,14 +1068,14 @@ function CompactModelCard(props: {
           </div>
 
           <span
-            className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            className="max-w-[7rem] shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
             style={{
               color: model.accentColor,
               backgroundColor: `${model.accentColor}18`,
               border: `1px solid ${model.accentColor}30`,
             }}
           >
-            {model.badge}
+            <span className="block truncate">{model.badge}</span>
           </span>
         </div>
       </div>
@@ -1135,6 +1169,10 @@ export function SectionModels() {
     vendors: PricingVendor[]
     groupRatio: Record<string, number>
   }>({ models: [], vendors: [], groupRatio: {} })
+  /** 模型可用率（24h 成功率）：与模型广场同源的性能监控，按模型名索引 */
+  const [perfRates, setPerfRates] = useState<Map<string, number>>(
+    () => new Map()
+  )
   useEffect(() => {
     let mounted = true
     getPricing()
@@ -1150,14 +1188,40 @@ export function SectionModels() {
       .catch(() => {
         // Silently fallback to static preset models if API fails
       })
+    getPerfMetricsSummary(24)
+      .then((res) => {
+        if (!mounted) return
+        const rates = new Map<string, number>()
+        for (const item of res?.data?.models ?? []) {
+          const rate = item?.success_rate
+          if (
+            typeof rate === "number" &&
+            Number.isFinite(rate) &&
+            rate >= 0 &&
+            rate <= 100
+          ) {
+            rates.set(item.model_name, rate)
+          }
+        }
+        setPerfRates(rates)
+      })
+      .catch(() => {
+        // 性能监控不可用时静默降级：可用率展示为占位符
+      })
     return () => {
       mounted = false
     }
   }, [])
 
   const displayModels = useMemo(
-    () => hydrateModels(backendData.models, backendData.vendors, backendData.groupRatio),
-    [backendData]
+    () =>
+      hydrateModels(
+        backendData.models,
+        backendData.vendors,
+        backendData.groupRatio,
+        perfRates
+      ),
+    [backendData, perfRates]
   )
   const activeModel = displayModels[activeIndex] ?? displayModels[0]
 
@@ -1177,7 +1241,7 @@ export function SectionModels() {
   return (
     <section
       id="models"
-      className="relative overflow-hidden px-4 pt-10 pb-20 sm:px-6 sm:pt-14 sm:pb-24 lg:px-8"
+      className="relative overflow-hidden px-4 pt-16 pb-24 sm:px-6 sm:pt-20 sm:pb-28 lg:px-8"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocusCapture={() => setIsPaused(true)}
