@@ -26,48 +26,83 @@ export type PlazaFilterChipOption = {
   label: string
   countLabel?: string
   suffix?: string
+  /** suffix 的配色：倍率低于 1 时按「有折扣」的语义色呈现 */
+  suffixTone?: 'muted' | 'discount'
   icon?: ReactNode
 }
 
+function getSuffixClassName(
+  active: boolean,
+  tone: 'muted' | 'discount'
+): string {
+  if (active) {
+    return 'text-background/65'
+  }
+  if (tone === 'discount') {
+    return 'text-success'
+  }
+  return 'text-muted-foreground'
+}
+
+/** 悬停时掠过的一层光泽，做法与首页「进入控制台」按钮一致 */
+const shineClassName =
+  'pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-transform duration-700 ease-out group-hover/button:translate-x-full'
+
+/**
+ * 筛选胶囊：未选中是白底细边框，选中是实底墨色 + 投影。
+ * 悬停上浮、按下回弹与光泽都沿用首页「进入控制台」那枚按钮的反馈，
+ * 让筛选器摸起来像一排真的按钮，而不是标签。
+ */
 export function PlazaFilterChip(props: {
   option: PlazaFilterChipOption
   active: boolean
   onClick: () => void
 }) {
+  const { active, option } = props
+
   return (
     <Button
       type='button'
-      variant={props.active ? 'default' : 'outline'}
+      variant='ghost'
       size='sm'
       onClick={props.onClick}
-      aria-pressed={props.active}
-      className='h-8 max-w-full shrink-0 gap-1.5 rounded-full px-3 text-xs'
-      title={props.option.label}
-    >
-      {props.option.icon && (
-        <span className='shrink-0'>{props.option.icon}</span>
+      aria-pressed={active}
+      title={option.label}
+      className={cn(
+        'relative h-8 max-w-full shrink-0 gap-1.5 overflow-hidden rounded-full border px-3 text-xs font-medium',
+        'transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
+        active
+          ? 'border-transparent bg-foreground text-background shadow-[0_4px_14px_rgba(0,0,0,0.12)] hover:bg-foreground hover:text-background hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)]'
+          : 'border-border/70 bg-background text-foreground/75 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-border hover:bg-background hover:text-foreground hover:shadow-[0_4px_14px_rgba(0,0,0,0.10)] dark:shadow-none'
       )}
-      <span className='truncate'>{props.option.label}</span>
-      {props.option.suffix && (
+    >
+      <span
+        aria-hidden='true'
+        className={cn(
+          shineClassName,
+          active ? 'via-white/25' : 'via-foreground/[0.07]'
+        )}
+      />
+      {option.icon && <span className='relative shrink-0'>{option.icon}</span>}
+      <span className='relative truncate'>{option.label}</span>
+      {option.suffix && (
         <span
           className={cn(
-            'rounded-full px-1.5 py-0.5 text-[11px] font-medium tabular-nums',
-            props.active
-              ? 'bg-primary-foreground/15 text-primary-foreground'
-              : 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
+            'relative font-mono text-[11px] leading-none tabular-nums',
+            getSuffixClassName(active, option.suffixTone ?? 'muted')
           )}
         >
-          {props.option.suffix}
+          {option.suffix}
         </span>
       )}
-      {props.option.countLabel && (
+      {option.countLabel && (
         <span
           className={cn(
-            'text-[11px] tabular-nums',
-            props.active ? 'text-primary-foreground/80' : 'text-muted-foreground'
+            'relative text-[11px] leading-none tabular-nums',
+            active ? 'text-background/60' : 'text-muted-foreground/70'
           )}
         >
-          {props.option.countLabel}
+          {option.countLabel}
         </span>
       )}
     </Button>

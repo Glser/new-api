@@ -20,20 +20,37 @@ import type { ReactNode } from 'react'
 
 import { cn } from '@/lib/utils'
 
-export const plazaFilterRowClassName = 'flex min-w-0 items-start gap-3'
+export const plazaFilterRowClassName =
+  'flex flex-wrap items-start gap-x-2 gap-y-2 px-3.5 py-3 sm:gap-x-3 sm:px-4'
 export const plazaFilterRowLabelClassName =
-  'text-foreground flex h-8 shrink-0 items-center text-sm font-medium whitespace-nowrap'
+  'flex h-8 w-full shrink-0 items-center gap-2 text-sm font-medium whitespace-nowrap text-foreground/80 sm:w-24'
 export const plazaFilterRowChipsClassName =
   'flex min-w-0 flex-1 flex-wrap content-start gap-2'
 
+/**
+ * 筛选区外壳：把多行筛选条件收进同一个浅灰面板，行与行之间用发丝线分隔。
+ * 相比每行各自一张卡片，面板让「筛选」在视觉上成为一个整体控件。
+ */
+export function PlazaFilterPanel(props: { children: ReactNode }) {
+  return (
+    <div className='border-border/70 bg-muted/40 divide-border/60 flex flex-col divide-y rounded-xl border'>
+      {props.children}
+    </div>
+  )
+}
+
 export function PlazaFilterRow(props: {
   label: string
+  icon?: ReactNode
   children: ReactNode
   className?: string
 }) {
   return (
     <div className={cn(plazaFilterRowClassName, props.className)}>
-      <p className={plazaFilterRowLabelClassName}>{props.label}</p>
+      <p className={plazaFilterRowLabelClassName}>
+        {props.icon}
+        {props.label}
+      </p>
       <div
         role='group'
         aria-label={props.label}

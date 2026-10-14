@@ -16,16 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Building } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
 import type { PricingModel, PricingVendor } from '@/features/pricing/types'
 import { getLobeIcon } from '@/lib/lobe-icon'
 
-import {
-  PlazaFilterChip,
-  type PlazaFilterChipOption,
-} from './filter-chip'
+import { PlazaFilterChip, type PlazaFilterChipOption } from './filter-chip'
 import { PlazaFilterRow } from './filter-row'
 
 function countByVendor(models: PricingModel[], vendorName: string): number {
@@ -35,6 +33,10 @@ function countByVendor(models: PricingModel[], vendorName: string): number {
   )
 }
 
+/**
+ * 提供商行不放「全部」胶囊：默认状态就是全部。
+ * 点一下选中某个提供商，再点一次同一个胶囊即取消选择。
+ */
 export function PlazaVendorRow(props: {
   vendors: PricingVendor[]
   models: PricingModel[]
@@ -44,36 +46,36 @@ export function PlazaVendorRow(props: {
   const { t } = useTranslation()
   const label = t('Provider')
 
-  const options: PlazaFilterChipOption[] = [
-    {
-      value: FILTER_ALL,
-      label: t('All'),
-      countLabel: t('{{count}} models short', { count: props.models.length }),
-    },
-    ...props.vendors.flatMap((vendor) => {
-      const count = countByVendor(props.models, vendor.name)
-      if (count === 0) {
-        return []
-      }
-      return [
-        {
-          value: vendor.name,
-          label: vendor.name,
-          countLabel: t('{{count}} models short', { count }),
-          icon: vendor.icon ? getLobeIcon(vendor.icon, 14) : undefined,
-        },
-      ]
-    }),
-  ]
+  const options: PlazaFilterChipOption[] = props.vendors.flatMap((vendor) => {
+    const count = countByVendor(props.models, vendor.name)
+    if (count === 0) {
+      return []
+    }
+    return [
+      {
+        value: vendor.name,
+        label: vendor.name,
+        countLabel: t('{{count}} models short', { count }),
+        icon: vendor.icon ? getLobeIcon(vendor.icon, 14) : undefined,
+      },
+    ]
+  })
 
   return (
-    <PlazaFilterRow label={label}>
+    <PlazaFilterRow
+      label={label}
+      icon={<Building aria-hidden='true' className='size-4' />}
+    >
       {options.map((option) => (
         <PlazaFilterChip
           key={option.value}
           option={option}
           active={props.value === option.value}
-          onClick={() => props.onChange(option.value)}
+          onClick={() =>
+            props.onChange(
+              props.value === option.value ? FILTER_ALL : option.value
+            )
+          }
         />
       ))}
     </PlazaFilterRow>

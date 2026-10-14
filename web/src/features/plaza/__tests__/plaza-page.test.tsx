@@ -195,7 +195,9 @@ describe('plaza page', () => {
     const vendorGroup = await screen.findByRole('group', {
       name: 'Provider',
     })
-    await user.click(within(vendorGroup).getByRole('button', { name: /OpenAI/ }))
+    await user.click(
+      within(vendorGroup).getByRole('button', { name: /OpenAI/ })
+    )
 
     await waitFor(() => {
       expect(
@@ -261,6 +263,34 @@ describe('plaza page', () => {
     expect(priceRow?.querySelector('p')).toHaveTextContent('Price')
   })
 
+  it('omits the all-providers chip from the provider row', async () => {
+    renderPlaza()
+
+    const vendorGroup = await screen.findByRole('group', {
+      name: 'Provider',
+    })
+    expect(
+      within(vendorGroup).queryByRole('button', { name: /All/ })
+    ).not.toBeInTheDocument()
+  })
+
+  it('clears the vendor filter when the pressed chip is clicked again', async () => {
+    const user = userEvent.setup()
+    renderPlaza()
+
+    const vendorGroup = await screen.findByRole('group', {
+      name: 'Provider',
+    })
+    const openAI = within(vendorGroup).getByRole('button', { name: /OpenAI/ })
+    await user.click(openAI)
+    expect(openAI).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(openAI)
+    await waitFor(() => {
+      expect(openAI).toHaveAttribute('aria-pressed', 'false')
+    })
+    expect(screen.getByRole('heading', { name: 'claude-opus' })).toBeVisible()
+  })
   it('scales the page from the current viewport width', async () => {
     const originalWidth = window.innerWidth
     Object.defineProperty(window, 'innerWidth', {

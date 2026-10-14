@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { PlazaCategorySection } from './category-section'
 import { PlazaFilterChip } from './filter-chip'
-import { PlazaFilterRow } from './filter-row'
+import { PlazaFilterPanel, PlazaFilterRow } from './filter-row'
 import { PlazaGroupRow } from './group-row'
 import { PlazaLoadingSkeleton } from './loading-skeleton'
 import { PlazaScaleFrame } from './scale-frame'
@@ -27,6 +27,7 @@ import { PlazaVendorRow } from './vendor-row'
 export {
   PlazaCategorySection,
   PlazaFilterChip,
+  PlazaFilterPanel,
   PlazaFilterRow,
   PlazaGroupRow,
   PlazaLoadingSkeleton,

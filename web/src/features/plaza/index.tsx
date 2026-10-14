@@ -17,11 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { useCallback, useMemo, useState } from 'react'
+import { X } from 'lucide-react'
+import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
 import { PageTransition } from '@/components/page-transition'
+import { Button } from '@/components/ui/button'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import { EmptyState } from '@/features/pricing/components/empty-state'
 import { ModelDetailsDrawer } from '@/features/pricing/components/model-details'
@@ -36,16 +38,28 @@ import { requireServerSuccess } from '@/lib/server-error-message'
 
 import {
   PlazaCategorySection,
+  PlazaFilterPanel,
   PlazaGroupRow,
   PlazaLoadingSkeleton,
   PlazaScaleFrame,
   PlazaVendorRow,
 } from './components'
 import { usePlazaFilters } from './hooks/use-plaza-filters'
-import {
-  groupModelsByCategory,
-  PLAZA_CATEGORY_ORDER,
-} from './lib/categories'
+import { groupModelsByCategory, PLAZA_CATEGORY_ORDER } from './lib/categories'
+
+/**
+ * 页面顶部装饰：一层极淡的中性点阵，向下淡出。
+ * 用网点代替彩色光晕，既让页面不至于太白，也不抢模型卡片。
+ */
+const plazaBackdropStyle: CSSProperties = {
+  backgroundImage:
+    'radial-gradient(circle, var(--border) 1px, transparent 1px)',
+  backgroundSize: '24px 24px',
+  maskImage:
+    'radial-gradient(ellipse 75% 100% at 50% 0%, black, transparent 78%)',
+  WebkitMaskImage:
+    'radial-gradient(ellipse 75% 100% at 50% 0%, black, transparent 78%)',
+}
 
 export function Plaza() {
   const { t } = useTranslation()
@@ -85,8 +99,7 @@ export function Plaza() {
   const selectedModel = useMemo(
     () =>
       selectedModelName
-        ? models.find((model) => model.model_name === selectedModelName) ||
-          null
+        ? models.find((model) => model.model_name === selectedModelName) || null
         : null,
     [models, selectedModelName]
   )
@@ -102,6 +115,15 @@ export function Plaza() {
   const groupedModels = useMemo(
     () => groupModelsByCategory(filteredModels),
     [filteredModels]
+  )
+
+  /** 只展示有模型的分类，编号按可见顺序连续编排 */
+  const visibleCategories = useMemo(
+    () =>
+      PLAZA_CATEGORY_ORDER.filter(
+        (category) => groupedModels[category].length > 0
+      ),
+    [groupedModels]
   )
 
   const perfQuery = useQuery({
@@ -135,46 +157,53 @@ export function Plaza() {
     <PublicLayout showMainContainer={false}>
       <PlazaScaleFrame className='relative'>
         <div
-          aria-hidden
-          className='pointer-events-none absolute inset-x-0 top-0 h-[480px] opacity-20 dark:opacity-[0.10]'
-          style={{
-            background: [
-              'radial-gradient(ellipse 60% 50% at 20% 20%, oklch(0.72 0.18 250 / 80%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 50% 40% at 80% 15%, oklch(0.65 0.15 200 / 60%) 0%, transparent 70%)',
-              'radial-gradient(ellipse 40% 35% at 50% 70%, oklch(0.70 0.12 280 / 40%) 0%, transparent 70%)',
-            ].join(', '),
-            maskImage: 'linear-gradient(to bottom, black 40%, transparent 100%)',
-            WebkitMaskImage:
-              'linear-gradient(to bottom, black 40%, transparent 100%)',
-          }}
+          aria-hidden='true'
+          className='pointer-events-none absolute inset-x-0 top-0 h-[420px]'
+          style={plazaBackdropStyle}
         />
         <PageTransition className='relative mx-auto w-full max-w-[1440px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <header className='mx-auto mb-6 max-w-3xl pt-5 sm:mb-8 sm:pt-8'>
-            <SearchBar
-              value={searchInput}
-              onChange={setSearchInput}
-              onClear={clearSearch}
-              placeholder={t(
-                'Search model name, provider, endpoint, or tag...'
+          <header className='mx-auto mb-5 max-w-3xl pt-5 sm:mb-6 sm:pt-8'>
+            <div className='flex items-center gap-2'>
+              <SearchBar
+                value={searchInput}
+                onChange={setSearchInput}
+                onClear={clearSearch}
+                placeholder={t(
+                  'Search model name, provider, endpoint, or tag...'
+                )}
+                className='min-w-0 flex-1'
+              />
+              {hasActiveFilters && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onClick={clearAll}
+                  className='text-muted-foreground hover:text-foreground h-10 shrink-0 gap-1.5 rounded-lg px-3 text-xs'
+                >
+                  <X aria-hidden='true' className='size-3.5' />
+                  {t('Clear filters')}
+                </Button>
               )}
-              className='mx-auto max-w-2xl'
-            />
+            </div>
           </header>
 
-          <div className='flex flex-col gap-5'>
-            <PlazaVendorRow
-              vendors={vendors}
-              models={models}
-              value={vendorFilter}
-              onChange={setVendorFilter}
-            />
-            <PlazaGroupRow
-              groups={availableGroups}
-              models={models}
-              groupRatios={groupRatio}
-              value={groupFilter}
-              onChange={setGroupFilter}
-            />
+          <div className='flex flex-col gap-6 sm:gap-8'>
+            <PlazaFilterPanel>
+              <PlazaVendorRow
+                vendors={vendors}
+                models={models}
+                value={vendorFilter}
+                onChange={setVendorFilter}
+              />
+              <PlazaGroupRow
+                groups={availableGroups}
+                models={models}
+                groupRatios={groupRatio}
+                value={groupFilter}
+                onChange={setGroupFilter}
+              />
+            </PlazaFilterPanel>
 
             {filteredModels.length === 0 ? (
               <EmptyState
@@ -183,11 +212,12 @@ export function Plaza() {
                 onClearFilters={clearAll}
               />
             ) : (
-              <div className='flex flex-col gap-10'>
-                {PLAZA_CATEGORY_ORDER.map((category) => (
+              <div className='flex flex-col gap-10 sm:gap-12'>
+                {visibleCategories.map((category, index) => (
                   <PlazaCategorySection
                     key={category}
                     category={category}
+                    index={index + 1}
                     models={groupedModels[category]}
                     onModelClick={handleModelClick}
                     priceRate={priceRate}

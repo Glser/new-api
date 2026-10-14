@@ -16,16 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Coins } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
 import type { PricingModel } from '@/features/pricing/types'
 
 import { formatGroupRatio } from '../lib/group-ratio'
-import {
-  PlazaFilterChip,
-  type PlazaFilterChipOption,
-} from './filter-chip'
+import { PlazaFilterChip, type PlazaFilterChipOption } from './filter-chip'
 import { PlazaFilterRow } from './filter-row'
 
 function countByGroup(models: PricingModel[], group: string): number {
@@ -33,6 +31,12 @@ function countByGroup(models: PricingModel[], group: string): number {
     (count, model) => count + (model.enable_groups?.includes(group) ? 1 : 0),
     0
   )
+}
+
+/** formatGroupRatio 产出 "x0.5"，这里换成更易读的乘号 */
+function formatRatioBadge(ratio: number | undefined): string | undefined {
+  const formatted = formatGroupRatio(ratio)
+  return formatted ? formatted.replaceAll('x', '×') : undefined
 }
 
 export function PlazaGroupRow(props: {
@@ -51,18 +55,32 @@ export function PlazaGroupRow(props: {
       label: t('All'),
       countLabel: t('{{count}} available', { count: props.models.length }),
     },
-    ...props.groups.map((group) => ({
-      value: group,
-      label: group,
-      suffix: formatGroupRatio(props.groupRatios?.[group]),
-      countLabel: t('{{count}} available', {
-        count: countByGroup(props.models, group),
-      }),
-    })),
+    // 价格行只保留「分组名 + 倍率」，计数交给「全部」胶囊，避免一粒胶囊里堆三组信息
+    ...props.groups.flatMap((group) => {
+      const count = countByGroup(props.models, group)
+      if (count === 0) {
+        return []
+      }
+      const ratio = props.groupRatios?.[group]
+      return [
+        {
+          value: group,
+          label: group,
+          suffix: formatRatioBadge(ratio),
+          suffixTone:
+            ratio != null && ratio < 1
+              ? ('discount' as const)
+              : ('muted' as const),
+        },
+      ]
+    }),
   ]
 
   return (
-    <PlazaFilterRow label={label}>
+    <PlazaFilterRow
+      label={label}
+      icon={<Coins aria-hidden='true' className='size-4' />}
+    >
       {options.map((option) => (
         <PlazaFilterChip
           key={option.value}

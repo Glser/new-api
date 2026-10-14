@@ -16,9 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Image, Layers, MessageSquare, Video, type LucideIcon } from 'lucide-react'
+import {
+  Boxes,
+  Film,
+  Image,
+  MessagesSquare,
+  type LucideIcon,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { ModelCard } from '@/features/pricing/components/model-card'
 import type { ModelPerfBadgeData } from '@/features/pricing/components/model-perf-badge'
 import { DEFAULT_TOKEN_UNIT } from '@/features/pricing/constants'
@@ -31,14 +38,24 @@ import {
 } from '../lib/categories'
 
 const CATEGORY_ICONS: Record<PlazaCategory, LucideIcon> = {
-  [PLAZA_CATEGORIES.CHAT]: MessageSquare,
+  [PLAZA_CATEGORIES.CHAT]: MessagesSquare,
   [PLAZA_CATEGORIES.IMAGE]: Image,
-  [PLAZA_CATEGORIES.VIDEO]: Video,
-  [PLAZA_CATEGORIES.OTHER]: Layers,
+  [PLAZA_CATEGORIES.VIDEO]: Film,
+  [PLAZA_CATEGORIES.OTHER]: Boxes,
+}
+
+/** 每个大类一个低饱和色，只用于图标底色，用来区分区块又不抢卡片 */
+const CATEGORY_TONES: Record<PlazaCategory, IconBadgeTone> = {
+  [PLAZA_CATEGORIES.CHAT]: 'chart-1',
+  [PLAZA_CATEGORIES.IMAGE]: 'chart-4',
+  [PLAZA_CATEGORIES.VIDEO]: 'chart-3',
+  [PLAZA_CATEGORIES.OTHER]: 'neutral',
 }
 
 export function PlazaCategorySection(props: {
   category: PlazaCategory
+  /** 分组序号，从 1 开始，渲染成标题左侧的 01 / 02 编号 */
+  index: number
   models: PricingModel[]
   onModelClick: (modelName: string) => void
   priceRate?: number
@@ -56,25 +73,26 @@ export function PlazaCategorySection(props: {
 
   const categoryLabel = t(PLAZA_CATEGORY_LABEL_KEYS[props.category])
   const CategoryIcon = CATEGORY_ICONS[props.category]
+  const headingId = `plaza-category-${props.category}`
 
   return (
-    <section
-      aria-labelledby={`plaza-category-${props.category}`}
-      className='flex flex-col gap-4'
-    >
-      <div className='flex items-center gap-2'>
-        <CategoryIcon
-          aria-hidden='true'
-          className='text-muted-foreground size-4 shrink-0'
-        />
+    <section aria-labelledby={headingId} className='flex flex-col gap-4'>
+      <div className='flex items-center gap-2.5 sm:gap-3'>
+        <span className='text-muted-foreground/60 w-5 shrink-0 font-mono text-[11px] tabular-nums sm:w-6'>
+          {String(props.index).padStart(2, '0')}
+        </span>
+        <IconBadge tone={CATEGORY_TONES[props.category]} size='sm'>
+          <CategoryIcon />
+        </IconBadge>
         <h2
-          id={`plaza-category-${props.category}`}
-          className='text-lg font-semibold tracking-tight sm:text-xl'
+          id={headingId}
+          className='text-[17px] font-semibold tracking-tight sm:text-lg'
         >
           {categoryLabel}
         </h2>
-        <span className='bg-emerald-500/12 text-emerald-700 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums dark:text-emerald-400'>
-          {t('{{count}} types', { count: props.models.length })}
+        <span aria-hidden='true' className='bg-border h-px min-w-8 flex-1' />
+        <span className='text-muted-foreground shrink-0 text-xs whitespace-nowrap tabular-nums'>
+          {t('{{count}} models', { count: props.models.length })}
         </span>
       </div>
       <div className='grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3'>
