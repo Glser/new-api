@@ -2154,6 +2154,7 @@
     "Every group name in the pricing table can be used in two places: on a user (the user group, assigned by admins) and on a token (the token group, chosen when creating the token). Same name pool, two different jobs.": "Every group name in the pricing table can be used in two places: on a user (the user group, assigned by admins) and on a token (the token group, chosen when creating the token). Same name pool, two different jobs.",
     "Every other device will lose access immediately. This device will remain signed in.": "Every other device will lose access immediately. This device will remain signed in.",
     "Everything configured for this group, in one place.": "Everything configured for this group, in one place.",
+    "Explore": "Explore",
     "Exact": "Exact",
     "Exact Match": "Exact Match",
     "Exact match only and case-sensitive. Prefixes, regex, and * wildcards are not supported.": "Exact match only and case-sensitive. Prefixes, regex, and * wildcards are not supported.",
