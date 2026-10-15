@@ -56,7 +56,7 @@ export function PlazaVendorRow(props: {
         value: vendor.name,
         label: vendor.name,
         countLabel: t('{{count}} models short', { count }),
-        icon: vendor.icon ? getLobeIcon(vendor.icon, 18) : undefined,
+        icon: vendor.icon ? getLobeIcon(vendor.icon, 20) : undefined,
       },
     ]
   })

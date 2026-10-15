@@ -44,7 +44,6 @@ const CATEGORY_ICONS: Record<PlazaCategory, LucideIcon> = {
   [PLAZA_CATEGORIES.OTHER]: Boxes,
 }
 
-
 export function PlazaCategorySection(props: {
   category: PlazaCategory
 

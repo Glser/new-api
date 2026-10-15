@@ -34,7 +34,7 @@ describe('plaza filter row layout', () => {
 
   it('pins the label to chip height so it stays vertically aligned', () => {
     expect(plazaFilterRowLabelClassName.split(' ')).toEqual(
-      expect.arrayContaining(['h-8', 'items-center', 'shrink-0'])
+      expect.arrayContaining(['h-9', 'items-center', 'shrink-0'])
     )
   })
 

@@ -32,15 +32,15 @@ export function PlazaLoadingSkeleton() {
       <PlazaFilterPanel>
         {Array.from({ length: 2 }, (_, row) => (
           <div key={row} className={plazaFilterRowClassName}>
-            <div className='flex h-8 w-full shrink-0 items-center gap-2 sm:w-24'>
-              <Skeleton className='size-5 shrink-0 rounded-md' />
-              <Skeleton className='h-3.5 w-12' />
+            <div className='flex h-9 w-full shrink-0 items-center gap-2 sm:w-24'>
+              <Skeleton className='size-9 shrink-0 rounded-xl' />
+              <Skeleton className='h-4 w-12' />
             </div>
             <div className={plazaFilterRowChipsClassName}>
-              <Skeleton className='h-8 w-24 rounded-full' />
-              <Skeleton className='h-8 w-28 rounded-full' />
-              <Skeleton className='h-8 w-20 rounded-full' />
-              <Skeleton className='h-8 w-32 rounded-full' />
+              <Skeleton className='h-9 w-24 rounded-full' />
+              <Skeleton className='h-9 w-28 rounded-full' />
+              <Skeleton className='h-9 w-20 rounded-full' />
+              <Skeleton className='h-9 w-32 rounded-full' />
             </div>
           </div>
         ))}

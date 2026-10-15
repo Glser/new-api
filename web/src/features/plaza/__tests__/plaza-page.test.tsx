@@ -253,7 +253,7 @@ describe('plaza page', () => {
     expect(vendorRow).toHaveClass('flex')
     expect(vendorRow).not.toHaveClass('flex-col')
     expect(vendorRow?.querySelector('p')).toHaveTextContent('Vendor')
-    expect(vendorRow?.querySelector('p')).toHaveClass('h-8')
+    expect(vendorRow?.querySelector('p')).toHaveClass('h-9')
 
     const priceGroup = screen.getByRole('group', { name: 'Price' })
     const priceRow = priceGroup.parentElement

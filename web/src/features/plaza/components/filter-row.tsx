@@ -23,8 +23,12 @@ import { cn } from '@/lib/utils'
 
 export const plazaFilterRowClassName =
   'flex flex-wrap items-start gap-x-2 gap-y-2 px-3.5 py-3 sm:gap-x-3 sm:px-4'
+/**
+ * 行首标签和右侧胶囊同高（h-9 / text-sm）：图标、文字、胶囊三者在同一
+ * 基线上对齐，整行才不像「小标签拖着一排大按钮」。
+ */
 export const plazaFilterRowLabelClassName =
-  'flex h-8 w-full shrink-0 items-center gap-1.5 text-[13px] font-medium whitespace-nowrap text-foreground/75 sm:w-24'
+  'flex h-9 w-full shrink-0 items-center gap-2 text-sm font-medium whitespace-nowrap text-foreground/75 sm:w-24'
 export const plazaFilterRowChipsClassName =
   'flex min-w-0 flex-1 flex-wrap content-start gap-2'
 
@@ -50,7 +54,7 @@ export function PlazaFilterRow(props: {
     <div className={cn(plazaFilterRowClassName, props.className)}>
       <p className={plazaFilterRowLabelClassName}>
         {props.icon && (
-          <IconBadge size='xs' className='size-6 [&>svg]:size-3.5'>
+          <IconBadge className='size-9 rounded-xl [&>svg]:size-4.5'>
             {props.icon}
           </IconBadge>
         )}
