@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Percent } from 'lucide-react'
+import { Tags } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
@@ -33,6 +33,10 @@ function countByGroup(models: PricingModel[], group: string): number {
   )
 }
 
+/**
+ * 价格行用「价格标签」而不是百分号：这一行讲的是分组倍率（×0.5 / ×1），
+ * 标签图形和「价格」的语义直接对应，也比孤零零一个 % 更像一枚行首徽标。
+ */
 /** formatGroupRatio 产出 "x0.5"，这里换成更易读的乘号 */
 function formatRatioBadge(ratio: number | undefined): string | undefined {
   const formatted = formatGroupRatio(ratio)
@@ -77,7 +81,7 @@ export function PlazaGroupRow(props: {
   ]
 
   return (
-    <PlazaFilterRow label={label} icon={<Percent aria-hidden='true' />}>
+    <PlazaFilterRow label={label} icon={<Tags aria-hidden='true' />}>
       {options.map((option) => (
         <PlazaFilterChip
           key={option.value}

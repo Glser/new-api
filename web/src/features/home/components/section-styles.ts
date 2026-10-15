@@ -27,9 +27,15 @@ For commercial licensing, please contact support@quantumnous.com
 export const glassPanelClassName =
   "border-slate-900/[0.08] bg-white/85 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_24px_50px_-30px_rgba(15,23,42,0.28)] backdrop-blur-2xl dark:border-white/10 dark:bg-white/[0.05] dark:shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.08)]"
 
-/** 小卡表面：完全不透明，避免小字号文字发虚 */
+/**
+ * 小卡表面：与 glassPanelClassName 同一套玻璃质感。
+ *
+ * 暗色下改用 6% 白色半透明 + 背景模糊，让卡片透出 SectionBackdrop 的氛围光，
+ * 与左侧大卡（5%）视觉统一；实底 slate-900 会在深色页面里显得又黑又闷、与背景脱节。
+ * 透明度比大卡高半档，用于补偿小字号文字的可读性。
+ */
 export const compactPanelClassName =
-  "border-slate-900/[0.08] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_16px_36px_-24px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-slate-900 dark:shadow-[0_16px_40px_-24px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)]"
+  "border-slate-900/[0.08] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05),0_16px_36px_-24px_rgba(15,23,42,0.22)] dark:border-white/10 dark:bg-white/[0.06] dark:backdrop-blur-2xl dark:shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.08)]"
 
 /** 卡片内的胶囊容器 */
 export const glassCapsuleClassName =
