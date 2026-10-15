@@ -20,12 +20,12 @@ import {
   Boxes,
   Film,
   Image,
-  MessagesSquare,
+  MessageCircle,
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
+import { IconBadge } from '@/components/ui/icon-badge'
 import { ModelCard } from '@/features/pricing/components/model-card'
 import type { ModelPerfBadgeData } from '@/features/pricing/components/model-perf-badge'
 import { DEFAULT_TOKEN_UNIT } from '@/features/pricing/constants'
@@ -38,24 +38,16 @@ import {
 } from '../lib/categories'
 
 const CATEGORY_ICONS: Record<PlazaCategory, LucideIcon> = {
-  [PLAZA_CATEGORIES.CHAT]: MessagesSquare,
+  [PLAZA_CATEGORIES.CHAT]: MessageCircle,
   [PLAZA_CATEGORIES.IMAGE]: Image,
   [PLAZA_CATEGORIES.VIDEO]: Film,
   [PLAZA_CATEGORIES.OTHER]: Boxes,
 }
 
-/** 每个大类一个低饱和色，只用于图标底色，用来区分区块又不抢卡片 */
-const CATEGORY_TONES: Record<PlazaCategory, IconBadgeTone> = {
-  [PLAZA_CATEGORIES.CHAT]: 'chart-1',
-  [PLAZA_CATEGORIES.IMAGE]: 'chart-4',
-  [PLAZA_CATEGORIES.VIDEO]: 'chart-3',
-  [PLAZA_CATEGORIES.OTHER]: 'neutral',
-}
 
 export function PlazaCategorySection(props: {
   category: PlazaCategory
-  /** 分组序号，从 1 开始，渲染成标题左侧的 01 / 02 编号 */
-  index: number
+
   models: PricingModel[]
   onModelClick: (modelName: string) => void
   priceRate?: number
@@ -78,10 +70,8 @@ export function PlazaCategorySection(props: {
   return (
     <section aria-labelledby={headingId} className='flex flex-col gap-4'>
       <div className='flex items-center gap-2.5 sm:gap-3'>
-        <span className='text-muted-foreground/60 w-5 shrink-0 font-mono text-[11px] tabular-nums sm:w-6'>
-          {String(props.index).padStart(2, '0')}
-        </span>
-        <IconBadge tone={CATEGORY_TONES[props.category]} size='sm'>
+        {/* 中性色徽标融进柔光纸面，区块之间靠图标形状区分，不再上饱和度 */}
+        <IconBadge size='md'>
           <CategoryIcon />
         </IconBadge>
         <h2

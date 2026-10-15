@@ -104,7 +104,7 @@ export function Plaza() {
     [filteredModels]
   )
 
-  /** 只展示有模型的分类，编号按可见顺序连续编排 */
+  /** 只展示有模型的分类 */
   const visibleCategories = useMemo(
     () =>
       PLAZA_CATEGORY_ORDER.filter(
@@ -197,11 +197,10 @@ export function Plaza() {
               />
             ) : (
               <div className='flex flex-col gap-10 sm:gap-12'>
-                {visibleCategories.map((category, index) => (
+                {visibleCategories.map((category) => (
                   <PlazaCategorySection
                     key={category}
                     category={category}
-                    index={index + 1}
                     models={groupedModels[category]}
                     onModelClick={handleModelClick}
                     priceRate={priceRate}
