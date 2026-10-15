@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import type { IconSvgElement } from '@hugeicons/react'
 import type { LinkProps } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 
@@ -97,6 +98,11 @@ export type TopNavLink = {
   disabled?: boolean
   requiresAuth?: boolean
   external?: boolean
+  /**
+   * Glyph drawn before the label. Resolved from the destination when omitted
+   * (see `config/top-nav-icons.ts`), so custom link lists stay optional.
+   */
+  icon?: IconSvgElement
 }
 
 /**

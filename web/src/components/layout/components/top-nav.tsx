@@ -16,8 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
-import { Menu } from 'lucide-react'
+import { Menu01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Link, useRouterState } from '@tanstack/react-router'
 import { useMemo } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -29,7 +30,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
+import { resolveTopNavIcon } from '../config/top-nav-icons'
+import { isTopNavLinkActive } from '../lib/url-utils'
 import type { TopNavLink } from '../types'
+import { TopNavLinkItem } from './top-nav-link'
+
+/** Shared label classes so the dropdown and the inline bar read the same. */
+const LABEL_CLASS = 'flex items-center gap-2 [&_svg]:size-4 [&_svg]:shrink-0'
 
 type TopNavProps = React.HTMLAttributes<HTMLElement> & {
   links: TopNavLink[]
@@ -40,16 +47,20 @@ type TopNavProps = React.HTMLAttributes<HTMLElement> & {
  * 在大屏幕显示水平导航，在小屏幕显示下拉菜单
  */
 export function TopNav({ className, links, ...props }: TopNavProps) {
-  // 规范化链接，确保所有可选属性都有默认值
+  const routerState = useRouterState()
+  const pathname = routerState.location.pathname
+
+  // 规范化链接：补齐默认值，并按当前路径推断选中项与图标
   const normalizedLinks = useMemo(
     () =>
       links.map((link) => ({
-        isActive: false,
-        disabled: false,
-        external: false,
         ...link,
+        isActive: link.isActive ?? isTopNavLinkActive(pathname, link.href),
+        disabled: link.disabled ?? false,
+        external: link.external ?? false,
+        icon: link.icon ?? resolveTopNavIcon(link.href, link.external),
       })),
-    [links]
+    [links, pathname]
   )
 
   return (
@@ -60,11 +71,11 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
           <DropdownMenuTrigger
             render={<Button size='icon' variant='outline' className='size-7' />}
           >
-            <Menu />
+            <HugeiconsIcon icon={Menu01Icon} className='size-4' />
           </DropdownMenuTrigger>
           <DropdownMenuContent side='bottom' align='start'>
             {normalizedLinks.map(
-              ({ title, href, isActive, disabled, external }) => (
+              ({ title, href, isActive, disabled, external, icon: Icon }) => (
                 <DropdownMenuItem
                   key={`${title}-${href}`}
                   render={
@@ -73,21 +84,33 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
                         href={href}
                         target='_blank'
                         rel='noopener noreferrer'
-                        className={!isActive ? 'text-muted-foreground' : ''}
+                        className={cn(
+                          LABEL_CLASS,
+                          !isActive && 'text-muted-foreground'
+                        )}
                       >
+                        {Icon && (
+                          <HugeiconsIcon icon={Icon} aria-hidden='true' />
+                        )}
                         {title}
                       </a>
                     ) : (
                       <Link
                         to={href}
-                        className={!isActive ? 'text-muted-foreground' : ''}
+                        className={cn(
+                          LABEL_CLASS,
+                          !isActive && 'text-muted-foreground'
+                        )}
                         disabled={disabled}
                       >
+                        {Icon && (
+                          <HugeiconsIcon icon={Icon} aria-hidden='true' />
+                        )}
                         {title}
                       </Link>
                     )
                   }
-                 />
+                />
               )
             )}
           </DropdownMenuContent>
@@ -97,33 +120,19 @@ export function TopNav({ className, links, ...props }: TopNavProps) {
       {/* 桌面端水平导航 */}
       <nav
         className={cn(
-          'hidden items-center space-x-4 lg:flex lg:space-x-4 xl:space-x-6',
+          'hidden items-center gap-1 lg:flex xl:gap-1.5',
           className
         )}
         {...props}
       >
-        {normalizedLinks.map(({ title, href, isActive, disabled, external }) =>
-          external ? (
-            <a
-              key={`${title}-${href}`}
-              href={href}
-              target='_blank'
-              rel='noopener noreferrer'
-              className={`hover:text-primary text-sm font-medium transition-colors ${isActive ? '' : 'text-muted-foreground'}`}
-            >
-              {title}
-            </a>
-          ) : (
-            <Link
-              key={`${title}-${href}`}
-              to={href}
-              disabled={disabled}
-              className={`hover:text-primary text-sm font-medium transition-colors ${isActive ? '' : 'text-muted-foreground'}`}
-            >
-              {title}
-            </Link>
-          )
-        )}
+        {normalizedLinks.map((link) => (
+          <TopNavLinkItem
+            key={`${link.title}-${link.href}`}
+            link={link}
+            label={link.title}
+            active={link.isActive}
+          />
+        ))}
       </nav>
     </>
   )

@@ -34,9 +34,12 @@ import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
+import { withTopNavIcons } from '../config/top-nav-icons'
 import { defaultTopNavLinks } from '../config/top-nav.config'
+import { isTopNavLinkActive } from '../lib/url-utils'
 import type { TopNavLink } from '../types'
 import { HeaderLogo } from './header-logo'
+import { TopNavLinkItem, TopNavMobileLink } from './top-nav-link'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -97,7 +100,9 @@ export function PublicHeader(props: PublicHeaderProps) {
   const user = auth.user
   const isAuthenticated = !!user
   const displaySiteName = customSiteName || systemName
-  const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
+  const links = withTopNavIcons(
+    dynamicLinks.length > 0 ? dynamicLinks : navLinks
+  )
   let logoContent: React.ReactNode
   if (loading) {
     logoContent = <Skeleton className='size-full rounded-lg' />
@@ -131,7 +136,6 @@ export function PublicHeader(props: PublicHeaderProps) {
       </Button>
     )
   }
-
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -214,7 +218,7 @@ export function PublicHeader(props: PublicHeaderProps) {
         <div
           className={cn(
             'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-            scrolled ? 'max-w-[52rem] px-3 pt-3' : 'max-w-7xl px-4 pt-0 md:px-6'
+            scrolled ? 'max-w-[68rem] px-3 pt-3' : 'max-w-7xl px-4 pt-0 md:px-6'
           )}
         >
           <nav
@@ -249,48 +253,17 @@ export function PublicHeader(props: PublicHeaderProps) {
             </div>
 
             {/* Desktop nav */}
-            <div className='hidden min-w-0 items-center gap-0.5 lg:flex'>
-              {links.map((link) => {
-                const isActive = pathname === link.href
-                if (link.external) {
-                  return (
-                    <a
-                      key={`${link.title}:${link.href}`}
-                      href={link.href}
-                      title={t(link.title)}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      aria-disabled={link.disabled}
-                      tabIndex={link.disabled ? -1 : undefined}
-                      onClick={(event) => handleNavLinkClick(event, link)}
-                      className={cn(
-                        'text-muted-foreground hover:text-foreground min-w-0 truncate rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
-                        link.disabled && 'pointer-events-none opacity-50'
-                      )}
-                    >
-                      {t(link.title)}
-                    </a>
-                  )
-                }
-                return (
-                  <Link
-                      key={`${link.title}:${link.href}`}
-                    to={link.href}
-                    title={t(link.title)}
-                    disabled={link.disabled}
-                    onClick={(event) => handleNavLinkClick(event, link)}
-                    className={cn(
-                      'min-w-0 truncate rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200',
-                      isActive
-                        ? 'text-foreground'
-                        : 'text-muted-foreground hover:text-foreground',
-                      link.disabled && 'pointer-events-none opacity-50'
-                    )}
-                  >
-                    {t(link.title)}
-                  </Link>
-                )
-              })}
+            <div className='hidden min-w-0 items-center gap-1 lg:flex'>
+              {links.map((link) => (
+                <TopNavLinkItem
+                  key={`${link.title}:${link.href}`}
+                  link={link}
+                  tone='marketing'
+                  label={t(link.title)}
+                  active={isTopNavLinkActive(pathname, link.href)}
+                  onClick={(event) => handleNavLinkClick(event, link)}
+                />
+              ))}
 
               {(showLanguageSwitcher ||
                 showThemeSwitch ||
@@ -372,49 +345,24 @@ export function PublicHeader(props: PublicHeaderProps) {
       >
         <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
           <nav className='flex flex-col gap-1'>
-            {links.map((link, i) => {
-              const isActive = pathname === link.href
-              const linkClassName = cn(
-                'flex items-center gap-3 py-3 text-base font-medium tracking-tight transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
-                mobileOpen
-                  ? 'translate-y-0 opacity-100'
-                  : 'translate-y-4 opacity-0',
-                isActive ? 'text-foreground' : 'text-muted-foreground',
-                link.disabled && 'pointer-events-none opacity-50'
-              )
-              const transitionStyle = {
-                transitionDelay: mobileOpen ? `${100 + i * 50}ms` : '0ms',
-              }
-              if (link.external) {
-                return (
-                  <a
-                      key={`${link.title}:${link.href}`}
-                    href={link.href}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    aria-disabled={link.disabled}
-                    tabIndex={link.disabled ? -1 : undefined}
-                    onClick={(event) => handleNavLinkClick(event, link, true)}
-                    className={linkClassName}
-                    style={transitionStyle}
-                  >
-                    {t(link.title)}
-                  </a>
-                )
-              }
-              return (
-                <Link
-                      key={`${link.title}:${link.href}`}
-                  to={link.href}
-                  disabled={link.disabled}
-                  onClick={(event) => handleNavLinkClick(event, link, true)}
-                  className={linkClassName}
-                  style={transitionStyle}
-                >
-                  {t(link.title)}
-                </Link>
-              )
-            })}
+            {links.map((link, i) => (
+              <TopNavMobileLink
+                key={`${link.title}:${link.href}`}
+                link={link}
+                label={t(link.title)}
+                active={isTopNavLinkActive(pathname, link.href)}
+                className={cn(
+                  'py-3',
+                  mobileOpen
+                    ? 'translate-y-0 opacity-100'
+                    : 'translate-y-4 opacity-0'
+                )}
+                style={{
+                  transitionDelay: mobileOpen ? `${100 + i * 50}ms` : '0ms',
+                }}
+                onClick={(event) => handleNavLinkClick(event, link, true)}
+              />
+            ))}
           </nav>
 
           <div

@@ -16,13 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
+import { useRouterState } from '@tanstack/react-router'
 
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { cn } from '@/lib/utils'
 
+import { withTopNavIcons } from '../config/top-nav-icons'
 import { defaultTopNavLinks } from '../config/top-nav.config'
+import { isTopNavLinkActive } from '../lib/url-utils'
 import type { TopNavLink } from '../types'
+import { TopNavLinkItem } from './top-nav-link'
 
 interface PublicNavigationProps {
   /**
@@ -47,42 +50,23 @@ export function PublicNavigation({
   // Use the same logic as AppHeader: prioritize dynamic links from backend
   const dynamicLinks = useTopNavLinks()
   const defaultLinks = providedLinks || defaultTopNavLinks
-  const links = dynamicLinks.length > 0 ? dynamicLinks : defaultLinks
+  const links = withTopNavIcons(
+    dynamicLinks.length > 0 ? dynamicLinks : defaultLinks
+  )
+  const routerState = useRouterState()
+  const pathname = routerState.location.pathname
 
   return (
     <nav className={cn('hidden items-center gap-1 md:flex', className)}>
-      {links.map((link, index) => {
-        // Handle external links
-        if (link.external) {
-          return (
-            <a
-              key={index}
-              href={link.href}
-              target='_blank'
-              rel='noopener noreferrer'
-              className={cn(
-                'text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-4 py-2 text-sm font-medium transition-colors focus:outline-none',
-                link.disabled && 'pointer-events-none opacity-50'
-              )}
-            >
-              {link.title}
-            </a>
-          )
-        }
-        // Handle internal links
-        return (
-          <Link
-            key={index}
-            to={link.href}
-            className={cn(
-              'text-muted-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground inline-flex h-9 w-max items-center justify-center rounded-md bg-transparent px-4 py-2 text-sm font-medium transition-colors focus:outline-none',
-              link.disabled && 'pointer-events-none opacity-50'
-            )}
-          >
-            {link.title}
-          </Link>
-        )
-      })}
+      {links.map((link) => (
+        <TopNavLinkItem
+          key={`${link.title}:${link.href}`}
+          link={link}
+          tone='marketing'
+          label={link.title}
+          active={isTopNavLinkActive(pathname, link.href)}
+        />
+      ))}
     </nav>
   )
 }

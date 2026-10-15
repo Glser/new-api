@@ -87,8 +87,9 @@ export function checkIsActive(
         }
         return false
       })
-    )
-      {return true}
+    ) {
+      return true
+    }
   }
 
   // For regular link items, check the item's URL
@@ -119,4 +120,18 @@ export function checkIsActive(
   }
 
   return false
+}
+
+/**
+ * Whether a top-nav link should read as the current page.
+ *
+ * Prefix matching keeps a parent route highlighted (`/dashboard/overview`
+ * keeps `Console` selected), while the root path only matches exactly so it
+ * does not light up on every screen.
+ */
+export function isTopNavLinkActive(pathname: string, href: string): boolean {
+  const current = normalizeHref(pathname)
+  const target = normalizeHref(href)
+  if (target === '/') return current === '/'
+  return current === target || current.startsWith(`${target}/`)
 }
