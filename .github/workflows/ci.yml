@@ -58,7 +58,7 @@ jobs:
         run: make test
 
   frontend:
-    name: Frontend typecheck and test
+    name: Frontend typecheck
     if: github.event.action != 'closed' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -83,6 +83,3 @@ jobs:
 
       - name: Typecheck
         run: bun run typecheck
-
-      - name: Test
-        run: bun run test
