@@ -1,3 +1,16 @@
+import { Link } from '@tanstack/react-router'
+import {
+  Activity,
+  ArrowRight,
+  Building2,
+  Coins,
+  Gauge,
+  Layers,
+  Sparkles,
+  Tag,
+  TrendingDown,
+  type LucideIcon,
+} from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -14,46 +27,32 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <https://www.gnu.org/licenses/>.
 */
-import { useMemo, useState, useEffect } from "react"
-import { getPricing } from "@/features/pricing/api"
-import { getPerfMetricsSummary } from "@/features/performance-metrics/api"
-import { getSuccessRateDotClass } from "@/features/performance-metrics/lib/format"
-import type { PricingModel, PricingVendor } from "@/features/pricing/types"
-import { getModelTokenPrices } from "@/features/pricing/lib/dynamic-price"
-import { parseModelTags } from "@/features/models/lib/model-utils"
-import { Link } from "@tanstack/react-router"
-import {
-  Activity,
-  ArrowRight,
-  Building2,
-  Coins,
-  Gauge,
-  Layers,
-  Sparkles,
-  Tag,
-  TrendingDown,
-  type LucideIcon,
-} from "lucide-react"
-import { useTranslation } from "react-i18next"
+import { useMemo, useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
+import { CopyButton } from '@/components/copy-button'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import {
   SectionBackdrop,
   SectionHeader,
   SectionPrimaryLink,
   SectionDivider,
   SectionScrollCue,
-} from "@/features/home/components/section-primitives"
+} from '@/features/home/components/section-primitives'
 import {
-ACCENT_PALETTE,
-glassCapsuleClassName,
-glassPanelClassName,
-compactPanelClassName,
-} from "@/features/home/components/section-styles"
-
-import { CopyButton } from "@/components/copy-button"
-import { TooltipProvider } from "@/components/ui/tooltip"
-import { getLobeIcon } from "@/lib/lobe-icon"
-import { cn } from "@/lib/utils"
+  ACCENT_PALETTE,
+  glassCapsuleClassName,
+  glassPanelClassName,
+  compactPanelClassName,
+} from '@/features/home/components/section-styles'
+import { parseModelTags } from '@/features/models/lib/model-utils'
+import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
+import { getSuccessRateDotClass } from '@/features/performance-metrics/lib/format'
+import { getPricing } from '@/features/pricing/api'
+import { getModelTokenPrices } from '@/features/pricing/lib/dynamic-price'
+import type { PricingModel, PricingVendor } from '@/features/pricing/types'
+import { getLobeIcon } from '@/lib/lobe-icon'
+import { cn } from '@/lib/utils'
 
 interface ModelItem {
   id: string
@@ -89,31 +88,30 @@ interface ModelItem {
 
 /** 常见供应商规范品牌名映射 */
 const VENDOR_NAME_MAP: Record<string, string> = {
-  openai: "OpenAI",
-  anthropic: "Anthropic",
-  deepseek: "DeepSeek",
-  google: "Google",
-  xai: "xAI",
-  meta: "Meta",
-  mistral: "Mistral",
-  minimax: "MiniMax",
-  moonshot: "Moonshot",
-  cohere: "Cohere",
-  zhipu: "Zhipu",
-  alibaba: "Alibaba",
-  qwen: "Qwen",
-  baidu: "Baidu",
-  tencent: "Tencent",
-  bytedance: "ByteDance",
-  doubao: "Doubao",
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  deepseek: 'DeepSeek',
+  google: 'Google',
+  xai: 'xAI',
+  meta: 'Meta',
+  mistral: 'Mistral',
+  minimax: 'MiniMax',
+  moonshot: 'Moonshot',
+  cohere: 'Cohere',
+  zhipu: 'Zhipu',
+  alibaba: 'Alibaba',
+  qwen: 'Qwen',
+  baidu: 'Baidu',
+  tencent: 'Tencent',
+  bytedance: 'ByteDance',
+  doubao: 'Doubao',
 }
-
 
 /**
  * 格式化供应商名称为规范品牌大小写（如 Anthropic, OpenAI）
  */
 function formatProviderName(raw?: string): string {
-  if (!raw) return "Anthropic"
+  if (!raw) return 'Anthropic'
   const clean = raw.trim()
   const lower = clean.toLowerCase()
   if (VENDOR_NAME_MAP[lower]) {
@@ -125,28 +123,31 @@ function formatProviderName(raw?: string): string {
 
 /* 国内供应商集合：官方价按人民币展示，国外供应商按美元展示 */
 const DOMESTIC_PROVIDERS = new Set([
-  "deepseek",
-  "zhipu",
-  "qwen",
-  "alibaba",
-  "baidu",
-  "tencent",
-  "bytedance",
-  "doubao",
-  "moonshot",
-  "minimax",
-  "kimi",
-  "yi",
-  "360",
-  "spark",
-  "hunyuan",
-  "ernie",
+  'deepseek',
+  'zhipu',
+  'qwen',
+  'alibaba',
+  'baidu',
+  'tencent',
+  'bytedance',
+  'doubao',
+  'moonshot',
+  'minimax',
+  'kimi',
+  'yi',
+  '360',
+  'spark',
+  'hunyuan',
+  'ernie',
 ])
 
 /** 判断是否为国内供应商 */
-function isDomesticProvider(providerName?: string, modelName?: string): boolean {
-  const p = (providerName || "").toLowerCase()
-  const m = (modelName || "").toLowerCase()
+function isDomesticProvider(
+  providerName?: string,
+  modelName?: string
+): boolean {
+  const p = (providerName || '').toLowerCase()
+  const m = (modelName || '').toLowerCase()
   for (const domestic of DOMESTIC_PROVIDERS) {
     if (p.includes(domestic) || m.includes(domestic)) {
       return true
@@ -156,7 +157,7 @@ function isDomesticProvider(providerName?: string, modelName?: string): boolean 
 }
 
 /* 站内价固定人民币展示：这是「用户实际支付」的口径，不随后台显示设置变化 */
-const SITE_CURRENCY_SYMBOL = "¥"
+const SITE_CURRENCY_SYMBOL = '¥'
 
 /**
  * 美元兑人民币汇率，写死为 7.2。
@@ -172,7 +173,7 @@ const USD_TO_CNY_RATE = 7.2
  * 直接展示会让用户看到一串无意义的小数。最多保留 4 位，再清掉末尾多余的 0。
  */
 function formatPriceAmount(value: number): string {
-  if (!Number.isFinite(value)) return "-"
+  if (!Number.isFinite(value)) return '-'
   const rounded = Number(value.toFixed(4))
   return String(rounded)
 }
@@ -184,8 +185,11 @@ function formatPriceAmount(value: number): string {
  * （可能是 USD / CNY / 自定义 / 积分），而官方价是一行「原产地标价」，必须按模型
  * 所属地区固定货币，不受后台显示设置影响。
  */
-function formatOfficialPrice(valueUSD: number | null | undefined, isDomestic: boolean): string {
-  if (valueUSD === null || valueUSD === undefined) return "-"
+function formatOfficialPrice(
+  valueUSD: number | null | undefined,
+  isDomestic: boolean
+): string {
+  if (valueUSD === null || valueUSD === undefined) return '-'
   if (!isDomestic) {
     return `$${formatPriceAmount(valueUSD)}`
   }
@@ -203,7 +207,7 @@ function formatSitePrice(
   valueUSD: number | null | undefined,
   groupRatioMultiplier: number
 ): string {
-  if (valueUSD === null || valueUSD === undefined) return "-"
+  if (valueUSD === null || valueUSD === undefined) return '-'
   return `${SITE_CURRENCY_SYMBOL}${formatPriceAmount(valueUSD * groupRatioMultiplier)}`
 }
 
@@ -212,11 +216,17 @@ function resolveLowestGroupRatio(
   model: PricingModel,
   groupRatio: Record<string, number>
 ): number {
-  const enableGroups = Array.isArray(model.enable_groups) ? model.enable_groups : []
+  const enableGroups = Array.isArray(model.enable_groups)
+    ? model.enable_groups
+    : []
   let minRatio = Number.POSITIVE_INFINITY
   for (const group of enableGroups) {
     const ratio = groupRatio[group]
-    if (typeof ratio === "number" && Number.isFinite(ratio) && ratio < minRatio) {
+    if (
+      typeof ratio === 'number' &&
+      Number.isFinite(ratio) &&
+      ratio < minRatio
+    ) {
       minRatio = ratio
     }
   }
@@ -227,7 +237,7 @@ function resolveLowestGroupRatio(
  * 徽章兜底文案：模型没有配置标签时按展示位置轮换。
  * 配了标签时徽章取第一个标签，见 convertPricingModelToItem。
  */
-const BADGES = ["SOTA 推理", "旗舰精选", "高性能模型", "前沿推理"]
+const BADGES = ['SOTA 推理', '旗舰精选', '高性能模型', '前沿推理']
 
 function resolveBadge(index: number): string {
   return BADGES[index % BADGES.length]
@@ -266,99 +276,99 @@ function resolveExchangeRateDiscount(
 
 const MODELS: ModelItem[] = [
   {
-    id: "claude-opus-5-5",
-    name: "Claude Opus 5.5",
-    provider: "Anthropic",
-    iconKey: "Claude.Color",
-    specs: ["", "", ""],
+    id: 'claude-opus-5-5',
+    name: 'Claude Opus 5.5',
+    provider: 'Anthropic',
+    iconKey: 'Claude.Color',
+    specs: ['', '', ''],
     extraTags: [],
-    badge: "SOTA 推理",
+    badge: 'SOTA 推理',
     description:
-      "Anthropic 旗舰思维模型，具备扩展思维与深度推理能力，在复杂编程、科研分析与多轮 Agent 任务中全面领跑。",
-    officialInput: "-",
-    officialOutput: "-",
-    siteInput: "-",
-    siteOutput: "-",
+      'Anthropic 旗舰思维模型，具备扩展思维与深度推理能力，在复杂编程、科研分析与多轮 Agent 任务中全面领跑。',
+    officialInput: '-',
+    officialOutput: '-',
+    siteInput: '-',
+    siteOutput: '-',
     tags: [],
     discountPercent: null,
     priceUnavailable: true,
     successRate: null,
-    accentColor: "rgb(249, 115, 22)",
-    glowColor: "rgba(249, 115, 22, 0.22)",
+    accentColor: 'rgb(249, 115, 22)',
+    glowColor: 'rgba(249, 115, 22, 0.22)',
   },
   {
-    id: "chatgpt-6-astra",
-    name: "ChatGPT 6 Astra",
-    provider: "OpenAI",
-    iconKey: "Codex.Color",
-    specs: ["", "", ""],
+    id: 'chatgpt-6-astra',
+    name: 'ChatGPT 6 Astra',
+    provider: 'OpenAI',
+    iconKey: 'Codex.Color',
+    specs: ['', '', ''],
     extraTags: [],
-    badge: "全感知旗舰",
+    badge: '全感知旗舰',
     description:
-      "OpenAI 下一代全模态模型，融合视觉、语音、实时交互与超长上下文，具备接近人类的感知推理与创作能力。",
-    officialInput: "-",
-    officialOutput: "-",
-    siteInput: "-",
-    siteOutput: "-",
+      'OpenAI 下一代全模态模型，融合视觉、语音、实时交互与超长上下文，具备接近人类的感知推理与创作能力。',
+    officialInput: '-',
+    officialOutput: '-',
+    siteInput: '-',
+    siteOutput: '-',
     tags: [],
     discountPercent: null,
     priceUnavailable: true,
     successRate: null,
-    accentColor: "rgb(16, 185, 129)",
-    glowColor: "rgba(16, 185, 129, 0.22)",
+    accentColor: 'rgb(16, 185, 129)',
+    glowColor: 'rgba(16, 185, 129, 0.22)',
   },
   {
-    id: "deepseek-v4-1-flash",
-    name: "DeepSeek v4.1 Flash",
-    provider: "DeepSeek",
-    iconKey: "DeepSeek.Color",
-    specs: ["", "", ""],
+    id: 'deepseek-v4-1-flash',
+    name: 'DeepSeek v4.1 Flash',
+    provider: 'DeepSeek',
+    iconKey: 'DeepSeek.Color',
+    specs: ['', '', ''],
     extraTags: [],
-    badge: "极速思考链",
+    badge: '极速思考链',
     description:
-      "DeepSeek 新一代快速推理模型，保留完整思维链能力的同时大幅降低延迟，以极低成本实现顶级推理表现。",
-    officialInput: "-",
-    officialOutput: "-",
-    siteInput: "-",
-    siteOutput: "-",
+      'DeepSeek 新一代快速推理模型，保留完整思维链能力的同时大幅降低延迟，以极低成本实现顶级推理表现。',
+    officialInput: '-',
+    officialOutput: '-',
+    siteInput: '-',
+    siteOutput: '-',
     tags: [],
     discountPercent: null,
     priceUnavailable: true,
     successRate: null,
-    accentColor: "rgb(59, 130, 246)",
-    glowColor: "rgba(59, 130, 246, 0.22)",
+    accentColor: 'rgb(59, 130, 246)',
+    glowColor: 'rgba(59, 130, 246, 0.22)',
   },
   {
-    id: "grok-4-7",
-    name: "Grok 4.7",
-    provider: "xAI",
-    iconKey: "Grok",
-    specs: ["", "", ""],
+    id: 'grok-4-7',
+    name: 'Grok 4.7',
+    provider: 'xAI',
+    iconKey: 'Grok',
+    specs: ['', '', ''],
     extraTags: [],
-    badge: "前沿推理",
+    badge: '前沿推理',
     description:
-      "xAI Grok 系列旗舰，配备原生实时 X 平台信息接入与超强数理推理能力，在科学竞赛与复杂分析场景中表现卓越。",
-    officialInput: "-",
-    officialOutput: "-",
-    siteInput: "-",
-    siteOutput: "-",
+      'xAI Grok 系列旗舰，配备原生实时 X 平台信息接入与超强数理推理能力，在科学竞赛与复杂分析场景中表现卓越。',
+    officialInput: '-',
+    officialOutput: '-',
+    siteInput: '-',
+    siteOutput: '-',
     tags: [],
     discountPercent: null,
     priceUnavailable: true,
     successRate: null,
-    accentColor: "rgb(139, 92, 246)",
-    glowColor: "rgba(139, 92, 246, 0.22)",
+    accentColor: 'rgb(139, 92, 246)',
+    glowColor: 'rgba(139, 92, 246, 0.22)',
   },
 ]
 
 /* 卡片表面与胶囊样式统一从 section-primitives 引入 */
 /* 小卡内部胶囊：实底，无模糊（背景色由调用方按需覆盖） */
 const compactCapsuleClassName =
-  "rounded-2xl border border-slate-900/[0.07] shadow-none sm:rounded-full dark:border-white/10"
+  'rounded-2xl border border-slate-900/[0.07] shadow-none sm:rounded-full dark:border-white/10'
 
 function ProviderGlyph(props: { iconKey: string; size?: number }) {
   return (
-    <span className="flex shrink-0 items-center justify-center">
+    <span className='flex shrink-0 items-center justify-center'>
       {getLobeIcon(props.iconKey, props.size ?? 20)}
     </span>
   )
@@ -380,35 +390,36 @@ function withAlpha(rgbColor: string, alpha: number): string {
  * 厂商的模型），继承会让配错的关联把错误图标放大到卡片上。供应商名只参与推断
  * 的兜底分支。
  */
-function resolveIconKey(
-  model: PricingModel,
-  vendor?: PricingVendor
-): string {
+function resolveIconKey(model: PricingModel, vendor?: PricingVendor): string {
   if (model.icon) return model.icon
 
-  const name = (model.model_name || "").toLowerCase()
-  if (name.includes("claude")) return "Claude.Color"
-  if (name.includes("gpt") || name.includes("o1") || name.includes("o3") || name.includes("chatgpt")) {
-    return "Codex.Color"
+  const name = (model.model_name || '').toLowerCase()
+  if (name.includes('claude')) return 'Claude.Color'
+  if (
+    name.includes('gpt') ||
+    name.includes('o1') ||
+    name.includes('o3') ||
+    name.includes('chatgpt')
+  ) {
+    return 'Codex.Color'
   }
-  if (name.includes("deepseek")) return "DeepSeek.Color"
-  if (name.includes("grok")) return "Grok"
-  if (name.includes("gemini")) return "Gemini.Color"
-  if (name.includes("qwen")) return "Qwen.Color"
-  if (name.includes("glm")) return "Zhipu.Color"
-  if (name.includes("minimax")) return "Minimax.Color"
-  if (name.includes("moonshot") || name.includes("kimi")) return "Moonshot"
-  if (name.includes("mistral")) return "Mistral.Color"
+  if (name.includes('deepseek')) return 'DeepSeek.Color'
+  if (name.includes('grok')) return 'Grok'
+  if (name.includes('gemini')) return 'Gemini.Color'
+  if (name.includes('qwen')) return 'Qwen.Color'
+  if (name.includes('glm')) return 'Zhipu.Color'
+  if (name.includes('minimax')) return 'Minimax.Color'
+  if (name.includes('moonshot') || name.includes('kimi')) return 'Moonshot'
+  if (name.includes('mistral')) return 'Mistral.Color'
 
-  const v = (vendor?.name || "").toLowerCase()
-  if (v.includes("anthropic")) return "Claude.Color"
-  if (v.includes("openai")) return "OpenAI"
-  if (v.includes("deepseek")) return "DeepSeek.Color"
-  if (v.includes("xai")) return "XAI"
-  if (v.includes("google")) return "Gemini.Color"
-  return "Sparkles"
+  const v = (vendor?.name || '').toLowerCase()
+  if (v.includes('anthropic')) return 'Claude.Color'
+  if (v.includes('openai')) return 'OpenAI'
+  if (v.includes('deepseek')) return 'DeepSeek.Color'
+  if (v.includes('xai')) return 'XAI'
+  if (v.includes('google')) return 'Gemini.Color'
+  return 'Sparkles'
 }
-
 
 /**
  * 将 PricingModel 转换为展示用的 ModelItem
@@ -426,7 +437,10 @@ function convertPricingModelToItem(
   perfRates: Map<string, number>
 ): ModelItem {
   const vendorObj = vendors.find((v) => v.id === model.vendor_id)
-  const rawVendorName = vendorObj?.name || model.vendor_name || (model.model_name.split(/[-_/]/)[0] ?? "AI")
+  const rawVendorName =
+    vendorObj?.name ||
+    model.vendor_name ||
+    (model.model_name.split(/[-_/]/)[0] ?? 'AI')
   const provider = formatProviderName(rawVendorName)
   const palette = ACCENT_PALETTE[index % ACCENT_PALETTE.length]
 
@@ -434,9 +448,18 @@ function convertPricingModelToItem(
   const isDomestic = isDomesticProvider(rawVendorName, model.model_name)
   const groupRatioMultiplier = resolveLowestGroupRatio(model, groupRatio)
   const officialInput = formatOfficialPrice(prices.officialInputUSD, isDomestic)
-  const officialOutput = formatOfficialPrice(prices.officialOutputUSD, isDomestic)
-  const siteInput = formatSitePrice(prices.officialInputUSD, groupRatioMultiplier)
-  const siteOutput = formatSitePrice(prices.officialOutputUSD, groupRatioMultiplier)
+  const officialOutput = formatOfficialPrice(
+    prices.officialOutputUSD,
+    isDomestic
+  )
+  const siteInput = formatSitePrice(
+    prices.officialInputUSD,
+    groupRatioMultiplier
+  )
+  const siteOutput = formatSitePrice(
+    prices.officialOutputUSD,
+    groupRatioMultiplier
+  )
 
   const discountPercent = resolveExchangeRateDiscount(
     prices.officialInputUSD,
@@ -444,7 +467,9 @@ function convertPricingModelToItem(
     groupRatioMultiplier,
     isDomestic
   )
-  const tags = parseModelTags(model.tags).filter((tag) => tag.toLowerCase() !== "featured")
+  const tags = parseModelTags(model.tags).filter(
+    (tag) => tag.toLowerCase() !== 'featured'
+  )
 
   return {
     id: model.model_name,
@@ -453,9 +478,9 @@ function convertPricingModelToItem(
     iconKey: resolveIconKey(model, vendorObj),
     // 徽章取第一个标签；规格胶囊与推荐场景从第二个开始取，避免同一标签重复占槽
     badge: tags[0] || resolveBadge(index),
-    specs: [tags[1] ?? "", tags[2] ?? "", tags[3] ?? ""],
+    specs: [tags[1] ?? '', tags[2] ?? '', tags[3] ?? ''],
     extraTags: tags.slice(4),
-    description: model.description || "",
+    description: model.description || '',
     officialInput,
     officialOutput,
     siteInput,
@@ -477,7 +502,7 @@ function convertPricingModelToItem(
 function isFeaturedModel(model: PricingModel): boolean {
   if (!model.tags) return false
   const tags = model.tags.toLowerCase().split(/[,;|\s]+/)
-  return tags.includes("featured")
+  return tags.includes('featured')
 }
 
 function hydrateModels(
@@ -503,20 +528,26 @@ function hydrateModels(
     // 检查是否有匹配 MODELS 预设的知名模型
     const matchedPresets: ModelItem[] = MODELS.map((preset, idx) => {
       const match = backendModels.find((bm) => {
-        const bmName = (bm.model_name || "").toLowerCase()
+        const bmName = (bm.model_name || '').toLowerCase()
         const mId = preset.id.toLowerCase()
         const mName = preset.name.toLowerCase()
         return (
           bmName === mId ||
           bmName === mName ||
-          bmName.includes(mId.replaceAll("-", "")) ||
-          mId.includes(bmName.replaceAll("-", ""))
+          bmName.includes(mId.replaceAll('-', '')) ||
+          mId.includes(bmName.replaceAll('-', ''))
         )
       })
 
       if (!match) return preset
 
-      const converted = convertPricingModelToItem(match, vendors, groupRatio, idx, perfRates)
+      const converted = convertPricingModelToItem(
+        match,
+        vendors,
+        groupRatio,
+        idx,
+        perfRates
+      )
       return {
         ...preset,
         provider: formatProviderName(preset.provider),
@@ -562,28 +593,28 @@ function PricePair(props: {
 }) {
   const { t } = useTranslation()
 
-  let sizeClassName = "text-sm sm:text-base text-foreground"
+  let sizeClassName = 'text-sm sm:text-base text-foreground'
   if (props.large) {
-    sizeClassName = "text-lg sm:text-xl lg:text-[1.65rem]"
+    sizeClassName = 'text-lg sm:text-xl lg:text-[1.65rem]'
   } else if (props.muted) {
-    sizeClassName = "text-sm sm:text-base text-muted-foreground"
+    sizeClassName = 'text-sm sm:text-base text-muted-foreground'
   }
 
   const labelClassName = cn(
-    "text-[10px] font-semibold uppercase tracking-[0.16em] leading-none text-muted-foreground/65",
-    !props.showLabels && "sr-only"
+    'text-[10px] font-semibold uppercase tracking-[0.16em] leading-none text-muted-foreground/65',
+    !props.showLabels && 'sr-only'
   )
 
   const valueClassName = cn(
-    "font-mono font-semibold tabular-nums leading-none tracking-tighter transition-colors",
+    'font-mono font-semibold tabular-nums leading-none tracking-tighter transition-colors',
     sizeClassName,
-    props.muted && "text-muted-foreground/80"
+    props.muted && 'text-muted-foreground/80'
   )
 
   return (
-    <div className="flex min-w-0 items-stretch justify-center gap-2.5 sm:gap-3.5">
-      <span className="flex min-w-0 items-baseline gap-1.5">
-        <span className={labelClassName}>{t("Input")}</span>
+    <div className='flex min-w-0 items-stretch justify-center gap-2.5 sm:gap-3.5'>
+      <span className='flex min-w-0 items-baseline gap-1.5'>
+        <span className={labelClassName}>{t('Input')}</span>
         <span
           className={valueClassName}
           style={props.accent ? { color: props.accent } : undefined}
@@ -591,9 +622,12 @@ function PricePair(props: {
           {props.input}
         </span>
       </span>
-      <span aria-hidden className="w-px self-stretch bg-slate-900/10 dark:bg-white/15" />
-      <span className="flex min-w-0 items-baseline gap-1.5">
-        <span className={labelClassName}>{t("Output")}</span>
+      <span
+        aria-hidden
+        className='w-px self-stretch bg-slate-900/10 dark:bg-white/15'
+      />
+      <span className='flex min-w-0 items-baseline gap-1.5'>
+        <span className={labelClassName}>{t('Output')}</span>
         <span
           className={valueClassName}
           style={props.accent ? { color: props.accent } : undefined}
@@ -617,15 +651,19 @@ function SpecChip(props: {
   const Icon = props.icon
 
   return (
-    <div className="flex min-w-0 items-center justify-center gap-2">
-      <dt className="sr-only">{props.label}</dt>
+    <div className='flex min-w-0 items-center justify-center gap-2'>
+      <dt className='sr-only'>{props.label}</dt>
       <span
-        className="flex size-6 shrink-0 items-center justify-center rounded-lg"
+        className='flex size-6 shrink-0 items-center justify-center rounded-lg'
         style={{ backgroundColor: `${props.accent}14` }}
       >
-        <Icon className="size-3.5 shrink-0" style={{ color: props.accent }} aria-hidden />
+        <Icon
+          className='size-3.5 shrink-0'
+          style={{ color: props.accent }}
+          aria-hidden
+        />
       </span>
-      <dd className="truncate text-xs font-semibold tracking-tight text-foreground">
+      <dd className='text-foreground truncate text-xs font-semibold tracking-tight'>
         {props.value}
       </dd>
     </div>
@@ -635,9 +673,9 @@ function SpecChip(props: {
 /* 规格胶囊固定三个槽位，保持原有三列布局：值依次取后台 tags，
  * 某个位置没配到时显示占位符，避免布局塌陷。 */
 const SPEC_SLOTS: { icon: LucideIcon; labelKey: string }[] = [
-  { icon: Layers, labelKey: "sec_models_context" },
-  { icon: Gauge, labelKey: "sec_models_performance" },
-  { icon: Activity, labelKey: "sec_models_category" },
+  { icon: Layers, labelKey: 'sec_models_context' },
+  { icon: Gauge, labelKey: 'sec_models_performance' },
+  { icon: Activity, labelKey: 'sec_models_category' },
 ]
 
 function SpecChips(props: { model: ModelItem }) {
@@ -646,7 +684,7 @@ function SpecChips(props: { model: ModelItem }) {
   return (
     <dl
       className={cn(
-        "grid grid-cols-3 items-center px-3 py-2.5 sm:px-4",
+        'grid grid-cols-3 items-center px-3 py-2.5 sm:px-4',
         glassCapsuleClassName
       )}
     >
@@ -654,14 +692,15 @@ function SpecChips(props: { model: ModelItem }) {
         <div
           key={slot.labelKey}
           className={cn(
-            "flex min-w-0 items-center justify-center",
-            index > 0 && "border-l border-slate-900/10 px-1.5 dark:border-white/15"
+            'flex min-w-0 items-center justify-center',
+            index > 0 &&
+              'border-l border-slate-900/10 px-1.5 dark:border-white/15'
           )}
         >
           <SpecChip
             icon={slot.icon}
             label={t(slot.labelKey)}
-            value={props.model.specs[index] || "-"}
+            value={props.model.specs[index] || '-'}
             accent={props.model.accentColor}
           />
         </div>
@@ -680,27 +719,27 @@ function OfficialPriceCard(props: { model: ModelItem }) {
     return (
       <div
         className={cn(
-          "relative flex flex-col gap-1 overflow-hidden px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3",
+          'relative flex flex-col gap-1 overflow-hidden px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3',
           glassCapsuleClassName,
-          "border-solid",
-          "bg-white dark:bg-white/[0.03]"
+          'border-solid',
+          'bg-white dark:bg-white/[0.03]'
         )}
       >
-        <div className="flex shrink-0 items-center gap-1.5 text-[10px] text-muted-foreground/80">
-          <span className="flex size-5 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
-            <Tag className="size-3" aria-hidden />
+        <div className='text-muted-foreground/80 flex shrink-0 items-center gap-1.5 text-[10px]'>
+          <span className='bg-muted/60 text-muted-foreground flex size-5 items-center justify-center rounded-md'>
+            <Tag className='size-3' aria-hidden />
           </span>
-          <span className="font-semibold tracking-[0.06em]">
-            {t("sec_models_official_rate")}
+          <span className='font-semibold tracking-[0.06em]'>
+            {t('sec_models_official_rate')}
           </span>
         </div>
         <Link
-          to="/pricing"
+          to='/pricing'
           search={{ search: model.id }}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground/80 underline-offset-4 hover:underline"
+          className='text-foreground/80 inline-flex items-center gap-1.5 text-xs font-semibold underline-offset-4 hover:underline'
         >
-          {t("sec_models_price_see_pricing")}
-          <ArrowRight className="size-3.5 shrink-0" aria-hidden />
+          {t('sec_models_price_see_pricing')}
+          <ArrowRight className='size-3.5 shrink-0' aria-hidden />
         </Link>
       </div>
     )
@@ -709,27 +748,27 @@ function OfficialPriceCard(props: { model: ModelItem }) {
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-1.5 overflow-hidden px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3",
+        'relative flex flex-col gap-1.5 overflow-hidden px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3',
         glassCapsuleClassName,
-        "border-solid",
+        'border-solid',
         // Light mode gets a real surface so the reference row still reads as a
         // distinct lane; dark mode keeps the misty veil so the card glow shows.
-        "bg-white dark:bg-white/[0.03]"
+        'bg-white dark:bg-white/[0.03]'
       )}
     >
-      <div className="flex shrink-0 items-center gap-1.5 text-[10px] text-muted-foreground/80">
-        <span className="flex size-5 items-center justify-center rounded-md bg-muted/60 text-muted-foreground">
-          <Tag className="size-3" aria-hidden />
+      <div className='text-muted-foreground/80 flex shrink-0 items-center gap-1.5 text-[10px]'>
+        <span className='bg-muted/60 text-muted-foreground flex size-5 items-center justify-center rounded-md'>
+          <Tag className='size-3' aria-hidden />
         </span>
-        <span className="font-semibold tracking-[0.06em]">
-          {t("sec_models_official_rate")}
+        <span className='font-semibold tracking-[0.06em]'>
+          {t('sec_models_official_rate')}
         </span>
         {/* "/ 1M tokens" 单位说明在窄屏时隐藏，宽屏再显示 */}
-        <span className="hidden font-mono text-[9px] opacity-60 sm:inline">
-          {t("sec_models_per_million")}
+        <span className='hidden font-mono text-[9px] opacity-60 sm:inline'>
+          {t('sec_models_per_million')}
         </span>
       </div>
-      <div className="flex items-center justify-end">
+      <div className='flex items-center justify-end'>
         <PricePair
           input={model.officialInput}
           output={model.officialOutput}
@@ -752,33 +791,33 @@ function SitePriceCard(props: { model: ModelItem }) {
     return (
       <div
         className={cn(
-          "relative flex flex-col gap-1 overflow-hidden px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5",
+          'relative flex flex-col gap-1 overflow-hidden px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5',
           glassCapsuleClassName,
-          "border-solid"
+          'border-solid'
         )}
         style={{
           borderColor: `${model.accentColor}33`,
           background: `linear-gradient(135deg, ${model.accentColor}12 0%, rgba(255,255,255,0.04) 55%, ${model.accentColor}08 100%)`,
         }}
       >
-        <div className="flex shrink-0 items-center gap-2">
+        <div className='flex shrink-0 items-center gap-2'>
           <span
-            className="flex size-5 items-center justify-center rounded-md text-white shadow-2xs"
+            className='flex size-5 items-center justify-center rounded-md text-white shadow-2xs'
             style={{ backgroundColor: model.accentColor }}
           >
-            <Coins className="size-3" aria-hidden />
+            <Coins className='size-3' aria-hidden />
           </span>
-          <span className="text-xs font-bold tracking-tight text-foreground">
-            {t("sec_models_site_rate")}
+          <span className='text-foreground text-xs font-bold tracking-tight'>
+            {t('sec_models_site_rate')}
           </span>
         </div>
         <Link
-          to="/pricing"
+          to='/pricing'
           search={{ search: model.id }}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground/80 underline-offset-4 hover:underline"
+          className='text-foreground/80 inline-flex items-center gap-1.5 text-xs font-semibold underline-offset-4 hover:underline'
         >
-          {t("sec_models_price_see_pricing")}
-          <ArrowRight className="size-3.5 shrink-0" aria-hidden />
+          {t('sec_models_price_see_pricing')}
+          <ArrowRight className='size-3.5 shrink-0' aria-hidden />
         </Link>
       </div>
     )
@@ -787,9 +826,9 @@ function SitePriceCard(props: { model: ModelItem }) {
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-2 overflow-hidden px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3.5",
+        'relative flex flex-col gap-2 overflow-hidden px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3.5',
         glassCapsuleClassName,
-        "border-solid"
+        'border-solid'
       )}
       style={{
         borderColor: `${model.accentColor}33`,
@@ -797,33 +836,32 @@ function SitePriceCard(props: { model: ModelItem }) {
         boxShadow: `0 2px 16px -10px ${model.glowColor}, inset 0 1px 0 rgba(255,255,255,0.55)`,
       }}
     >
-      <div className="flex shrink-0 items-center gap-2">
+      <div className='flex shrink-0 items-center gap-2'>
         <span
-          className="flex size-5 items-center justify-center rounded-md text-white shadow-2xs"
+          className='flex size-5 items-center justify-center rounded-md text-white shadow-2xs'
           style={{ backgroundColor: model.accentColor }}
         >
-          <Coins className="size-3" aria-hidden />
+          <Coins className='size-3' aria-hidden />
         </span>
-        <span className="text-xs font-bold tracking-tight text-foreground">
-          {t("sec_models_site_rate")}
+        <span className='text-foreground text-xs font-bold tracking-tight'>
+          {t('sec_models_site_rate')}
         </span>
         {discount ? (
           <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold text-white shadow-sm"
+            className='inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold text-white shadow-sm'
             style={{ backgroundColor: model.accentColor }}
           >
-            <TrendingDown className="size-2.5" aria-hidden />
-            -{discount}%
-            <span className="sr-only">{t("sec_models_save")}</span>
+            <TrendingDown className='size-2.5' aria-hidden />-{discount}%
+            <span className='sr-only'>{t('sec_models_save')}</span>
           </span>
         ) : null}
-        <span className="sr-only">{t("sec_models_pricing")}</span>
+        <span className='sr-only'>{t('sec_models_pricing')}</span>
         {/* "/ 1M tokens" 单位说明在窄屏时隐藏，宽屏再显示 */}
-        <span className="hidden font-mono text-[9px] opacity-60 sm:inline">
-          {t("sec_models_per_million")}
+        <span className='hidden font-mono text-[9px] opacity-60 sm:inline'>
+          {t('sec_models_per_million')}
         </span>
       </div>
-      <div className="flex items-center justify-end">
+      <div className='flex items-center justify-end'>
         <PricePair
           input={model.siteInput}
           output={model.siteOutput}
@@ -843,32 +881,32 @@ function FeaturedModelCard(props: { model: ModelItem }) {
   return (
     <article
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-3xl border transition-all duration-500 hover:-translate-y-1",
+        'group relative flex h-full flex-col overflow-hidden rounded-3xl border transition-all duration-500 hover:-translate-y-1',
         glassPanelClassName
       )}
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-40 transition-opacity duration-700 dark:opacity-30"
+        className='pointer-events-none absolute inset-0 opacity-40 transition-opacity duration-700 dark:opacity-30'
         style={{
           background: `radial-gradient(ellipse 70% 55% at 50% 0%, ${model.glowColor}, transparent 62%), radial-gradient(ellipse 55% 45% at 50% 100%, ${model.glowColor}, transparent 68%)`,
         }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-0 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl opacity-50 transition-colors duration-700"
+        className='pointer-events-none absolute top-0 left-1/2 size-64 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-50 blur-3xl transition-colors duration-700'
         style={{ backgroundColor: model.glowColor }}
       />
 
       <div
-        className="relative flex flex-1 flex-col p-5 transition-opacity duration-300 sm:p-6 lg:p-8"
+        className='relative flex flex-1 flex-col p-5 transition-opacity duration-300 sm:p-6 lg:p-8'
         key={model.id}
       >
         {/* 头部：供应商图标 + 模型标题，右侧：亮点 Badge */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3.5">
+        <div className='flex items-start justify-between gap-3'>
+          <div className='flex min-w-0 items-center gap-3.5'>
             <span
-              className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/40 p-2 shadow-sm backdrop-blur-md dark:bg-white/10"
+              className='flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/40 p-2 shadow-sm backdrop-blur-md dark:bg-white/10'
               style={{
                 filter: `drop-shadow(0 6px 14px ${model.glowColor})`,
                 border: `1px solid ${model.accentColor}30`,
@@ -876,63 +914,66 @@ function FeaturedModelCard(props: { model: ModelItem }) {
             >
               <ProviderGlyph iconKey={model.iconKey} size={32} />
             </span>
-            <div className="min-w-0">
-              <h3 className="truncate text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground sm:text-[1.85rem]">
+            <div className='min-w-0'>
+              <h3 className='text-foreground truncate text-2xl leading-tight font-bold tracking-[-0.02em] sm:text-[1.85rem]'>
                 {model.name}
               </h3>
             </div>
           </div>
 
           <span
-            className="inline-flex max-w-[10rem] shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
+            className='inline-flex max-w-[10rem] shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold'
             style={{
               backgroundColor: `${model.accentColor}18`,
               color: model.accentColor,
               borderColor: `${model.accentColor}35`,
             }}
           >
-            <Sparkles className="size-3 shrink-0" aria-hidden />
-            <span className="min-w-0 truncate">{model.badge}</span>
+            <Sparkles className='size-3 shrink-0' aria-hidden />
+            <span className='min-w-0 truncate'>{model.badge}</span>
           </span>
         </div>
 
         {/* 描述：限制阅读宽度并做断行优化，长段落更均匀 */}
-        <div className="flex flex-1 items-center py-5 sm:py-6">
-          <div className="mx-auto w-full max-w-xl px-2 sm:px-4">
-            <p className="text-pretty text-left text-sm leading-[1.85] text-muted-foreground sm:text-[0.95rem]">
-              {model.description || t("sec_models_no_description")}
+        <div className='flex flex-1 items-center py-5 sm:py-6'>
+          <div className='mx-auto w-full max-w-xl px-2 sm:px-4'>
+            <p className='text-muted-foreground text-left text-sm leading-[1.85] text-pretty sm:text-[0.95rem]'>
+              {model.description || t('sec_models_no_description')}
             </p>
           </div>
         </div>
 
         {/* 规格胶囊：固定三列，值依次取后台 tags */}
-        <div className="mx-auto mb-4 w-full max-w-xl">
+        <div className='mx-auto mb-4 w-full max-w-xl'>
           <SpecChips model={model} />
         </div>
 
         {/* 价格组件拆分为两个：官方标价在上，站内特权价在下，二者同源仅折扣不同 */}
-        <div className="mx-auto flex w-full max-w-xl flex-col gap-2.5">
+        <div className='mx-auto flex w-full max-w-xl flex-col gap-2.5'>
           <OfficialPriceCard model={model} />
           <SitePriceCard model={model} />
         </div>
 
         {/* 推荐适用场景：展示超出三个规格槽位的多余标签，没有则不占位 */}
         {model.extraTags.length > 0 && (
-          <div className="mx-auto mb-3.5 mt-5 hidden w-full max-w-xl flex-col items-center sm:flex">
-            <div className="mb-2.5 flex items-center gap-2">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
-                {t("sec_models_scenarios")}
+          <div className='mx-auto mt-5 mb-3.5 hidden w-full max-w-xl flex-col items-center sm:flex'>
+            <div className='mb-2.5 flex items-center gap-2'>
+              <span className='text-muted-foreground/70 text-[10px] font-semibold tracking-[0.16em] uppercase'>
+                {t('sec_models_scenarios')}
               </span>
-              <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-slate-900/10 to-transparent dark:from-white/15" />
+              <span
+                aria-hidden
+                className='h-px flex-1 bg-gradient-to-r from-slate-900/10 to-transparent dark:from-white/15'
+              />
             </div>
-            <ul className="flex flex-wrap justify-center gap-2">
+            <ul className='flex flex-wrap justify-center gap-2'>
               {model.extraTags.map((tag) => (
                 <li
                   key={tag}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-slate-900/[0.08] bg-white/60 px-3 py-1 text-xs font-medium text-foreground/85 backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
+                  className='text-foreground/85 inline-flex items-center gap-1.5 rounded-full border border-slate-900/[0.08] bg-white/60 px-3 py-1 text-xs font-medium backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]'
                 >
                   <span
-                    className="size-1.5 shrink-0 rounded-full"
+                    className='size-1.5 shrink-0 rounded-full'
                     style={{ backgroundColor: model.accentColor }}
                   />
                   {tag}
@@ -943,68 +984,71 @@ function FeaturedModelCard(props: { model: ModelItem }) {
         )}
 
         {/* 底部操作项 */}
-        <div className="mt-auto flex w-full flex-wrap items-center justify-between gap-3 border-t border-slate-900/[0.08] pt-4 dark:border-white/10">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+        <div className='mt-auto flex w-full flex-wrap items-center justify-between gap-3 border-t border-slate-900/[0.08] pt-4 dark:border-white/10'>
+          <div className='flex flex-wrap items-center justify-center gap-2 sm:gap-3'>
             {/* 供应商名称：放置在左下角，与右侧小卡保持视觉对齐 */}
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-900/[0.08] bg-white/60 px-2.5 py-1 text-xs font-medium text-foreground/80 shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]">
-              <Building2 className="size-3 text-muted-foreground/80" aria-hidden />
+            <span className='text-foreground/80 inline-flex items-center gap-1.5 rounded-full border border-slate-900/[0.08] bg-white/60 px-2.5 py-1 text-xs font-medium shadow-2xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]'>
+              <Building2
+                className='text-muted-foreground/80 size-3'
+                aria-hidden
+              />
               <span>{model.provider}</span>
             </span>
 
             <TooltipProvider delay={0}>
               <CopyButton
                 value={model.id}
-                variant="outline"
-                size="sm"
-                className="h-9 gap-1.5 rounded-full border-slate-900/10 bg-white/60 px-3 font-mono text-xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]"
-                tooltip={t("sec_models_copy_id")}
-                successTooltip={t("sec_models_copied")}
+                variant='outline'
+                size='sm'
+                className='h-9 gap-1.5 rounded-full border-slate-900/10 bg-white/60 px-3 font-mono text-xs backdrop-blur-md dark:border-white/10 dark:bg-white/[0.06]'
+                tooltip={t('sec_models_copy_id')}
+                successTooltip={t('sec_models_copied')}
               >
-                <span className="max-w-[12rem] truncate">{model.id}</span>
+                <span className='max-w-[12rem] truncate'>{model.id}</span>
               </CopyButton>
             </TooltipProvider>
 
             {/* 可用率：与模型广场同源的 24h 性能监控，无监控数据时展示占位符 */}
             <span
-              className="flex items-center gap-1.5 text-[11px] text-muted-foreground/90"
+              className='text-muted-foreground/90 flex items-center gap-1.5 text-[11px]'
               title={
                 model.successRate != null
-                  ? t("Availability (last 24h)")
+                  ? t('Availability (last 24h)')
                   : undefined
               }
             >
               <span
                 aria-hidden
                 className={cn(
-                  "size-1.5 shrink-0 rounded-full",
+                  'size-1.5 shrink-0 rounded-full',
                   model.successRate != null
                     ? getSuccessRateDotClass(model.successRate)
-                    : "bg-muted-foreground/40"
+                    : 'bg-muted-foreground/40'
                 )}
               />
-              <span className="hidden sm:inline">
-                {t("sec_models_availability")}
+              <span className='hidden sm:inline'>
+                {t('sec_models_availability')}
               </span>
-              <span className="font-mono tabular-nums">
+              <span className='font-mono tabular-nums'>
                 {model.successRate != null
                   ? `${model.successRate.toFixed(1)}%`
-                  : "—"}
+                  : '—'}
               </span>
             </span>
           </div>
 
           <Link
-            to="/pricing"
+            to='/pricing'
             search={{ search: model.id }}
-            className="group relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-xl border border-border/70 bg-card/60 px-4 text-xs font-medium text-foreground backdrop-blur-md transition-all duration-300 hover:border-foreground/25 hover:bg-card/90 hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:scale-[1.02] active:scale-[0.98]"
+            className='group border-border/70 bg-card/60 text-foreground hover:border-foreground/25 hover:bg-card/90 relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-xl border px-4 text-xs font-medium backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:scale-[0.98]'
           >
             <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-foreground/5 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+              className='via-foreground/5 pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full'
             />
-            {t("sec_models_view_model")}
+            {t('sec_models_view_model')}
             <ArrowRight
-              className="size-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5"
+              className='size-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5'
               aria-hidden
             />
           </Link>
@@ -1025,18 +1069,18 @@ function CompactModelCard(props: {
 
   return (
     <button
-      type="button"
+      type='button'
       onClick={props.onSelect}
       aria-pressed={props.selected}
-      aria-label={`${model.name}. ${props.selected ? t("sec_models_showing") : t("sec_models_show")}`}
+      aria-label={`${model.name}. ${props.selected ? t('sec_models_showing') : t('sec_models_show')}`}
       className={cn(
-        "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left",
+        'group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left',
         compactPanelClassName,
         // 与「让一张画面」卡片同一套悬浮：整体过渡 + 500ms + 仅抬起。
-        "transition-all duration-500 hover:-translate-y-1",
-        "active:scale-[0.99]",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        props.selected && "-translate-y-1 scale-[1.01]"
+        'transition-all duration-500 hover:-translate-y-1',
+        'active:scale-[0.99]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        props.selected && '-translate-y-1 scale-[1.01]'
       )}
       style={
         props.selected
@@ -1048,11 +1092,11 @@ function CompactModelCard(props: {
       }
     >
       {/* 头部：图标 + Eyebrow 供应商与模型名称，右侧徽章 */}
-      <div className="w-full">
-        <div className="flex items-start justify-between gap-2.5">
-          <div className="flex min-w-0 items-center gap-2.5">
+      <div className='w-full'>
+        <div className='flex items-start justify-between gap-2.5'>
+          <div className='flex min-w-0 items-center gap-2.5'>
             <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 shadow-none transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 dark:bg-white/10"
+              className='flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 shadow-none transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 dark:bg-white/10'
               style={{
                 filter: `drop-shadow(0 3px 8px ${model.glowColor})`,
                 border: `1px solid ${model.accentColor}25`,
@@ -1060,48 +1104,48 @@ function CompactModelCard(props: {
             >
               <ProviderGlyph iconKey={model.iconKey} size={22} />
             </span>
-            <div className="min-w-0">
-              <h4 className="truncate text-[0.95rem] font-bold leading-tight tracking-[-0.01em] text-foreground">
+            <div className='min-w-0'>
+              <h4 className='text-foreground truncate text-[0.95rem] leading-tight font-bold tracking-[-0.01em]'>
                 {model.name}
               </h4>
             </div>
           </div>
 
           <span
-            className="max-w-[7rem] shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            className='max-w-[7rem] shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold'
             style={{
               color: model.accentColor,
               backgroundColor: `${model.accentColor}18`,
               border: `1px solid ${model.accentColor}30`,
             }}
           >
-            <span className="block truncate">{model.badge}</span>
+            <span className='block truncate'>{model.badge}</span>
           </span>
         </div>
       </div>
 
       {/* 描述：两行截断，行高略放大以改善密集度 */}
-      <div className="my-3.5 w-full">
-        <p className="line-clamp-2 text-left text-[12px] leading-[1.75] text-muted-foreground/90">
-          {model.description || t("sec_models_no_description")}
+      <div className='my-3.5 w-full'>
+        <p className='text-muted-foreground/90 line-clamp-2 text-left text-[12px] leading-[1.75]'>
+          {model.description || t('sec_models_no_description')}
         </p>
       </div>
 
       {/* 规格胶囊：小卡固定展示前三个标签，三等分排列，未配到时显示占位符 */}
-      <div className="mb-2.5 w-full">
-        <dl className="grid grid-cols-3 items-center rounded-2xl border border-slate-900/[0.07] bg-slate-100 px-2 py-1.5 dark:border-white/10 dark:bg-white/[0.07]">
+      <div className='mb-2.5 w-full'>
+        <dl className='grid grid-cols-3 items-center rounded-2xl border border-slate-900/[0.07] bg-slate-100 px-2 py-1.5 dark:border-white/10 dark:bg-white/[0.07]'>
           {SPEC_SLOTS.map((slot, index) => (
             <div
               key={slot.labelKey}
               className={cn(
-                "flex min-w-0 items-center justify-center",
-                index > 0 && "border-l border-slate-900/10 dark:border-white/15"
+                'flex min-w-0 items-center justify-center',
+                index > 0 && 'border-l border-slate-900/10 dark:border-white/15'
               )}
             >
               <SpecChip
                 icon={slot.icon}
                 label={t(slot.labelKey)}
-                value={model.specs[index] || "-"}
+                value={model.specs[index] || '-'}
                 accent={model.accentColor}
               />
             </div>
@@ -1112,7 +1156,7 @@ function CompactModelCard(props: {
       {/* 价格栏：实底 accent 胶囊 + 折扣徽章；无 token 价格时引导去定价页查看 */}
       <div
         className={cn(
-          "mb-3 flex w-full items-center justify-center gap-2.5 px-3 py-2",
+          'mb-3 flex w-full items-center justify-center gap-2.5 px-3 py-2',
           compactCapsuleClassName
         )}
         style={{
@@ -1123,11 +1167,11 @@ function CompactModelCard(props: {
       >
         {model.priceUnavailable ? (
           <Link
-            to="/pricing"
+            to='/pricing'
             search={{ search: model.id }}
-            className="text-xs font-semibold text-foreground/80 underline-offset-4 hover:underline"
+            className='text-foreground/80 text-xs font-semibold underline-offset-4 hover:underline'
           >
-            {t("sec_models_price_see_pricing")}
+            {t('sec_models_price_see_pricing')}
           </Link>
         ) : (
           <>
@@ -1139,20 +1183,20 @@ function CompactModelCard(props: {
             />
             {discount ? (
               <span
-                className="shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-xs"
+                className='shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-xs'
                 style={{ backgroundColor: model.accentColor }}
               >
                 -{discount}%
-                <span className="sr-only">{t("sec_models_save")}</span>
+                <span className='sr-only'>{t('sec_models_save')}</span>
               </span>
             ) : null}
           </>
         )}
       </div>
       {/* 供应商：固定在左下角，降为次要层级（保持 Anthropic 品牌大小写格式） */}
-      <div className="mt-auto flex w-full items-center gap-1.5 text-[11px] font-medium tracking-wide text-muted-foreground/70">
-        <Building2 className="size-3 shrink-0" aria-hidden />
-        <span className="truncate">{model.provider}</span>
+      <div className='text-muted-foreground/70 mt-auto flex w-full items-center gap-1.5 text-[11px] font-medium tracking-wide'>
+        <Building2 className='size-3 shrink-0' aria-hidden />
+        <span className='truncate'>{model.provider}</span>
       </div>
     </button>
   )
@@ -1195,7 +1239,7 @@ export function SectionModels() {
         for (const item of res?.data?.models ?? []) {
           const rate = item?.success_rate
           if (
-            typeof rate === "number" &&
+            typeof rate === 'number' &&
             Number.isFinite(rate) &&
             rate >= 0 &&
             rate <= 100
@@ -1240,8 +1284,8 @@ export function SectionModels() {
 
   return (
     <section
-      id="models"
-      className="home-section-offscreen relative overflow-hidden px-4 pt-16 pb-24 sm:px-6 sm:pt-20 sm:pb-28 lg:px-8"
+      id='models'
+      className='home-section-offscreen relative overflow-hidden px-4 pt-16 pb-24 sm:px-6 sm:pt-20 sm:pb-28 lg:px-8'
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocusCapture={() => setIsPaused(true)}
@@ -1249,25 +1293,25 @@ export function SectionModels() {
     >
       <SectionBackdrop />
 
-      <div className="mx-auto max-w-7xl">
+      <div className='mx-auto max-w-7xl'>
         <SectionHeader
-          titlePrimary={t("sec_models_title_p1")}
-          titleSecondary={t("sec_models_title_p2")}
-          description={t("sec_models_desc")}
+          titlePrimary={t('sec_models_title_p1')}
+          titleSecondary={t('sec_models_title_p2')}
+          description={t('sec_models_desc')}
           action={
             <SectionPrimaryLink
-              to="/pricing"
-              label={t("sec_models_view_all")}
+              to='/pricing'
+              label={t('sec_models_view_all')}
             />
           }
         />
 
-        <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12 lg:gap-6">
-          <div className="lg:col-span-6">
+        <div className='grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12 lg:gap-6'>
+          <div className='lg:col-span-6'>
             <FeaturedModelCard model={activeModel} />
           </div>
 
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:col-span-6">
+          <div className='grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:col-span-6'>
             {displayModels.map((model, index) => (
               <CompactModelCard
                 key={model.id}
@@ -1283,12 +1327,11 @@ export function SectionModels() {
       </div>
 
       <SectionScrollCue
-        target="studio"
-        cue={t("sec_models_scroll_cue")}
-        aside={t("sec_models_scroll_aside")}
+        target='studio'
+        cue={t('sec_models_scroll_cue')}
+        aside={t('sec_models_scroll_aside')}
       />
       <SectionDivider />
     </section>
   )
 }
-

@@ -39,6 +39,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { cn } from '@/lib/utils'
 
 import {
   SettingsForm,
@@ -48,6 +49,7 @@ import {
 import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
+import { parsePrefixList } from './usd-price-prefixes'
 
 const thinkingBlacklistExample = JSON.stringify(
   ['moonshotai/kimi-k2-thinking', 'kimi-k2-thinking', 're:.*@sha256:.*'],
@@ -96,6 +98,7 @@ const schema = z.object({
   general_setting: z.object({
     ping_interval_enabled: z.boolean(),
     ping_interval_seconds: z.coerce.number().min(1),
+    model_square_usd_price_prefixes: z.string(),
   }),
 })
 
@@ -108,6 +111,7 @@ type FlatGlobalModelSettings = {
   'global.chat_completions_to_responses_policy': string
   'general_setting.ping_interval_enabled': boolean
   'general_setting.ping_interval_seconds': number
+  'general_setting.model_square_usd_price_prefixes': string
 }
 
 const flattenGlobalValues = (
@@ -127,13 +131,16 @@ const flattenGlobalValues = (
     values.general_setting.ping_interval_enabled,
   'general_setting.ping_interval_seconds':
     values.general_setting.ping_interval_seconds,
+  // 存成 JSON 字符串：option 接口只接受标量
+  'general_setting.model_square_usd_price_prefixes': JSON.stringify(
+    parsePrefixList(values.general_setting.model_square_usd_price_prefixes)
+  ),
 })
 
 function normalizeJsonText(value: string, fallback: string) {
   const trimmed = (value ?? '').toString().trim()
   return trimmed ? trimmed : fallback
 }
-
 type GlobalSettingsCardProps = {
   defaultValues: GlobalModelSettingsFormValues
 }
@@ -367,6 +374,35 @@ export function GlobalSettingsCard({ defaultValues }: GlobalSettingsCardProps) {
                 <FormDescription>
                   {t(
                     'Recommended to keep this high to avoid upstream throttling.'
+                  )}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Separator />
+
+          <FormField
+            control={form.control}
+            name='general_setting.model_square_usd_price_prefixes'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Model square USD price prefixes')}</FormLabel>
+                <FormControl>
+                  <textarea
+                    {...field}
+                    rows={3}
+                    placeholder='gpt-4o, claude-sonnet'
+                    className={cn(
+                      'border-input placeholder:text-muted-foreground/60 flex min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs',
+                      'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none'
+                    )}
+                  />
+                </FormControl>
+                <FormDescription>
+                  {t(
+                    'Comma or newline separated model-name prefixes. Matching token-priced models also show their USD official price and the discount on the model square.'
                   )}
                 </FormDescription>
                 <FormMessage />

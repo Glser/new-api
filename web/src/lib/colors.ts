@@ -65,12 +65,7 @@ export function getBgColorClass(color?: string): string {
 /**
  * Announcement status types
  */
-type AnnouncementType =
-  | 'default'
-  | 'ongoing'
-  | 'success'
-  | 'warning'
-  | 'error'
+type AnnouncementType = 'default' | 'ongoing' | 'success' | 'warning' | 'error'
 
 /**
  * Announcement status color mapping

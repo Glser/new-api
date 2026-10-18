@@ -59,8 +59,8 @@ const shineClassName =
  * 同一排按钮的两种状态。所以深色下给未选中态垫一层 10% 的前景色表面，
  * 并加深边框与文字，让它先成为「一颗按钮」，再用更亮的表面表达选中。
  *
- * 密度也调过一版：胶囊整体放大到 h-9 / text-sm，左侧 logo、中间文案、
- * 右侧计数/倍率三者贴得更紧，行首标签也提到同一高度，整行不再头重脚轻。
+ * 密度也调过一版：胶囊收到 h-[25px] / text-xs，左侧 logo、中间文案、
+ * 右侧计数/倍率三者贴得更紧，行首标签也收到同一高度，整行不再头重脚轻。
  *
  * 悬停上浮、按下回弹与光泽都沿用首页「进入控制台」那枚按钮的反馈，
  * 让筛选器摸起来像一排真的按钮，而不是标签。但悬停不用 hover:scale，
@@ -87,7 +87,7 @@ export function PlazaFilterChip(props: {
       aria-pressed={active}
       title={option.label}
       className={cn(
-        'relative h-8 max-w-full shrink-0 gap-1.5 overflow-hidden rounded-full border px-3 text-[13px] font-medium',
+        'relative h-[25px] max-w-full shrink-0 gap-1 overflow-hidden rounded-full border px-2.5 text-xs font-medium',
         'transition duration-200 hover:-translate-y-px',
         active
           ? 'border-foreground/25 bg-muted text-foreground shadow-none hover:border-foreground/25 hover:bg-muted hover:text-foreground dark:border-foreground/30 dark:bg-foreground/[0.18] dark:text-foreground dark:hover:border-foreground/30 dark:hover:bg-foreground/[0.18] dark:hover:text-foreground'
@@ -106,14 +106,14 @@ export function PlazaFilterChip(props: {
           aria-hidden='true'
           className='relative flex shrink-0 items-center'
         >
-          <Check className='size-3' />
+          <Check className='size-2.5' />
         </span>
       )}
       {option.icon && (
         // Button 基类的 [&_svg:not([class*='size-'])]:size-4 会把未标注尺寸的 svg
         // 一律压成 16px，盖掉 getLobeIcon 传的 size；这里用 ! 覆盖，让供应商 logo
         // 跟上缩小后的字号。
-        <span className='relative flex shrink-0 items-center [&_svg]:size-4!'>
+        <span className='relative flex shrink-0 items-center [&_svg]:size-3.5!'>
           {option.icon}
         </span>
       )}
@@ -121,7 +121,7 @@ export function PlazaFilterChip(props: {
       {option.suffix && (
         <span
           className={cn(
-            'relative rounded-[0.3rem] px-1.5 py-0.5 font-mono text-[11px] leading-none tabular-nums',
+            'relative rounded-[0.3rem] px-1 py-px font-mono text-[10px] leading-none tabular-nums',
             getSuffixClassName()
           )}
         >
@@ -131,7 +131,7 @@ export function PlazaFilterChip(props: {
       {option.countLabel && (
         <span
           className={cn(
-            'relative text-[11px] leading-none tabular-nums',
+            'relative text-[10px] leading-none tabular-nums',
             active ? 'text-foreground/60' : 'text-muted-foreground/70'
           )}
         >

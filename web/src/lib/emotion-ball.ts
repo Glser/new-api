@@ -97,7 +97,9 @@ function loadScript(src: string): Promise<void> {
 
 export function loadEmotionBall(): Promise<EmotionBallApi> {
   if (typeof window === 'undefined') {
-    return Promise.reject(new Error('Emotion Ball is only available in the browser'))
+    return Promise.reject(
+      new Error('Emotion Ball is only available in the browser')
+    )
   }
 
   if (window.EmotionBall) {

@@ -44,12 +44,12 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               <img
                 src='/logo.png'
                 alt={t('Logo')}
-                className='h-8 w-8 rounded-full object-contain block dark:hidden'
+                className='block h-8 w-8 rounded-full object-contain dark:hidden'
               />
               <img
                 src='/logo-dark.png'
                 alt={t('Logo')}
-                className='h-8 w-8 rounded-full object-contain hidden dark:block'
+                className='hidden h-8 w-8 rounded-full object-contain dark:block'
               />
             </>
           ) : (

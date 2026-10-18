@@ -19,10 +19,12 @@ For commercial licensing, please contact support@quantumnous.com
 import { ChannelAffinitySection } from '../general/channel-affinity'
 import { IoNetDeploymentSettingsSection } from '../integrations/ionet-deployment-settings-section'
 import type { ModelSettings } from '../types'
+import { safeJsonParse } from '../utils/json-parser'
 import { createSectionRegistry } from '../utils/section-registry'
 import { ClaudeSettingsCard } from './claude-settings-card'
 import { GeminiSettingsCard } from './gemini-settings-card'
 import { GlobalSettingsCard } from './global-settings-card'
+import { formatPrefixList } from './usd-price-prefixes'
 import { GrokSettingsCard } from './grok-settings-card'
 import { RoutingReliabilitySection } from './routing-reliability-section'
 
@@ -60,6 +62,13 @@ const MODELS_SECTIONS = [
               settings['general_setting.ping_interval_enabled'],
             ping_interval_seconds:
               settings['general_setting.ping_interval_seconds'],
+            // 表单里是逗号分隔文本，存储里是 JSON 数组
+            model_square_usd_price_prefixes: formatPrefixList(
+              safeJsonParse<string[]>(
+                settings['general_setting.model_square_usd_price_prefixes'],
+                { fallback: [] }
+              )
+            ),
           },
         }}
       />

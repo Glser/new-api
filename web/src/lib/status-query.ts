@@ -58,6 +58,20 @@ function toNumber(value: unknown, fallback: number): number {
 }
 
 /**
+ * Coerce a status field to a string array, dropping blanks.
+ *
+ * Backends may hand back `null`, a scalar, or a list; anything that is not a
+ * usable list becomes an empty array so callers can iterate unconditionally.
+ */
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter((item) => item !== '')
+}
+
+/**
  * Map `/api/status` response data to our persisted system config structure
  */
 export function mapStatusDataToConfig(
@@ -88,6 +102,10 @@ export function mapStatusDataToConfig(
     customCurrencyExchangeRate: toNumber(
       data.custom_currency_exchange_rate,
       DEFAULT_CURRENCY_CONFIG.customCurrencyExchangeRate
+    ),
+    // 模型广场美元官方价前缀列表（后台全局模型配置）
+    modelSquareUsdPricePrefixes: toStringArray(
+      data.model_square_usd_price_prefixes
     ),
   }
 

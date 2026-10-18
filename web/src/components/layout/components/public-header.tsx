@@ -121,18 +121,31 @@ export function PublicHeader(props: PublicHeaderProps) {
 
   let authContent: React.ReactNode
   if (loading) {
-    authContent = <Skeleton className='h-8 w-20 rounded-lg' />
+    authContent = <Skeleton className='h-8 w-20 rounded-full' />
   } else if (isAuthenticated) {
     authContent = <ProfileDropdown />
   } else {
     authContent = (
-      <Button
-        size='sm'
-        className='h-8 rounded-lg px-3.5 text-xs font-medium'
-        render={<Link to='/sign-in' />}
+      <Link
+        to='/sign-in'
+        className={cn(
+          'group relative inline-flex h-8 cursor-pointer items-center justify-center overflow-hidden rounded-full px-4 text-xs font-semibold tracking-tight select-none transition-all duration-300',
+          // 质感黑白对比度 + 极细内边框发光设计
+          'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.08)]',
+          'hover:scale-[1.03] hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] active:scale-[0.98]',
+          'dark:bg-foreground dark:text-background dark:shadow-[0_1px_2px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.15)]',
+          'dark:hover:shadow-[0_6px_20px_rgba(255,255,255,0.12)]'
+        )}
       >
-        {t('Sign in')}
-      </Button>
+        {/* Luminous overlay wave on hover (与首页进入控制台按钮同款微光波流淌效果) */}
+        <span
+          aria-hidden='true'
+          className='pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full dark:via-black/20'
+        />
+        <span className='relative z-1 flex items-center gap-1.5'>
+          {t('Sign in')}
+        </span>
+      </Link>
     )
   }
 
@@ -221,16 +234,16 @@ export function PublicHeader(props: PublicHeaderProps) {
             'bg-card/70 ring-border/40 h-12 rounded-2xl px-4 ring-[0.5px] backdrop-blur-2xl',
             'dark:bg-foreground/[0.07] dark:ring-white/10',
             'shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]',
-            'mt-3 max-w-[68rem]'
+            'mt-3 max-w-4xl'
           )}
         >
           {/* Logo */}
-          <div className='@container/system-brand flex min-w-0 shrink-0 items-center gap-1 lg:min-w-36 lg:shrink'>
+          <div className='z-1 flex min-w-0 shrink-0 items-center gap-1'>
             <Link
               to={homeUrl}
               className='group flex min-w-0 items-center gap-2'
             >
-              <div className='flex size-8 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
+              <div className='flex size-8 shrink-0 -translate-y-0.5 items-center justify-center transition-all duration-300 group-hover:scale-105'>
                 {logoContent}
               </div>
               <span
@@ -244,7 +257,7 @@ export function PublicHeader(props: PublicHeaderProps) {
 
           {/* Desktop nav — absolutely centred so it sits in the middle of the
                 bar regardless of how wide the brand or the actions grow. */}
-          <div className='pointer-events-none absolute inset-x-0 top-0 hidden h-full items-center justify-center lg:flex'>
+          <div className='pointer-events-none absolute inset-0 hidden h-full items-center justify-center lg:flex'>
             <div className='pointer-events-auto flex items-center gap-1'>
               <PillNav
                 links={links}
@@ -255,7 +268,7 @@ export function PublicHeader(props: PublicHeaderProps) {
           </div>
 
           {/* Actions */}
-          <div className='ms-auto flex shrink-0 items-center gap-1 lg:gap-0.5'>
+          <div className='z-1 ms-auto flex shrink-0 items-center gap-1 lg:gap-0.5'>
             {(showLanguageSwitcher || showThemeSwitch || showNotifications) && (
               <div className='bg-border/40 mx-1 h-4 w-px' />
             )}

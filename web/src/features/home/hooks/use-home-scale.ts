@@ -16,21 +16,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useSyncExternalStore } from "react"
+import { useSyncExternalStore } from 'react'
 
-import { getHomeScale } from "../lib/scale"
+import { getHomeScale } from '../lib/scale'
 
 function subscribeToViewport(onStoreChange: () => void): () => void {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return () => {}
   }
 
-  window.addEventListener("resize", onStoreChange)
-  return () => window.removeEventListener("resize", onStoreChange)
+  window.addEventListener('resize', onStoreChange)
+  return () => window.removeEventListener('resize', onStoreChange)
 }
 
 function getClientScale(): number {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return 1
   }
   return getHomeScale(window.innerWidth)

@@ -77,62 +77,72 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         props.className
       )}
     >
-      <dl className='flex min-w-0 items-start gap-2.5 text-[9px] tabular-nums'>
-        <div className='w-[4.25rem] shrink-0'>
+      <dl className='flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-[9px] tabular-nums'>
+        <div className='flex shrink-0 items-center gap-1.5'>
           <dt
             title={t('Request success rate sampled over the last 24 hours')}
-            className='text-muted-foreground flex items-center justify-between gap-1 text-[9px] leading-3'
+            className='text-muted-foreground text-[9px] leading-3'
           >
-            <span>{t('Status')}</span>
-            <span className='font-mono'>
+            {t('Status')}
+          </dt>
+          <dd className='flex items-center gap-1'>
+            <span
+              role='img'
+              aria-label={t(
+                'Recent success-rate samples; gray bars indicate missing data.'
+              )}
+              title={t(
+                'Recent success-rate samples; gray bars indicate missing data.'
+              )}
+              className='flex h-2 w-14 items-center justify-between'
+            >
+              {STATUS_SLOTS.map((slot) => {
+                const rate = statusRates[slot]
+                return (
+                  <span
+                    key={slot}
+                    aria-hidden
+                    className={cn(
+                      'h-full w-px shrink-0 rounded-xs',
+                      rate != null &&
+                        Number.isFinite(rate) &&
+                        rate >= 0 &&
+                        rate <= 100
+                        ? getSuccessRateDotClass(rate)
+                        : 'bg-muted-foreground/15'
+                    )}
+                  />
+                )
+              })}
+            </span>
+            <span className='font-mono text-[9px] leading-3'>
               {hasSuccessRate ? `${successRate.toFixed(1)}%` : '—%'}
             </span>
-          </dt>
-          <dd
-            role='img'
-            aria-label={t(
-              'Recent success-rate samples; gray bars indicate missing data.'
-            )}
-            title={t(
-              'Recent success-rate samples; gray bars indicate missing data.'
-            )}
-            className='mt-0.5 flex h-2 w-[4.25rem] items-center justify-between'
+          </dd>
+        </div>
+        <div className='ms-auto flex shrink-0 items-center gap-x-3'>
+          <div
+            title={t('Average latency')}
+            className='flex shrink-0 items-center gap-1.5'
           >
-            {STATUS_SLOTS.map((slot) => {
-              const rate = statusRates[slot]
-              return (
-                <span
-                  key={slot}
-                  aria-hidden
-                  className={cn(
-                    'h-full w-px shrink-0 rounded-xs',
-                    rate != null &&
-                      Number.isFinite(rate) &&
-                      rate >= 0 &&
-                      rate <= 100
-                      ? getSuccessRateDotClass(rate)
-                      : 'bg-muted-foreground/15'
-                  )}
-                />
-              )
-            })}
-          </dd>
-        </div>
-        <div title={t('Average latency')} className='shrink-0'>
-          <dt className='text-muted-foreground text-[9px] leading-3'>
-            {t('Latency short')}
-          </dt>
-          <dd className='mt-0.5 font-mono whitespace-nowrap'>
-            {latencyText === '—' ? '—s' : latencyText}
-          </dd>
-        </div>
-        <div title={t('Throughput')} className='shrink-0'>
-          <dt className='text-muted-foreground text-[9px] leading-3'>
-            {t('Throughput short')}
-          </dt>
-          <dd className='mt-0.5 font-mono whitespace-nowrap'>
-            {throughputText === '—' ? '—t/s' : throughputText}
-          </dd>
+            <dt className='text-muted-foreground text-[9px] leading-3'>
+              {t('Latency short')}
+            </dt>
+            <dd className='font-mono text-[9px] leading-3 whitespace-nowrap'>
+              {latencyText === '—' ? '—s' : latencyText}
+            </dd>
+          </div>
+          <div
+            title={t('Throughput')}
+            className='flex shrink-0 items-center gap-1.5'
+          >
+            <dt className='text-muted-foreground text-[9px] leading-3'>
+              {t('Throughput short')}
+            </dt>
+            <dd className='font-mono text-[9px] leading-3 whitespace-nowrap'>
+              {throughputText === '—' ? '—t/s' : throughputText}
+            </dd>
+          </div>
         </div>
       </dl>
       {props.children}

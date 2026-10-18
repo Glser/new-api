@@ -21,13 +21,13 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 export const plazaFilterRowClassName =
-  'flex flex-col flex-wrap items-start gap-x-2 gap-y-2 px-0.5 py-2 sm:flex-row sm:gap-x-3 sm:px-1'
+  'flex flex-col flex-wrap items-start gap-x-2 gap-y-1.5 px-0.5 py-1.5 sm:flex-row sm:gap-x-3 sm:px-1'
 /**
- * 行首标签和右侧胶囊同高（h-8 / text-[13px]）：图标、文字、胶囊三者在同一
+ * 行首标签和右侧胶囊同高（h-[25px] / text-xs）：图标、文字、胶囊三者在同一
  * 基线上对齐，整行才不像「小标签拖着一排大按钮」。
  */
 export const plazaFilterRowLabelClassName =
-  'text-foreground flex h-8 w-full shrink-0 items-center gap-2 text-[13px] font-semibold whitespace-nowrap sm:w-20'
+  'text-foreground flex h-[25px] w-full shrink-0 items-center gap-1.5 text-xs font-semibold whitespace-nowrap sm:w-20'
 export const plazaFilterRowChipsClassName =
   'flex min-w-0 flex-1 flex-wrap content-start gap-1.5'
 
@@ -54,7 +54,7 @@ export function PlazaFilterRow(props: {
         {props.icon && (
           <span
             aria-hidden='true'
-            className='text-foreground flex size-4 shrink-0 items-center justify-center [&_svg]:size-4'
+            className='text-foreground flex size-3.5 shrink-0 items-center justify-center [&_svg]:size-3.5'
           >
             {props.icon}
           </span>

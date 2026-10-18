@@ -91,7 +91,8 @@ function AdminSystemUpdateAction(props: SystemUpdateActionProps) {
           className={cn(
             'relative',
             compact && 'size-8 px-0 lg:w-auto lg:gap-1.5 lg:px-2.5',
-            update.shouldNotify && 'border-primary/40 bg-primary/10 text-primary'
+            update.shouldNotify &&
+              'border-primary/40 bg-primary/10 text-primary'
           )}
         >
           {triggerContent}

@@ -599,7 +599,7 @@ For commercial licensing, please contact support@quantumnous.com
   --chart-4: oklch(0.78 0.13 0);
   --chart-5: oklch(0.83 0.027 175);
 
-  --sidebar: oklch(0.205 0.004 60);
+  --sidebar: color-mix(in oklch, var(--foreground) 1.5%, var(--background));
   --sidebar-foreground: oklch(0.95 0.005 92);
   --sidebar-primary: oklch(0.72 0.135 40);
   --sidebar-primary-foreground: oklch(0.18 0.005 60);

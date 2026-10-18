@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { ContentSettings } from '../types'
 import { createSectionRegistry } from '../utils/section-registry'
+import { AgentSettingsSection } from './agent-settings-section'
 import { AnnouncementsSection } from './announcements-section'
 import { ApiInfoSection } from './api-info-section'
 import { ChatSettingsSection } from './chat-settings-section'
@@ -98,6 +99,13 @@ const CONTENT_SECTIONS = [
     titleKey: 'Chat Presets',
     build: (settings: ContentSettings) => (
       <ChatSettingsSection defaultValue={settings.Chats} />
+    ),
+  },
+  {
+    id: 'agent',
+    titleKey: 'Agent Tools',
+    build: (settings: ContentSettings) => (
+      <AgentSettingsSection defaultValue={settings.Agents} />
     ),
   },
   {

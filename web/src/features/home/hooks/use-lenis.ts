@@ -1,3 +1,4 @@
+import Lenis from 'lenis'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -16,8 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect } from "react"
-import Lenis from "lenis"
+import { useEffect } from 'react'
 
 /**
  * 为首页启用高帧率平滑动力学滚动 (Lenis)。
@@ -29,10 +29,12 @@ import Lenis from "lenis"
  */
 export function useLenis() {
   useEffect(() => {
-    if (typeof window === "undefined") return
+    if (typeof window === 'undefined') return
 
     // 如果用户设置了偏好减少动画，直接跳过平滑滚动
-    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+    const reducedMotion = window.matchMedia?.(
+      '(prefers-reduced-motion: reduce)'
+    )?.matches
     if (reducedMotion) return
 
     let lenis: Lenis | null = null

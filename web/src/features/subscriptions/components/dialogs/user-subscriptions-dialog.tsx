@@ -263,9 +263,9 @@ export function UserSubscriptionsDialog(props: Props) {
                 options={plans.map((p) => ({
                   value: String(p.plan.id),
                   label: `${p.plan.title} (${formatBillingCurrencyFromUSD(
-                  Number(p.plan.price_amount || 0),
-                  { abbreviate: false }
-                )})`,
+                    Number(p.plan.price_amount || 0),
+                    { abbreviate: false }
+                  )})`,
                 }))}
                 value={selectedPlanId}
                 onValueChange={(v) => v !== null && setSelectedPlanId(v)}

@@ -23,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getLobeIcon } from '@/lib/lobe-icon'
+import { cn } from '@/lib/utils'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { DEFAULT_TOKEN_UNIT } from '../constants'
@@ -35,12 +36,88 @@ import {
   isFlatPerRequestExpression,
   isUnconfiguredTaskUsageModel,
 } from '../lib/dynamic-price'
-import { isTokenBasedModel } from '../lib/model-helpers'
+import { getDisplayGroupRatio, isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import { taskPriceLabel, taskUsageUnitLabel } from '../lib/task-price-display'
+import { formatUsdPrice, getOfficialVsSitePrice } from '../lib/usd-price'
 import type { PricingModel, PriceType, TokenUnit } from '../types'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
+
+
+const MAX_VISIBLE_CARD_GROUPS = 1
+
+type TokenPricePart = { label: string; text: string }
+
+function toTokenPriceParts(
+  inputUSD: number | null | undefined,
+  outputUSD: number | null | undefined,
+  inputLabel: string,
+  outputLabel: string,
+  tokenUnit: TokenUnit
+): TokenPricePart[] {
+  const parts: TokenPricePart[] = []
+  if (inputUSD != null) {
+    parts.push({ label: inputLabel, text: formatUsdPrice(inputUSD, tokenUnit) })
+  }
+  if (outputUSD != null) {
+    parts.push({
+      label: outputLabel,
+      text: formatUsdPrice(outputUSD, tokenUnit),
+    })
+  }
+  return parts
+}
+
+function TokenUnitMark(props: { unit: string; name: string }) {
+  return (
+    <span className='inline-flex items-baseline gap-x-[3px]'>
+      <span>/{props.unit}</span>
+      <span>{props.name}</span>
+    </span>
+  )
+}
+
+function CompactTokenPriceParts(props: {
+  parts: TokenPricePart[]
+  strike?: boolean
+  unit?: string
+  unitName?: string
+  className?: string
+}) {
+  const cells = [0, 1].map((index) => {
+    const part = props.parts[index]
+    if (!part) {
+      return <span key={index} />
+    }
+
+    return (
+      <span
+        key={part.label}
+        className={cn(
+          'flex min-w-0 items-baseline gap-x-[2px] whitespace-nowrap font-mono tabular-nums',
+          index === 1 && 'ps-[9px]',
+          props.className
+        )}
+      >
+        <span className='text-muted-foreground font-normal'>{part.label}</span>
+        <span
+          className={cn(
+            props.strike &&
+              'text-muted-foreground line-through decoration-muted-foreground/50'
+          )}
+        >
+          {part.text}
+          {index === props.parts.length - 1 && props.unit && props.unitName ? (
+            <TokenUnitMark unit={props.unit} name={props.unitName} />
+          ) : null}
+        </span>
+      </span>
+    )
+  })
+
+  return <span className='contents'>{cells}</span>
+}
 
 export interface ModelCardProps {
   model: PricingModel
@@ -64,14 +141,52 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const usdExchangeRate = props.usdExchangeRate ?? 1
   const showRechargePrice = props.showRechargePrice ?? false
   const isTokenBased = isTokenBasedModel(props.model)
-  const tokenUnitLabel = tokenUnit === 'K' ? '1K' : '1M'
+  const tokenUnitName = t('Tokens')
   const groups = props.model.enable_groups || []
+  const visibleGroups = groups.slice(0, MAX_VISIBLE_CARD_GROUPS)
+  const hiddenGroupCount = Math.max(groups.length - visibleGroups.length, 0)
   const modelIconKey = props.model.icon || props.model.vendor_icon
   const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 20) : null
   const initial = props.model.model_name?.charAt(0).toUpperCase() || '?'
   const isUnconfiguredTaskUsage = isUnconfiguredTaskUsageModel(props.model)
   const billingTime = useBillingTime(props.model.billing_expr)
   const currency = useSystemConfigStore((state) => state.config.currency)
+  // 官方价 vs 站内价：官方价是配置原价（倍率 1 / 表达式基础档），
+  // 站内价是当前分组倍率后的实付价（未选分组时用最低可用分组）。
+  const officialVsSite = useMemo(
+    () =>
+      getOfficialVsSitePrice(
+        props.model,
+        getDisplayGroupRatio(props.model, props.selectedGroup),
+        {
+          now: billingTime === undefined ? undefined : new Date(billingTime),
+        }
+      ),
+    [props.model, props.selectedGroup, billingTime]
+  )
+  const officialPriceParts = useMemo(
+    () =>
+      toTokenPriceParts(
+        officialVsSite?.officialInputUSD,
+        officialVsSite?.officialOutputUSD,
+        t('Input'),
+        t('Output'),
+        tokenUnit
+      ),
+    [officialVsSite, t, tokenUnit]
+  )
+  const sitePriceParts = useMemo(
+    () =>
+      toTokenPriceParts(
+        officialVsSite?.siteInputUSD,
+        officialVsSite?.siteOutputUSD,
+        t('Input'),
+        t('Output'),
+        tokenUnit
+      ),
+    [officialVsSite, t, tokenUnit]
+  )
+  const siteDiscountPercent = officialVsSite?.discountPercent ?? 0
   const dynamicPriceOptions = useMemo(
     () => ({
       now: billingTime === undefined ? undefined : new Date(billingTime),
@@ -121,7 +236,9 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       )
     } else if (dynamicSummary.primaryEntries.length > 0) {
       priceSummary = (
-        <>
+        // 多个条目横排且不折行：窄卡片下靠各自 truncate 收缩，
+        // 而不是把输入/输出拆成上下两行。
+        <div className='flex min-w-0 items-baseline gap-x-2'>
           {dynamicSummary.primaryEntries
             .slice(0, dynamicSummary.providerCount ? 2 : undefined)
             .map((entry) => {
@@ -129,7 +246,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               const unitLabel = taskUsageUnitLabel(
                 entry,
                 i18n.language,
-                unitLabelKey ? t(unitLabelKey) : tokenUnitLabel
+                unitLabelKey ? t(unitLabelKey) : `${tokenUnit} ${tokenUnitName}`
               )
               let label: ReactNode = null
               if (entry.labelKind !== 'schema') {
@@ -153,7 +270,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
                   )}
                   <span>{entry.formattedRange ?? entry.formatted}</span>
                   <span className='text-muted-foreground text-[10px] font-normal whitespace-nowrap'>
-                    / {unitLabel}
+                    /{unitLabel}
                   </span>
                 </span>
               )
@@ -182,7 +299,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
                 ({dynamicSummary.tier.label})
               </span>
             )}
-        </>
+        </div>
       )
     } else {
       // 徽标已按「表达式是否只是固定单价」分流，价格行沿用同一结论，
@@ -204,7 +321,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               props.selectedGroup
             )}
             <span className='text-muted-foreground ms-1 text-[10px] font-normal'>
-              / {t('request')}
+              /{t('request')}
             </span>
           </span>
         )
@@ -228,7 +345,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       { type: 'output', label: t('Output') },
     ]
     priceSummary = (
-      <div className='flex min-w-0 items-baseline gap-x-3'>
+      <div className='flex min-w-0 items-baseline gap-x-2'>
         {prices.map((price) => (
           <span
             key={price.type}
@@ -249,7 +366,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               )}
             </span>
             <span className='text-muted-foreground text-[10px] font-normal'>
-              / {tokenUnitLabel}
+              <TokenUnitMark unit={tokenUnit} name={tokenUnitName} />
             </span>
           </span>
         ))}
@@ -271,7 +388,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           )}
         </span>
         <span className='text-muted-foreground text-[10px] font-normal'>
-          / {t('request')}
+          /{t('request')}
         </span>
       </span>
     )
@@ -331,50 +448,78 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         <div
           role='group'
           aria-label={t('Pricing')}
-          className='mt-auto flex min-w-0 items-center justify-between gap-2'
+          className='mt-auto flex min-w-0 flex-col gap-0.5'
         >
+          {officialVsSite ? (
+            <div className='grid min-w-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-baseline gap-x-1.5 gap-y-0.5'>
+              <span className='text-muted-foreground/70 text-[10px] leading-tight'>
+                {t('Official price')}:
+              </span>
+              <CompactTokenPriceParts
+                parts={officialPriceParts}
+                strike={siteDiscountPercent > 0}
+                unit={tokenUnit}
+                unitName={tokenUnitName}
+                className='text-[10px] font-medium'
+              />
+              <span />
+              <span className='text-muted-foreground text-[10px] leading-tight'>
+                {t('Site price')}:
+              </span>
+              <CompactTokenPriceParts
+                parts={sitePriceParts}
+                unit={tokenUnit}
+                unitName={tokenUnitName}
+                className='text-[11px] font-semibold'
+              />
+              {siteDiscountPercent > 0 ? (
+                <span
+                  className='bg-destructive/10 text-destructive shrink-0 translate-x-[5px] justify-self-end rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums'
+                  title={`${t('Official price')} · ${t('% off', { percent: siteDiscountPercent })}`}
+                >
+                  -{siteDiscountPercent}%
+                </span>
+              ) : (
+                <span />
+              )}
+            </div>
+          ) : (
+            <div className='min-w-0 font-mono text-[11px] leading-tight font-semibold tabular-nums'>
+              {priceSummary}
+            </div>
+          )}
+        </div>
+        {/* 计费标签靠左，可用分组靠右；分组过多时收成 +N */}
+        <div className='flex min-w-0 items-center justify-between gap-2'>
           <ModelBillingModeBadge
             model={props.model}
-            className='bg-foreground/[0.05] border-border/60 text-foreground/75 shrink-0 rounded-md border px-1.5 py-px text-[10px] font-medium'
+            className='bg-foreground/[0.05] border-border/60 text-foreground/75 -ms-1 shrink-0 rounded-md border px-1.5 py-px text-[10px] font-medium'
           />
-          {priceSummary}
+          {groups.length > 0 && (
+            <span
+              className='text-muted-foreground flex min-w-0 items-center justify-end gap-1 text-[10px]'
+              title={`${t('Available groups')}: ${groups.join(', ')}`}
+            >
+              <span className='shrink-0'>{t('Available groups')}</span>
+              {visibleGroups.map((group) => (
+                <span key={group} className='max-w-16 truncate' title={group}>
+                  {group}
+                </span>
+              ))}
+              {hiddenGroupCount > 0 ? (
+                <span className='text-muted-foreground/80 shrink-0'>
+                  +{hiddenGroupCount}
+                </span>
+              ) : null}
+            </span>
+          )}
         </div>
-        {dynamicSummary?.providerCount && (
-          <span className='text-muted-foreground block text-[10px] break-words'>
-            {t('{{count}} providers', {
-              count: dynamicSummary.providerCount,
-            })}
-            {dynamicSummary.hasUnconfiguredProviders &&
-              ` · ${t('Not configured for some providers')}`}
-          </span>
-        )}
-        {groups.length > 0 && (
-          <dl className='min-w-0 text-[10px]'>
-            <div className='flex min-w-0 items-baseline gap-1.5'>
-              <dt className='text-muted-foreground shrink-0 ps-px'>
-                {t('Available groups')}
-              </dt>
-              <dd className='min-w-0 truncate' title={groups.join(', ')}>
-                {groups.join(', ')}
-              </dd>
-            </div>
-          </dl>
-        )}
       </CardContent>
       <CardFooter className='mt-auto border-0 bg-transparent pt-0'>
         <ModelPerfBadge
           perf={props.perf}
           className='border-border/60 border-t pt-2'
-        >
-          {props.model.vendor_name && (
-            <span
-              className='text-muted-foreground ms-auto shrink-0 truncate text-[10px]'
-              title={props.model.vendor_name}
-            >
-              {props.model.vendor_name}
-            </span>
-          )}
-        </ModelPerfBadge>
+        />
       </CardFooter>
     </Card>
   )

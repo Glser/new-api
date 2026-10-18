@@ -596,16 +596,24 @@ export function ModelMutateDrawer(props: {
                         control={form.control}
                         name='tags'
                         render={({ field }) => {
-                          const tags = Array.isArray(field.value) ? field.value : []
-                          const isFeatured = tags.some((tag: string) => tag.toLowerCase() === 'featured')
+                          const tags = Array.isArray(field.value)
+                            ? field.value
+                            : []
+                          const isFeatured = tags.some(
+                            (tag: string) => tag.toLowerCase() === 'featured'
+                          )
                           return (
-                            <FormItem className={sideDrawerSwitchItemClassName()}>
+                            <FormItem
+                              className={sideDrawerSwitchItemClassName()}
+                            >
                               <div className='flex flex-col gap-0.5'>
                                 <FormLabel className='text-base'>
                                   {t('Featured on Home')}
                                 </FormLabel>
                                 <FormDescription>
-                                  {t('Feature this model on the homepage showcase section.')}
+                                  {t(
+                                    'Feature this model on the homepage showcase section.'
+                                  )}
                                 </FormDescription>
                               </div>
                               <FormControl>
@@ -618,7 +626,10 @@ export function ModelMutateDrawer(props: {
                                       }
                                     } else {
                                       field.onChange(
-                                        tags.filter((tag: string) => tag.toLowerCase() !== 'featured')
+                                        tags.filter(
+                                          (tag: string) =>
+                                            tag.toLowerCase() !== 'featured'
+                                        )
                                       )
                                     }
                                   }}

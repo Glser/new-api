@@ -1,6 +1,10 @@
 package operation_setting
 
-import "github.com/QuantumNous/new-api/setting/config"
+import (
+	"strings"
+
+	"github.com/QuantumNous/new-api/setting/config"
+)
 
 // 额度展示类型
 const (
@@ -20,6 +24,9 @@ type GeneralSetting struct {
 	CustomCurrencySymbol string `json:"custom_currency_symbol"`
 	// 自定义货币与美元汇率（1 USD = X Custom）
 	CustomCurrencyExchangeRate float64 `json:"custom_currency_exchange_rate"`
+	// 模型广场展示美元官方价的前缀列表：命中的按 Token 计费模型会同时展示
+	// 美元官方价与折算人民币，并由前端据此计算折扣。空列表表示不启用。
+	ModelSquareUsdPricePrefixes []string `json:"model_square_usd_price_prefixes"`
 }
 
 // 默认配置
@@ -30,6 +37,7 @@ var generalSetting = GeneralSetting{
 	QuotaDisplayType:           QuotaDisplayTypeUSD,
 	CustomCurrencySymbol:       "¤",
 	CustomCurrencyExchangeRate: 1.0,
+	ModelSquareUsdPricePrefixes: []string{},
 }
 
 func init() {
@@ -44,6 +52,24 @@ func GetGeneralSetting() *GeneralSetting {
 // IsCurrencyDisplay 是否以货币形式展示（美元或人民币）
 func IsCurrencyDisplay() bool {
 	return generalSetting.QuotaDisplayType != QuotaDisplayTypeTokens
+}
+
+// IsModelSquareUsdPriceModel 模型是否命中美元官方价前缀列表。
+// 严格前缀匹配，配置里的空项会被忽略。
+func IsModelSquareUsdPriceModel(modelName string) bool {
+	if modelName == "" {
+		return false
+	}
+	for _, prefix := range generalSetting.ModelSquareUsdPricePrefixes {
+		prefix = strings.TrimSpace(prefix)
+		if prefix == "" {
+			continue
+		}
+		if strings.HasPrefix(modelName, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // IsCNYDisplay 是否以人民币展示

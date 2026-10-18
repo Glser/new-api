@@ -26,14 +26,14 @@ import { useTheme } from '@/context/theme-provider'
 import { isLikelyHtml } from '@/lib/content-format'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { 
-  Hero, 
+import {
+  Hero,
   HomeScaleFrame,
-  SectionModels, 
-  SectionStudio, 
-  SectionLens, 
-  SectionTasks, 
-  SectionAPI 
+  SectionModels,
+  SectionStudio,
+  SectionLens,
+  SectionTasks,
+  SectionAPI,
 } from './components'
 import { useHomePageContent, useLenis } from './hooks'
 

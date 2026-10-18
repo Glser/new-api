@@ -16,11 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { CSSProperties, ReactNode } from "react"
+import type { CSSProperties, ReactNode } from 'react'
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
 
-import { useHomeScale } from "../hooks/use-home-scale"
+import { useHomeScale } from '../hooks/use-home-scale'
 
 export function HomeScaleFrame(props: {
   children: ReactNode
@@ -36,13 +36,12 @@ export function HomeScaleFrame(props: {
 
   return (
     <div
-      data-testid="home-scale-frame"
+      data-testid='home-scale-frame'
       data-home-scale={String(scale)}
-      className={cn("home-scroll-frame w-full", props.className)}
+      className={cn('home-scroll-frame w-full', props.className)}
       style={style}
     >
       {props.children}
     </div>
   )
 }
-

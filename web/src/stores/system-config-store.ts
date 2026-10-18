@@ -36,6 +36,11 @@ export interface CurrencyConfig {
   customCurrencySymbol: string
   /** Exchange rate from USD to the custom currency (used when type === CUSTOM) */
   customCurrencyExchangeRate: number
+  /**
+   * Model-name prefixes whose token-priced models also show the USD official
+   * price on the model square. Empty means the feature is off.
+   */
+  modelSquareUsdPricePrefixes: string[]
 }
 
 export interface SystemConfig {
@@ -54,6 +59,7 @@ export const DEFAULT_CURRENCY_CONFIG: CurrencyConfig = {
   usdExchangeRate: 1,
   customCurrencySymbol: '¤',
   customCurrencyExchangeRate: 1,
+  modelSquareUsdPricePrefixes: [],
 }
 
 interface SystemConfigState {
