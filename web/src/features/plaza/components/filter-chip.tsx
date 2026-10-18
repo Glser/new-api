@@ -27,22 +27,18 @@ export type PlazaFilterChipOption = {
   label: string
   countLabel?: string
   suffix?: string
-  /** suffix 的配色：倍率低于 1 时按「有折扣」的语义色呈现 */
-  suffixTone?: 'muted' | 'discount'
   icon?: ReactNode
 }
 
-function getSuffixClassName(
-  active: boolean,
-  tone: 'muted' | 'discount'
-): string {
-  if (tone === 'discount') {
-    return 'text-success'
-  }
-  if (active) {
-    return 'text-foreground/60'
-  }
-  return 'text-muted-foreground'
+/**
+ * 倍率徽章的配色。
+ *
+ * 一律用低饱和的青绿：价格行讲的就是钱，绿色让「×0.5 / ×1」从分组描述里跳出来，
+ * 同时压低了彩度——原样的 `--success` 在小字号上偏艳，长时间看会刺眼。
+ * 底色是同色相的半透明，徽章读起来是一块柔和的色片而不是一枚荧光标签。
+ */
+function getSuffixClassName(): string {
+  return 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/12 dark:text-emerald-300'
 }
 
 /** 悬停时掠过的一层光泽，做法与首页「进入控制台」按钮一致 */
@@ -91,11 +87,11 @@ export function PlazaFilterChip(props: {
       aria-pressed={active}
       title={option.label}
       className={cn(
-        'relative h-9 max-w-full shrink-0 gap-1.5 overflow-hidden rounded-full border px-3.5 text-sm font-medium',
+        'relative h-8 max-w-full shrink-0 gap-1.5 overflow-hidden rounded-full border px-3 text-[13px] font-medium',
         'transition duration-200 hover:-translate-y-px',
         active
           ? 'border-foreground/25 bg-muted text-foreground shadow-none hover:border-foreground/25 hover:bg-muted hover:text-foreground dark:border-foreground/30 dark:bg-foreground/[0.18] dark:text-foreground dark:hover:border-foreground/30 dark:hover:bg-foreground/[0.18] dark:hover:text-foreground'
-          : 'border-border/70 bg-background text-foreground/75 shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:border-border hover:bg-background hover:text-foreground hover:shadow-[0_4px_14px_rgba(0,0,0,0.10)] dark:border-foreground/20 dark:bg-foreground/[0.10] dark:text-foreground/85 dark:shadow-none dark:hover:border-foreground/35 dark:hover:bg-foreground/[0.16] dark:hover:text-foreground'
+          : 'border-border bg-muted/50 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:border-foreground/20 hover:bg-muted hover:text-foreground dark:border-foreground/20 dark:bg-foreground/[0.10] dark:text-foreground/90 dark:shadow-none dark:hover:border-foreground/35 dark:hover:bg-foreground/[0.16] dark:hover:text-foreground'
       )}
     >
       <span
@@ -110,14 +106,14 @@ export function PlazaFilterChip(props: {
           aria-hidden='true'
           className='relative flex shrink-0 items-center'
         >
-          <Check className='size-3.5' />
+          <Check className='size-3' />
         </span>
       )}
       {option.icon && (
         // Button 基类的 [&_svg:not([class*='size-'])]:size-4 会把未标注尺寸的 svg
         // 一律压成 16px，盖掉 getLobeIcon 传的 size；这里用 ! 覆盖，让供应商 logo
-        // 跟上放大后的字号。
-        <span className='relative flex shrink-0 items-center [&_svg]:size-5!'>
+        // 跟上缩小后的字号。
+        <span className='relative flex shrink-0 items-center [&_svg]:size-4!'>
           {option.icon}
         </span>
       )}
@@ -125,8 +121,8 @@ export function PlazaFilterChip(props: {
       {option.suffix && (
         <span
           className={cn(
-            'relative font-mono text-[11px] leading-none tabular-nums',
-            getSuffixClassName(active, option.suffixTone ?? 'muted')
+            'relative rounded-[0.3rem] px-1.5 py-0.5 font-mono text-[11px] leading-none tabular-nums',
+            getSuffixClassName()
           )}
         >
           {option.suffix}

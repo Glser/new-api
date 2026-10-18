@@ -18,7 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 
-import { DEFAULT_TOKEN_UNIT, QUOTA_TYPE_VALUES, TOKEN_UNIT_DIVISORS } from '../constants'
+import {
+  DEFAULT_TOKEN_UNIT,
+  QUOTA_TYPE_VALUES,
+  TOKEN_UNIT_DIVISORS,
+} from '../constants'
 import type {
   BillingUsageSchema,
   BillingUsageUnit,
@@ -37,6 +41,10 @@ import {
   type ParsedTier,
 } from './billing-expr'
 import { compileBillingExpression } from './billing-expression/parser'
+import type {
+  CompilationResult,
+  ExpressionNode,
+} from './billing-expression/types'
 import { getDisplayGroupRatio } from './model-helpers'
 import { withPluginPricing } from './plugin-pricing'
 import {
@@ -44,6 +52,118 @@ import {
   getTaskNumberFields,
   tryParseTaskVisualConfig,
 } from './task-expr'
+
+/**
+ * Whether an expression is just a flat per-request price.
+ *
+ * `tier("base", fixed(1))` and a bare `fixed(1)` carry no token or image
+ * terms, so they price one call at a constant amount — behaviourally the same
+ * as the classic per-request billing the ratio fields describe. Every other
+ * shape (`p * 2 + c * 8`, conditions, request multipliers) is genuinely
+ * dynamic and must keep the dynamic badge.
+ */
+export function isFlatPerRequestExpression(
+  expression: string | undefined
+): boolean {
+  const trimmed = expression?.trim()
+  if (!trimmed) return false
+
+  let compiled: CompilationResult
+  try {
+    compiled = compileBillingExpression(trimmed)
+  } catch {
+    // Unparsable expressions are treated as dynamic rather than per-request:
+    // an unreadable config should not be flattened into a simpler badge.
+    return false
+  }
+  if (compiled.status !== 'ready') return false
+
+  // Any variable reference means the price moves with request contents.
+  if (compiled.variables.size > 0) return false
+  // Request rules reprice specific request shapes.
+  if (compiled.requestRules.length > 0) return false
+
+  return isFlatPriceNode(compiled.ast)
+}
+
+/**
+ * Whether an expression prices by token usage.
+ *
+ * Two shapes both land here:
+ * - `u("tokens") * 1 / 1000000` — a raw usage count
+ * - `p * 10 + c * 50` — per-token unit prices (`p` input, `c` output,
+ *   `cr` cached read, `cc` cached write, ...)
+ *
+ * Both scale with how many tokens a request carries, so from the user's side
+ * they are the same thing: token-based billing. Only a flat amount per call
+ * (`fixed(12)`) or a non-token unit (`u("seconds")`, `u("credits")`) is
+ * something else.
+ */
+export function isTokenBasedExpression(
+  expression: string | undefined
+): boolean {
+  const trimmed = expression?.trim()
+  if (!trimmed) return false
+
+  let compiled: CompilationResult
+  try {
+    compiled = compileBillingExpression(trimmed)
+  } catch {
+    return false
+  }
+  if (compiled.status !== 'ready') return false
+
+  return containsTokenPricing(compiled.ast)
+}
+
+/** Token-priced variables, plus the `u("tokens")` usage call. */
+const TOKEN_PRICING_VARS = new Set(BILLING_PRICING_VARS.map((v) => v.key))
+
+function containsTokenPricing(node: ExpressionNode): boolean {
+  switch (node.kind) {
+    case 'variable':
+      return TOKEN_PRICING_VARS.has(node.name)
+    case 'call':
+      if (node.name === 'u') {
+        return node.args.some(
+          (arg) => arg.kind === 'literal' && arg.value === 'tokens'
+        )
+      }
+      return node.args.some((arg) => containsTokenPricing(arg))
+    case 'unary':
+      return containsTokenPricing(node.operand)
+    case 'binary':
+      return containsTokenPricing(node.left) || containsTokenPricing(node.right)
+    case 'conditional':
+      return containsTokenPricing(node.yes) || containsTokenPricing(node.no)
+    default:
+      return false
+  }
+}
+
+function isFlatPriceNode(node: ExpressionNode): boolean {
+  if (node.kind === 'literal') {
+    return typeof node.value === 'number' && node.value >= 0
+  }
+  if (node.kind === 'call') {
+    // `fixed(n)` is flat by definition; `tier(label, fixed(n))` is the same
+    // price wrapped in a single named branch.
+    if (node.name === 'fixed') {
+      return node.args.every((arg) => isFlatPriceNode(arg))
+    }
+    if (node.name === 'tier') {
+      return node.args.some((arg) => isFlatPriceNode(arg))
+    }
+    return false
+  }
+  // Arithmetic over flat terms stays flat (e.g. `fixed(1) * 2`).
+  if (node.kind === 'unary') return isFlatPriceNode(node.operand)
+  if (node.kind === 'binary') {
+    return isFlatPriceNode(node.left) && isFlatPriceNode(node.right)
+  }
+  // Conditions make the price depend on request contents.
+  return false
+}
 
 export type DynamicPriceOptions = {
   tokenUnit: TokenUnit
@@ -777,7 +897,11 @@ function resolveGroupRatioMultiplier(
   let minRatio = Number.POSITIVE_INFINITY
   for (const group of enableGroups) {
     const ratio = ratios[group]
-    if (typeof ratio === 'number' && Number.isFinite(ratio) && ratio < minRatio) {
+    if (
+      typeof ratio === 'number' &&
+      Number.isFinite(ratio) &&
+      ratio < minRatio
+    ) {
       minRatio = ratio
     }
   }

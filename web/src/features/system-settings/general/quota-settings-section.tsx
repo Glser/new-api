@@ -57,7 +57,17 @@ const quotaSchema = z.object({
   QuotaForInvitee: z.coerce.number().min(0),
   TopUpLink: z.string(),
   general_setting: z.object({
-    docs_link: z.string(),
+    // Empty keeps the built-in `/docs` route. A non-empty value is opened as an
+    // external link, so it must be an absolute URL — without one the browser
+    // resolves it against the current origin and the nav link 404s.
+    docs_link: z
+      .string()
+      .trim()
+      .refine((value) => value === '' || /^https?:\/\//i.test(value), {
+        // Plain string, not `t()`: this schema is built at module scope, before
+        // any translator exists.
+        message: 'Enter a full URL starting with http:// or https://',
+      }),
   }),
   quota_setting: z.object({
     enable_free_model_pre_consume: z.boolean(),

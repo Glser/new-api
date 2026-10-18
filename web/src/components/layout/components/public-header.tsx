@@ -27,7 +27,6 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SystemUpdateAction } from '@/features/system-update/system-update-action'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
@@ -39,7 +38,8 @@ import { defaultTopNavLinks } from '../config/top-nav.config'
 import { isTopNavLinkActive } from '../lib/url-utils'
 import type { TopNavLink } from '../types'
 import { HeaderLogo } from './header-logo'
-import { TopNavLinkItem, TopNavMobileLink } from './top-nav-link'
+import { PillNav } from './pill-nav'
+import { PillNavSheet } from './pill-nav-sheet'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -79,7 +79,6 @@ export function PublicHeader(props: PublicHeaderProps) {
 
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [authPromptTarget, setAuthPromptTarget] =
     useState<AuthPromptTarget | null>(null)
@@ -136,13 +135,6 @@ export function PublicHeader(props: PublicHeaderProps) {
       </Button>
     )
   }
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : ''
@@ -215,123 +207,119 @@ export function PublicHeader(props: PublicHeaderProps) {
   return (
     <>
       <header className='pointer-events-none fixed inset-x-0 top-0 z-50'>
-        <div
+        {/* The bar itself is the width-constraining, centred layer — no extra
+            wrapper between `header` and the visible nav. */}
+        <nav
           className={cn(
-            'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-            scrolled ? 'max-w-[68rem] px-3 pt-3' : 'max-w-7xl px-4 pt-0 md:px-6'
+            'pointer-events-auto relative mx-auto flex items-center justify-between gap-2 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
+            // The bar always carries its own surface: a slightly deeper tint than
+            // the page, wrapping brand, links and actions in one layer.
+            // `bg-background` alone would make the bar the same colour as the
+            // page it floats over, so the bar uses a surface that lifts off it:
+            // `--card` in light mode, and a `--foreground` mix in dark mode
+            // where `--card` sits too close to `--background` to read as raised.
+            'bg-card/70 ring-border/40 h-12 rounded-2xl px-4 ring-[0.5px] backdrop-blur-2xl',
+            'dark:bg-foreground/[0.07] dark:ring-white/10',
+            'shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]',
+            'mt-3 max-w-[68rem]'
           )}
         >
-          <nav
-            className={cn(
-              'flex items-center justify-between gap-2 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
-              scrolled
-                ? 'bg-background/60 ring-border/50 h-12 rounded-2xl pr-1.5 pl-4 shadow-[0_2px_16px_-6px_rgba(0,0,0,0.08),0_0_0_0.5px_rgba(0,0,0,0.02)] ring-[0.5px] backdrop-blur-2xl dark:shadow-[0_2px_16px_-6px_rgba(0,0,0,0.4)]'
-                : 'h-16 px-2'
+          {/* Logo */}
+          <div className='@container/system-brand flex min-w-0 shrink-0 items-center gap-1 lg:min-w-36 lg:shrink'>
+            <Link
+              to={homeUrl}
+              className='group flex min-w-0 items-center gap-2'
+            >
+              <div className='flex size-8 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
+                {logoContent}
+              </div>
+              <span
+                className='max-w-48 truncate text-[0.9375rem] leading-none font-semibold tracking-tight'
+                title={displaySiteName}
+              >
+                {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
+              </span>
+            </Link>
+          </div>
+
+          {/* Desktop nav — absolutely centred so it sits in the middle of the
+                bar regardless of how wide the brand or the actions grow. */}
+          <div className='pointer-events-none absolute inset-x-0 top-0 hidden h-full items-center justify-center lg:flex'>
+            <div className='pointer-events-auto flex items-center gap-1'>
+              <PillNav
+                links={links}
+                tone='marketing'
+                isActive={(link) => isTopNavLinkActive(pathname, link.href)}
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className='ms-auto flex shrink-0 items-center gap-1 lg:gap-0.5'>
+            {(showLanguageSwitcher || showThemeSwitch || showNotifications) && (
+              <div className='bg-border/40 mx-1 h-4 w-px' />
             )}
-          >
-            {/* Logo */}
-            <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1 lg:min-w-36'>
-              <Link
-                to={homeUrl}
-                className='group flex min-w-0 items-center gap-2.5'
-              >
-                <div className='flex size-7 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
-                  {logoContent}
-                </div>
+
+            {showLanguageSwitcher && <LanguageSwitcher />}
+            {showThemeSwitch && <ThemeSwitch />}
+            {showNotifications && (
+              <NotificationPopover
+                open={notifications.popoverOpen}
+                onOpenChange={notifications.setPopoverOpen}
+                unreadCount={notifications.unreadCount}
+                activeTab={notifications.activeTab}
+                onTabChange={notifications.setActiveTab}
+                notice={notifications.notice}
+                announcements={notifications.announcements}
+                loading={notifications.loading}
+              />
+            )}
+
+            {showAuthButtons && (
+              <>
+                <div className='bg-border/40 mx-1 h-4 w-px' />
+                {authContent}
+              </>
+            )}
+          </div>
+
+          {/* Mobile: compact actions + hamburger */}
+          <div className='flex shrink-0 items-center gap-0.5 lg:hidden'>
+            {showThemeSwitch && <ThemeSwitch />}
+            {showAuthButtons && !loading && isAuthenticated && (
+              <ProfileDropdown />
+            )}
+            <Button
+              type='button'
+              variant='ghost'
+              size='icon'
+              className='size-9'
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label={t('Toggle navigation menu')}
+            >
+              <div className='relative size-4'>
                 <span
-                  className='max-w-48 truncate text-sm font-semibold tracking-tight'
-                  title={displaySiteName}
-                >
-                  {loading ? (
-                    <Skeleton className='h-4 w-16' />
-                  ) : (
-                    displaySiteName
+                  className={cn(
+                    'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
+                    mobileOpen ? 'top-[7px] rotate-45' : 'top-[3px]'
                   )}
-                </span>
-              </Link>
-              <SystemUpdateAction presentation='version' />
-            </div>
-
-            {/* Desktop nav */}
-            <div className='hidden min-w-0 items-center gap-1 lg:flex'>
-              {links.map((link) => (
-                <TopNavLinkItem
-                  key={`${link.title}:${link.href}`}
-                  link={link}
-                  tone='marketing'
-                  label={t(link.title)}
-                  active={isTopNavLinkActive(pathname, link.href)}
-                  onClick={(event) => handleNavLinkClick(event, link)}
                 />
-              ))}
-
-              {(showLanguageSwitcher ||
-                showThemeSwitch ||
-                showNotifications) && (
-                <div className='bg-border/40 mx-2 h-4 w-px' />
-              )}
-
-              {showLanguageSwitcher && <LanguageSwitcher />}
-              {showThemeSwitch && <ThemeSwitch />}
-              {showNotifications && (
-                <NotificationPopover
-                  open={notifications.popoverOpen}
-                  onOpenChange={notifications.setPopoverOpen}
-                  unreadCount={notifications.unreadCount}
-                  activeTab={notifications.activeTab}
-                  onTabChange={notifications.setActiveTab}
-                  notice={notifications.notice}
-                  announcements={notifications.announcements}
-                  loading={notifications.loading}
+                <span
+                  className={cn(
+                    'absolute inset-x-0 top-[7px] block h-[1.5px] rounded-full bg-current transition-all duration-300',
+                    mobileOpen ? 'scale-x-0 opacity-0' : 'opacity-100'
+                  )}
                 />
-              )}
-
-              {showAuthButtons && (
-                <>
-                  <div className='bg-border/40 mx-1 h-4 w-px' />
-                  {authContent}
-                </>
-              )}
-            </div>
-
-            {/* Mobile: compact actions + hamburger */}
-            <div className='flex shrink-0 items-center gap-2 lg:hidden'>
-              {showThemeSwitch && <ThemeSwitch />}
-              {showAuthButtons && !loading && isAuthenticated && (
-                <ProfileDropdown />
-              )}
-              <Button
-                type='button'
-                variant='ghost'
-                size='icon'
-                className='size-9'
-                onClick={() => setMobileOpen((v) => !v)}
-                aria-label={t('Toggle navigation menu')}
-              >
-                <div className='relative size-4'>
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'top-[7px] rotate-45' : 'top-[3px]'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 top-[7px] block h-[1.5px] rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'scale-x-0 opacity-0' : 'opacity-100'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
-                      mobileOpen ? 'top-[7px] -rotate-45' : 'top-[11px]'
-                    )}
-                  />
-                </div>
-              </Button>
-            </div>
-          </nav>
-        </div>
+                <span
+                  className={cn(
+                    'absolute inset-x-0 block h-[1.5px] origin-center rounded-full bg-current transition-all duration-300',
+                    mobileOpen ? 'top-[7px] -rotate-45' : 'top-[11px]'
+                  )}
+                />
+              </div>
+            </Button>
+          </div>
+        </nav>
       </header>
 
       {/* Mobile full-screen overlay */}
@@ -343,27 +331,13 @@ export function PublicHeader(props: PublicHeaderProps) {
             : 'pointer-events-none opacity-0'
         )}
       >
-        <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
-          <nav className='flex flex-col gap-1'>
-            {links.map((link, i) => (
-              <TopNavMobileLink
-                key={`${link.title}:${link.href}`}
-                link={link}
-                label={t(link.title)}
-                active={isTopNavLinkActive(pathname, link.href)}
-                className={cn(
-                  'py-3',
-                  mobileOpen
-                    ? 'translate-y-0 opacity-100'
-                    : 'translate-y-4 opacity-0'
-                )}
-                style={{
-                  transitionDelay: mobileOpen ? `${100 + i * 50}ms` : '0ms',
-                }}
-                onClick={(event) => handleNavLinkClick(event, link, true)}
-              />
-            ))}
-          </nav>
+        <div className='flex h-full flex-col justify-between px-6 pt-20 pb-10 sm:px-8'>
+          <PillNavSheet
+            links={links}
+            open={mobileOpen}
+            isActive={(link) => isTopNavLinkActive(pathname, link.href)}
+            onLinkClick={(event, link) => handleNavLinkClick(event, link, true)}
+          />
 
           <div
             className={cn(

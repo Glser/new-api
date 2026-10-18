@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import {
   Book02Icon,
-  CompassIcon,
   DashboardSquare01Icon,
   Home01Icon,
   InformationCircleIcon,
@@ -42,7 +41,6 @@ const TOP_NAV_ICONS_BY_HREF: Record<string, IconSvgElement> = {
   '/': Home01Icon,
   '/dashboard': DashboardSquare01Icon,
   '/pricing': Tag01Icon,
-  '/explore': CompassIcon,
   '/rankings': RankingIcon,
   '/docs': Book02Icon,
   '/about': InformationCircleIcon,

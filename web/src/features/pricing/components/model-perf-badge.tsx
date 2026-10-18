@@ -77,11 +77,11 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         props.className
       )}
     >
-      <dl className='flex min-w-0 items-start gap-5 text-xs tabular-nums'>
-        <div className='w-24 shrink-0'>
+      <dl className='flex min-w-0 items-start gap-2.5 text-[9px] tabular-nums'>
+        <div className='w-[4.25rem] shrink-0'>
           <dt
             title={t('Request success rate sampled over the last 24 hours')}
-            className='text-muted-foreground flex items-center justify-between gap-1 text-[11px] leading-4'
+            className='text-muted-foreground flex items-center justify-between gap-1 text-[9px] leading-3'
           >
             <span>{t('Status')}</span>
             <span className='font-mono'>
@@ -96,7 +96,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
             title={t(
               'Recent success-rate samples; gray bars indicate missing data.'
             )}
-            className='mt-1 flex h-3 w-24 items-center justify-between'
+            className='mt-0.5 flex h-2 w-[4.25rem] items-center justify-between'
           >
             {STATUS_SLOTS.map((slot) => {
               const rate = statusRates[slot]
@@ -105,7 +105,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
                   key={slot}
                   aria-hidden
                   className={cn(
-                    'h-full w-[3px] shrink-0 rounded-xs',
+                    'h-full w-px shrink-0 rounded-xs',
                     rate != null &&
                       Number.isFinite(rate) &&
                       rate >= 0 &&
@@ -119,18 +119,18 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
           </dd>
         </div>
         <div title={t('Average latency')} className='shrink-0'>
-          <dt className='text-muted-foreground text-[11px] leading-4'>
+          <dt className='text-muted-foreground text-[9px] leading-3'>
             {t('Latency short')}
           </dt>
-          <dd className='mt-1 font-mono whitespace-nowrap'>
+          <dd className='mt-0.5 font-mono whitespace-nowrap'>
             {latencyText === '—' ? '—s' : latencyText}
           </dd>
         </div>
         <div title={t('Throughput')} className='shrink-0'>
-          <dt className='text-muted-foreground text-[11px] leading-4'>
+          <dt className='text-muted-foreground text-[9px] leading-3'>
             {t('Throughput short')}
           </dt>
-          <dd className='mt-1 font-mono whitespace-nowrap'>
+          <dd className='mt-0.5 font-mono whitespace-nowrap'>
             {throughputText === '—' ? '—t/s' : throughputText}
           </dd>
         </div>

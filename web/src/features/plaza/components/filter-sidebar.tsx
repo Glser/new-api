@@ -28,7 +28,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer'
-import { IconBadge } from '@/components/ui/icon-badge'
 import { FILTER_ALL } from '@/features/pricing/constants'
 import type { PricingModel, PricingVendor } from '@/features/pricing/types'
 import { getLobeIcon } from '@/lib/lobe-icon'
@@ -71,7 +70,6 @@ function PlazaFilterListItem(props: {
   onClick: () => void
   icon?: ReactNode
   suffix?: string
-  suffixTone?: 'muted' | 'discount'
 }) {
   return (
     <button
@@ -98,14 +96,7 @@ function PlazaFilterListItem(props: {
       )}
       <span className='min-w-0 flex-1 truncate'>{props.label}</span>
       {props.suffix && (
-        <span
-          className={cn(
-            'shrink-0 font-mono text-xs leading-none tabular-nums',
-            props.suffixTone === 'discount'
-              ? 'text-success'
-              : 'text-muted-foreground'
-          )}
-        >
+        <span className='shrink-0 rounded-[0.3rem] bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[11px] leading-none text-emerald-700 tabular-nums dark:bg-emerald-400/12 dark:text-emerald-300'>
           {props.suffix}
         </span>
       )}
@@ -136,7 +127,12 @@ function PlazaFilterSection(props: {
         id={headingId}
         className='text-foreground/70 flex items-center gap-2 px-1 text-[13px] font-semibold'
       >
-        <IconBadge size='sm'>{props.icon}</IconBadge>
+        <span
+          aria-hidden='true'
+          className='text-foreground/80 flex size-4 shrink-0 items-center justify-center [&_svg]:size-4'
+        >
+          {props.icon}
+        </span>
         {props.title}
       </h2>
       <div
@@ -155,6 +151,7 @@ export type PlazaFilterSidebarProps = {
   models: PricingModel[]
   groups: string[]
   groupRatios?: Record<string, number>
+  usableGroup?: Record<string, { desc: string; ratio: number }>
   vendorFilter: string
   groupFilter: string
   onVendorChange: (value: string) => void
@@ -193,16 +190,13 @@ export function PlazaFilterSidebar(props: PlazaFilterSidebarProps) {
       return []
     }
     const ratio = props.groupRatios?.[group]
+    const description = props.usableGroup?.[group]?.desc?.trim()
     return [
       {
         value: group,
-        label: group,
+        label: description || group,
         count,
         suffix: formatRatio(ratio),
-        suffixTone:
-          ratio != null && ratio < 1
-            ? ('discount' as const)
-            : ('muted' as const),
       },
     ]
   })
@@ -259,7 +253,6 @@ export function PlazaFilterSidebar(props: PlazaFilterSidebarProps) {
             label={option.label}
             count={option.count}
             suffix={option.suffix}
-            suffixTone={option.suffixTone}
             active={props.groupFilter === option.value}
             onClick={() =>
               props.onGroupChange(

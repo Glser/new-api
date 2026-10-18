@@ -20,12 +20,11 @@ import {
   Boxes,
   Film,
   Image,
-  MessageCircle,
+  MessagesSquare,
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { IconBadge } from '@/components/ui/icon-badge'
 import { ModelCard } from '@/features/pricing/components/model-card'
 import type { ModelPerfBadgeData } from '@/features/pricing/components/model-perf-badge'
 import { DEFAULT_TOKEN_UNIT } from '@/features/pricing/constants'
@@ -38,7 +37,9 @@ import {
 } from '../lib/categories'
 
 const CATEGORY_ICONS: Record<PlazaCategory, LucideIcon> = {
-  [PLAZA_CATEGORIES.CHAT]: MessageCircle,
+  // 双气泡而不是单气泡：这一区讲的是「和模型对话」，两个气泡比一个评论
+  // 气泡更贴近聊天气泡的语义。
+  [PLAZA_CATEGORIES.CHAT]: MessagesSquare,
   [PLAZA_CATEGORIES.IMAGE]: Image,
   [PLAZA_CATEGORIES.VIDEO]: Film,
   [PLAZA_CATEGORIES.OTHER]: Boxes,
@@ -69,22 +70,26 @@ export function PlazaCategorySection(props: {
   return (
     <section aria-labelledby={headingId} className='flex flex-col gap-4'>
       <div className='flex items-center gap-2.5 sm:gap-3'>
-        {/* 中性色徽标融进柔光纸面，区块之间靠图标形状区分，不再上饱和度 */}
-        <IconBadge size='md'>
+        {/* 无底色图标：只靠形状和深浅区分区块，不再垫一块灰底 */}
+        <span
+          aria-hidden='true'
+          className='text-foreground/80 flex size-5 shrink-0 items-center justify-center [&_svg]:size-5'
+        >
           <CategoryIcon />
-        </IconBadge>
+        </span>
         <h2
           id={headingId}
           className='text-[17px] font-semibold tracking-tight sm:text-lg'
         >
           {categoryLabel}
         </h2>
-        <span aria-hidden='true' className='bg-border h-px min-w-8 flex-1' />
-        <span className='text-muted-foreground shrink-0 text-xs whitespace-nowrap tabular-nums'>
+        {/* 计数收进一枚哑光徽章：原来是一条通到右边的发丝线加一行小字，
+            线让标题栏显得零碎，徽章把同一信息收成一个视觉单元。 */}
+        <span className='bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums'>
           {t('{{count}} models', { count: props.models.length })}
         </span>
       </div>
-      <div className='grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3'>
+      <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 sm:gap-4'>
         {props.models.map((model) => (
           <ModelCard
             key={model.id ?? model.model_name}

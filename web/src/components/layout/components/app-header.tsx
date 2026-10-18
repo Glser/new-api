@@ -16,20 +16,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useRouterState } from '@tanstack/react-router'
+
 import { ConfigDrawer } from '@/components/config-drawer'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
-import { SystemUpdateAction } from '@/features/system-update/system-update-action'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
+import { isTopNavLinkActive } from '../lib/url-utils'
 import type { TopNavLink } from '../types'
 import { Header } from './header'
+import { PillNav } from './pill-nav'
 import { SystemBrand } from './system-brand'
-import { TopNav } from './top-nav'
 
 /**
  * General application Header component
@@ -110,12 +112,12 @@ export function AppHeader({
 
   // Notifications hook
   const notifications = useNotifications()
+  const pathname = useRouterState().location.pathname
 
   return (
     <Header>
       <div className='@container/system-brand flex min-w-0 flex-1 items-center gap-1'>
         <SystemBrand variant='inline' />
-        <SystemUpdateAction presentation='version' />
       </div>
 
       {leftContent ? (
@@ -126,7 +128,11 @@ export function AppHeader({
         <div className='ms-auto flex shrink-0 items-center gap-1 sm:gap-2'>
           {showTopNav && (
             <div className='me-1 hidden lg:block'>
-              <TopNav links={links} />
+              <PillNav
+                links={links}
+                tone='console'
+                isActive={(link) => isTopNavLinkActive(pathname, link.href)}
+              />
             </div>
           )}
           {showSearch && (

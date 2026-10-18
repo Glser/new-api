@@ -135,3 +135,21 @@ export function isTopNavLinkActive(pathname: string, href: string): boolean {
   if (target === '/') return current === '/'
   return current === target || current.startsWith(`${target}/`)
 }
+
+/**
+ * Give an admin-supplied external URL a scheme when it has none.
+ *
+ * `docs.example.com` renders as a working `<a href>`, but the browser resolves
+ * it against the current origin — so the nav link lands on this site's own
+ * `/docs.example.com` path and 404s. Prefixing `https://` makes the configured
+ * value behave as intended. Values that already carry a scheme, and empty
+ * ones, pass through untouched.
+ */
+export function normalizeExternalHref(href: string | undefined): string {
+  const trimmed = href?.trim()
+  if (!trimmed) return ''
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) return trimmed
+  // `//host` is protocol-relative and already absolute.
+  if (trimmed.startsWith('//')) return `https:${trimmed}`
+  return `https://${trimmed}`
+}

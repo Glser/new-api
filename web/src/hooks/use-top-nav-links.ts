@@ -20,6 +20,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { withTopNavIcons } from '@/components/layout/config/top-nav-icons'
+import { normalizeExternalHref } from '@/components/layout/lib/url-utils'
 import type { TopNavLink } from '@/components/layout/types'
 import { useStatus } from '@/hooks/use-status'
 import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
@@ -51,6 +52,9 @@ export function useTopNavLinks(): TopNavLink[] {
 
   // Documentation link (may be external)
   const docsLink: string | undefined = status?.docs_link as string | undefined
+  // An admin can save a scheme-less host (`docs.example.com`); the browser would
+  // resolve that against the current origin and 404, so default to https.
+  const normalizedDocsLink = normalizeExternalHref(docsLink)
 
   const isAuthed = !!auth?.user
 
@@ -71,7 +75,6 @@ export function useTopNavLinks(): TopNavLink[] {
   if (pricing && typeof pricing === 'object' && pricing.enabled) {
     const requiresAuth = pricing.requireAuth && !isAuthed
     links.push({ title: t('Model Square'), href: '/pricing', requiresAuth })
-    links.push({ title: t('Explore'), href: '/explore', requiresAuth })
   }
 
   // Rankings
@@ -83,8 +86,12 @@ export function useTopNavLinks(): TopNavLink[] {
 
   // Docs (supports external links)
   if (modules?.docs !== false) {
-    if (docsLink) {
-      links.push({ title: t('Docs'), href: docsLink, external: true })
+    if (normalizedDocsLink) {
+      links.push({
+        title: t('Docs'),
+        href: normalizedDocsLink,
+        external: true,
+      })
     } else {
       links.push({ title: t('Docs'), href: '/docs' })
     }

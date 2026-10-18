@@ -18,30 +18,28 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { ReactNode } from 'react'
 
-import { IconBadge } from '@/components/ui/icon-badge'
 import { cn } from '@/lib/utils'
 
 export const plazaFilterRowClassName =
-  'flex flex-wrap items-start gap-x-2 gap-y-2 px-3.5 py-3 sm:gap-x-3 sm:px-4'
+  'flex flex-col flex-wrap items-start gap-x-2 gap-y-2 px-0.5 py-2 sm:flex-row sm:gap-x-3 sm:px-1'
 /**
- * 行首标签和右侧胶囊同高（h-9 / text-sm）：图标、文字、胶囊三者在同一
+ * 行首标签和右侧胶囊同高（h-8 / text-[13px]）：图标、文字、胶囊三者在同一
  * 基线上对齐，整行才不像「小标签拖着一排大按钮」。
  */
 export const plazaFilterRowLabelClassName =
-  'flex h-9 w-full shrink-0 items-center gap-2 text-sm font-medium whitespace-nowrap text-foreground/75 sm:w-24'
+  'text-foreground flex h-8 w-full shrink-0 items-center gap-2 text-[13px] font-semibold whitespace-nowrap sm:w-20'
 export const plazaFilterRowChipsClassName =
-  'flex min-w-0 flex-1 flex-wrap content-start gap-2'
+  'flex min-w-0 flex-1 flex-wrap content-start gap-1.5'
 
 /**
- * 筛选区外壳：把多行筛选条件收进同一个浅灰面板，行与行之间用发丝线分隔。
- * 相比每行各自一张卡片，面板让「筛选」在视觉上成为一个整体控件。
+ * 筛选区外壳。
+ *
+ * 不用整块底色把筛选条件框起来：一块浅灰面板在宽屏上会显得刻意，也会和
+ * 下面的模型卡片抢层次。行与行之间也不画分割线——两行各自很短，一条线
+ * 反而把筛选切成两块；留白本身就足够分组。
  */
 export function PlazaFilterPanel(props: { children: ReactNode }) {
-  return (
-    <div className='border-border/70 bg-muted/40 divide-border/60 flex flex-col divide-y rounded-xl border'>
-      {props.children}
-    </div>
-  )
+  return <div className='flex flex-col'>{props.children}</div>
 }
 
 export function PlazaFilterRow(props: {
@@ -54,9 +52,12 @@ export function PlazaFilterRow(props: {
     <div className={cn(plazaFilterRowClassName, props.className)}>
       <p className={plazaFilterRowLabelClassName}>
         {props.icon && (
-          <IconBadge className='size-9 rounded-xl [&>svg]:size-4.5'>
+          <span
+            aria-hidden='true'
+            className='text-foreground flex size-4 shrink-0 items-center justify-center [&_svg]:size-4'
+          >
             {props.icon}
-          </IconBadge>
+          </span>
         )}
         {props.label}
       </p>

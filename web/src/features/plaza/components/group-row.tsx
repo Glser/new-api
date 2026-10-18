@@ -47,6 +47,13 @@ export function PlazaGroupRow(props: {
   groups: string[]
   models: PricingModel[]
   groupRatios?: Record<string, number>
+  /**
+   * 后台「分组倍率」可视化编辑器里的 Description 列，键为分组名，
+   * 值为 `{ desc, ratio }`（见 `PricingResponse.usable_group`）。
+   * 用来替换胶囊上的原始分组名，让管理员写的「标准/VIP/测试」这类说明直接
+   * 展示给用户；没有填描述的分组回落显示原始分组名。
+   */
+  usableGroup?: Record<string, { desc: string; ratio: number }>
   value: string
   onChange: (value: string) => void
 }) {
@@ -59,22 +66,20 @@ export function PlazaGroupRow(props: {
       label: t('All'),
       countLabel: t('{{count}} models short', { count: props.models.length }),
     },
-    // 价格行只保留「分组名 + 倍率」，计数交给「全部」胶囊，避免一粒胶囊里堆三组信息
+    // 价格行只保留「描述/分组名 + 倍率」，计数交给「全部」胶囊，避免一粒胶囊里堆三组信息
     ...props.groups.flatMap((group) => {
       const count = countByGroup(props.models, group)
       if (count === 0) {
         return []
       }
       const ratio = props.groupRatios?.[group]
+      // 后台描述优先，未填写时回落原始分组名，避免胶囊空白
+      const description = props.usableGroup?.[group]?.desc?.trim()
       return [
         {
           value: group,
-          label: group,
+          label: description || group,
           suffix: formatRatioBadge(ratio),
-          suffixTone:
-            ratio != null && ratio < 1
-              ? ('discount' as const)
-              : ('muted' as const),
         },
       ]
     }),

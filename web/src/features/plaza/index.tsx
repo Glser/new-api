@@ -145,8 +145,8 @@ export function Plaza() {
     <PublicLayout showMainContainer={false}>
       <PlazaScaleFrame className='relative'>
         <PlazaBackdrop />
-        <PageTransition className='relative mx-auto w-full max-w-[1440px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
-          <header className='mx-auto mb-5 max-w-3xl pt-5 sm:mb-6 sm:pt-8'>
+        <PageTransition className='relative mx-auto w-full max-w-[1600px] px-3 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 xl:px-8'>
+          <header className='mx-auto mb-6 pt-5 sm:mb-7 sm:pt-8'>
             <div className='flex items-center gap-2'>
               <SearchBar
                 value={searchInput}
@@ -160,10 +160,10 @@ export function Plaza() {
               {hasActiveFilters && (
                 <Button
                   type='button'
-                  variant='ghost'
+                  variant='outline'
                   size='sm'
                   onClick={clearAll}
-                  className='text-muted-foreground hover:text-foreground h-10 shrink-0 gap-1.5 rounded-lg px-3 text-xs'
+                  className='h-11 shrink-0 gap-1.5 rounded-xl px-3 text-[13px]'
                 >
                   <X aria-hidden='true' className='size-3.5' />
                   {t('Clear filters')}
@@ -172,7 +172,7 @@ export function Plaza() {
             </div>
           </header>
 
-          <div className='flex flex-col gap-6 sm:gap-8'>
+          <div className='flex flex-col gap-4 sm:gap-5'>
             <PlazaFilterPanel>
               <PlazaVendorRow
                 vendors={vendors}
@@ -184,6 +184,7 @@ export function Plaza() {
                 groups={availableGroups}
                 models={models}
                 groupRatios={groupRatio}
+                usableGroup={usableGroup}
                 value={groupFilter}
                 onChange={setGroupFilter}
               />
@@ -196,7 +197,7 @@ export function Plaza() {
                 onClearFilters={clearAll}
               />
             ) : (
-              <div className='flex flex-col gap-10 sm:gap-12'>
+              <div className='flex flex-col gap-7 sm:gap-8'>
                 {visibleCategories.map((category) => (
                   <PlazaCategorySection
                     key={category}

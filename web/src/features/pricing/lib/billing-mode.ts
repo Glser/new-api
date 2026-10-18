@@ -17,7 +17,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { PricingModel } from '../types'
-import { hasTaskUsageSchema, isDynamicPricingModel } from './dynamic-price'
+import {
+  hasTaskUsageSchema,
+  isDynamicPricingModel,
+  isFlatPerRequestExpression,
+  isTokenBasedExpression,
+} from './dynamic-price'
 import { isTokenBasedModel } from './model-helpers'
 
 export type BillingModeLabelKey =
@@ -32,6 +37,15 @@ export function getBillingModeLabelKey(
   // Task-usage models badge as one business category; the metering unit
   // ($/1M token, $/credit, $/second) is already carried by the price line.
   if (hasTaskUsageSchema(model)) return 'Task billing'
+  // Expression billing that prices a flat amount per call (`fixed(1)`,
+  // `tier("base", fixed(1))`) is per-request billing in expression clothing,
+  // and outranks `quota_type`: these models keep `quota_type: 0` from the
+  // ratio era, which alone would mislabel them as token-based.
+  if (isFlatPerRequestExpression(model.billing_expr)) return 'Per Request'
+  // An expression over token variables (`p * 10 + c * 50`,
+  // `u("tokens") * 1 / 1000000`) bills by token just like the ratio fields,
+  // so it reads as token-based rather than "dynamic".
+  if (isTokenBasedExpression(model.billing_expr)) return 'Token-based'
   if (isDynamicPricingModel(model)) return 'Dynamic Pricing'
   if (isTokenBasedModel(model)) return 'Token-based'
   return 'Per Request'

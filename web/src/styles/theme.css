@@ -103,12 +103,14 @@ For commercial licensing, please contact support@quantumnous.com
    * in theme-presets.css. Default mirrors `--font-sans` so behavior is
    * identical when no font preference is set. */
   --font-body: var(--font-sans);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  /* Off-white canvas rather than pure white: a hair of warmth takes the glare
+     off long reading sessions. Keep the chroma tiny so neutrals stay neutral. */
+  --background: oklch(0.985 0.004 95);
+  --foreground: oklch(0.22 0.006 95);
+  --card: oklch(0.995 0.003 95);
+  --card-foreground: oklch(0.22 0.006 95);
+  --popover: oklch(0.995 0.003 95);
+  --popover-foreground: oklch(0.22 0.006 95);
   --primary: oklch(0.692 0.141 243.716);
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.95 0 0);
@@ -179,13 +181,14 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 .dark {
-  /* OpenAI-like dark mode with a crisp charcoal canvas. */
-  --background: oklch(0.235 0 0);
-  --foreground: oklch(0.965 0 0);
-  --card: oklch(0.285 0 0);
-  --card-foreground: oklch(0.965 0 0);
-  --popover: oklch(0.305 0 0);
-  --popover-foreground: oklch(0.965 0 0);
+  /* Soft charcoal instead of near-black: the same warmth as the light canvas,
+     lifted off pure #000 so dark mode stops reading as a hole in the screen. */
+  --background: oklch(0.265 0.006 95);
+  --foreground: oklch(0.93 0.004 95);
+  --card: oklch(0.305 0.006 95);
+  --card-foreground: oklch(0.93 0.004 95);
+  --popover: oklch(0.325 0.006 95);
+  --popover-foreground: oklch(0.93 0.004 95);
   --primary: oklch(0.54 0.142 248.516);
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.335 0 0);

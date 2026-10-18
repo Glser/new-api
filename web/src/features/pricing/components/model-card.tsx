@@ -16,15 +16,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ChevronRight } from 'lucide-react'
+import { Check, Copy } from 'lucide-react'
 import { memo, useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { CopyButton } from '@/components/copy-button'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getLobeIcon } from '@/lib/lobe-icon'
-import { cn } from '@/lib/utils'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { DEFAULT_TOKEN_UNIT } from '../constants'
@@ -34,9 +32,9 @@ import {
   getDynamicDisplayGroupRatio,
   getDynamicPriceUnitLabelKey,
   getDynamicPricingSummary,
+  isFlatPerRequestExpression,
   isUnconfiguredTaskUsageModel,
 } from '../lib/dynamic-price'
-import { parseTags } from '../lib/filters'
 import { isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import { taskPriceLabel, taskUsageUnitLabel } from '../lib/task-price-display'
@@ -57,17 +55,19 @@ export interface ModelCardProps {
 
 export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const { t, i18n } = useTranslation()
+  const { copyToClipboard, copiedText } = useCopyToClipboard({
+    successMessage: t('Copy model name'),
+  })
+  const isCopied = copiedText === props.model.model_name
   const tokenUnit = props.tokenUnit ?? DEFAULT_TOKEN_UNIT
   const priceRate = props.priceRate ?? 1
   const usdExchangeRate = props.usdExchangeRate ?? 1
   const showRechargePrice = props.showRechargePrice ?? false
   const isTokenBased = isTokenBasedModel(props.model)
   const tokenUnitLabel = tokenUnit === 'K' ? '1K' : '1M'
-  const tags = parseTags(props.model.tags)
   const groups = props.model.enable_groups || []
-  const endpoints = props.model.supported_endpoint_types || []
   const modelIconKey = props.model.icon || props.model.vendor_icon
-  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 28) : null
+  const modelIcon = modelIconKey ? getLobeIcon(modelIconKey, 20) : null
   const initial = props.model.model_name?.charAt(0).toUpperCase() || '?'
   const isUnconfiguredTaskUsage = isUnconfiguredTaskUsageModel(props.model)
   const billingTime = useBillingTime(props.model.billing_expr)
@@ -110,7 +110,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   if (dynamicSummary) {
     if (dynamicSummary.isSpecialExpression) {
       priceSummary = (
-        <div className='col-span-full min-w-0'>
+        <div className='min-w-0'>
           <span className='text-warning'>
             {t('Special billing expression')}
           </span>
@@ -142,40 +142,34 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
                 )
               }
               return (
-                <div
+                <span
                   key={entry.key}
-                  className={cn(
-                    'flex min-w-0 flex-col gap-1',
-                    dynamicSummary.isTaskUsage && 'col-span-full'
-                  )}
+                  className='flex min-w-0 flex-wrap items-baseline gap-x-1.5 font-mono text-[11px] leading-tight font-semibold tabular-nums'
                 >
                   {label && (
-                    <span className='text-muted-foreground text-xs break-words whitespace-normal'>
+                    <span className='text-muted-foreground text-[10px] font-normal'>
                       {label}
                     </span>
                   )}
-                  <span className='flex flex-wrap items-baseline gap-x-1 font-mono text-sm font-semibold tabular-nums'>
-                    <span>{entry.formattedRange ?? entry.formatted}</span>
-                    <span className='text-muted-foreground text-xs font-normal whitespace-nowrap'>
-                      {' '}
-                      / {unitLabel}
-                    </span>
+                  <span>{entry.formattedRange ?? entry.formatted}</span>
+                  <span className='text-muted-foreground text-[10px] font-normal whitespace-nowrap'>
+                    / {unitLabel}
                   </span>
-                </div>
+                </span>
               )
             })}
           {dynamicSummary.isTimePricing && (
-            <span className='text-muted-foreground col-span-full text-xs'>
+            <span className='text-muted-foreground text-[10px]'>
               {t('Current period price')}
             </span>
           )}
           {dynamicSummary.isMixedBilling && (
-            <span className='text-muted-foreground col-span-full text-xs'>
+            <span className='text-muted-foreground text-[10px]'>
               {t('Token or per-call pricing')}
             </span>
           )}
           {cardExamplePrice && (
-            <span className='text-muted-foreground col-span-full text-xs break-words'>
+            <span className='text-muted-foreground text-[10px] break-words'>
               {cardExamplePrice.label} ≈ {cardExamplePrice.formatted}
             </span>
           )}
@@ -184,24 +178,47 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             !dynamicSummary.primaryEntries.some(
               (entry) => entry.formattedRange
             ) && (
-              <span className='text-muted-foreground col-span-full text-xs break-words'>
+              <span className='text-muted-foreground text-[10px] break-words'>
                 ({dynamicSummary.tier.label})
               </span>
             )}
         </>
       )
     } else {
-      priceSummary = (
-        <span className='text-muted-foreground col-span-full'>
-          {dynamicSummary.hasUnconfiguredProviders
-            ? t('Usage-based billing · price not configured')
-            : t('Dynamic Pricing')}
-        </span>
-      )
+      // 徽标已按「表达式是否只是固定单价」分流，价格行沿用同一结论，
+      // 避免出现「按次计费 + 动态计费」这种自相矛盾的组合。
+      if (dynamicSummary.hasUnconfiguredProviders) {
+        priceSummary = (
+          <span className='text-muted-foreground text-[10px]'>
+            {t('Usage-based billing · price not configured')}
+          </span>
+        )
+      } else if (isFlatPerRequestExpression(props.model.billing_expr)) {
+        priceSummary = (
+          <span className='font-mono text-[11px] leading-tight font-semibold tabular-nums'>
+            {formatRequestPrice(
+              props.model,
+              showRechargePrice,
+              priceRate,
+              usdExchangeRate,
+              props.selectedGroup
+            )}
+            <span className='text-muted-foreground ms-1 text-[10px] font-normal'>
+              / {t('request')}
+            </span>
+          </span>
+        )
+      } else {
+        priceSummary = (
+          <span className='text-muted-foreground text-[10px]'>
+            {t('Dynamic Pricing')}
+          </span>
+        )
+      }
     }
   } else if (isUnconfiguredTaskUsage) {
     priceSummary = (
-      <span className='text-muted-foreground col-span-full'>
+      <span className='text-muted-foreground text-[10px]'>
         {t('Usage-based billing · price not configured')}
       </span>
     )
@@ -209,34 +226,42 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     const prices: { type: PriceType; label: string }[] = [
       { type: 'input', label: t('Input') },
       { type: 'output', label: t('Output') },
-      ...(props.model.cache_ratio != null
-        ? [{ type: 'cache' as const, label: t('Cached') }]
-        : []),
     ]
-    priceSummary = prices.map((price) => (
-      <div key={price.type} className='flex min-w-0 flex-col gap-1'>
-        <span className='text-muted-foreground text-xs'>{price.label}</span>
-        <span className='font-mono text-sm font-semibold tabular-nums'>
-          {formatPrice(
-            props.model,
-            price.type,
-            tokenUnit,
-            showRechargePrice,
-            priceRate,
-            usdExchangeRate,
-            props.selectedGroup
-          )}
-          <span className='text-muted-foreground text-xs font-normal'>
-            {' '}
-            / {tokenUnitLabel}
+    priceSummary = (
+      <div className='flex min-w-0 items-baseline gap-x-3'>
+        {prices.map((price) => (
+          <span
+            key={price.type}
+            className='flex min-w-0 items-baseline gap-x-1 font-mono text-[11px] leading-tight font-semibold tabular-nums'
+          >
+            <span className='text-muted-foreground text-[10px] font-normal'>
+              {price.label}
+            </span>
+            <span>
+              {formatPrice(
+                props.model,
+                price.type,
+                tokenUnit,
+                showRechargePrice,
+                priceRate,
+                usdExchangeRate,
+                props.selectedGroup
+              )}
+            </span>
+            <span className='text-muted-foreground text-[10px] font-normal'>
+              / {tokenUnitLabel}
+            </span>
           </span>
-        </span>
+        ))}
       </div>
-    ))
+    )
   } else {
     priceSummary = (
-      <div className='col-span-full flex min-w-0 flex-col gap-1'>
-        <span className='font-mono text-sm font-semibold tabular-nums'>
+      <span className='flex min-w-0 items-baseline gap-x-1 font-mono text-[11px] leading-tight font-semibold tabular-nums'>
+        <span className='text-muted-foreground text-[10px] font-normal'>
+          {t('Price')}
+        </span>
+        <span>
           {formatRequestPrice(
             props.model,
             showRechargePrice,
@@ -244,140 +269,95 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             usdExchangeRate,
             props.selectedGroup
           )}
-          <span className='text-muted-foreground text-xs font-normal'>
-            {' '}
-            / {t('request')}
-          </span>
         </span>
-      </div>
+        <span className='text-muted-foreground text-[10px] font-normal'>
+          / {t('request')}
+        </span>
+      </span>
     )
   }
 
   return (
-    <Card className='hover:ring-foreground/20 h-full min-w-0 gap-3 transition-colors'>
-      <CardHeader className='flex flex-row items-start gap-3'>
+    <Card
+      role='button'
+      tabIndex={0}
+      onClick={props.onClick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          props.onClick()
+        }
+      }}
+      className='hover:ring-foreground/20 h-full min-w-0 cursor-pointer gap-2 transition-colors'
+    >
+      <CardHeader className='flex flex-row items-center gap-2'>
         <div
           aria-hidden
-          className='bg-muted/50 flex size-10 shrink-0 items-center justify-center rounded-lg'
+          className='bg-muted/50 flex size-8 shrink-0 items-center justify-center rounded-md'
         >
           {modelIcon || (
-            <span className='text-muted-foreground text-sm font-bold'>
+            <span className='text-muted-foreground text-[10px] font-bold'>
               {initial}
             </span>
           )}
         </div>
-        <div className='min-w-0 flex-1'>
-          <h3
-            className='line-clamp-2 font-mono text-[15px] leading-snug font-semibold [overflow-wrap:anywhere]'
-            title={props.model.model_name}
-          >
-            {props.model.model_name}
-          </h3>
-          {props.model.vendor_name && (
-            <p
-              className='text-muted-foreground mt-1 truncate text-xs'
-              title={props.model.vendor_name}
-            >
-              {props.model.vendor_name}
-            </p>
+        <span
+          title={props.model.model_name}
+          className='min-w-0 flex-1 truncate font-mono text-xs leading-none font-semibold [overflow-wrap:anywhere]'
+        >
+          {props.model.model_name}
+        </span>
+        <button
+          type='button'
+          onClick={(event) => {
+            event.stopPropagation()
+            void copyToClipboard(props.model.model_name || '')
+          }}
+          title={t('Copy model name')}
+          aria-label={t('Copy model name')}
+          className='text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] flex size-5 shrink-0 items-center justify-center rounded-md transition-colors'
+        >
+          {isCopied ? (
+            <Check aria-hidden className='size-3' />
+          ) : (
+            <Copy aria-hidden className='size-3' />
           )}
-        </div>
-        <CopyButton
-          value={props.model.model_name}
-          tooltip={t('Copy model name')}
-          className='size-7'
-          iconClassName='size-3.5'
-        />
+        </button>
       </CardHeader>
-      <CardContent className='flex flex-1 flex-col gap-3'>
-        <div className='flex min-w-0 flex-col gap-1.5'>
-          <p className='text-muted-foreground line-clamp-2 text-[13px] leading-5 break-words'>
-            {props.model.description || t('No description available.')}
-          </p>
-          {tags.length > 0 && (
-            <div
-              role='group'
-              aria-label={t('Tags')}
-              className='text-muted-foreground flex min-w-0 items-baseline gap-1.5 text-xs'
-            >
-              <span className='shrink-0'>{t('Tags')}</span>
-              <span className='truncate' title={tags.join(', ')}>
-                {tags.slice(0, 2).join(', ')}
-              </span>
-              {tags.length > 2 && (
-                <span className='shrink-0' title={tags.slice(2).join(', ')}>
-                  +{tags.length - 2}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+      <CardContent className='flex flex-1 flex-col gap-2'>
+        <p className='text-muted-foreground line-clamp-2 min-h-8 text-[11px] leading-4 break-words'>
+          {props.model.description || ' '}
+        </p>
         <div
           role='group'
           aria-label={t('Pricing')}
-          className='mt-auto flex min-w-0 flex-col gap-1.5'
+          className='mt-auto flex min-w-0 items-center justify-between gap-2'
         >
-          <ModelBillingModeBadge model={props.model} appearance='caption' />
-          {dynamicSummary?.providerCount && (
-            <span className='text-muted-foreground text-xs break-words'>
-              {t('{{count}} providers', {
-                count: dynamicSummary.providerCount,
-              })}
-              {dynamicSummary.hasUnconfiguredProviders &&
-                ` · ${t('Not configured for some providers')}`}
-            </span>
-          )}
-          <div className='grid grid-cols-[repeat(auto-fit,minmax(88px,1fr))] gap-x-3 gap-y-2'>
-            {priceSummary}
-          </div>
+          <ModelBillingModeBadge
+            model={props.model}
+            className='bg-foreground/[0.05] border-border/60 text-foreground/75 shrink-0 rounded-md border px-1.5 py-px text-[10px] font-medium'
+          />
+          {priceSummary}
         </div>
-        {(groups.length > 0 || endpoints.length > 0) && (
-          <dl
-            className={cn(
-              'grid min-w-0 grid-cols-2 gap-3 text-xs',
-              (groups.length === 0 || endpoints.length === 0) && 'grid-cols-1'
-            )}
-          >
-            {groups.length > 0 && (
-              <div className='flex min-w-0 items-baseline gap-1.5'>
-                <dt className='text-muted-foreground shrink-0'>
-                  {t('Groups')}
-                </dt>
-                <dd className='flex min-w-0 items-baseline gap-1'>
-                  <span className='truncate' title={groups.join(', ')}>
-                    {groups[0]}
-                  </span>
-                  {groups.length > 1 && (
-                    <span
-                      className='text-muted-foreground shrink-0'
-                      title={groups.slice(1).join(', ')}
-                    >
-                      +{groups.length - 1}
-                    </span>
-                  )}
-                </dd>
-              </div>
-            )}
-            {endpoints.length > 0 && (
-              <div className='flex min-w-0 items-baseline gap-1.5'>
-                <dt className='text-muted-foreground shrink-0'>
-                  {t('Endpoints')}
-                </dt>
-                <dd className='flex min-w-0 items-baseline gap-1'>
-                  <span className='truncate' title={endpoints.join(', ')}>
-                    {endpoints.slice(0, 2).join(', ')}
-                  </span>
-                  {endpoints.length > 2 && (
-                    <span
-                      className='text-muted-foreground shrink-0'
-                      title={endpoints.slice(2).join(', ')}
-                    >
-                      +{endpoints.length - 2}
-                    </span>
-                  )}
-                </dd>
-              </div>
-            )}
+        {dynamicSummary?.providerCount && (
+          <span className='text-muted-foreground block text-[10px] break-words'>
+            {t('{{count}} providers', {
+              count: dynamicSummary.providerCount,
+            })}
+            {dynamicSummary.hasUnconfiguredProviders &&
+              ` · ${t('Not configured for some providers')}`}
+          </span>
+        )}
+        {groups.length > 0 && (
+          <dl className='min-w-0 text-[10px]'>
+            <div className='flex min-w-0 items-baseline gap-1.5'>
+              <dt className='text-muted-foreground shrink-0 ps-px'>
+                {t('Available groups')}
+              </dt>
+              <dd className='min-w-0 truncate' title={groups.join(', ')}>
+                {groups.join(', ')}
+              </dd>
+            </div>
           </dl>
         )}
       </CardContent>
@@ -386,10 +366,14 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           perf={props.perf}
           className='border-border/60 border-t pt-2'
         >
-          <Button variant='ghost' size='sm' onClick={props.onClick}>
-            {t('Details')}
-            <ChevronRight aria-hidden className='size-3.5' />
-          </Button>
+          {props.model.vendor_name && (
+            <span
+              className='text-muted-foreground ms-auto shrink-0 truncate text-[10px]'
+              title={props.model.vendor_name}
+            >
+              {props.model.vendor_name}
+            </span>
+          )}
         </ModelPerfBadge>
       </CardFooter>
     </Card>

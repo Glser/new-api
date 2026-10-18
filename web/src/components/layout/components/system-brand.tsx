@@ -61,22 +61,22 @@ export function SystemBrand(props: SystemBrandProps) {
         to='/'
         aria-label={t('Go to home')}
         className={cn(
-          'text-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium transition-colors outline-none select-none',
+          'text-foreground inline-flex h-8 items-center gap-2 rounded-md px-1.5 text-[0.9375rem] font-medium transition-colors outline-none select-none',
           'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
         )}
       >
-        <div className='flex size-5 items-center justify-center overflow-hidden rounded-md'>
+        <div className='flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md'>
           {logo === '/logo.png' ? (
             <>
               <img
                 src='/logo.png'
                 alt={t('Logo')}
-                className='size-full rounded-md object-contain block dark:hidden'
+                className='block size-full rounded-md object-contain dark:hidden'
               />
               <img
                 src='/logo-dark.png'
                 alt={t('Logo')}
-                className='size-full rounded-md object-contain hidden dark:block'
+                className='hidden size-full rounded-md object-contain dark:block'
               />
             </>
           ) : (
@@ -87,7 +87,7 @@ export function SystemBrand(props: SystemBrandProps) {
             />
           )}
         </div>
-        <span className='max-w-[12rem] truncate'>{name}</span>
+        <span className='max-w-[12rem] truncate leading-none'>{name}</span>
       </Link>
     )
   }
@@ -106,12 +106,12 @@ export function SystemBrand(props: SystemBrandProps) {
                 <img
                   src='/logo.png'
                   alt={t('Logo')}
-                  className='size-full rounded-lg object-contain block dark:hidden'
+                  className='block size-full rounded-lg object-contain dark:hidden'
                 />
                 <img
                   src='/logo-dark.png'
                   alt={t('Logo')}
-                  className='size-full rounded-lg object-contain hidden dark:block'
+                  className='hidden size-full rounded-lg object-contain dark:block'
                 />
               </>
             ) : (
