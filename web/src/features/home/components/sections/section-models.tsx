@@ -520,11 +520,16 @@ function hydrateModels(
   const featuredModels = backendModels.filter(isFeaturedModel)
   const normalModels = backendModels.filter((m) => !isFeaturedModel(m))
 
-  // 如果后台有配置 featured 或常规模型，组合出最多 4 个模型
-  const candidateModels: PricingModel[] = [...featuredModels, ...normalModels]
+  // 如果后台配置了 featured 模型，优先按 featured 展示（多于 4 个支持多页分页）；若无 featured，则展示候选列表
+  let candidateModels: PricingModel[]
+  if (featuredModels.length > 0) {
+    candidateModels = featuredModels
+  } else {
+    candidateModels = normalModels
+  }
 
-  // 如果候选数量少于 4，且有未被完全覆盖的场景，优先尝试匹配并增强已有的 MODELS
-  if (featuredModels.length === 0 && candidateModels.length >= 4) {
+  // 如果完全无 featured 且候选数量少于 4，优先尝试匹配并增强已有的 MODELS
+  if (featuredModels.length === 0 && candidateModels.length < 4) {
     // 检查是否有匹配 MODELS 预设的知名模型
     const matchedPresets: ModelItem[] = MODELS.map((preset, idx) => {
       const match = backendModels.find((bm) => {
@@ -571,11 +576,9 @@ function hydrateModels(
     return matchedPresets
   }
 
-  // 若有明确后台 featured 标记或无对应 preset 匹配，则直接从后台选前 4 个模型展示
-  const selected = candidateModels.slice(0, 4)
-  if (selected.length === 0) return MODELS
+  if (candidateModels.length === 0) return MODELS
 
-  return selected.map((model, idx) =>
+  return candidateModels.map((model, idx) =>
     convertPricingModelToItem(model, vendors, groupRatio, idx, perfRates)
   )
 }
@@ -1202,11 +1205,13 @@ function CompactModelCard(props: {
   )
 }
 
-const ROTATION_INTERVAL_MS = 7000
+const ROTATION_INTERVAL_MS = 5000
+const PAGE_SIZE = 4
 
 export function SectionModels() {
   const { t } = useTranslation()
   const [activeIndex, setActiveIndex] = useState(0)
+  const [page, setPage] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [backendData, setBackendData] = useState<{
     models: PricingModel[]
@@ -1267,14 +1272,27 @@ export function SectionModels() {
       ),
     [backendData, perfRates]
   )
+  const totalPages = Math.ceil(displayModels.length / PAGE_SIZE)
+  const currentPage = Math.min(page, Math.max(0, totalPages - 1))
+  const pageModels = useMemo(
+    () => displayModels.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE),
+    [displayModels, currentPage]
+  )
+
   const activeModel = displayModels[activeIndex] ?? displayModels[0]
 
-  // 优化4：轮播展示到左侧大卡，间隔 7 秒，悬浮或交互时暂停
+  // 轮播展示到左侧大卡，间隔 5 秒，悬浮或交互时暂停
   useEffect(() => {
     if (isPaused || displayModels.length <= 1) return
 
     const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % displayModels.length)
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % displayModels.length
+        // 自动同步分页页码到下一项所在的页
+        const nextPage = Math.floor(next / PAGE_SIZE)
+        setPage((cur) => (cur !== nextPage ? nextPage : cur))
+        return next
+      })
     }, ROTATION_INTERVAL_MS)
 
     return () => {
@@ -1311,17 +1329,50 @@ export function SectionModels() {
             <FeaturedModelCard model={activeModel} />
           </div>
 
-          <div className='grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:col-span-6'>
-            {displayModels.map((model, index) => (
-              <CompactModelCard
-                key={model.id}
-                model={model}
-                selected={index === activeIndex}
-                onSelect={() => {
-                  setActiveIndex(index)
-                }}
-              />
-            ))}
+          <div className='flex flex-col justify-between gap-3.5 lg:col-span-6'>
+            <div className='grid grid-cols-1 gap-3.5 sm:grid-cols-2'>
+              {pageModels.map((model, idx) => {
+                const globalIndex = currentPage * PAGE_SIZE + idx
+                return (
+                  <CompactModelCard
+                    key={model.id}
+                    model={model}
+                    selected={globalIndex === activeIndex}
+                    onSelect={() => {
+                      setActiveIndex(globalIndex)
+                    }}
+                  />
+                )
+              })}
+            </div>
+
+            {/* 当后台配置超过 4 个模型时居中展示分页指示点 */}
+            {totalPages > 1 && (
+              <div className='mt-1 flex items-center justify-center select-none'>
+                <div className='flex items-center gap-1.5'>
+                  {Array.from({ length: totalPages }).map((_, pIdx) => {
+                    const pageKey = `models-page-${pIdx}`
+                    return (
+                      <button
+                        key={pageKey}
+                        type='button'
+                        onClick={() => {
+                          setPage(pIdx)
+                          setActiveIndex(pIdx * PAGE_SIZE)
+                        }}
+                        aria-label={`Page ${pIdx + 1}`}
+                        className={cn(
+                          'h-1.5 cursor-pointer rounded-full transition-all duration-300',
+                          pIdx === currentPage
+                            ? 'w-6 bg-foreground'
+                            : 'w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60'
+                        )}
+                      />
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

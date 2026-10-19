@@ -100,7 +100,7 @@ export function HeroAgentShowcase() {
     if (isPaused || total <= 1) return
     timerRef.current = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % total)
-    }, 4000)
+    }, 6000)
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
@@ -173,37 +173,41 @@ export function HeroAgentShowcase() {
               }}
               className={`group absolute top-2 flex w-[260px] flex-col rounded-2xl border p-5 transition-colors select-none sm:w-[275px] ${isCenter ? 'border-border bg-card ring-border/50 cursor-default shadow-lg ring-1' : 'border-border/60 bg-card/85 hover:border-border/90 cursor-pointer backdrop-blur-sm hover:opacity-85'}`}
             >
-              {/* Header: Clean Icon & Status Indicator */}
-              <div className='flex items-center justify-between'>
-                <div className='flex size-11 items-center justify-center rounded-2xl bg-foreground/5 p-2 transition-transform duration-300 group-hover:scale-105'>
+              {/* Header: Clean Icon & Centered Name */}
+              <div className='flex items-center gap-3'>
+                <div className='flex size-11 shrink-0 items-center justify-center rounded-2xl bg-foreground/5 p-2 transition-transform duration-300 group-hover:scale-105'>
                   {getLobeIcon(agent.icon_key, 26)}
                 </div>
-                <div className='flex items-center gap-2'>
-                  <span className='text-muted-foreground/70 font-mono text-[10px] font-medium tracking-wider uppercase'>
-                    {agent.tag}
-                  </span>
-                  <div
-                    className='size-2 rounded-full transition-all duration-300'
-                    style={{
-                      backgroundColor: isCenter ? accentColor : 'var(--border)',
-                      boxShadow: isCenter ? `0 0 8px ${accentColor}` : 'none',
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Title & Description */}
-              <div className='mt-4 flex flex-col'>
-                <h4 className='text-foreground text-[15px] font-semibold tracking-tight antialiased sm:text-base'>
+                <h4
+                  className='text-foreground min-w-0 text-[14.5px] font-semibold leading-tight tracking-tight antialiased sm:text-[15px]'
+                  title={agent.name}
+                >
                   {agent.name}
                 </h4>
-                <p className='text-muted-foreground mt-1.5 line-clamp-2 min-h-[38px] text-xs leading-relaxed antialiased sm:text-[13px]'>
+              </div>
+
+              {/* Description */}
+              <div className='mt-3 flex flex-col'>
+                <p className='text-muted-foreground line-clamp-2 min-h-[38px] text-xs leading-relaxed antialiased sm:text-[13px]'>
                   {agent.description}
                 </p>
               </div>
 
-              {/* Bottom Subtle Action Strip: 一键配置 */}
-              <div className='border-border/40 mt-5 flex items-center justify-end border-t pt-3.5'>
+              {/* Bottom Action Area: 左下角 Tag + 状态小点，右下角一键配置按钮（无灰色分割线） */}
+              <div className='mt-5 flex items-center justify-between gap-2'>
+                <div className='flex items-center gap-1.5'>
+                  <div
+                    className='size-1.5 shrink-0 rounded-full transition-all duration-300'
+                    style={{
+                      backgroundColor: isCenter ? accentColor : 'var(--border)',
+                      boxShadow: isCenter ? `0 0 6px ${accentColor}` : 'none',
+                    }}
+                  />
+                  <span className='text-muted-foreground/70 font-mono text-[10px] font-medium tracking-wider uppercase'>
+                    {agent.tag}
+                  </span>
+                </div>
+
                 <a
                   href={agent.guide_url || DEFAULT_GUIDE_URL}
                   target='_blank'
@@ -227,6 +231,24 @@ export function HeroAgentShowcase() {
             </div>
           )
         })}
+      </div>
+
+      {/* Indicator & Bottom Footnote */}
+      <div className='-mt-[72px] flex w-full flex-col items-center gap-2.5'>
+        <div className='flex items-center gap-1.5'>
+          {agents.map((agent, index) => (
+            <button
+              key={agent.id || index}
+              type='button'
+              onClick={() => setActiveIndex(index)}
+              aria-label={agent.name}
+              className={`h-1.5 cursor-pointer rounded-full transition-all duration-300 ${index === activeIndex ? 'w-6 bg-foreground' : 'w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60'}`}
+            />
+          ))}
+        </div>
+        <p className='text-muted-foreground/65 text-center font-mono text-[11px]'>
+          {t('hero_agent_footer')}
+        </p>
       </div>
     </div>
   )

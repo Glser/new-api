@@ -16,8 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { formatBillingCurrencyFromUSD } from '@/lib/currency'
-
 import { TOKEN_UNIT_DIVISORS } from '../constants'
 import type { PricingModel, TokenUnit } from '../types'
 import { getModelTokenPrices } from './dynamic-price'
@@ -41,15 +39,43 @@ export type UsdPriceComparison = {
 export type OfficialVsSiteOptions = {
   /** Used to pick the current time-based tier, matching the card's site price. */
   now?: Date
+  /**
+   * USD to site currency exchange rate (e.g. 7 for CNY).
+   * When provided, site price is compared in local currency to official USD * exchangeRate.
+   */
+  usdExchangeRate?: number
+  /**
+   * Price recharge rate (e.g. cost in site currency for 1 USD credit).
+   */
+  priceRate?: number
+  showRechargePrice?: boolean
+}
+
+/** Check if model name matches any prefix in the list (case-insensitive prefix match). */
+export function matchesPrefix(
+  modelName: string | undefined | null,
+  prefixes: readonly string[] | undefined | null
+): boolean {
+  if (!modelName || !prefixes || prefixes.length === 0) return false
+  const name = modelName.trim().toLowerCase()
+  return prefixes.some((prefix) => {
+    const p = prefix.trim().toLowerCase()
+    if (!p) return false
+    // 允许前缀匹配模型名（例如 gpt 匹配 gpt-4o，或 openai/gpt-4o 匹配 gpt）
+    return name.startsWith(p) || name.split(/[/:]/).some((part) => part.startsWith(p))
+  })
 }
 
 /**
  * Compute the official-vs-site price pair for a model.
  *
- * "Official" is the configured list price at group ratio 1.0: ratio models use
- * `model_ratio * 2`, expression / tiered models use the same first-tier
- * input/output the details page shows as Base Price. "Site" is that list
- * price multiplied by the viewer's group ratio.
+ * "Official" is the configured list price at group ratio 1.0 in USD.
+ * "Site" is that list price multiplied by the viewer's group ratio.
+ *
+ * When `usdExchangeRate` is provided, discount calculation converts the official USD
+ * price to the site's local currency before comparing with the site's charged price
+ * (taking into account user group discount and recharge rate), accurately showing how
+ * much cheaper the model is.
  *
  * Returns `null` when there is no comparable token list price (per-request
  * and unreadable expressions).
@@ -73,16 +99,28 @@ export function getOfficialVsSitePrice(
     Number.isFinite(groupRatioMultiplier) && groupRatioMultiplier > 0
       ? groupRatioMultiplier
       : 1
-  const siteUSD = officialUSD * multiplier
+  const siteInputUSD = scaleOfficialAmount(officialInputUSD, multiplier)
+  const siteOutputUSD = scaleOfficialAmount(officialOutputUSD, multiplier)
 
-  const raw = ((officialUSD - siteUSD) / officialUSD) * 100
-  const discountPercent = raw >= MIN_DISCOUNT_PERCENT ? Math.round(raw) : 0
+  const usdExchangeRate =
+    typeof options?.usdExchangeRate === 'number' && options.usdExchangeRate > 0
+      ? options.usdExchangeRate
+      : 1
+
+  // 综合计算有效折扣率：
+  // 官方原价是美元定价（例如 1 美元），换算成本地币种相当于 officialUSD * usdExchangeRate（例如 1 * 7 = 7 元）；
+  // 站内实付按分组倍率（例如 0.1 元），用户享受到的真实折扣为：
+  // 1 - (multiplier / usdExchangeRate) = 1 - 0.1/7 ≈ 98.57% -> -99%
+  const effectiveRatio = multiplier / usdExchangeRate
+  const rawDiscount = (1 - effectiveRatio) * 100
+  const discountPercent =
+    rawDiscount >= MIN_DISCOUNT_PERCENT ? Math.round(rawDiscount) : 0
 
   return {
     officialInputUSD,
     officialOutputUSD,
-    siteInputUSD: scaleOfficialAmount(officialInputUSD, multiplier),
-    siteOutputUSD: scaleOfficialAmount(officialOutputUSD, multiplier),
+    siteInputUSD,
+    siteOutputUSD,
     discountPercent,
   }
 }
@@ -101,7 +139,15 @@ function readOfficialAmount(value: number | null | undefined): number | null {
   return value
 }
 
-/** Render a USD amount using the site's own precision rules. */
+function removeTrailingZeros(str: string): string {
+  if (!str.includes('.')) return str
+  return str.replace(/(\.[0-9]*?)0+$/, '$1').replace(/\.$/, '')
+}
+
+/**
+ * Render a USD amount strictly formatted in USD ($ currency symbol),
+ * independent of the site's local display currency.
+ */
 export function formatUsdPrice(
   amountUSD: number,
   tokenUnit: TokenUnit,
@@ -109,10 +155,10 @@ export function formatUsdPrice(
 ): string {
   const amount = amountUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
   if (!Number.isFinite(amount)) return '-'
-  return formatBillingCurrencyFromUSD(amount, {
-    showSymbol: showCurrencySymbol,
-    digitsLarge: 4,
-    digitsSmall: 6,
-    abbreviate: false,
-  })
+
+  const abs = Math.abs(amount)
+  const digits = abs >= 1 ? 4 : 6
+  const numStr = removeTrailingZeros(amount.toFixed(digits))
+
+  return showCurrencySymbol ? `$${numStr}` : numStr
 }

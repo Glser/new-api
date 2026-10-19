@@ -39,7 +39,11 @@ import {
 import { getDisplayGroupRatio, isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import { taskPriceLabel, taskUsageUnitLabel } from '../lib/task-price-display'
-import { formatUsdPrice, getOfficialVsSitePrice } from '../lib/usd-price'
+import {
+  formatUsdPrice,
+  getOfficialVsSitePrice,
+  matchesPrefix,
+} from '../lib/usd-price'
 import type { PricingModel, PriceType, TokenUnit } from '../types'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
@@ -49,7 +53,7 @@ const MAX_VISIBLE_CARD_GROUPS = 1
 
 type TokenPricePart = { label: string; text: string }
 
-function toTokenPriceParts(
+function toOfficialTokenPriceParts(
   inputUSD: number | null | undefined,
   outputUSD: number | null | undefined,
   inputLabel: string,
@@ -67,6 +71,44 @@ function toTokenPriceParts(
     })
   }
   return parts
+}
+
+function toSiteTokenPriceParts(
+  model: PricingModel,
+  inputLabel: string,
+  outputLabel: string,
+  tokenUnit: TokenUnit,
+  showRechargePrice: boolean,
+  priceRate: number,
+  usdExchangeRate: number,
+  selectedGroup?: string
+): TokenPricePart[] {
+  return [
+    {
+      label: inputLabel,
+      text: formatPrice(
+        model,
+        'input',
+        tokenUnit,
+        showRechargePrice,
+        priceRate,
+        usdExchangeRate,
+        selectedGroup
+      ),
+    },
+    {
+      label: outputLabel,
+      text: formatPrice(
+        model,
+        'output',
+        tokenUnit,
+        showRechargePrice,
+        priceRate,
+        usdExchangeRate,
+        selectedGroup
+      ),
+    },
+  ]
 }
 
 function TokenUnitMark(props: { unit: string; name: string }) {
@@ -151,22 +193,40 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const isUnconfiguredTaskUsage = isUnconfiguredTaskUsageModel(props.model)
   const billingTime = useBillingTime(props.model.billing_expr)
   const currency = useSystemConfigStore((state) => state.config.currency)
-  // 官方价 vs 站内价：官方价是配置原价（倍率 1 / 表达式基础档），
-  // 站内价是当前分组倍率后的实付价（未选分组时用最低可用分组）。
+  const prefixes = currency.modelSquareUsdPricePrefixes
+  const isPrefixMatched = useMemo(
+    () => matchesPrefix(props.model.model_name, prefixes),
+    [props.model.model_name, prefixes]
+  )
+  // 官方价 vs 站内价：仅针对按量计费（Token计费）且命中配置前缀的模型展示
   const officialVsSite = useMemo(
     () =>
-      getOfficialVsSitePrice(
-        props.model,
-        getDisplayGroupRatio(props.model, props.selectedGroup),
-        {
-          now: billingTime === undefined ? undefined : new Date(billingTime),
-        }
-      ),
-    [props.model, props.selectedGroup, billingTime]
+      isTokenBased && isPrefixMatched
+        ? getOfficialVsSitePrice(
+            props.model,
+            getDisplayGroupRatio(props.model, props.selectedGroup),
+            {
+              now: billingTime === undefined ? undefined : new Date(billingTime),
+              usdExchangeRate,
+              priceRate,
+              showRechargePrice,
+            }
+          )
+        : null,
+    [
+      isTokenBased,
+      isPrefixMatched,
+      props.model,
+      props.selectedGroup,
+      billingTime,
+      usdExchangeRate,
+      priceRate,
+      showRechargePrice,
+    ]
   )
   const officialPriceParts = useMemo(
     () =>
-      toTokenPriceParts(
+      toOfficialTokenPriceParts(
         officialVsSite?.officialInputUSD,
         officialVsSite?.officialOutputUSD,
         t('Input'),
@@ -177,14 +237,28 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   )
   const sitePriceParts = useMemo(
     () =>
-      toTokenPriceParts(
-        officialVsSite?.siteInputUSD,
-        officialVsSite?.siteOutputUSD,
-        t('Input'),
-        t('Output'),
-        tokenUnit
-      ),
-    [officialVsSite, t, tokenUnit]
+      officialVsSite
+        ? toSiteTokenPriceParts(
+            props.model,
+            t('Input'),
+            t('Output'),
+            tokenUnit,
+            showRechargePrice,
+            priceRate,
+            usdExchangeRate,
+            props.selectedGroup
+          )
+        : [],
+    [
+      officialVsSite,
+      props.model,
+      t,
+      tokenUnit,
+      showRechargePrice,
+      priceRate,
+      usdExchangeRate,
+      props.selectedGroup,
+    ]
   )
   const siteDiscountPercent = officialVsSite?.discountPercent ?? 0
   const dynamicPriceOptions = useMemo(
