@@ -39,17 +39,10 @@ export type UsdPriceComparison = {
 export type OfficialVsSiteOptions = {
   /** Used to pick the current time-based tier, matching the card's site price. */
   now?: Date
-  /**
-   * USD to site currency exchange rate (e.g. 7 for CNY).
-   * When provided, site price is compared in local currency to official USD * exchangeRate.
-   */
-  usdExchangeRate?: number
-  /**
-   * Price recharge rate (e.g. cost in site currency for 1 USD credit).
-   */
-  priceRate?: number
-  showRechargePrice?: boolean
 }
+
+/** 官方价对比站内价时使用的固定汇率（1 USD = 7 站内币种） */
+export const FIXED_USD_EXCHANGE_RATE = 7
 
 /** Check if model name matches any prefix in the list (case-insensitive prefix match). */
 export function matchesPrefix(
@@ -69,13 +62,13 @@ export function matchesPrefix(
 /**
  * Compute the official-vs-site price pair for a model.
  *
- * "Official" is the configured list price at group ratio 1.0 in USD.
- * "Site" is that list price multiplied by the viewer's group ratio.
+ * "Official" is the configured list price at group ratio 1.0, shown as USD.
+ * "Site" is that list price multiplied by the viewer's group ratio — the same
+ * number the rest of the site uses for billing, in the site's display currency.
  *
- * When `usdExchangeRate` is provided, discount calculation converts the official USD
- * price to the site's local currency before comparing with the site's charged price
- * (taking into account user group discount and recharge rate), accurately showing how
- * much cheaper the model is.
+ * Discount compares those two amounts in the same currency: official USD is
+ * converted with a fixed 1 USD = 7 rate, then compared with the site price.
+ * Example: official $10 → ¥70, site ¥2 (group 0.2) → (1 - 2/70) ≈ 97% off.
  *
  * Returns `null` when there is no comparable token list price (per-request
  * and unreadable expressions).
@@ -102,16 +95,10 @@ export function getOfficialVsSitePrice(
   const siteInputUSD = scaleOfficialAmount(officialInputUSD, multiplier)
   const siteOutputUSD = scaleOfficialAmount(officialOutputUSD, multiplier)
 
-  const usdExchangeRate =
-    typeof options?.usdExchangeRate === 'number' && options.usdExchangeRate > 0
-      ? options.usdExchangeRate
-      : 1
-
-  // 综合计算有效折扣率：
-  // 官方原价是美元定价（例如 1 美元），换算成本地币种相当于 officialUSD * usdExchangeRate（例如 1 * 7 = 7 元）；
-  // 站内实付按分组倍率（例如 0.1 元），用户享受到的真实折扣为：
-  // 1 - (multiplier / usdExchangeRate) = 1 - 0.1/7 ≈ 98.57% -> -99%
-  const effectiveRatio = multiplier / usdExchangeRate
+  // Plaza USD-vs-site discount always uses the fixed showcase rate, not the
+  // admin quota-display exchange rate (which may be 1 when display is CNY).
+  // 官方 $10 → ¥70，站内按倍率实付 ¥2：1 - (multiplier / 7)
+  const effectiveRatio = multiplier / FIXED_USD_EXCHANGE_RATE
   const rawDiscount = (1 - effectiveRatio) * 100
   const discountPercent =
     rawDiscount >= MIN_DISCOUNT_PERCENT ? Math.round(rawDiscount) : 0

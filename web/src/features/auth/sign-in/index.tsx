@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { TermsFooter } from '../components/terms-footer'
+import { SignInScaleFrame } from './components/scale-frame'
 import { UserAuthForm } from './components/user-auth-form'
 
 interface AgentItem {
@@ -281,31 +282,53 @@ function ModelCardItem(props: { item: ModelCardData }) {
     [props.item.rawModel]
   )
 
-  const sitePriceParts = useMemo(
-    () => {
-      const parts: { label: string; text: string }[] = []
-      if (officialVsSite?.siteInputUSD != null) {
-        parts.push({ label: t('Input'), text: formatUsdPrice(officialVsSite.siteInputUSD, tokenUnit) })
-      }
-      if (officialVsSite?.siteOutputUSD != null) {
-        parts.push({ label: t('Output'), text: formatUsdPrice(officialVsSite.siteOutputUSD, tokenUnit) })
-      }
-      return parts
-    },
-    [officialVsSite, t, tokenUnit]
-  )
-
-  const siteDiscountPercent = officialVsSite?.discountPercent ?? 0
-
   const dynamicSummary = useMemo(
     () =>
       getDynamicPricingSummary(props.item.rawModel, {
         tokenUnit,
-        groupRatioMultiplier: getDynamicDisplayGroupRatio(props.item.rawModel, undefined),
+        groupRatioMultiplier: getDynamicDisplayGroupRatio(
+          props.item.rawModel,
+          undefined
+        ),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [props.item.rawModel, tokenUnit, currency]
   )
+
+  const sitePriceParts = useMemo(() => {
+    const parts: { label: string; text: string }[] = []
+    const input = dynamicSummary?.primaryEntries.find(
+      (entry) => entry.field === 'inputPrice'
+    )
+    const output = dynamicSummary?.primaryEntries.find(
+      (entry) => entry.field === 'outputPrice'
+    )
+    if (input) {
+      parts.push({
+        label: t('Input'),
+        text: input.formattedRange ?? input.formatted,
+      })
+    } else if (officialVsSite?.siteInputUSD != null) {
+      parts.push({
+        label: t('Input'),
+        text: formatUsdPrice(officialVsSite.siteInputUSD, tokenUnit),
+      })
+    }
+    if (output) {
+      parts.push({
+        label: t('Output'),
+        text: output.formattedRange ?? output.formatted,
+      })
+    } else if (officialVsSite?.siteOutputUSD != null) {
+      parts.push({
+        label: t('Output'),
+        text: formatUsdPrice(officialVsSite.siteOutputUSD, tokenUnit),
+      })
+    }
+    return parts
+  }, [dynamicSummary, officialVsSite, t, tokenUnit])
+
+  const siteDiscountPercent = officialVsSite?.discountPercent ?? 0
 
   let priceContent: React.ReactNode = null
 
@@ -611,143 +634,145 @@ export function SignIn() {
   }, [pricingData, t])
 
   return (
-    <div className='relative min-h-svh w-full overflow-hidden bg-background'>
-      {/* Background ambient lighting */}
-      <div
-        aria-hidden='true'
-        className='pointer-events-none absolute -top-40 right-1/4 -z-10 h-[500px] w-[800px] translate-x-1/2 rounded-full bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-3xl'
-      />
-      <div
-        aria-hidden='true'
-        className='pointer-events-none absolute bottom-0 left-0 -z-10 size-[480px] rounded-full bg-primary/5 blur-3xl'
-      />
+    <SignInScaleFrame>
+      <div className='relative min-h-[calc(100svh/var(--sign-in-scale,1))] w-full overflow-hidden bg-background'>
+        {/* Background ambient lighting */}
+        <div
+          aria-hidden='true'
+          className='pointer-events-none absolute -top-40 right-1/4 -z-10 h-[500px] w-[800px] translate-x-1/2 rounded-full bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-3xl'
+        />
+        <div
+          aria-hidden='true'
+          className='pointer-events-none absolute bottom-0 left-0 -z-10 size-[480px] rounded-full bg-primary/5 blur-3xl'
+        />
 
-      {/* Top brand bar */}
-      <header className='absolute top-0 inset-x-0 z-20 flex h-16 items-center px-6 sm:px-10'>
-        <Link
-          to='/'
-          className='flex items-center gap-2.5 transition-opacity hover:opacity-85'
-        >
-          <div className='relative size-8'>
-            {loading && <Skeleton className='absolute inset-0 rounded-full' />}
-            {!loading && logo === '/logo.png' && (
-              <>
+        {/* Top brand bar */}
+        <header className='absolute top-0 inset-x-0 z-20 flex h-16 items-center px-6 sm:px-10 lg:px-16 xl:px-20'>
+          <Link
+            to='/'
+            className='flex items-center gap-2.5 transition-opacity hover:opacity-85'
+          >
+            <div className='relative size-8'>
+              {loading && <Skeleton className='absolute inset-0 rounded-full' />}
+              {!loading && logo === '/logo.png' && (
+                <>
+                  <img
+                    src='/logo.png'
+                    alt={t('Logo')}
+                    className='block size-full rounded-full object-contain dark:hidden'
+                  />
+                  <img
+                    src='/logo-dark.png'
+                    alt={t('Logo')}
+                    className='hidden size-full rounded-full object-contain dark:block'
+                  />
+                </>
+              )}
+              {!loading && logo !== '/logo.png' && (
                 <img
-                  src='/logo.png'
+                  src={logo}
                   alt={t('Logo')}
-                  className='block size-full rounded-full object-contain dark:hidden'
+                  className='size-full rounded-full object-cover'
                 />
-                <img
-                  src='/logo-dark.png'
-                  alt={t('Logo')}
-                  className='hidden size-full rounded-full object-contain dark:block'
-                />
-              </>
+              )}
+            </div>
+            {loading ? (
+              <Skeleton className='h-5 w-24' />
+            ) : (
+              <span className='text-base font-semibold tracking-tight text-foreground'>
+                {systemName}
+              </span>
             )}
-            {!loading && logo !== '/logo.png' && (
-              <img
-                src={logo}
-                alt={t('Logo')}
-                className='size-full rounded-full object-cover'
+          </Link>
+        </header>
+
+        {/* Main Split Layout: Left is Agent & Models Marquee, Right is Auth Form */}
+        <div className='min-h-[calc(100svh/var(--sign-in-scale,1))] flex flex-col lg:flex-row items-center justify-center lg:justify-between px-6 sm:px-10 lg:px-16 xl:px-20 pt-20 pb-10 lg:pt-0 gap-8 lg:gap-10 max-w-[1440px] mx-auto w-full'>
+          {/* Left Column: Left sub-col is Agent Tools, Right sub-col is Models */}
+          <div className='relative hidden h-[690px] w-full max-w-[640px] overflow-hidden lg:block shrink-0'>
+            {/* Top & Bottom gradient mask for smooth fading */}
+            <div className='pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-background via-background/85 to-transparent' />
+            <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-background via-background/85 to-transparent' />
+
+            <div className='grid grid-cols-2 gap-4.5'>
+              {/* Column 1: Agent Tools (从后台 agents 配置动态生成) */}
+              <div className='relative h-[670px] w-full overflow-hidden'>
+                <div className='mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase'>
+                  <Bot className='size-3.5 text-primary' />
+                  <span>{t('Agent 智能体工具')}</span>
+                </div>
+                <motion.div
+                  className='flex flex-col'
+                  animate={{ y: ['0%', '-50%'] }}
+                  transition={{
+                    repeat: Infinity,
+                    ease: 'linear',
+                    duration: 38,
+                  }}
+                >
+                  {[...agents, ...agents].map((agent, idx) => {
+                    const key = idx < agents.length ? agent.id : `${agent.id}-dup-${idx}`
+                    return <AgentCardItem key={key} item={agent} />
+                  })}
+                </motion.div>
+              </div>
+
+              {/* Column 2: Models (从后台模型配置 featured/精选模型动态生成) */}
+              <div className='relative h-[670px] w-full overflow-hidden'>
+                <div className='mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase'>
+                  <Sparkles className='size-3.5 text-amber-500' />
+                  <span>{t('精选推荐模型')}</span>
+                </div>
+                <motion.div
+                  className='flex flex-col'
+                  animate={{ y: ['-50%', '0%'] }}
+                  transition={{
+                    repeat: Infinity,
+                    ease: 'linear',
+                    duration: 44,
+                  }}
+                >
+                  {[...modelCards, ...modelCards].map((model, idx) => {
+                    const key = idx < modelCards.length ? model.id : `${model.id}-dup-${idx}`
+                    return <ModelCardItem key={key} item={model} />
+                  })}
+                </motion.div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Form Box - 靠拢左侧走马灯，原尺寸不变 */}
+          <div className='flex w-full flex-1 justify-center lg:justify-start items-center lg:pl-4 xl:pl-8'>
+            <div className='w-full max-w-md space-y-7 rounded-3xl border border-border/60 bg-card/75 p-7 shadow-xl shadow-black/[0.03] backdrop-blur-2xl sm:p-9 dark:bg-card/45 dark:shadow-black/30'>
+              <div className='space-y-2 text-left'>
+                <h2 className='text-2xl font-bold tracking-tight text-foreground sm:text-3xl'>
+                  {t('Sign in')}
+                </h2>
+                {!status?.self_use_mode_enabled &&
+                  status?.register_enabled !== false && (
+                    <p className='text-xs text-muted-foreground sm:text-sm'>
+                      {t("Don't have an account?")}{' '}
+                      <Link
+                        to='/sign-up'
+                        className='font-semibold text-foreground underline underline-offset-4 hover:text-primary'
+                      >
+                        {t('Sign up')}
+                      </Link>
+                    </p>
+                  )}
+              </div>
+
+              <UserAuthForm redirectTo={redirect} />
+
+              <TermsFooter
+                variant='sign-in'
+                status={status}
+                className='pt-1 text-center text-xs'
               />
-            )}
-          </div>
-          {loading ? (
-            <Skeleton className='h-5 w-24' />
-          ) : (
-            <span className='text-base font-semibold tracking-tight text-foreground'>
-              {systemName}
-            </span>
-          )}
-        </Link>
-      </header>
-
-      {/* Main Split Layout: Left is Agent & Models Marquee, Right is Auth Form */}
-      <div className='min-h-svh flex flex-col lg:flex-row items-center justify-between pl-6 sm:pl-10 lg:pl-12 pr-6 sm:pr-10 lg:pr-16 pt-20 pb-10 lg:pt-0 gap-10 max-w-[1400px] mx-auto w-full'>
-        {/* Left Column: Left sub-col is Agent Tools, Right sub-col is Models - 向左净平移1/4卡片距离 (~72px) */}
-        <div className='relative hidden h-[690px] w-full max-w-[640px] overflow-hidden lg:block shrink-0 lg:-ml-18'>
-          {/* Top & Bottom gradient mask for smooth fading */}
-          <div className='pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-background via-background/85 to-transparent' />
-          <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-background via-background/85 to-transparent' />
-
-          <div className='grid grid-cols-2 gap-4.5'>
-            {/* Column 1: Agent Tools (从后台 agents 配置动态生成) */}
-            <div className='relative h-[670px] w-full overflow-hidden'>
-              <div className='mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase'>
-                <Bot className='size-3.5 text-primary' />
-                <span>{t('Agent 智能体工具')}</span>
-              </div>
-              <motion.div
-                className='flex flex-col'
-                animate={{ y: ['0%', '-50%'] }}
-                transition={{
-                  repeat: Infinity,
-                  ease: 'linear',
-                  duration: 38,
-                }}
-              >
-                {[...agents, ...agents].map((agent, idx) => {
-                  const key = idx < agents.length ? agent.id : `${agent.id}-dup-${idx}`
-                  return <AgentCardItem key={key} item={agent} />
-                })}
-              </motion.div>
             </div>
-
-            {/* Column 2: Models (从后台模型配置 featured/精选模型动态生成) */}
-            <div className='relative h-[670px] w-full overflow-hidden'>
-              <div className='mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase'>
-                <Sparkles className='size-3.5 text-amber-500' />
-                <span>{t('精选推荐模型')}</span>
-              </div>
-              <motion.div
-                className='flex flex-col'
-                animate={{ y: ['-50%', '0%'] }}
-                transition={{
-                  repeat: Infinity,
-                  ease: 'linear',
-                  duration: 44,
-                }}
-              >
-                {[...modelCards, ...modelCards].map((model, idx) => {
-                  const key = idx < modelCards.length ? model.id : `${model.id}-dup-${idx}`
-                  return <ModelCardItem key={key} item={model} />
-                })}
-              </motion.div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Form Box - 居中视觉区域 */}
-        <div className='flex flex-1 justify-center items-center'>
-          <div className='w-full max-w-md space-y-7 rounded-3xl border border-border/60 bg-card/75 p-7 shadow-xl shadow-black/[0.03] backdrop-blur-2xl sm:p-9 dark:bg-card/45 dark:shadow-black/30'>
-            <div className='space-y-2 text-left'>
-              <h2 className='text-2xl font-bold tracking-tight text-foreground sm:text-3xl'>
-                {t('Sign in')}
-              </h2>
-              {!status?.self_use_mode_enabled &&
-                status?.register_enabled !== false && (
-                  <p className='text-xs text-muted-foreground sm:text-sm'>
-                    {t("Don't have an account?")}{' '}
-                    <Link
-                      to='/sign-up'
-                      className='font-semibold text-foreground underline underline-offset-4 hover:text-primary'
-                    >
-                      {t('Sign up')}
-                    </Link>
-                  </p>
-                )}
-            </div>
-
-            <UserAuthForm redirectTo={redirect} />
-
-            <TermsFooter
-              variant='sign-in'
-              status={status}
-              className='pt-1 text-center text-xs'
-            />
           </div>
         </div>
       </div>
-    </div>
+    </SignInScaleFrame>
   )
 }

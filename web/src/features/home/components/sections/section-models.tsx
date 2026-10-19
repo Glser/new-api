@@ -50,6 +50,7 @@ import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import { getSuccessRateDotClass } from '@/features/performance-metrics/lib/format'
 import { getPricing } from '@/features/pricing/api'
 import { getModelTokenPrices } from '@/features/pricing/lib/dynamic-price'
+import { FIXED_USD_EXCHANGE_RATE } from '@/features/pricing/lib/usd-price'
 import type { PricingModel, PricingVendor } from '@/features/pricing/types'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
@@ -160,13 +161,13 @@ function isDomesticProvider(
 const SITE_CURRENCY_SYMBOL = '¥'
 
 /**
- * 美元兑人民币汇率，写死为 7.2。
+ * 美元兑人民币汇率，写死为 7。
  *
  * 刻意不读后台的 `usd_exchange_rate`：那个字段服务于控制台的配额展示，运营可能
  * 按展示需要调整；而首页的「官方价 vs 站内价」要的是一把稳定的尺子，让折扣比例
  * 可解释、不随后台配置漂移。
  */
-const USD_TO_CNY_RATE = 7.2
+const USD_TO_CNY_RATE = FIXED_USD_EXCHANGE_RATE
 
 /**
  * 去掉二进制浮点的累计误差：3 * 0.2 会得到 0.6000000000000001，

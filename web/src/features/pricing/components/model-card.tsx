@@ -35,6 +35,7 @@ import {
   getDynamicPricingSummary,
   isFlatPerRequestExpression,
   isUnconfiguredTaskUsageModel,
+  type DynamicPriceEntry,
 } from '../lib/dynamic-price'
 import { getDisplayGroupRatio, isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
@@ -68,6 +69,29 @@ function toOfficialTokenPriceParts(
     parts.push({
       label: outputLabel,
       text: formatUsdPrice(outputUSD, tokenUnit),
+    })
+  }
+  return parts
+}
+
+function toSiteTokenPricePartsFromSummary(
+  entries: DynamicPriceEntry[],
+  inputLabel: string,
+  outputLabel: string
+): TokenPricePart[] {
+  const parts: TokenPricePart[] = []
+  const input = entries.find((entry) => entry.field === 'inputPrice')
+  const output = entries.find((entry) => entry.field === 'outputPrice')
+  if (input) {
+    parts.push({
+      label: inputLabel,
+      text: input.formattedRange ?? input.formatted,
+    })
+  }
+  if (output) {
+    parts.push({
+      label: outputLabel,
+      text: output.formattedRange ?? output.formatted,
     })
   }
   return parts
@@ -207,9 +231,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             getDisplayGroupRatio(props.model, props.selectedGroup),
             {
               now: billingTime === undefined ? undefined : new Date(billingTime),
-              usdExchangeRate,
-              priceRate,
-              showRechargePrice,
             }
           )
         : null,
@@ -219,9 +240,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       props.model,
       props.selectedGroup,
       billingTime,
-      usdExchangeRate,
-      priceRate,
-      showRechargePrice,
     ]
   )
   const officialPriceParts = useMemo(
@@ -235,32 +253,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       ),
     [officialVsSite, t, tokenUnit]
   )
-  const sitePriceParts = useMemo(
-    () =>
-      officialVsSite
-        ? toSiteTokenPriceParts(
-            props.model,
-            t('Input'),
-            t('Output'),
-            tokenUnit,
-            showRechargePrice,
-            priceRate,
-            usdExchangeRate,
-            props.selectedGroup
-          )
-        : [],
-    [
-      officialVsSite,
-      props.model,
-      t,
-      tokenUnit,
-      showRechargePrice,
-      priceRate,
-      usdExchangeRate,
-      props.selectedGroup,
-    ]
-  )
-  const siteDiscountPercent = officialVsSite?.discountPercent ?? 0
   const dynamicPriceOptions = useMemo(
     () => ({
       now: billingTime === undefined ? undefined : new Date(billingTime),
@@ -289,6 +281,36 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [props.model, dynamicPriceOptions, currency]
   )
+  const sitePriceParts = useMemo(() => {
+    if (!officialVsSite) return []
+    const fromExpr = toSiteTokenPricePartsFromSummary(
+      dynamicSummary?.primaryEntries ?? [],
+      t('Input'),
+      t('Output')
+    )
+    if (fromExpr.length > 0) return fromExpr
+    return toSiteTokenPriceParts(
+      props.model,
+      t('Input'),
+      t('Output'),
+      tokenUnit,
+      showRechargePrice,
+      priceRate,
+      usdExchangeRate,
+      props.selectedGroup
+    )
+  }, [
+    officialVsSite,
+    dynamicSummary,
+    props.model,
+    t,
+    tokenUnit,
+    showRechargePrice,
+    priceRate,
+    usdExchangeRate,
+    props.selectedGroup,
+  ])
+  const siteDiscountPercent = officialVsSite?.discountPercent ?? 0
   const cardExamplePrice = useMemo(
     () => getCardExamplePrice(props.model, dynamicPriceOptions),
     // Currency is read indirectly by the price formatter.
