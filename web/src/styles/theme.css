@@ -94,6 +94,7 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 :root {
+  color-scheme: light;
   --radius: 1rem;
   --app-header-height: 3rem;
   /* Static build-channel fallback consumed when JS hasn't booted yet. */
@@ -181,6 +182,7 @@ For commercial licensing, please contact support@quantumnous.com
 }
 
 .dark {
+  color-scheme: dark;
   /* Soft charcoal instead of near-black: softened and lifted for a gentle,
      low-fatigue console background. */
   --background: oklch(0.29 0.005 95);

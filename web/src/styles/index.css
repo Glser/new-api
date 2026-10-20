@@ -129,6 +129,18 @@ For commercial licensing, please contact support@quantumnous.com
       font-size: 16px !important;
     }
   }
+
+  /* Chrome autofill paints an opaque light wash. Cover it with the
+     current surface so dark inputs stay on the same color as the card. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--foreground) !important;
+    caret-color: var(--foreground);
+    box-shadow: 0 0 0 1000px var(--autofill-bg, var(--card)) inset !important;
+    transition: background-color 99999s ease-out 0s;
+  }
 }
 
 /* Vercel Geist-style skeleton shimmer */

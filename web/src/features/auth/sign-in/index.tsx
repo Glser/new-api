@@ -219,28 +219,13 @@ function AgentCardItem({ item }: { item: AgentItem }) {
   return (
     <div className='relative mb-4 flex min-h-[185px] flex-col justify-between overflow-hidden rounded-2xl border border-border/60 bg-card/65 p-4.5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-foreground/25 hover:bg-card/90 hover:shadow-md'>
       <div>
-        <div className='flex items-start justify-between gap-3'>
-          <div className='flex items-center gap-3 min-w-0'>
-            <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-background/90 p-2 shadow-xs'>
-              {getLobeIcon(item.icon_key, 24)}
-            </div>
-            <div className='min-w-0'>
-              <h4 className='truncate text-sm font-semibold tracking-tight text-foreground'>
-                {item.name}
-              </h4>
-              <span className='inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground'>
-                <Bot className='size-2.5 text-primary/70' />
-                {item.tag}
-              </span>
-            </div>
+        <div className='flex items-center gap-3 min-w-0'>
+          <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-background/90 p-2 shadow-xs'>
+            {getLobeIcon(item.icon_key, 24)}
           </div>
-          <div
-            className='size-2 shrink-0 rounded-full mt-1'
-            style={{
-              backgroundColor: item.accent_color || '#3b82f6',
-              boxShadow: `0 0 8px ${item.accent_color || '#3b82f6'}`,
-            }}
-          />
+          <h4 className='truncate text-sm font-semibold tracking-tight text-foreground'>
+            {item.name}
+          </h4>
         </div>
 
         <p className='mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground'>
@@ -248,19 +233,29 @@ function AgentCardItem({ item }: { item: AgentItem }) {
         </p>
       </div>
 
-      {item.guide_url && (
-        <div className='flex items-center justify-end border-t border-border/40 pt-2.5 mt-2'>
+      <div className='flex items-center justify-between gap-3 border-t border-border/40 pt-2.5 mt-2'>
+        <span className='inline-flex min-w-0 items-center gap-1.5 font-mono text-[10px] text-muted-foreground'>
+          <span
+            className='size-2 shrink-0 rounded-full'
+            style={{
+              backgroundColor: item.accent_color || '#3b82f6',
+              boxShadow: `0 0 8px ${item.accent_color || '#3b82f6'}`,
+            }}
+          />
+          {item.tag}
+        </span>
+        {item.guide_url && (
           <a
             href={item.guide_url}
             target='_blank'
             rel='noopener noreferrer'
-            className='inline-flex items-center gap-1 text-[11px] font-medium text-foreground/80 hover:text-foreground'
+            className='inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-foreground/80 hover:text-foreground'
           >
             <span>{t('查看教程')}</span>
             <ArrowUpRight className='size-3 text-muted-foreground' />
           </a>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
@@ -556,7 +551,7 @@ function ModelCardItem(props: { item: ModelCardData }) {
                 key={spec}
                 className='inline-flex items-center gap-1 rounded-md border border-border/50 bg-background/60 px-1.5 py-0.5 text-[0.6875rem] text-muted-foreground'
               >
-                <Tag className='size-2.5 text-primary/70' />
+                <Tag className='size-2.5 text-muted-foreground/70' />
                 {spec}
               </span>
             ))}
@@ -639,11 +634,11 @@ export function SignIn() {
         {/* Background ambient lighting */}
         <div
           aria-hidden='true'
-          className='pointer-events-none absolute -top-40 right-1/4 -z-10 h-[500px] w-[800px] translate-x-1/2 rounded-full bg-gradient-to-b from-primary/10 via-primary/5 to-transparent blur-3xl'
+          className='pointer-events-none absolute -top-40 right-1/4 -z-10 h-[500px] w-[800px] translate-x-1/2 rounded-full bg-gradient-to-b from-foreground/5 via-foreground/[0.02] to-transparent blur-3xl'
         />
         <div
           aria-hidden='true'
-          className='pointer-events-none absolute bottom-0 left-0 -z-10 size-[480px] rounded-full bg-primary/5 blur-3xl'
+          className='pointer-events-none absolute bottom-0 left-0 -z-10 size-[480px] rounded-full bg-foreground/[0.03] blur-3xl'
         />
 
         {/* Top brand bar */}
@@ -698,7 +693,7 @@ export function SignIn() {
               {/* Column 1: Agent Tools (从后台 agents 配置动态生成) */}
               <div className='relative h-[670px] w-full overflow-hidden'>
                 <div className='mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase'>
-                  <Bot className='size-3.5 text-primary' />
+                  <Bot className='size-3.5 text-muted-foreground' />
                   <span>{t('Agent 智能体工具')}</span>
                 </div>
                 <motion.div
@@ -743,7 +738,7 @@ export function SignIn() {
 
           {/* Right Column: Form Box - 靠拢左侧走马灯，原尺寸不变 */}
           <div className='flex w-full flex-1 justify-center lg:justify-start items-center lg:pl-4 xl:pl-8'>
-            <div className='w-full max-w-md space-y-7 rounded-3xl border border-border/60 bg-card/75 p-7 shadow-xl shadow-black/[0.03] backdrop-blur-2xl sm:p-9 dark:bg-card/45 dark:shadow-black/30'>
+            <div className='w-full max-w-[25rem] space-y-7 rounded-3xl border border-border/60 bg-card/75 p-7 shadow-xl shadow-black/[0.03] backdrop-blur-2xl sm:p-9 dark:bg-card/45 dark:shadow-black/30 [--autofill-bg:color-mix(in_oklch,var(--card)_75%,var(--background))] dark:[--autofill-bg:color-mix(in_oklch,var(--card)_45%,var(--background))]'>
               <div className='space-y-2 text-left'>
                 <h2 className='text-2xl font-bold tracking-tight text-foreground sm:text-3xl'>
                   {t('Sign in')}
@@ -754,7 +749,7 @@ export function SignIn() {
                       {t("Don't have an account?")}{' '}
                       <Link
                         to='/sign-up'
-                        className='font-semibold text-foreground underline underline-offset-4 hover:text-primary'
+                        className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
                       >
                         {t('Sign up')}
                       </Link>
