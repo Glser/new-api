@@ -218,7 +218,7 @@ export function HeroAgentShowcase() {
                       setActiveIndex(index)
                     }
                   }}
-                  className={`group/btn relative inline-flex h-8 cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:scale-[0.98] sm:h-8.5 ${isCenter ? 'bg-foreground text-background hover:scale-[1.03] hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]' : 'bg-foreground/80 text-background opacity-90'}`}
+                  className={`group/btn relative inline-flex h-8 cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:translate-y-px sm:h-8.5 ${isCenter ? 'bg-foreground text-background hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]' : 'bg-foreground/80 text-background opacity-90'}`}
                 >
                   <span
                     aria-hidden='true'

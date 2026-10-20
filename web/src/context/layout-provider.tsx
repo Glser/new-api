@@ -29,7 +29,7 @@ const LAYOUT_VARIANT_COOKIE_NAME = 'layout_variant'
 const LAYOUT_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
 // Default values
-const DEFAULT_VARIANT = 'inset'
+const DEFAULT_VARIANT = 'sidebar'
 const DEFAULT_COLLAPSIBLE = 'icon'
 
 type LayoutContextType = {
@@ -57,8 +57,9 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
   })
 
   const [variant, _setVariant] = useState<Variant>(() => {
-    const saved = getCookie(LAYOUT_VARIANT_COOKIE_NAME)
-    return (saved as Variant) || DEFAULT_VARIANT
+    // Palette settings were removed; keep a flush chrome frame so the
+    // header/sidebar read as the shell and content is a single work surface.
+    return DEFAULT_VARIANT
   })
 
   const setCollapsible = (newCollapsible: Collapsible) => {

@@ -18,11 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useRouterState } from '@tanstack/react-router'
 
-import { ConfigDrawer } from '@/components/config-drawer'
+import { ThemeSwitch } from '@/components/theme-switch'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 
@@ -46,8 +45,8 @@ import { SystemBrand } from './system-brand'
  * <AppHeader navLinks={customLinks} />
  *
  * @example
- * // Hide navigation bar and search box
- * <AppHeader showTopNav={false} showSearch={false} />
+ * // Hide navigation bar
+ * <AppHeader showTopNav={false} />
  *
  * @example
  * // Fully customize left and right content
@@ -71,11 +70,6 @@ type AppHeaderProps = {
    */
   leftContent?: React.ReactNode
   /**
-   * Whether to show search box
-   * @default true
-   */
-  showSearch?: boolean
-  /**
    * Custom right content, overrides default right content if provided
    */
   rightContent?: React.ReactNode
@@ -85,10 +79,10 @@ type AppHeaderProps = {
    */
   showNotifications?: boolean
   /**
-   * Whether to show config drawer
+   * Whether to show theme switch
    * @default true
    */
-  showConfigDrawer?: boolean
+  showThemeSwitch?: boolean
   /**
    * Whether to show profile dropdown
    * @default true
@@ -100,10 +94,9 @@ export function AppHeader({
   navLinks = defaultTopNavLinks,
   showTopNav = true,
   leftContent,
-  showSearch = true,
   rightContent,
   showNotifications = true,
-  showConfigDrawer = true,
+  showThemeSwitch = true,
   showProfileDropdown = true,
 }: AppHeaderProps) {
   // Prioritize dynamically generated links from backend
@@ -125,7 +118,7 @@ export function AppHeader({
       ) : null}
 
       {rightContent ?? (
-        <div className='ms-auto flex shrink-0 items-center gap-1 sm:gap-2'>
+        <div className='ms-auto me-4 flex shrink-0 items-center gap-1 sm:me-6 sm:gap-2'>
           {showTopNav && (
             <div className='me-1 hidden lg:block'>
               <PillNav
@@ -134,9 +127,6 @@ export function AppHeader({
                 isActive={(link) => isTopNavLinkActive(pathname, link.href)}
               />
             </div>
-          )}
-          {showSearch && (
-            <Search className='w-8 flex-none [&>span]:hidden sm:[&>span]:inline' />
           )}
           {showNotifications && (
             <NotificationPopover
@@ -151,7 +141,7 @@ export function AppHeader({
             />
           )}
           <LanguageSwitcher />
-          {showConfigDrawer && <ConfigDrawer />}
+          {showThemeSwitch && <ThemeSwitch />}
           {showProfileDropdown && <ProfileDropdown />}
         </div>
       )}

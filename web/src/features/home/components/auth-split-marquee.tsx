@@ -210,7 +210,7 @@ export function AuthSplitMarquee({
               <div className='space-y-4 pt-4'>
                 <Link
                   to='/dashboard'
-                  className='group relative inline-flex h-11 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-foreground px-6 text-sm font-semibold text-background shadow-md transition-all duration-300 hover:scale-[1.01] hover:shadow-lg active:scale-[0.99]'
+                  className='group relative inline-flex h-11 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl bg-foreground px-6 text-sm font-semibold text-background shadow-md transition-all duration-300 hover:-translate-y-px hover:shadow-lg active:translate-y-px'
                 >
                   <span
                     aria-hidden='true'

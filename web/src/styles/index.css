@@ -130,16 +130,22 @@ For commercial licensing, please contact support@quantumnous.com
     }
   }
 
-  /* Chrome autofill paints an opaque light wash. Cover it with the
-     current surface so dark inputs stay on the same color as the card. */
+  /* Replace Chrome's default autofill wash (rgb(232, 240, 254))
+     with the field surface. Paint the shell too, so the fill covers
+     the whole rounded box instead of a smaller inner slab. */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
     -webkit-text-fill-color: var(--foreground) !important;
     caret-color: var(--foreground);
+    background-color: transparent !important;
     box-shadow: 0 0 0 1000px var(--autofill-bg, var(--card)) inset !important;
     transition: background-color 99999s ease-out 0s;
+  }
+
+  [data-slot='auth-field']:has(input:-webkit-autofill) {
+    background-color: var(--autofill-bg, var(--card));
   }
 }
 

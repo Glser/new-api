@@ -16,6 +16,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Outlet, useRouterState } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/(auth)')({})
+import { AuthSplitLayout } from '@/features/auth/auth-split-layout'
+
+const SPLIT_AUTH_PATHS = new Set([
+  '/sign-in',
+  '/sign-up',
+  '/forgot-password',
+  '/reset',
+  '/user/reset',
+])
+
+function AuthGroupLayout() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
+  if (!SPLIT_AUTH_PATHS.has(pathname)) {
+    return <Outlet />
+  }
+
+  return (
+    <AuthSplitLayout>
+      <Outlet />
+    </AuthSplitLayout>
+  )
+}
+
+export const Route = createFileRoute('/(auth)')({
+  component: AuthGroupLayout,
+})

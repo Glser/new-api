@@ -210,6 +210,20 @@ export interface UserChartsFilters {
   topUserLimit: number
 }
 
+export type UserConsoleRangePreset =
+  | 'today'
+  | 'yesterday'
+  | 'week'
+  | 'month'
+  | 'last-month'
+  | 'custom'
+
+export interface UserConsoleDateRange {
+  preset: UserConsoleRangePreset
+  start: Date
+  end: Date
+}
+
 // ============================================================================
 // API Info Types
 // ============================================================================

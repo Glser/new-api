@@ -16,8 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -25,7 +26,11 @@ import { toast } from 'sonner'
 import type { z } from 'zod'
 
 import { Turnstile } from '@/components/turnstile'
-import { Button } from '@/components/ui/button'
+import {
+  AUTH_FIELD_INPUT,
+  AuthIconField,
+  AuthSubmitButton,
+} from '@/features/auth/components/auth-field'
 import {
   Form,
   FormControl,
@@ -108,17 +113,39 @@ export function ForgotPasswordForm({
           control={form.control}
           name='email'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder='name@example.com' {...field} />
-              </FormControl>
-              <FormMessage />
+            <FormItem className='space-y-2'>
+              <FormLabel className='sr-only'>Email</FormLabel>
+              <p className='pl-2 text-left text-xs leading-relaxed text-muted-foreground sm:text-sm'>
+                {t(
+                  'Enter the email used at registration to receive a password reset link.'
+                )}
+              </p>
+              <AuthIconField icon={Mail}>
+                <FormControl className='min-w-0 flex-1'>
+                  <Input
+                    type='email'
+                    autoComplete='email'
+                    placeholder='name@example.com'
+                    className={AUTH_FIELD_INPUT}
+                    {...field}
+                  />
+                </FormControl>
+              </AuthIconField>
+              <FormMessage className='text-xs' />
             </FormItem>
           )}
         />
+        <p className='pr-3 text-right text-xs text-muted-foreground'>
+          {t('Already have an account?')}{' '}
+          <Link
+            to='/sign-in'
+            className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
+          >
+            {t('Sign in')}
+          </Link>
+        </p>
 
-        <Button
+        <AuthSubmitButton
           type='submit'
           className='mt-2'
           disabled={isLoading || isActive || !turnstileReady}
@@ -126,8 +153,12 @@ export function ForgotPasswordForm({
           {isActive
             ? t('Resend ({{seconds}}s)', { seconds: secondsLeft })
             : t('Send reset email')}
-          {isLoading ? <Loader2 className='animate-spin' /> : <ArrowRight />}
-        </Button>
+          {isLoading ? (
+            <Loader2 className='size-4.5 animate-spin' />
+          ) : (
+            <ArrowRight className='size-4.5' />
+          )}
+        </AuthSubmitButton>
 
         {isTurnstileEnabled && (
           <div className='mt-2'>

@@ -82,7 +82,7 @@ export function SectionPrimaryLink(props: {
     <Link
       to={props.to}
       className={cn(
-        'group relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)] active:scale-[0.98]',
+        'group relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)] active:translate-y-px',
         props.className
       )}
     >

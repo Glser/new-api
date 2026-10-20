@@ -31,7 +31,7 @@ export function Hero(props: HeroProps) {
 
   const renderDocsButton = () => {
     const className =
-      'group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl border border-border/70 bg-card/40 px-5 text-xs sm:text-sm font-medium text-muted-foreground/90 backdrop-blur-md transition-all duration-300 hover:border-foreground/25 hover:bg-card/80 hover:text-foreground hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
+      'group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl border border-border/70 bg-card/40 px-5 text-xs sm:text-sm font-medium text-muted-foreground/90 backdrop-blur-md transition-all duration-300 hover:border-foreground/25 hover:bg-card/80 hover:text-foreground hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:-translate-y-px active:translate-y-px cursor-pointer'
     const content = (
       <>
         <span
@@ -146,7 +146,7 @@ export function Hero(props: HeroProps) {
               {/* Primary Access Button */}
               <Link
                 to={'/dashboard' as any}
-                className='group bg-foreground text-background relative inline-flex h-11 cursor-pointer items-center gap-2 overflow-hidden rounded-xl px-6 text-xs font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] active:scale-[0.98] sm:text-sm dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)]'
+                className='group bg-foreground text-background relative inline-flex h-11 cursor-pointer items-center gap-2 overflow-hidden rounded-xl px-6 text-xs font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] active:translate-y-px sm:text-sm dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)]'
               >
                 {/* Luminous overlay wave on hover */}
                 <span
@@ -160,7 +160,7 @@ export function Hero(props: HeroProps) {
               {/* Secondary Explore Button */}
               <Link
                 to={'/pricing' as any}
-                className='group border-border/70 bg-card/60 text-foreground hover:border-foreground/25 hover:bg-card/90 relative inline-flex h-11 cursor-pointer items-center gap-2 overflow-hidden rounded-xl border px-5 text-xs font-medium backdrop-blur-md transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:scale-[0.98] sm:text-sm'
+                className='group border-border/70 bg-card/60 text-foreground hover:border-foreground/25 hover:bg-card/90 relative inline-flex h-11 cursor-pointer items-center gap-2 overflow-hidden rounded-xl border px-5 text-xs font-medium backdrop-blur-md transition-all duration-300 hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:translate-y-px sm:text-sm'
               >
                 <span
                   aria-hidden

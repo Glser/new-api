@@ -50,6 +50,14 @@ export const TIME_RANGE_PRESETS = [
   { label: '29 Days', days: 29 },
 ] as const
 
+export const USER_CONSOLE_RANGE_PRESETS = [
+  { value: 'today', labelKey: 'Today' },
+  { value: 'yesterday', labelKey: 'Yesterday' },
+  { value: 'week', labelKey: 'This week' },
+  { value: 'month', labelKey: 'This month' },
+  { value: 'last-month', labelKey: 'Last month' },
+] as const
+
 export const CONSUMPTION_DISTRIBUTION_CHART_OPTIONS = [
   { value: 'bar', labelKey: 'Bar Chart' },
   { value: 'area', labelKey: 'Area Chart' },

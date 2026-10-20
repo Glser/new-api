@@ -355,16 +355,16 @@ export function UserAuthForm({
                   <FormLabel className='sr-only'>
                     {t('Username or Email')}
                   </FormLabel>
-                  <div className='group relative flex items-center rounded-xl border border-border/70 bg-transparent shadow-2xs transition-all duration-200 focus-within:border-foreground/40 focus-within:ring-3 focus-within:ring-foreground/8 hover:border-foreground/25'>
+                  <div data-slot='auth-field' className='group relative flex items-center overflow-hidden rounded-xl border border-border/70 bg-transparent shadow-2xs transition-all duration-200 focus-within:border-foreground/40 focus-within:ring-3 focus-within:ring-foreground/8 hover:border-foreground/25'>
                     <span className='pointer-events-none flex size-11 shrink-0 items-center justify-center text-muted-foreground transition-colors group-focus-within:text-foreground'>
                       <User className='size-4.5' aria-hidden />
                     </span>
-                    <FormControl>
+                    <FormControl className='min-w-0 flex-1'>
                       <Input
                         type='text'
                         autoComplete='username'
                         placeholder={t('Username or Email')}
-                        className='h-11 border-0 bg-transparent px-0 pr-3.5 text-sm font-medium shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent'
+                        className='h-11 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 pr-3.5 text-sm font-medium shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent'
                         {...field}
                       />
                     </FormControl>
@@ -381,16 +381,16 @@ export function UserAuthForm({
               render={({ field }) => (
                 <FormItem className='space-y-1.5'>
                   <FormLabel className='sr-only'>{t('Password')}</FormLabel>
-                  <div className='group relative flex items-center rounded-xl border border-border/70 bg-transparent shadow-2xs transition-all duration-200 focus-within:border-foreground/40 focus-within:ring-3 focus-within:ring-foreground/8 hover:border-foreground/25'>
+                  <div data-slot='auth-field' className='group relative flex items-center overflow-hidden rounded-xl border border-border/70 bg-transparent shadow-2xs transition-all duration-200 focus-within:border-foreground/40 focus-within:ring-3 focus-within:ring-foreground/8 hover:border-foreground/25'>
                     <span className='pointer-events-none flex size-11 shrink-0 items-center justify-center text-muted-foreground transition-colors group-focus-within:text-foreground'>
                       <Lock className='size-4.5' aria-hidden />
                     </span>
-                    <FormControl>
+                    <FormControl className='min-w-0 flex-1'>
                       <Input
                         type={showPassword ? 'text' : 'password'}
                         autoComplete='current-password'
                         placeholder={t('Password')}
-                        className='h-11 border-0 bg-transparent px-0 pr-10 text-sm font-medium shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent'
+                        className='h-11 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 pr-10 text-sm font-medium shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent'
                         {...field}
                       />
                     </FormControl>
@@ -412,11 +412,25 @@ export function UserAuthForm({
                       )}
                     </button>
                   </div>
-                  <div className='flex items-center justify-between gap-3 pt-0.5'>
-                    <FormMessage className='text-xs' />
+                  <div className='flex items-start justify-between gap-3 pt-0.5 pl-3'>
+                    <div className='min-w-0 space-y-1'>
+                      {!status?.self_use_mode_enabled &&
+                        status?.register_enabled !== false && (
+                          <p className='text-xs text-muted-foreground'>
+                            {t("Don't have an account?")}{' '}
+                            <Link
+                              to='/sign-up'
+                              className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
+                            >
+                              {t('Sign up')}
+                            </Link>
+                          </p>
+                        )}
+                      <FormMessage className='text-xs' />
+                    </div>
                     <Link
                       to='/forgot-password'
-                      className='ml-auto shrink-0 text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
+                      className='shrink-0 text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
                     >
                       {t('Forgot password?')}
                     </Link>
@@ -428,11 +442,21 @@ export function UserAuthForm({
             {/* Submit Button */}
             <Button
               type='submit'
-              className='mt-1.5 h-11 w-full justify-center gap-2 rounded-xl bg-foreground text-background text-sm font-semibold shadow-md transition-all duration-200 hover:bg-foreground/90 hover:scale-[1.01] active:scale-[0.99]'
+              className='group relative mt-1.5 h-11 w-full justify-center gap-2 overflow-hidden rounded-xl bg-foreground text-sm font-semibold text-background shadow-[0_1px_2px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] active:translate-y-px dark:shadow-[0_1px_2px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.15)] dark:hover:shadow-[0_6px_20px_rgba(255,255,255,0.12)]'
               disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
             >
-              {isLoading ? <Loader2 className='size-4.5 animate-spin' /> : <LogIn className='size-4.5' />}
-              {t('Sign in')}
+              <span
+                aria-hidden='true'
+                className='pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full dark:via-black/20'
+              />
+              <span className='relative z-1 flex items-center gap-2'>
+                {isLoading ? (
+                  <Loader2 className='size-4.5 animate-spin' />
+                ) : (
+                  <LogIn className='size-4.5' />
+                )}
+                {t('Sign in')}
+              </span>
             </Button>
 
             {/* Turnstile */}

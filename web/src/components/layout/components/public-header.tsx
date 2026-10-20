@@ -132,7 +132,7 @@ export function PublicHeader(props: PublicHeaderProps) {
           'group relative inline-flex h-8 cursor-pointer items-center justify-center overflow-hidden rounded-full px-4 text-xs font-semibold tracking-tight select-none transition-all duration-300',
           // 质感黑白对比度 + 极细内边框发光设计
           'bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.08)]',
-          'hover:scale-[1.03] hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] active:scale-[0.98]',
+          'hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] active:translate-y-px',
           'dark:bg-foreground dark:text-background dark:shadow-[0_1px_2px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.15)]',
           'dark:hover:shadow-[0_6px_20px_rgba(255,255,255,0.12)]'
         )}

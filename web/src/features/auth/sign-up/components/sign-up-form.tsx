@@ -16,8 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -25,7 +26,6 @@ import { toast } from 'sonner'
 import type { z } from 'zod'
 
 import { Dialog } from '@/components/dialog'
-import { PasswordInput } from '@/components/password-input'
 import { Turnstile } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,6 +39,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { register, wechatLoginByCode } from '@/features/auth/api'
+import {
+  AUTH_FIELD_INPUT,
+  AuthIconField,
+  AuthSubmitButton,
+} from '@/features/auth/components/auth-field'
 import { LegalConsent } from '@/features/auth/components/legal-consent'
 import { OAuthProviders } from '@/features/auth/components/oauth-providers'
 import { registerFormSchema } from '@/features/auth/constants'
@@ -66,6 +71,8 @@ export function SignUpForm({
   const [wechatCode, setWeChatCode] = useState('')
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
 
@@ -256,12 +263,19 @@ export function SignUpForm({
           control={form.control}
           name='username'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Username')}</FormLabel>
-              <FormControl>
-                <Input placeholder={t('Enter your username')} {...field} />
-              </FormControl>
-              <FormMessage />
+            <FormItem className='space-y-1.5'>
+              <FormLabel className='sr-only'>{t('Username')}</FormLabel>
+              <AuthIconField icon={User}>
+                <FormControl className='min-w-0 flex-1'>
+                  <Input
+                    placeholder={t('Enter your username')}
+                    autoComplete='username'
+                    className={AUTH_FIELD_INPUT}
+                    {...field}
+                  />
+                </FormControl>
+              </AuthIconField>
+              <FormMessage className='text-xs' />
             </FormItem>
           )}
         />
@@ -271,15 +285,33 @@ export function SignUpForm({
           control={form.control}
           name='password'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Password')}</FormLabel>
-              <FormControl>
-                <PasswordInput
-                  placeholder={t('Enter password (8–128 characters)')}
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
+            <FormItem className='space-y-1.5'>
+              <FormLabel className='sr-only'>{t('Password')}</FormLabel>
+              <AuthIconField icon={Lock}>
+                <FormControl className='min-w-0 flex-1'>
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete='new-password'
+                    placeholder={t('Enter password (8–128 characters)')}
+                    className='h-11 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 pr-10 text-sm font-medium shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent'
+                    {...field}
+                  />
+                </FormControl>
+                <button
+                  type='button'
+                  tabIndex={-1}
+                  className='absolute right-2.5 flex size-7 items-center justify-center rounded-lg text-muted-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground'
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? t('Hide password') : t('Show password')}
+                >
+                  {showPassword ? (
+                    <Eye className='size-4' aria-hidden />
+                  ) : (
+                    <EyeOff className='size-4' aria-hidden />
+                  )}
+                </button>
+              </AuthIconField>
+              <FormMessage className='text-xs' />
             </FormItem>
           )}
         />
@@ -289,12 +321,35 @@ export function SignUpForm({
           control={form.control}
           name='confirmPassword'
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Confirm password')}</FormLabel>
-              <FormControl>
-                <PasswordInput placeholder={t('Confirm password')} {...field} />
-              </FormControl>
-              <FormMessage />
+            <FormItem className='space-y-1.5'>
+              <FormLabel className='sr-only'>{t('Confirm password')}</FormLabel>
+              <AuthIconField icon={Lock}>
+                <FormControl className='min-w-0 flex-1'>
+                  <Input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    autoComplete='new-password'
+                    placeholder={t('Confirm password')}
+                    className='h-11 min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 pr-10 text-sm font-medium shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent'
+                    {...field}
+                  />
+                </FormControl>
+                <button
+                  type='button'
+                  tabIndex={-1}
+                  className='absolute right-2.5 flex size-7 items-center justify-center rounded-lg text-muted-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground'
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  aria-label={
+                    showConfirmPassword ? t('Hide password') : t('Show password')
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <Eye className='size-4' aria-hidden />
+                  ) : (
+                    <EyeOff className='size-4' aria-hidden />
+                  )}
+                </button>
+              </AuthIconField>
+              <FormMessage className='text-xs' />
             </FormItem>
           )}
         />
@@ -307,34 +362,40 @@ export function SignUpForm({
               control={form.control}
               name='email'
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
+                <FormItem className='space-y-1.5'>
+                  <FormLabel className='sr-only'>
                     {t('Email (required for verification)')}
                   </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('name@example.com')}
-                      type='email'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
+                  <AuthIconField icon={Mail}>
+                    <FormControl className='min-w-0 flex-1'>
+                      <Input
+                        placeholder={t('name@example.com')}
+                        type='email'
+                        autoComplete='email'
+                        className={AUTH_FIELD_INPUT}
+                        {...field}
+                      />
+                    </FormControl>
+                  </AuthIconField>
+                  <FormMessage className='text-xs' />
                 </FormItem>
               )}
             />
 
             {/* Verification Code Field */}
-            <div className='flex items-end gap-2'>
-              <div className='flex-1'>
+            <div className='flex items-center gap-2'>
+              <AuthIconField icon={Mail} className='min-w-0 flex-1'>
                 <Input
                   placeholder={t('Verification code')}
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
+                  className={AUTH_FIELD_INPUT}
                 />
-              </div>
+              </AuthIconField>
               <Button
                 variant='outline'
                 type='button'
+                className='h-11 shrink-0 rounded-xl'
                 disabled={
                   isLoading ||
                   isSendingCode ||
@@ -368,19 +429,28 @@ export function SignUpForm({
           className='mt-1'
         />
 
+        <p className='pl-3 text-xs text-muted-foreground'>
+          {t('Already have an account?')}{' '}
+          <Link
+            to='/sign-in'
+            className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
+          >
+            {t('Sign in')}
+          </Link>
+        </p>
+
         {/* Submit Button */}
-        <Button
+        <AuthSubmitButton
           type='submit'
-          className='mt-2 w-full justify-center gap-2'
           disabled={
             isLoading ||
             (requiresLegalConsent && !agreedToLegal) ||
             !turnstileReady
           }
         >
-          {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
+          {isLoading ? <Loader2 className='size-4.5 animate-spin' /> : null}
           {t('Create account')}
-        </Button>
+        </AuthSubmitButton>
 
         {oauthRegisterEnabled && (
           <OAuthProviders

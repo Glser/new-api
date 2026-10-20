@@ -16,16 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useNavigate } from '@tanstack/react-router'
-import { CheckIcon, CopyIcon } from 'lucide-react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { CheckIcon, CopyIcon, Loader2, Lock, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { useCountdown } from '@/hooks/use-countdown'
 import { api } from '@/lib/api'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
@@ -33,7 +31,12 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { AuthOperationError } from '@/lib/secure-verification'
 import { createServerError } from '@/lib/server-error-message'
 
-import { AuthLayout } from '../auth-layout'
+import { AuthCardHeading } from '../components/auth-card-heading'
+import {
+  AUTH_FIELD_INPUT,
+  AuthIconField,
+  AuthSubmitButton,
+} from '../components/auth-field'
 
 export type ResetPasswordSearchParams = {
   email?: string
@@ -111,101 +114,97 @@ export function ResetPasswordConfirm({
   }
 
   return (
-    <AuthLayout>
-      <div className='w-full space-y-8'>
-        <div className='space-y-2'>
-          <h2 className='text-center text-2xl font-semibold tracking-tight sm:text-left'>
-            {t('Reset password')}
-          </h2>
-          <p className='text-muted-foreground text-left text-sm sm:text-base'>
-            {newPassword
-              ? t('auth.resetPasswordConfirm.success')
-              : t('auth.resetPasswordConfirm.description')}
-          </p>
-        </div>
+    <>
+      <AuthCardHeading title={t('Reset password')} />
 
-        <div className='space-y-4'>
-          {!isValidResetLink && (
-            <Alert variant='destructive'>
-              <AlertDescription>
-                {t('Invalid reset link, please request a new password reset.')}
-              </AlertDescription>
-            </Alert>
-          )}
+      <div className='grid gap-4'>
+        <p className='pl-2 text-xs leading-relaxed text-muted-foreground sm:text-sm'>
+          {newPassword
+            ? t('auth.resetPasswordConfirm.success')
+            : t('auth.resetPasswordConfirm.description')}
+        </p>
 
-          <div className='space-y-2'>
-            <Label htmlFor='email'>{t('Email')}</Label>
-            <Input
-              id='email'
-              type='email'
-              value={email || ''}
-              disabled
-              placeholder={t('Waiting for email...')}
-            />
+        {!isValidResetLink && (
+          <Alert variant='destructive'>
+            <AlertDescription>
+              {t('Invalid reset link, please request a new password reset.')}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <AuthIconField icon={Mail}>
+          <Input
+            id='email'
+            type='email'
+            value={email || ''}
+            disabled
+            placeholder={t('Waiting for email...')}
+            className={AUTH_FIELD_INPUT}
+          />
+        </AuthIconField>
+
+        {newPassword && (
+          <div className='space-y-1.5'>
+            <AuthIconField icon={Lock}>
+              <Input
+                id='password'
+                value={newPassword}
+                disabled
+                className={`${AUTH_FIELD_INPUT} pr-10 font-mono`}
+              />
+              <button
+                type='button'
+                className='absolute right-2.5 flex size-7 items-center justify-center rounded-lg text-muted-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground'
+                onClick={handleCopy}
+                aria-label={t('Copy')}
+              >
+                {copied ? (
+                  <CheckIcon className='size-4' />
+                ) : (
+                  <CopyIcon className='size-4' />
+                )}
+              </button>
+            </AuthIconField>
+            <p className='text-xs text-muted-foreground'>
+              {t('Password has been copied to clipboard')}
+            </p>
           </div>
+        )}
 
-          {newPassword && (
-            <div className='space-y-2'>
-              <Label htmlFor='password'>{t('New password')}</Label>
-              <div className='flex gap-2'>
-                <Input
-                  id='password'
-                  value={newPassword}
-                  disabled
-                  className='font-mono'
-                />
-                <Button
-                  type='button'
-                  size='icon'
-                  variant='outline'
-                  onClick={handleCopy}
-                >
-                  {copied ? (
-                    <CheckIcon className='h-4 w-4' />
-                  ) : (
-                    <CopyIcon className='h-4 w-4' />
-                  )}
-                </Button>
-              </div>
-              <p className='text-muted-foreground text-xs'>
-                {t('Password has been copied to clipboard')}
-              </p>
-            </div>
-          )}
-
-          <Button
-            className='w-full'
-            onClick={
-              newPassword
-                ? () => navigate({ to: '/sign-in', replace: true })
-                : handleSubmit
-            }
-            disabled={
-              newPassword ? false : loading || isActive || !isValidResetLink
-            }
-          >
-            {newPassword && t('auth.resetPasswordConfirm.backToLogin')}
-            {!newPassword &&
-              isActive &&
-              t('auth.resetPasswordConfirm.retry', {
-                seconds: secondsLeft,
-              })}
-            {!newPassword &&
-              !isActive &&
-              t('auth.resetPasswordConfirm.confirm')}
-          </Button>
-
-          {!newPassword && (
-            <Button
-              variant='link'
-              className='w-full'
-              onClick={() => navigate({ to: '/sign-in', replace: true })}
+        {!newPassword && (
+          <p className='pr-3 text-right text-xs text-muted-foreground'>
+            <Link
+              to='/sign-in'
+              className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
             >
               {t('Back to login')}
-            </Button>
-          )}
-        </div>
+            </Link>
+          </p>
+        )}
+
+        <AuthSubmitButton
+          type='button'
+          disabled={
+            newPassword ? false : loading || isActive || !isValidResetLink
+          }
+          onClick={
+            newPassword
+              ? () => navigate({ to: '/sign-in', replace: true })
+              : handleSubmit
+          }
+        >
+          {loading ? <Loader2 className='size-4.5 animate-spin' /> : null}
+          {newPassword && t('auth.resetPasswordConfirm.backToLogin')}
+          {!newPassword &&
+            isActive &&
+            t('auth.resetPasswordConfirm.retry', {
+              seconds: secondsLeft,
+            })}
+          {!newPassword &&
+            !isActive &&
+            t('auth.resetPasswordConfirm.confirm')}
+        </AuthSubmitButton>
       </div>
-    </AuthLayout>
+    </>
   )
 }

@@ -60,6 +60,18 @@ export default defineConfig(({ envMode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        // pnpm 会同时暴露 node_modules/react 与 .pnpm/.../react，
+        // Rspack 把它们当成两份 React，开发态会 Invalid hook call 整页 500。
+        react: path.resolve(__dirname, 'node_modules/react'),
+        'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+        'react/jsx-runtime': path.resolve(
+          __dirname,
+          'node_modules/react/jsx-runtime.js'
+        ),
+        'react/jsx-dev-runtime': path.resolve(
+          __dirname,
+          'node_modules/react/jsx-dev-runtime.js'
+        ),
       },
     },
     html: {
