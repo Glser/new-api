@@ -138,7 +138,9 @@ export function HeroAgentShowcase() {
 
           const translateX = offset * 135
           const translateY = isCenter ? 0 : 14 + absOffset * 4
-          const translateZ = isCenter ? 0 : -absOffset * 80
+          // Keep a 1px Z offset on the center card so the compositor stays on
+          // a 3D layer. Identity 2D matrix + CSS zoom makes inner SVGs snap.
+          const translateZ = isCenter ? 1 : -absOffset * 80
           const rotateY = isCenter ? 0 : offset * -14
           const scale = isCenter ? 1 : 0.88 - (absOffset - 1) * 0.1
           let opacity: number
@@ -151,18 +153,31 @@ export function HeroAgentShowcase() {
           }
 
           const accentColor = agent.accent_color || '#3b82f6'
+          let pointerEvents: 'auto' | 'none' = 'none'
+          if (!isCenter && isVisible) {
+            pointerEvents = 'auto'
+          }
 
           return (
             <div
               key={agent.id || index}
+              role={isCenter ? undefined : 'button'}
+              tabIndex={isCenter ? undefined : 0}
               onClick={() => {
                 if (!isCenter) setActiveIndex(index)
+              }}
+              onKeyDown={(event) => {
+                if (isCenter) return
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  setActiveIndex(index)
+                }
               }}
               style={{
                 transform: `translate3d(${translateX}px, ${translateY}px, ${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
                 zIndex,
                 opacity: isVisible ? opacity : 0,
-                pointerEvents: isCenter || isVisible ? 'auto' : 'none',
+                pointerEvents,
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
                 boxShadow: isCenter
@@ -171,15 +186,17 @@ export function HeroAgentShowcase() {
                 transition:
                   'transform 560ms cubic-bezier(0.16, 1, 0.3, 1), opacity 450ms ease, box-shadow 450ms ease',
               }}
-              className={`group absolute top-2 flex w-[260px] flex-col rounded-2xl border p-5 transition-colors select-none sm:w-[275px] ${isCenter ? 'border-border bg-card ring-border/50 cursor-default shadow-lg ring-1' : 'border-border/60 bg-card/85 hover:border-border/90 cursor-pointer backdrop-blur-sm hover:opacity-85'}`}
+              className={`group border-border/70 bg-card absolute top-2 flex w-[260px] flex-col rounded-2xl border p-5 select-none sm:w-[275px] ${isCenter ? 'cursor-default' : 'hover:border-border/90 cursor-pointer hover:opacity-90'}`}
             >
-              {/* Header: Clean Icon & Centered Name */}
+              {/* Header: pinned icon box so SVG does not snap on 3D settle */}
               <div className='flex items-center gap-3'>
-                <div className='flex size-11 shrink-0 items-center justify-center rounded-2xl bg-foreground/5 p-2 transition-transform duration-300 group-hover:scale-105'>
-                  {getLobeIcon(agent.icon_key, 26)}
+                <div className='bg-foreground/5 flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl'>
+                  <span className='pointer-events-none flex size-[26px] items-center justify-center [&>svg]:block [&>svg]:size-[26px] [&>svg]:shrink-0'>
+                    {getLobeIcon(agent.icon_key, 26)}
+                  </span>
                 </div>
                 <h4
-                  className='text-foreground min-w-0 text-[14.5px] font-semibold leading-tight tracking-tight antialiased sm:text-[15px]'
+                  className='text-foreground min-w-0 text-[14.5px] leading-tight font-semibold tracking-tight antialiased sm:text-[15px]'
                   title={agent.name}
                 >
                   {agent.name}
@@ -213,12 +230,13 @@ export function HeroAgentShowcase() {
                   target='_blank'
                   rel='noopener noreferrer'
                   onClick={(event) => {
+                    event.stopPropagation()
                     if (!isCenter) {
                       event.preventDefault()
                       setActiveIndex(index)
                     }
                   }}
-                  className={`group/btn relative inline-flex h-8 cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:translate-y-px sm:h-8.5 ${isCenter ? 'bg-foreground text-background hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]' : 'bg-foreground/80 text-background opacity-90'}`}
+                  className={`group/btn pointer-events-auto relative inline-flex h-8 cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:translate-y-px sm:h-8.5 ${isCenter ? 'bg-foreground text-background hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]' : 'bg-foreground/80 text-background opacity-90'}`}
                 >
                   <span
                     aria-hidden='true'
@@ -231,6 +249,27 @@ export function HeroAgentShowcase() {
             </div>
           )
         })}
+
+        {total > 1 ? (
+          <>
+            <button
+              type='button'
+              aria-label={agents[(activeIndex - 1 + total) % total]?.name}
+              className='absolute top-4 left-0 z-50 h-[210px] cursor-pointer bg-transparent'
+              style={{ width: 'max(72px, calc((100% - 17.25rem) / 2))' }}
+              onClick={() =>
+                setActiveIndex((prev) => (prev - 1 + total) % total)
+              }
+            />
+            <button
+              type='button'
+              aria-label={agents[(activeIndex + 1) % total]?.name}
+              className='absolute top-4 right-0 z-50 h-[210px] cursor-pointer bg-transparent'
+              style={{ width: 'max(72px, calc((100% - 17.25rem) / 2))' }}
+              onClick={() => setActiveIndex((prev) => (prev + 1) % total)}
+            />
+          </>
+        ) : null}
       </div>
 
       {/* Indicator & Bottom Footnote */}
@@ -242,7 +281,7 @@ export function HeroAgentShowcase() {
               type='button'
               onClick={() => setActiveIndex(index)}
               aria-label={agent.name}
-              className={`h-1.5 cursor-pointer rounded-full transition-all duration-300 ${index === activeIndex ? 'w-6 bg-foreground' : 'w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60'}`}
+              className={`h-1.5 cursor-pointer rounded-full transition-all duration-300 ${index === activeIndex ? 'bg-foreground w-6' : 'bg-muted-foreground/30 hover:bg-muted-foreground/60 w-1.5'}`}
             />
           ))}
         </div>

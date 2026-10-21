@@ -35,11 +35,28 @@ import { computeTimeRange } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
+import {
+  MOCK_REMAIN_QUOTA,
+  MOCK_REQUEST_COUNT,
+  MOCK_USED_QUOTA,
+  OVERVIEW_MOCK_ENABLED,
+  buildMockQuotaSeries,
+} from '../../lib/overview-mock'
 import { StatCard } from '../ui/stat-card'
 
 const SUMMARY_SPARKLINE_BUCKETS = 12
 
 type SummarySparklineKey = 'balance' | 'usage' | 'requests'
+
+function getQuotaSeries(
+  data: QuotaDataItem[] | undefined,
+  start: number,
+  end: number
+): QuotaDataItem[] {
+  if (data && data.length > 0) return data
+  if (OVERVIEW_MOCK_ENABLED) return buildMockQuotaSeries(start, end)
+  return []
+}
 
 function getBucketIndex(
   timestamp: number,
@@ -143,9 +160,14 @@ export function SummaryCards() {
   const { status, loading } = useStatus()
 
   const summaryTimeRange = useMemo(() => computeTimeRange(1), [])
-  const remainQuota = Number(user?.quota ?? 0)
-  const usedQuota = Number(user?.used_quota ?? 0)
-  const requestCount = Number(user?.request_count ?? 0)
+  const remainQuota =
+    Number(user?.quota ?? 0) || (OVERVIEW_MOCK_ENABLED ? MOCK_REMAIN_QUOTA : 0)
+  const usedQuota =
+    Number(user?.used_quota ?? 0) ||
+    (OVERVIEW_MOCK_ENABLED ? MOCK_USED_QUOTA : 0)
+  const requestCount =
+    Number(user?.request_count ?? 0) ||
+    (OVERVIEW_MOCK_ENABLED ? MOCK_REQUEST_COUNT : 0)
 
   const usageTrendQuery = useQuery({
     queryKey: [
@@ -187,7 +209,11 @@ export function SummaryCards() {
   const sparklineData = useMemo(
     () =>
       buildSummarySparklines(
-        usageTrendQuery.data?.data ?? [],
+        getQuotaSeries(
+          usageTrendQuery.data?.data,
+          summaryTimeRange.start_timestamp,
+          summaryTimeRange.end_timestamp
+        ),
         remainQuota,
         summaryTimeRange.start_timestamp,
         summaryTimeRange.end_timestamp
@@ -202,11 +228,16 @@ export function SummaryCards() {
 
   const recentUsage = useMemo(
     () =>
-      (usageTrendQuery.data?.data ?? []).reduce(
-        (total, item) => total + (Number(item.quota) || 0),
-        0
-      ),
-    [usageTrendQuery.data?.data]
+      getQuotaSeries(
+        usageTrendQuery.data?.data,
+        summaryTimeRange.start_timestamp,
+        summaryTimeRange.end_timestamp
+      ).reduce((total, item) => total + (Number(item.quota) || 0), 0),
+    [
+      summaryTimeRange.end_timestamp,
+      summaryTimeRange.start_timestamp,
+      usageTrendQuery.data?.data,
+    ]
   )
 
   const healthLevel = getHealthLevel(remainQuota, recentUsage)

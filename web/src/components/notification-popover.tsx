@@ -17,9 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { TFunction } from 'i18next'
-import { Bell, Megaphone } from 'lucide-react'
+import { Bell, ChevronLeft, Megaphone } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Dialog } from '@/components/dialog'
 import { RichContent } from '@/components/rich-content'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,55 +32,78 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
-import {
-  Popover,
-  PopoverContent,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getAnnouncementColorClass } from '@/lib/colors'
+import { getAnnouncementKey, useNotifications } from '@/hooks/use-notifications'
 import { formatDateTimeObject } from '@/lib/time'
 import { cn } from '@/lib/utils'
 
-interface AnnouncementItem {
-  id?: number | string
-  type?: string
-  content?: string
+interface NotificationListItem {
+  key: string
+  kind: 'notice' | 'announcement'
+  title: string
+  preview: string
+  content: string
   extra?: string
   publishDate?: string | Date
+  type?: string
+  unread: boolean
 }
 
-interface NotificationPopoverProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  unreadCount: number
-  activeTab: 'notice' | 'announcements'
-  onTabChange: (tab: 'notice' | 'announcements') => void
-  notice: string
-  announcements: AnnouncementItem[]
-  loading: boolean
-  className?: string
+const TYPE_BADGE_CLASS: Record<string, string> = {
+  default: 'bg-muted text-muted-foreground',
+  ongoing: 'bg-sky-500/12 text-sky-700 dark:text-sky-300',
+  success: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300',
+  warning: 'bg-amber-500/12 text-amber-700 dark:text-amber-300',
+  error: 'bg-destructive/10 text-destructive',
 }
 
-/**
- * Get relative time string from a date
- */
+function stripMarkup(content: string): string {
+  return content
+    .replaceAll(/<[^>]*>/g, '')
+    .replaceAll(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replaceAll(/[#*_`>]/g, '')
+    .replaceAll(/\s+/g, ' ')
+    .trim()
+}
+
+function getPreviewText(content: string, maxLength = 64): string {
+  const plainText = stripMarkup(content)
+  if (!plainText) return ''
+  return plainText.length > maxLength
+    ? `${plainText.slice(0, maxLength)}...`
+    : plainText
+}
+
+function getListTitle(content: string, fallback: string): string {
+  const lines = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const heading = lines.find((line) => /^#{1,6}\s+/.test(line))
+  if (heading) {
+    return heading.replace(/^#{1,6}\s+/, '').trim() || fallback
+  }
+  const first = stripMarkup(lines[0] || '')
+  if (!first) return fallback
+  return first.length > 42 ? `${first.slice(0, 42)}...` : first
+}
+
+function getListPreview(content: string): string {
+  const lines = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const rest = lines.filter((line) => !/^#{1,6}\s+/.test(line)).join(' ')
+  return getPreviewText(rest || content, 72)
+}
+
 function getRelativeTime(publishDate: string | Date, t: TFunction): string {
-  if (!publishDate) return ''
-
-  const now = new Date()
   const pubDate = new Date(publishDate)
-
-  // If invalid date, return original string
   if (Number.isNaN(pubDate.getTime())) {
     return typeof publishDate === 'string' ? publishDate : ''
   }
 
-  const diffMs = now.getTime() - pubDate.getTime()
+  const diffMs = Date.now() - pubDate.getTime()
   const diffSeconds = Math.floor(diffMs / 1000)
   const diffMinutes = Math.floor(diffSeconds / 60)
   const diffHours = Math.floor(diffMinutes / 60)
@@ -87,10 +112,7 @@ function getRelativeTime(publishDate: string | Date, t: TFunction): string {
   const diffMonths = Math.floor(diffDays / 30)
   const diffYears = Math.floor(diffDays / 365)
 
-  // If future time, show specific date
   if (diffMs < 0) return formatDateTimeObject(pubDate)
-
-  // Return relative time based on difference
   if (diffSeconds < 60) return t('Just now')
   if (diffMinutes < 60) {
     return diffMinutes === 1
@@ -118,201 +140,123 @@ function getRelativeTime(publishDate: string | Date, t: TFunction): string {
       : t('{{count}} months ago', { count: diffMonths })
   }
   if (diffYears < 2) return t('1 year ago')
-
-  // Over 2 years, show specific date
   return formatDateTimeObject(pubDate)
 }
 
-/**
- * Announcement status dot indicator
- */
-function AnnouncementDot({ type }: { type?: string }) {
+function getTypeLabel(type: string | undefined, t: TFunction): string {
+  switch (type) {
+    case 'ongoing':
+      return t('Ongoing')
+    case 'success':
+      return t('Success')
+    case 'warning':
+      return t('Warning')
+    case 'error':
+      return t('Error')
+    default:
+      return t('Normal')
+  }
+}
+
+function StatusChip({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
   return (
     <span
       className={cn(
-        'mt-1.5 inline-block size-2 shrink-0 rounded-full',
-        getAnnouncementColorClass(type)
+        'inline-flex h-5 shrink-0 items-center rounded-md px-1.5 text-[11px] leading-none font-medium',
+        className
       )}
-    />
+    >
+      {children}
+    </span>
   )
 }
 
-function getAnnouncementRenderKey(announcement: AnnouncementItem): string {
-  if (announcement.id !== undefined && announcement.id !== null) {
-    return `id:${announcement.id}`
-  }
-
-  return JSON.stringify({
-    content: announcement.content ?? '',
-    extra: announcement.extra ?? '',
-    publishDate: announcement.publishDate ?? '',
-    type: announcement.type ?? '',
-  })
-}
-
-/**
- * Empty state component
- */
-function EmptyState({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  title: string
-  description?: string
-}) {
-  return (
-    <Empty className='min-h-48 border-0 p-4'>
-      <EmptyHeader>
-        <EmptyMedia variant='icon'>{icon}</EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        {description ? (
-          <EmptyDescription>{description}</EmptyDescription>
-        ) : null}
-      </EmptyHeader>
-    </Empty>
-  )
-}
-
-/**
- * Notice tab content
- */
-function NoticeContent({
-  notice,
-  loading,
-  t,
-}: {
-  notice: string
-  loading: boolean
-  t: TFunction
-}) {
-  if (loading) {
-    return (
-      <EmptyState
-        icon={<Bell />}
-        title={t('Loading...')}
-        description={t('Latest platform updates and notices')}
-      />
-    )
-  }
-
-  if (!notice) {
-    return (
-      <EmptyState icon={<Bell />} title={t('No announcements at this time')} />
-    )
-  }
-
-  return (
-    <ScrollArea className='h-[min(52vh,28rem)] pr-3'>
-      <RichContent breaks content={notice} />
-    </ScrollArea>
-  )
-}
-
-/**
- * Announcements tab content
- */
-function AnnouncementsContent({
-  announcements,
-  loading,
-  t,
-}: {
-  announcements: AnnouncementItem[]
-  loading: boolean
-  t: TFunction
-}) {
-  if (loading) {
-    return (
-      <EmptyState
-        icon={<Megaphone />}
-        title={t('Loading...')}
-        description={t('Latest platform updates and notices')}
-      />
-    )
-  }
-
-  if (announcements.length === 0) {
-    return (
-      <EmptyState icon={<Megaphone />} title={t('No system announcements')} />
-    )
-  }
-
-  return (
-    <ScrollArea className='h-[min(52vh,28rem)] pr-3'>
-      <div className='flex flex-col'>
-        {announcements.map((item, idx) => {
-          const announcementKey = getAnnouncementRenderKey(item)
-          const publishDate = item.publishDate
-            ? new Date(item.publishDate)
-            : null
-          const relativeTime = publishDate
-            ? getRelativeTime(publishDate, t)
-            : ''
-          const absoluteTime = publishDate
-            ? formatDateTimeObject(publishDate)
-            : ''
-
-          return (
-            <div key={announcementKey}>
-              <div className='py-3'>
-                <div className='flex items-start gap-3'>
-                  <AnnouncementDot type={item.type} />
-                  <div className='flex min-w-0 flex-1 flex-col gap-2'>
-                    <div className='text-sm'>
-                      <RichContent breaks content={item.content || ''} />
-                    </div>
-
-                    {item.extra ? (
-                      <div className='text-muted-foreground text-xs'>
-                        <RichContent breaks content={item.extra} />
-                      </div>
-                    ) : null}
-
-                    {absoluteTime ? (
-                      <div className='text-muted-foreground text-xs'>
-                        {relativeTime ? `${relativeTime} • ` : null}
-                        {absoluteTime}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-              {idx < announcements.length - 1 ? <Separator /> : null}
-            </div>
-          )
-        })}
-      </div>
-    </ScrollArea>
-  )
-}
-
-/**
- * Notification popover with Notice and Announcements tabs
- */
-export function NotificationPopover({
-  open,
-  onOpenChange,
-  unreadCount,
-  activeTab,
-  onTabChange,
-  notice,
-  announcements,
-  loading,
-  className,
-}: NotificationPopoverProps) {
+export function NotificationPopover({ className }: { className?: string }) {
   const { t } = useTranslation()
+  const {
+    notice,
+    announcements,
+    loading,
+    unreadCount,
+    lastReadNotice,
+    isAnnouncementRead,
+    markNoticeRead,
+    markAnnouncementsRead,
+  } = useNotifications()
+  const [open, setOpen] = useState(false)
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+
+  const items = useMemo<NotificationListItem[]>(() => {
+    const list: NotificationListItem[] = []
+
+    if (notice) {
+      list.push({
+        key: 'notice',
+        kind: 'notice',
+        title: getListTitle(notice, t('System Notice')),
+        preview: getListPreview(notice),
+        content: notice,
+        unread: notice !== lastReadNotice,
+        type: 'default',
+      })
+    }
+
+    for (const raw of announcements) {
+      const content = String(raw.content ?? '')
+      const key = getAnnouncementKey(raw)
+      list.push({
+        key,
+        kind: 'announcement',
+        title: getListTitle(content, t('System Announcements')),
+        preview: getListPreview(content),
+        content,
+        extra: raw.extra ? String(raw.extra) : undefined,
+        publishDate: raw.publishDate as string | Date | undefined,
+        unread: !isAnnouncementRead(key),
+        type: String(raw.type ?? 'default'),
+      })
+    }
+
+    return list
+  }, [announcements, isAnnouncementRead, lastReadNotice, notice, t])
+
+  const selected = items.find((item) => item.key === selectedKey) ?? null
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (!next) setSelectedKey(null)
+  }
+
+  const handleSelect = (item: NotificationListItem) => {
+    setSelectedKey(item.key)
+    if (item.kind === 'notice') {
+      markNoticeRead(item.content)
+      return
+    }
+    markAnnouncementsRead([item.key])
+  }
+
+  let dialogDescription: string | undefined
+  if (selected?.publishDate) {
+    dialogDescription = getRelativeTime(selected.publishDate, t)
+  } else if (selected) {
+    dialogDescription = t('System Notice')
+  }
+
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger
-        render={
-          <Button
-            variant='ghost'
-            size='icon'
-            className={cn('relative size-9', className)}
-            aria-label={t('Notifications')}
-          />
-        }
+    <>
+      <Button
+        variant='ghost'
+        size='icon'
+        className={cn('relative size-9', className)}
+        aria-label={t('Notifications')}
+        onClick={() => setOpen(true)}
       >
         <Bell className='size-[1.2rem]' />
         {unreadCount > 0 ? (
@@ -323,54 +267,183 @@ export function NotificationPopover({
             {unreadCount > 99 ? '99+' : unreadCount}
           </Badge>
         ) : null}
-      </PopoverTrigger>
-
-      <PopoverContent
-        align='end'
-        sideOffset={8}
-        className='w-[min(26rem,calc(100vw-1rem))] gap-3 p-3'
+      </Button>
+      <Dialog
+        open={open}
+        onOpenChange={handleOpenChange}
+        title={
+          selected ? (
+            <span className='flex items-center gap-1'>
+              <button
+                type='button'
+                onClick={() => setSelectedKey(null)}
+                className='text-muted-foreground hover:text-foreground -ml-1 inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-sm font-medium transition-colors'
+              >
+                <ChevronLeft className='size-4' />
+                {t('Back')}
+              </button>
+            </span>
+          ) : (
+            t('Announcements and activities')
+          )
+        }
+        description={dialogDescription}
+        contentClassName='sm:max-w-xl'
+        initialFocus={false}
+        contentHeight='auto'
+        bodyClassName='p-0'
       >
-        <PopoverHeader className='gap-1 px-1'>
-          <PopoverTitle>{t('System Announcements')}</PopoverTitle>
-          <p className='text-muted-foreground text-xs'>
-            {t('Latest platform updates and notices')}
-          </p>
-        </PopoverHeader>
-
-        <Tabs
-          value={activeTab}
-          onValueChange={onTabChange as (value: string) => void}
-        >
-          <TabsList className='grid w-full grid-cols-2'>
-            <TabsTrigger value='notice' className='gap-1.5'>
-              <Bell className='size-3.5' />
-              {t('Notice')}
-            </TabsTrigger>
-            <TabsTrigger value='announcements' className='gap-1.5'>
-              <Megaphone className='size-3.5' />
-              {t('Timeline')}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value='notice' className='mt-2'>
-            <NoticeContent notice={notice} loading={loading} t={t} />
-          </TabsContent>
-
-          <TabsContent value='announcements' className='mt-2'>
-            <AnnouncementsContent
-              announcements={announcements}
-              loading={loading}
-              t={t}
-            />
-          </TabsContent>
-        </Tabs>
-
-        <div className='flex justify-end'>
-          <Button size='sm' onClick={() => onOpenChange(false)}>
+        {selected ? (
+          <NotificationDetail item={selected} t={t} />
+        ) : (
+          <NotificationList
+            items={items}
+            loading={loading}
+            t={t}
+            onSelect={handleSelect}
+          />
+        )}
+        <div className='flex justify-end pt-3'>
+          <Button
+            variant='outline'
+            size='sm'
+            className='rounded-lg px-4'
+            onClick={() => handleOpenChange(false)}
+          >
             {t('Close')}
           </Button>
         </div>
-      </PopoverContent>
-    </Popover>
+      </Dialog>
+    </>
+  )
+}
+
+function NotificationList({
+  items,
+  loading,
+  t,
+  onSelect,
+}: {
+  items: NotificationListItem[]
+  loading: boolean
+  t: TFunction
+  onSelect: (item: NotificationListItem) => void
+}) {
+  if (loading) {
+    return (
+      <Empty className='min-h-48 border-0 p-4'>
+        <EmptyHeader>
+          <EmptyMedia variant='icon'>
+            <Bell />
+          </EmptyMedia>
+          <EmptyTitle>{t('Loading...')}</EmptyTitle>
+        </EmptyHeader>
+      </Empty>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <Empty className='min-h-48 border-0 p-4'>
+        <EmptyHeader>
+          <EmptyMedia variant='icon'>
+            <Megaphone />
+          </EmptyMedia>
+          <EmptyTitle>{t('No notifications')}</EmptyTitle>
+          <EmptyDescription>
+            {t('Latest platform updates and notices')}
+          </EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    )
+  }
+
+  return (
+    <ScrollArea className='max-h-[min(58vh,28rem)]'>
+      <div className='flex flex-col gap-2.5 py-1 pr-1'>
+        {items.map((item) => {
+          const created = item.publishDate
+            ? formatDateTimeObject(new Date(item.publishDate))
+            : ''
+          const extraText = item.extra ? stripMarkup(item.extra) : ''
+
+          return (
+            <button
+              key={item.key}
+              type='button'
+              onClick={() => onSelect(item)}
+              className='border-border/70 bg-card hover:border-border hover:bg-muted/25 focus-visible:ring-ring/40 w-full rounded-2xl border px-3.5 py-3 text-left shadow-[0_1px_0_rgba(0,0,0,0.02)] transition-colors focus-visible:ring-2 focus-visible:outline-none'
+            >
+              <span className='flex items-start gap-1.5'>
+                <span className='flex shrink-0 flex-wrap items-center gap-1.5 pt-0.5'>
+                  <StatusChip
+                    className={TYPE_BADGE_CLASS[item.type || 'default']}
+                  >
+                    {getTypeLabel(item.type, t)}
+                  </StatusChip>
+                  <StatusChip
+                    className={
+                      item.unread
+                        ? 'bg-primary/10 text-primary'
+                        : 'bg-muted text-muted-foreground'
+                    }
+                  >
+                    {item.unread ? t('Unread') : t('Read')}
+                  </StatusChip>
+                </span>
+                <span className='text-foreground min-w-0 flex-1 text-[13.5px] leading-snug font-medium'>
+                  {item.title}
+                </span>
+              </span>
+              <span className='text-muted-foreground mt-1.5 block text-xs'>
+                {t('View full announcement')}
+                {created ? ` · ${t('Created:')} ${created}` : null}
+              </span>
+              {extraText ? (
+                <span className='text-muted-foreground mt-2 block text-xs leading-relaxed'>
+                  {t('Remarks:')} {extraText}
+                </span>
+              ) : null}
+            </button>
+          )
+        })}
+      </div>
+    </ScrollArea>
+  )
+}
+
+function NotificationDetail({
+  item,
+  t,
+}: {
+  item: NotificationListItem
+  t: TFunction
+}) {
+  return (
+    <ScrollArea className='max-h-[min(58vh,28rem)] pr-3'>
+      <div className='space-y-3 py-1'>
+        <div className='flex flex-wrap items-center gap-1.5'>
+          <StatusChip className={TYPE_BADGE_CLASS[item.type || 'default']}>
+            {getTypeLabel(item.type, t)}
+          </StatusChip>
+          <StatusChip className='bg-muted text-muted-foreground'>
+            {t('Read')}
+          </StatusChip>
+        </div>
+        <div className='text-sm leading-relaxed'>
+          <RichContent breaks content={item.content} />
+        </div>
+        {item.extra ? (
+          <div className='border-border/60 bg-muted/30 rounded-xl border px-3 py-2.5'>
+            <p className='text-muted-foreground mb-1 text-[11px] font-medium'>
+              {t('Remarks:')}
+            </p>
+            <div className='text-muted-foreground text-xs leading-relaxed'>
+              <RichContent breaks content={item.extra} />
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </ScrollArea>
   )
 }

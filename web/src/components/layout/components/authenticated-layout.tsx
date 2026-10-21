@@ -45,7 +45,7 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
     <LayoutProvider>
       <SidebarProvider
         defaultOpen={defaultOpen}
-        className='relative flex-col bg-card'
+        className='relative flex-col bg-background'
       >
         <div
           aria-hidden='true'

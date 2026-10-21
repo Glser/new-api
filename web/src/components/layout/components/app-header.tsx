@@ -18,11 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useRouterState } from '@tanstack/react-router'
 
-import { ThemeSwitch } from '@/components/theme-switch'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { useNotifications } from '@/hooks/use-notifications'
+import { ThemeSwitch } from '@/components/theme-switch'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
@@ -103,8 +102,6 @@ export function AppHeader({
   const dynamicLinks = useTopNavLinks()
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
 
-  // Notifications hook
-  const notifications = useNotifications()
   const pathname = useRouterState().location.pathname
 
   return (
@@ -128,18 +125,7 @@ export function AppHeader({
               />
             </div>
           )}
-          {showNotifications && (
-            <NotificationPopover
-              open={notifications.popoverOpen}
-              onOpenChange={notifications.setPopoverOpen}
-              unreadCount={notifications.unreadCount}
-              activeTab={notifications.activeTab}
-              onTabChange={notifications.setActiveTab}
-              notice={notifications.notice}
-              announcements={notifications.announcements}
-              loading={notifications.loading}
-            />
-          )}
+          {showNotifications && <NotificationPopover />}
           <LanguageSwitcher />
           {showThemeSwitch && <ThemeSwitch />}
           {showProfileDropdown && <ProfileDropdown />}
