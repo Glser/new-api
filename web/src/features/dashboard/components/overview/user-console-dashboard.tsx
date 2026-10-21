@@ -20,15 +20,13 @@ import { RefreshCw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { BrandImage, SectionPageLayout } from '@/components/layout'
-import { Badge } from '@/components/ui/badge'
+import { SectionPageLayout } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { USER_CONSOLE_RANGE_PRESETS } from '@/features/dashboard/constants'
 import { useAnnouncements } from '@/features/dashboard/hooks/use-status-data'
 import { useUserConsoleData } from '@/features/dashboard/hooks/use-user-console-data'
 import { buildDefaultUserConsoleRange } from '@/features/dashboard/lib'
 import type { UserConsoleDateRange } from '@/features/dashboard/types'
-import { useSystemConfig } from '@/hooks/use-system-config'
 import dayjs from '@/lib/dayjs'
 import { cn } from '@/lib/utils'
 
@@ -60,7 +58,6 @@ function getSpendTitle(
 
 export function UserConsoleDashboard() {
   const { t } = useTranslation()
-  const { logo } = useSystemConfig()
   const [range, setRange] = useState<UserConsoleDateRange>(() =>
     buildDefaultUserConsoleRange()
   )
@@ -75,34 +72,12 @@ export function UserConsoleDashboard() {
     return preset ? t(preset.labelKey) : t('Custom')
   }, [range.preset, t])
   const remainQuota = Number(consoleData.user?.quota ?? 0)
-  const giftQuota = Number(consoleData.user?.aff_quota ?? 0)
 
   return (
     <SectionPageLayout>
       <SectionPageLayout.Title>
-        <span className='flex min-w-0 items-center gap-2'>
-          <BrandImage src={logo} alt={t('Logo')} className='size-7 rounded-lg' />
-          <span className='truncate'>{t('Console')}</span>
-          <Badge variant='secondary' className='font-normal'>
-            {t('Personal only')}
-          </Badge>
-        </span>
+        <span className='truncate text-2xl font-bold tracking-tight sm:text-3xl'>{t('Console')}</span>
       </SectionPageLayout.Title>
-      <SectionPageLayout.Actions>
-        <Button
-          variant='outline'
-          size='sm'
-          className='h-8'
-          onClick={consoleData.refresh}
-          disabled={consoleData.refreshing}
-        >
-          <RefreshCw
-            data-icon='inline-start'
-            className={cn(consoleData.refreshing && 'animate-spin')}
-          />
-          {t('Refresh')}
-        </Button>
-      </SectionPageLayout.Actions>
       <SectionPageLayout.Content>
         <div className='flex flex-col gap-4'>
           {latestAnnouncement ? (
@@ -110,9 +85,9 @@ export function UserConsoleDashboard() {
           ) : null}
 
           <div className='flex flex-wrap items-center justify-between gap-3'>
-            <div className='flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1'>
-              <span className='text-sm font-semibold'>{presetLabel}</span>
-              <span className='text-muted-foreground text-xs tabular-nums'>
+            <div className='flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 pl-3 sm:pl-4'>
+              <span className='text-base font-semibold'>{presetLabel}</span>
+              <span className='text-muted-foreground text-sm tabular-nums'>
                 {rangeLabel}
                 <span className='mx-2'>·</span>
                 {t('Updated at {{time}} ({{timezone}})', {
@@ -121,14 +96,28 @@ export function UserConsoleDashboard() {
                 })}
               </span>
             </div>
-            <UserConsoleDateRangeControl range={range} onChange={setRange} />
+            <div className='flex flex-wrap items-center justify-end gap-2'>
+              <Button
+                variant='outline'
+                size='default'
+                className='h-9 px-3'
+                onClick={consoleData.refresh}
+                disabled={consoleData.refreshing}
+              >
+                <RefreshCw
+                  data-icon='inline-start'
+                  className={cn(consoleData.refreshing && 'animate-spin')}
+                />
+                {t('Refresh')}
+              </Button>
+              <UserConsoleDateRangeControl range={range} onChange={setRange} />
+            </div>
           </div>
 
           <UserConsoleKpi
             spendTitle={getSpendTitle(range.preset, t)}
             spend={consoleData.stats.totalQuota}
             balance={remainQuota}
-            giftQuota={giftQuota}
             requests={consoleData.stats.totalCount}
             tokens={consoleData.stats.totalTokens}
             inProgressCount={consoleData.inProgressCount}

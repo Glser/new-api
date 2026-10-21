@@ -16,15 +16,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Info } from 'lucide-react'
+import { Megaphone } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-import { getAnnouncementColorClass } from '@/lib/colors'
 import { getPreviewText } from '@/features/dashboard/lib'
 import type { AnnouncementItem } from '@/features/dashboard/types'
-import { cn } from '@/lib/utils'
 
 import { AnnouncementDetailModal } from './announcement-detail-dialog'
 
@@ -39,21 +37,18 @@ export function UserConsoleBanner(props: UserConsoleBannerProps) {
 
   return (
     <>
-      <div className='bg-muted/40 flex items-center gap-3 rounded-xl border px-3 py-2 sm:px-4'>
+      <div className='bg-card flex items-center gap-3 rounded-xl border border-foreground/15 px-3.5 py-2.5 shadow-sm sm:px-4'>
         <span
-          className={cn(
-            'inline-flex size-5 shrink-0 items-center justify-center rounded-full',
-            getAnnouncementColorClass(props.announcement.type)
-          )}
+          className='bg-foreground text-background inline-flex size-9 shrink-0 items-center justify-center rounded-full'
           aria-hidden='true'
         >
-          <Info className='size-3 text-white' />
+          <Megaphone className='size-[18px]' />
         </span>
-        <p className='min-w-0 flex-1 truncate text-sm'>{preview}</p>
+        <p className='min-w-0 flex-1 truncate text-sm font-medium'>{preview}</p>
         <Button
           variant='outline'
-          size='sm'
-          className='h-7 shrink-0'
+          size='default'
+          className='border-foreground/35 hover:bg-muted h-8 shrink-0 px-3 font-medium'
           onClick={() => setOpen(true)}
         >
           {t('View full text')}

@@ -17,9 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatNumber, formatQuota, formatTokens } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -28,7 +28,6 @@ interface UserConsoleKpiProps {
   spendTitle: string
   spend: number
   balance: number
-  giftQuota: number
   requests: number
   tokens: number
   inProgressCount: number
@@ -41,16 +40,25 @@ function KpiValue(props: {
   className?: string
 }) {
   if (props.loading) {
-    return <Skeleton className='mt-3 h-8 w-24' />
+    return <Skeleton className='mt-3 h-10 w-28' />
   }
   return (
     <div
       className={cn(
-        'mt-3 font-mono text-2xl font-semibold tracking-tight tabular-nums sm:text-[1.75rem]',
+        'mt-3 font-mono text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
         props.className
       )}
     >
       {props.value}
+    </div>
+  )
+}
+
+function KpiMeta(props: { detail?: ReactNode; action?: ReactNode }) {
+  return (
+    <div className='mt-4 flex min-h-8 items-center justify-between gap-2'>
+      <div className='min-w-0 flex-1'>{props.detail}</div>
+      {props.action ? <div className='shrink-0'>{props.action}</div> : null}
     </div>
   )
 }
@@ -61,44 +69,36 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
   return (
     <div className='bg-muted/30 overflow-hidden rounded-2xl border'>
       <div className='grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4'>
-        <div className='px-4 py-4 sm:px-5'>
+        <div className='px-4 py-5 sm:px-5 sm:py-6'>
           <div className='text-muted-foreground text-xs font-medium'>
             {props.spendTitle}
           </div>
           <KpiValue loading={props.loading} value={formatQuota(props.spend)} />
-          <p className='text-muted-foreground mt-2 text-xs'>
-            {t('API usage for the selected range')}
-          </p>
+          <KpiMeta detail={<p className='text-muted-foreground truncate text-xs'>{t('API usage for the selected range')}</p>} />
         </div>
 
-        <div className='px-4 py-4 sm:px-5'>
+        <div className='px-4 py-5 sm:px-5 sm:py-6'>
           <div className='text-muted-foreground text-xs font-medium'>
             {t('Recharge balance')}
           </div>
           <KpiValue loading={props.loading} value={formatQuota(props.balance)} />
-          <p className='text-muted-foreground mt-2 text-xs'>
-            {t('Gift remaining {{amount}}', {
-              amount: formatQuota(props.giftQuota),
-            })}
-            {props.giftQuota > 0 ? (
+          <KpiMeta
+            detail={
               <Link
                 to='/wallet'
-                className='text-foreground ml-1 underline-offset-2 hover:underline'
+                className='group relative -ml-1 inline-flex h-7 items-center overflow-hidden rounded-md bg-lime-400 px-2.5 text-xs font-semibold text-black shadow-[0_4px_14px_rgba(163,230,53,0.28)] transition-all duration-300 hover:-translate-y-px hover:bg-lime-400 hover:shadow-[0_8px_24px_rgba(163,230,53,0.4)] active:translate-y-px'
               >
-                {t('View')}
+                <span
+                  aria-hidden
+                  className='pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full'
+                />
+                <span className='relative'>{t('Top up now')}</span>
               </Link>
-            ) : null}
-          </p>
-          <Button
-            size='sm'
-            className='mt-3 h-7 bg-lime-400 px-2.5 text-xs font-semibold text-black hover:bg-lime-300'
-            render={<Link to='/wallet' />}
-          >
-            {t('Top up now')}
-          </Button>
+            }
+          />
         </div>
 
-        <div className='px-4 py-4 sm:px-5'>
+        <div className='px-4 py-5 sm:px-5 sm:py-6'>
           <div className='text-muted-foreground text-xs font-medium'>
             {t('Request records')}
           </div>
@@ -106,21 +106,27 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
             loading={props.loading}
             value={formatNumber(props.requests)}
           />
-          <p className='text-muted-foreground mt-2 text-xs'>
-            {t('Token usage {{amount}}', {
-              amount: formatTokens(props.tokens),
-            })}
-          </p>
-          <Link
-            to='/usage-logs/$section'
-            params={{ section: 'common' }}
-            className='text-muted-foreground hover:text-foreground mt-3 inline-flex text-xs underline-offset-2 hover:underline'
-          >
-            {t('Usage logs')} →
-          </Link>
+          <KpiMeta
+            detail={
+              <p className='text-muted-foreground truncate text-xs'>
+                {t('Token usage {{amount}}', {
+                  amount: formatTokens(props.tokens),
+                })}
+              </p>
+            }
+            action={
+              <Link
+                to='/usage-logs/$section'
+                params={{ section: 'common' }}
+                className='text-muted-foreground hover:text-foreground inline-flex text-xs underline-offset-2 hover:underline'
+              >
+                {t('Usage logs')} →
+              </Link>
+            }
+          />
         </div>
 
-        <div className='px-4 py-4 sm:px-5'>
+        <div className='px-4 py-5 sm:px-5 sm:py-6'>
           <div className='text-muted-foreground text-xs font-medium'>
             {t('In-progress tasks')}
           </div>
@@ -128,16 +134,22 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
             loading={props.loading}
             value={formatNumber(props.inProgressCount)}
           />
-          <p className='text-muted-foreground mt-2 text-xs'>
-            {t('Images and videos submitted today')}
-          </p>
-          <Link
-            to='/usage-logs/$section'
-            params={{ section: 'task' }}
-            className='text-muted-foreground hover:text-foreground mt-3 inline-flex text-xs underline-offset-2 hover:underline'
-          >
-            {t('View tasks')} →
-          </Link>
+          <KpiMeta
+            detail={
+              <p className='text-muted-foreground truncate text-xs'>
+                {t('Images and videos submitted today')}
+              </p>
+            }
+            action={
+              <Link
+                to='/usage-logs/$section'
+                params={{ section: 'task' }}
+                className='text-muted-foreground hover:text-foreground inline-flex text-xs underline-offset-2 hover:underline'
+              >
+                {t('View tasks')} →
+              </Link>
+            }
+          />
         </div>
       </div>
     </div>

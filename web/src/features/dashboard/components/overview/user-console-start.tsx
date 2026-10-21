@@ -17,57 +17,68 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
-import { Grid2x2, KeyRound, Sparkles } from 'lucide-react'
+import { BrainCircuit, KeyRound, Palette } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { BrandImage } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { useSystemConfig } from '@/hooks/use-system-config'
+import { cn } from '@/lib/utils'
+
+function ShineAction(props: {
+  to: '/keys' | '/pricing' | '/playground'
+  children: ReactNode
+  solid?: boolean
+}) {
+  return (
+    <Button
+      variant={props.solid ? 'default' : 'outline'}
+      size='default'
+      className={cn(
+        'relative h-9 overflow-hidden px-3 shadow-none transition-all duration-300',
+        'hover:-translate-y-px active:translate-y-px',
+        props.solid &&
+          'bg-foreground text-background hover:bg-foreground [a]:hover:bg-foreground'
+      )}
+      render={<Link to={props.to} />}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute inset-0 z-[1] -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-transform duration-700 ease-out group-hover/button:translate-x-full',
+          props.solid ? 'via-white/25' : 'via-foreground/5'
+        )}
+      />
+      {props.children}
+    </Button>
+  )
+}
 
 export function UserConsoleStart() {
   const { t } = useTranslation()
-  const { logo } = useSystemConfig()
 
   return (
     <div className='flex flex-wrap items-center justify-between gap-3'>
-      <div className='flex min-w-0 items-center gap-3'>
-        <BrandImage
-          src={logo}
-          alt={t('Logo')}
-          className='size-8 rounded-lg'
-        />
-        <div className='min-w-0'>
-          <div className='truncate text-sm font-semibold'>
-            {t('Start the next creation')}
-          </div>
-          <p className='text-muted-foreground truncate text-xs'>
-            {t('Images, video, and API access')}
-          </p>
-        </div>
+      <div className='flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 pl-3 sm:pl-4'>
+        <span className='text-base font-semibold'>
+          {t('Start the next creation')}
+        </span>
+        <span className='text-muted-foreground text-sm'>
+          {t('Chat, image, and video API calls')}
+        </span>
       </div>
-      <div className='flex flex-wrap items-center gap-2'>
-        <Button
-          variant='outline'
-          size='sm'
-          className='h-8'
-          render={<Link to='/keys' />}
-        >
+      <div className='flex flex-wrap items-center justify-end gap-2'>
+        <ShineAction to='/keys'>
           <KeyRound data-icon='inline-start' />
           {t('API Key')}
-        </Button>
-        <Button
-          variant='outline'
-          size='sm'
-          className='h-8'
-          render={<Link to='/pricing' />}
-        >
-          <Grid2x2 data-icon='inline-start' />
+        </ShineAction>
+        <ShineAction to='/pricing'>
+          <BrainCircuit data-icon='inline-start' />
           {t('Browse models')}
-        </Button>
-        <Button size='sm' className='h-8' render={<Link to='/playground' />}>
-          <Sparkles data-icon='inline-start' />
-          {t('Enter studio')} →
-        </Button>
+        </ShineAction>
+        <ShineAction to='/playground' solid>
+          <Palette data-icon='inline-start' />
+          {t('Creative workbench')}
+        </ShineAction>
       </div>
     </div>
   )

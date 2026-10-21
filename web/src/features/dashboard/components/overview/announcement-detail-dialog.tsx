@@ -20,7 +20,6 @@ import { useTranslation } from 'react-i18next'
 
 import { Dialog } from '@/components/dialog'
 import { RichContent } from '@/components/rich-content'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { formatDateTimeObject } from '@/lib/time'
 
 interface AnnouncementDetailModalProps {
@@ -51,32 +50,22 @@ export function AnnouncementDetailModal({
           ? `${t('Published:')} ${formatDateTimeObject(new Date(announcement.publishDate))}`
           : undefined
       }
-      contentClassName='sm:max-w-lg'
-      contentHeight='auto'
-      bodyClassName='space-y-4'
+      contentClassName='sm:max-w-xl'
+      contentHeight='min(52vh, 28rem)'
+      headerClassName='pr-10'
+      bodyClassName='space-y-4 px-0 py-0'
+      scrollClassName='mx-0 [scrollbar-gutter:auto] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
     >
-      <ScrollArea className='max-h-[min(58vh,520px)] pr-4'>
-        <div className='space-y-4'>
-          {announcement?.content && (
-            <div>
-              <h4 className='mb-2 font-medium'>{t('Content')}</h4>
-              <RichContent breaks content={announcement.content} />
-            </div>
-          )}
-          {announcement?.extra && (
-            <div>
-              <h4 className='mb-2 font-medium'>
-                {t('Additional Information')}
-              </h4>
-              <RichContent
-                breaks
-                content={announcement.extra}
-                className='text-muted-foreground'
-              />
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+      {announcement?.content ? (
+        <RichContent breaks content={announcement.content} />
+      ) : null}
+      {announcement?.extra ? (
+        <RichContent
+          breaks
+          content={announcement.extra}
+          className='text-muted-foreground'
+        />
+      ) : null}
     </Dialog>
   )
 }

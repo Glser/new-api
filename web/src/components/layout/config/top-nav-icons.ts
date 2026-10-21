@@ -23,7 +23,7 @@ import {
   InformationCircleIcon,
   LinkSquare02Icon,
   RankingIcon,
-  Tag01Icon,
+  BrainCircuitIcon,
 } from '@hugeicons/core-free-icons'
 import type { IconSvgElement } from '@hugeicons/react'
 
@@ -40,7 +40,7 @@ import type { TopNavLink } from '../types'
 const TOP_NAV_ICONS_BY_HREF: Record<string, IconSvgElement> = {
   '/': Home01Icon,
   '/dashboard': DashboardSquare01Icon,
-  '/pricing': Tag01Icon,
+  '/pricing': BrainCircuitIcon,
   '/rankings': RankingIcon,
   '/docs': Book02Icon,
   '/about': InformationCircleIcon,

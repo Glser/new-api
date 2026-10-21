@@ -55,19 +55,19 @@ function ChartBody(props: {
   resolvedTheme: string
   emptyIcon?: typeof LayoutGrid
   emptyTitle: string
-  emptyDescription: string
 }) {
   if (props.loading) {
     return <Skeleton className='h-full w-full rounded-xl' />
   }
   if (!props.hasData) {
     return (
-      <EmptyState
-        icon={props.emptyIcon}
-        className='min-h-full border-0'
-        title={props.emptyTitle}
-        description={props.emptyDescription}
-      />
+      <div className='flex h-full w-full items-center justify-center'>
+        <EmptyState
+          icon={props.emptyIcon}
+          className='min-h-0 border-0 p-0'
+          title={props.emptyTitle}
+        />
+      </div>
     )
   }
   return (
@@ -127,7 +127,7 @@ function buildTrendSpec(args: {
       },
     },
     axes: [
-      { orient: 'bottom', label: { visible: true } },
+      { orient: 'bottom', label: { visible: true, flush: false } },
       { orient: 'left', label: { visible: true } },
     ],
     tooltip: {
@@ -233,7 +233,7 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
             ))}
           </div>
         </div>
-        <div className='h-64 px-2 pb-3 sm:h-72'>
+        <div className='h-64 px-3 pb-3 pl-4 sm:h-72 sm:pl-5'>
           <ChartBody
             loading={props.loading || !themeReady}
             hasData={hasData}
@@ -241,9 +241,6 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
             spec={trendSpec}
             resolvedTheme={resolvedTheme}
             emptyTitle={t('No usage in this range')}
-            emptyDescription={t(
-              'Change the date range above to inspect another period'
-            )}
           />
         </div>
       </section>
@@ -273,7 +270,6 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
             resolvedTheme={resolvedTheme}
             emptyIcon={LayoutGrid}
             emptyTitle={t('No model spend yet')}
-            emptyDescription={t('Spend and request mix by model will appear here')}
           />
         </div>
       </section>

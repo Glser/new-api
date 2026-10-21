@@ -20,6 +20,7 @@ import { CalendarDays } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DateRange } from 'react-day-picker'
+import { enUS, zhCN } from 'react-day-picker/locale'
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -49,10 +50,24 @@ function formatRangeLabel(start: Date, end: Date): string {
   return `${dayjs(start).format('YYYY-MM-DD')}  →  ${dayjs(end).format('YYYY-MM-DD')}`
 }
 
+function getVisibleStartMonth(range: DateRange | undefined): Date {
+  const end = range?.to ?? range?.from ?? new Date()
+  return dayjs(end).startOf('month').subtract(1, 'month').toDate()
+}
+
+function toStartOfDay(date: Date): Date {
+  return dayjs(date).startOf('day').toDate()
+}
+
 export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isZh = i18n.language === 'zhCN' || i18n.language.startsWith('zh')
+  const calendarLocale = isZh ? zhCN : enUS
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<DateRange | undefined>()
+  const [month, setMonth] = useState<Date>(() =>
+    getVisibleStartMonth({ from: props.range.start, to: props.range.end })
+  )
 
   const selectedRange = useMemo<DateRange>(
     () => ({ from: props.range.start, to: props.range.end }),
@@ -72,14 +87,32 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
       setDraft(selectedRange)
+      setMonth(getVisibleStartMonth(selectedRange))
     }
     setOpen(nextOpen)
   }
 
+  const handleSelect = (_next: DateRange | undefined, selectedDay: Date) => {
+    setDraft((current) => {
+      const prev = current ?? selectedRange
+      const clicked = toStartOfDay(selectedDay)
+
+      if (!prev.from || (prev.from && prev.to)) {
+        return { from: clicked, to: undefined }
+      }
+
+      const from = toStartOfDay(prev.from)
+      if (dayjs(clicked).isBefore(from, 'day')) {
+        return { from: clicked, to: from }
+      }
+      return { from, to: clicked }
+    })
+  }
+
   const applyDraft = () => {
-    if (!draft?.from || !draft.to) return
+    if (!draft?.from) return
     const start = dayjs(draft.from).startOf('day').toDate()
-    const end = dayjs(draft.to).endOf('day').toDate()
+    const end = dayjs(draft.to ?? draft.from).endOf('day').toDate()
     props.onChange({
       preset: matchUserConsolePreset(start, end),
       start,
@@ -97,7 +130,7 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
             type='button'
             onClick={() => handlePreset(preset.value)}
             className={cn(
-              'h-7 rounded-md px-2.5 text-xs font-medium transition-colors',
+              'h-8 rounded-md px-3 text-sm font-medium transition-colors',
               props.range.preset === preset.value
                 ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -115,20 +148,39 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
               type='button'
               variant='outline'
               size='sm'
-              className='h-8 min-w-52 justify-start gap-2 px-2.5 font-normal tabular-nums'
+              className='h-9 min-w-56 justify-start gap-2 px-3 text-sm font-normal tabular-nums'
             />
           }
         >
-          <CalendarDays className='text-muted-foreground size-3.5' />
+          <CalendarDays className='text-muted-foreground size-4' />
           {formatRangeLabel(props.range.start, props.range.end)}
         </PopoverTrigger>
         <PopoverContent align='end' className='w-auto p-3'>
           <Calendar
             mode='range'
-            numberOfMonths={1}
+            numberOfMonths={2}
+            locale={calendarLocale}
+            month={month}
+            onMonthChange={setMonth}
             selected={draft ?? selectedRange}
-            onSelect={setDraft}
+            onSelect={handleSelect}
             disabled={{ after: new Date() }}
+            classNames={{
+              months: 'relative flex flex-row gap-4',
+            }}
+            formatters={
+              isZh
+                ? {
+                    formatCaption: (date: Date) =>
+                      `${date.getFullYear()}年${date.getMonth() + 1}月`,
+                    formatMonthDropdown: (date: Date) =>
+                      `${date.getMonth() + 1}月`,
+                    formatWeekdayName: (date: Date) =>
+                      ['日', '一', '二', '三', '四', '五', '六'][date.getDay()] ??
+                      '',
+                  }
+                : undefined
+            }
           />
           <div className='mt-3 flex justify-end gap-2'>
             <Button variant='ghost' size='sm' onClick={() => setOpen(false)}>
@@ -136,7 +188,8 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
             </Button>
             <Button
               size='sm'
-              disabled={!draft?.from || !draft.to}
+              className='bg-foreground text-background hover:bg-foreground/90'
+              disabled={!draft?.from}
               onClick={applyDraft}
             >
               {t('Apply')}

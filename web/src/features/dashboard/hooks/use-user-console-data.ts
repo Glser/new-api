@@ -40,6 +40,7 @@ import type { MidjourneyLog, TaskLog } from '@/features/usage-logs/types'
 import { getSelf } from '@/lib/api'
 import { dateToUnixTimestamp } from '@/lib/time'
 import { requireServerSuccess } from '@/lib/server-error-message'
+import { STATUS_QUERY_KEY } from '@/lib/status-query'
 import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 
 const IN_PROGRESS_TASK_STATUSES = new Set<string>([
@@ -196,6 +197,9 @@ export function useUserConsoleData(range: UserConsoleDateRange) {
   const refresh = useCallback(() => {
     void queryClient.invalidateQueries({
       queryKey: ['dashboard', 'user-console'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: STATUS_QUERY_KEY,
     })
   }, [queryClient])
 
