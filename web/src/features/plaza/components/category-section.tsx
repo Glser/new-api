@@ -70,22 +70,21 @@ export function PlazaCategorySection(props: {
   return (
     <section aria-labelledby={headingId} className='flex flex-col gap-4'>
       <div className='flex items-center gap-2.5 sm:gap-3'>
-        {/* 无底色图标：只靠形状和深浅区分区块，不再垫一块灰底 */}
+        {/* 图标、标题、计数同一高度：默认行高会把 17px 标题撑得比右侧徽章高，
+            看起来像「聊天」和数量不在一条水平线上。 */}
         <span
           aria-hidden='true'
-          className='text-foreground/80 flex size-5 shrink-0 items-center justify-center [&_svg]:size-5'
+          className='text-foreground/80 flex size-[18px] shrink-0 items-center justify-center [&_svg]:size-[18px]'
         >
           <CategoryIcon />
         </span>
         <h2
           id={headingId}
-          className='text-[17px] font-semibold tracking-tight sm:text-lg'
+          className='text-[17px] leading-none font-semibold tracking-tight sm:text-lg sm:leading-none'
         >
           {categoryLabel}
         </h2>
-        {/* 计数收进一枚哑光徽章：原来是一条通到右边的发丝线加一行小字，
-            线让标题栏显得零碎，徽章把同一信息收成一个视觉单元。 */}
-        <span className='bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-0.5 text-xs font-medium tabular-nums'>
+        <span className='bg-muted text-muted-foreground flex h-[18px] shrink-0 items-center rounded-full px-2 text-xs leading-none font-medium tabular-nums'>
           {t('{{count}} models', { count: props.models.length })}
         </span>
       </div>

@@ -323,7 +323,11 @@ function ModelCardItem(props: { item: ModelCardData }) {
 
   let priceContent: React.ReactNode = null
 
-  if (officialVsSite) {
+  if (
+    officialVsSite &&
+    (officialVsSite.officialInputUSD != null ||
+      officialVsSite.officialOutputUSD != null)
+  ) {
     priceContent = (
       <div
         className='relative flex items-center justify-between gap-1.5 overflow-hidden rounded-xl border px-2.5 py-1.5 whitespace-nowrap'

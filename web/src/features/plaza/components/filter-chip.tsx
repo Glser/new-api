@@ -31,14 +31,10 @@ export type PlazaFilterChipOption = {
 }
 
 /**
- * 倍率徽章的配色。
- *
- * 一律用低饱和的青绿：价格行讲的就是钱，绿色让「×0.5 / ×1」从分组描述里跳出来，
- * 同时压低了彩度——原样的 `--success` 在小字号上偏艳，长时间看会刺眼。
- * 底色是同色相的半透明，徽章读起来是一块柔和的色片而不是一枚荧光标签。
+ * 倍率徽章配色对齐用户概览：实底 lime-400 + 黑字，让 ×0.5 / ×1 从分组描述里跳出来。
  */
 function getSuffixClassName(): string {
-  return 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/12 dark:text-emerald-300'
+  return 'bg-lime-400 font-semibold text-black'
 }
 
 /** 悬停时掠过的一层光泽，做法与首页「进入控制台」按钮一致 */
@@ -117,27 +113,30 @@ export function PlazaFilterChip(props: {
           {option.icon}
         </span>
       )}
-      <span className='relative truncate'>{option.label}</span>
-      {option.suffix && (
-        <span
-          className={cn(
-            'relative rounded-[0.3rem] px-1 py-px font-mono text-[10px] leading-none tabular-nums',
-            getSuffixClassName()
-          )}
-        >
-          {option.suffix}
-        </span>
-      )}
-      {option.countLabel && (
-        <span
-          className={cn(
-            'relative text-[10px] leading-none tabular-nums',
-            active ? 'text-foreground/60' : 'text-muted-foreground/70'
-          )}
-        >
-          {option.countLabel}
-        </span>
-      )}
+      {/* 名称和右侧数量/倍率同一行高、垂直居中，避免小字偏上或偏下。 */}
+      <span className='relative inline-flex min-w-0 items-center gap-1'>
+        <span className='truncate leading-none'>{option.label}</span>
+        {option.suffix && (
+          <span
+            className={cn(
+              'flex items-center rounded px-1 py-px text-[10px] leading-none tabular-nums',
+              getSuffixClassName()
+            )}
+          >
+            {option.suffix}
+          </span>
+        )}
+        {option.countLabel && (
+          <span
+            className={cn(
+              'text-[10px] leading-none tabular-nums',
+              active ? 'text-foreground/60' : 'text-muted-foreground/70'
+            )}
+          >
+            {option.countLabel}
+          </span>
+        )}
+      </span>
     </Button>
   )
 }

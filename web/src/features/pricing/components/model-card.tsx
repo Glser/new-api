@@ -22,11 +22,12 @@ import { useTranslation } from 'react-i18next'
 
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
+import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
-import { DEFAULT_TOKEN_UNIT } from '../constants'
+import { DEFAULT_TOKEN_UNIT, TOKEN_UNIT_DIVISORS } from '../constants'
 import { useBillingTime } from '../hooks/use-billing-time'
 import {
   getCardExamplePrice,
@@ -49,26 +50,45 @@ import type { PricingModel, PriceType, TokenUnit } from '../types'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
 
-
 const MAX_VISIBLE_CARD_GROUPS = 1
 
 type TokenPricePart = { label: string; text: string }
+
+function formatOfficialAmount(
+  amountUSD: number,
+  tokenUnit: TokenUnit,
+  asUsd: boolean
+): string {
+  if (asUsd) return formatUsdPrice(amountUSD, tokenUnit)
+  return formatBillingCurrencyFromUSD(
+    amountUSD / TOKEN_UNIT_DIVISORS[tokenUnit],
+    {
+      digitsLarge: 4,
+      digitsSmall: 6,
+      abbreviate: false,
+    }
+  )
+}
 
 function toOfficialTokenPriceParts(
   inputUSD: number | null | undefined,
   outputUSD: number | null | undefined,
   inputLabel: string,
   outputLabel: string,
-  tokenUnit: TokenUnit
+  tokenUnit: TokenUnit,
+  asUsd: boolean
 ): TokenPricePart[] {
   const parts: TokenPricePart[] = []
   if (inputUSD != null) {
-    parts.push({ label: inputLabel, text: formatUsdPrice(inputUSD, tokenUnit) })
+    parts.push({
+      label: inputLabel,
+      text: formatOfficialAmount(inputUSD, tokenUnit, asUsd),
+    })
   }
   if (outputUSD != null) {
     parts.push({
       label: outputLabel,
-      text: formatUsdPrice(outputUSD, tokenUnit),
+      text: formatOfficialAmount(outputUSD, tokenUnit, asUsd),
     })
   }
   return parts
@@ -135,11 +155,11 @@ function toSiteTokenPriceParts(
   ]
 }
 
-function TokenUnitMark(props: { unit: string; name: string }) {
+function TokenUnitMark(props: { unit: string; name?: string }) {
   return (
     <span className='inline-flex items-baseline gap-x-[3px]'>
       <span>/{props.unit}</span>
-      <span>{props.name}</span>
+      {props.name?.trim() ? <span>{props.name}</span> : null}
     </span>
   )
 }
@@ -174,7 +194,7 @@ function CompactTokenPriceParts(props: {
           )}
         >
           {part.text}
-          {index === props.parts.length - 1 && props.unit && props.unitName ? (
+          {index === props.parts.length - 1 && props.unit ? (
             <TokenUnitMark unit={props.unit} name={props.unitName} />
           ) : null}
         </span>
@@ -218,41 +238,44 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const billingTime = useBillingTime(props.model.billing_expr)
   const currency = useSystemConfigStore((state) => state.config.currency)
   const prefixes = currency.modelSquareUsdPricePrefixes
-  const isPrefixMatched = useMemo(
+  // 前缀名单只决定「官方」这一行要不要改成美元展示；原价/站内对比
+  // 对能算出标价的按量模型都展示，不要求模型名写进名单。
+  const showUsdOfficial = useMemo(
     () => matchesPrefix(props.model.model_name, prefixes),
     [props.model.model_name, prefixes]
   )
-  // 官方价 vs 站内价：仅针对按量计费（Token计费）且命中配置前缀的模型展示
+  const groupMultiplier = getDisplayGroupRatio(props.model, props.selectedGroup)
   const officialVsSite = useMemo(
     () =>
-      isTokenBased && isPrefixMatched
-        ? getOfficialVsSitePrice(
-            props.model,
-            getDisplayGroupRatio(props.model, props.selectedGroup),
-            {
-              now: billingTime === undefined ? undefined : new Date(billingTime),
-            }
-          )
+      isTokenBased
+        ? getOfficialVsSitePrice(props.model, groupMultiplier, {
+            now: billingTime === undefined ? undefined : new Date(billingTime),
+          })
         : null,
-    [
-      isTokenBased,
-      isPrefixMatched,
-      props.model,
-      props.selectedGroup,
-      billingTime,
-    ]
+    [isTokenBased, props.model, groupMultiplier, billingTime]
   )
-  const officialPriceParts = useMemo(
-    () =>
-      toOfficialTokenPriceParts(
-        officialVsSite?.officialInputUSD,
-        officialVsSite?.officialOutputUSD,
-        t('Input'),
-        t('Output'),
-        tokenUnit
-      ),
-    [officialVsSite, t, tokenUnit]
-  )
+  const officialPriceParts = useMemo(() => {
+    if (officialVsSite?.officialRequestUSD != null) {
+      return [
+        {
+          label: t('Per-call'),
+          text: formatOfficialAmount(
+            officialVsSite.officialRequestUSD,
+            'M',
+            showUsdOfficial
+          ),
+        },
+      ]
+    }
+    return toOfficialTokenPriceParts(
+      officialVsSite?.officialInputUSD,
+      officialVsSite?.officialOutputUSD,
+      t('Input'),
+      t('Output'),
+      tokenUnit,
+      showUsdOfficial
+    )
+  }, [officialVsSite, showUsdOfficial, t, tokenUnit])
   const dynamicPriceOptions = useMemo(
     () => ({
       now: billingTime === undefined ? undefined : new Date(billingTime),
@@ -283,6 +306,19 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   )
   const sitePriceParts = useMemo(() => {
     if (!officialVsSite) return []
+    if (officialVsSite.officialRequestUSD != null) {
+      const fixed = dynamicSummary?.primaryEntries.find(
+        (entry) => entry.field === 'fixedPrice'
+      )
+      if (fixed) {
+        return [
+          {
+            label: t('Per-call'),
+            text: fixed.formattedRange ?? fixed.formatted,
+          },
+        ]
+      }
+    }
     const fromExpr = toSiteTokenPricePartsFromSummary(
       dynamicSummary?.primaryEntries ?? [],
       t('Input'),
@@ -310,7 +346,11 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     usdExchangeRate,
     props.selectedGroup,
   ])
-  const siteDiscountPercent = officialVsSite?.discountPercent ?? 0
+  const siteDiscountPercent = showUsdOfficial
+    ? (officialVsSite?.discountPercent ?? 0)
+    : groupMultiplier > 0 && groupMultiplier < 1
+      ? Math.round((1 - groupMultiplier) * 100)
+      : 0
   const cardExamplePrice = useMemo(
     () => getCardExamplePrice(props.model, dynamicPriceOptions),
     // Currency is read indirectly by the price formatter.
@@ -501,7 +541,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           props.onClick()
         }
       }}
-      className='hover:ring-foreground/20 h-full min-w-0 cursor-pointer gap-2 transition-colors'
+      className='hover:ring-foreground/20 min-w-0 cursor-pointer gap-2 self-start transition-colors'
     >
       <CardHeader className='flex flex-row items-center gap-2'>
         <div
@@ -546,7 +586,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           aria-label={t('Pricing')}
           className='mt-auto flex min-w-0 flex-col gap-0.5'
         >
-          {officialVsSite ? (
+          {officialVsSite && officialPriceParts.length > 0 ? (
             <div className='grid min-w-0 grid-cols-[auto_auto_minmax(0,1fr)_auto] items-baseline gap-x-1.5 gap-y-0.5'>
               <span className='text-muted-foreground/70 text-[10px] leading-tight'>
                 {t('Official price')}:
@@ -554,8 +594,16 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               <CompactTokenPriceParts
                 parts={officialPriceParts}
                 strike={siteDiscountPercent > 0}
-                unit={tokenUnit}
-                unitName={tokenUnitName}
+                unit={
+                  officialVsSite.officialRequestUSD != null
+                    ? t('request')
+                    : tokenUnit
+                }
+                unitName={
+                  officialVsSite.officialRequestUSD != null
+                    ? undefined
+                    : tokenUnitName
+                }
                 className='text-[10px] font-medium'
               />
               <span />
@@ -564,8 +612,16 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               </span>
               <CompactTokenPriceParts
                 parts={sitePriceParts}
-                unit={tokenUnit}
-                unitName={tokenUnitName}
+                unit={
+                  officialVsSite.officialRequestUSD != null
+                    ? t('request')
+                    : tokenUnit
+                }
+                unitName={
+                  officialVsSite.officialRequestUSD != null
+                    ? undefined
+                    : tokenUnitName
+                }
                 className='text-[11px] font-semibold'
               />
               {siteDiscountPercent > 0 ? (

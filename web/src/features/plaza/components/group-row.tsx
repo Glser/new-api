@@ -20,9 +20,9 @@ import { Tags } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
-import type { PricingModel } from '@/features/pricing/types'
+import type { PricingModel, PricingUsableGroup } from '@/features/pricing/types'
 
-import { formatGroupRatio } from '../lib/group-ratio'
+import { formatGroupRatio, getGroupDescription } from '../lib/group-ratio'
 import { PlazaFilterChip, type PlazaFilterChipOption } from './filter-chip'
 import { PlazaFilterRow } from './filter-row'
 
@@ -48,12 +48,10 @@ export function PlazaGroupRow(props: {
   models: PricingModel[]
   groupRatios?: Record<string, number>
   /**
-   * 后台「分组倍率」可视化编辑器里的 Description 列，键为分组名，
-   * 值为 `{ desc, ratio }`（见 `PricingResponse.usable_group`）。
-   * 用来替换胶囊上的原始分组名，让管理员写的「标准/VIP/测试」这类说明直接
-   * 展示给用户；没有填描述的分组回落显示原始分组名。
+   * /api/pricing usable_group 是「分组名 -> 描述」。
+   * 胶囊优先展示后台填写的描述，没填则回落原始分组名。
    */
-  usableGroup?: Record<string, { desc: string; ratio: number }>
+  usableGroup?: PricingUsableGroup
   value: string
   onChange: (value: string) => void
 }) {
@@ -74,11 +72,11 @@ export function PlazaGroupRow(props: {
       }
       const ratio = props.groupRatios?.[group]
       // 后台描述优先，未填写时回落原始分组名，避免胶囊空白
-      const description = props.usableGroup?.[group]?.desc?.trim()
+      const description = getGroupDescription(props.usableGroup, group)
       return [
         {
           value: group,
-          label: description || group,
+          label: description,
           suffix: formatRatioBadge(ratio),
         },
       ]

@@ -29,11 +29,15 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer'
 import { FILTER_ALL } from '@/features/pricing/constants'
-import type { PricingModel, PricingVendor } from '@/features/pricing/types'
+import type {
+  PricingModel,
+  PricingUsableGroup,
+  PricingVendor,
+} from '@/features/pricing/types'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
-import { formatGroupRatio } from '../lib/group-ratio'
+import { formatGroupRatio, getGroupDescription } from '../lib/group-ratio'
 
 function countByVendor(models: PricingModel[], vendorName: string): number {
   return models.reduce(
@@ -96,7 +100,7 @@ function PlazaFilterListItem(props: {
       )}
       <span className='min-w-0 flex-1 truncate'>{props.label}</span>
       {props.suffix && (
-        <span className='shrink-0 rounded-[0.3rem] bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[11px] leading-none text-emerald-700 tabular-nums dark:bg-emerald-400/12 dark:text-emerald-300'>
+        <span className='shrink-0 rounded bg-lime-400 px-1.5 py-px text-[11px] leading-none font-semibold text-black tabular-nums'>
           {props.suffix}
         </span>
       )}
@@ -151,7 +155,7 @@ export type PlazaFilterSidebarProps = {
   models: PricingModel[]
   groups: string[]
   groupRatios?: Record<string, number>
-  usableGroup?: Record<string, { desc: string; ratio: number }>
+  usableGroup?: PricingUsableGroup
   vendorFilter: string
   groupFilter: string
   onVendorChange: (value: string) => void
@@ -190,11 +194,11 @@ export function PlazaFilterSidebar(props: PlazaFilterSidebarProps) {
       return []
     }
     const ratio = props.groupRatios?.[group]
-    const description = props.usableGroup?.[group]?.desc?.trim()
+    const description = getGroupDescription(props.usableGroup, group)
     return [
       {
         value: group,
-        label: description || group,
+        label: description,
         count,
         suffix: formatRatio(ratio),
       },

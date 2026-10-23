@@ -85,6 +85,8 @@ type DynamicPricingBreakdownProps = {
    * icon header and uses the dialog's small text sizes. Defaults to false.
    */
   compact?: boolean
+  /** Show only request multipliers when tier prices are rendered separately. */
+  rulesOnly?: boolean
   usageSchema?: BillingUsageSchema
   taskPriceOptions?: Pick<
     DynamicPriceOptions,
@@ -286,6 +288,7 @@ export function DynamicPricingBreakdown({
   requestRules,
   hideCacheColumns = false,
   compact = false,
+  rulesOnly = false,
   usageSchema,
   taskPriceOptions,
   usageFacts,
@@ -337,9 +340,9 @@ export function DynamicPricingBreakdown({
   const hasTiers = tiers.length > 0
   const hasRules = ruleGroups.length > 0
 
-  if (!expr) return null
+  if (!expr || (rulesOnly && !hasRules)) return null
 
-  if (!hasTiers) {
+  if (!hasTiers && !rulesOnly) {
     return (
       <section className={cn('min-w-0', !compact && 'py-4')}>
         {!compact && (
@@ -456,7 +459,7 @@ export function DynamicPricingBreakdown({
 
   return (
     <section className={cn('min-w-0', !compact && 'py-3 sm:py-4')}>
-      {!compact && !usageSchema && (
+      {!rulesOnly && !compact && !usageSchema && (
         <div className='mb-3 flex items-start gap-2 sm:mb-4'>
           <span className='mt-0.5 inline-flex size-6 items-center justify-center rounded-lg bg-amber-100 text-amber-700 shadow-sm dark:bg-amber-500/20 dark:text-amber-300'>
             <TagIcon className='size-3.5' />
@@ -472,7 +475,7 @@ export function DynamicPricingBreakdown({
         </div>
       )}
 
-      {hasTiers && (
+      {!rulesOnly && hasTiers && (
         <div className={cn(compact ? cn(hasRules && 'mb-2') : 'mb-3 sm:mb-4')}>
           {!usageSchema && (
             <div
@@ -731,16 +734,22 @@ export function DynamicPricingBreakdown({
                   >
                     {describeGroup(group, t, i18n.language)}
                   </span>
-                  <Badge
-                    variant='secondary'
-                    className={cn(
-                      'shrink-0 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300',
-                      isMatched &&
-                        'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
-                    )}
-                  >
-                    {group.multiplier}x{isMatched && ` · ${t('Matched')}`}
-                  </Badge>
+                  {rulesOnly ? (
+                    <span className='shrink-0 font-mono text-xs tabular-nums'>
+                      {group.multiplier}x
+                    </span>
+                  ) : (
+                    <Badge
+                      variant='secondary'
+                      className={cn(
+                        'shrink-0 bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300',
+                        isMatched &&
+                          'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300'
+                      )}
+                    >
+                      {group.multiplier}x{isMatched && ` · ${t('Matched')}`}
+                    </Badge>
+                  )}
                 </li>
               )
             })}

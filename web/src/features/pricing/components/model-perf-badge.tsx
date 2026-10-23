@@ -77,15 +77,12 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
         props.className
       )}
     >
-      <dl className='flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 text-[9px] tabular-nums'>
-        <div className='flex shrink-0 items-center gap-1.5'>
-          <dt
-            title={t('Request success rate sampled over the last 24 hours')}
-            className='text-muted-foreground text-[9px] leading-3'
-          >
-            {t('Status')}
+      <dl className='flex min-w-0 flex-1 flex-nowrap items-center gap-x-1.5 text-[9px] whitespace-nowrap tabular-nums'>
+        <div className='flex min-w-0 items-center gap-1'>
+          <dt className='sr-only'>
+            {t('Request success rate sampled over the last 24 hours')}
           </dt>
-          <dd className='flex items-center gap-1'>
+          <dd className='flex min-w-0 items-center gap-1'>
             <span
               role='img'
               aria-label={t(
@@ -94,7 +91,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
               title={t(
                 'Recent success-rate samples; gray bars indicate missing data.'
               )}
-              className='flex h-2 w-14 items-center justify-between'
+              className='flex shrink-0 items-center gap-px'
             >
               {STATUS_SLOTS.map((slot) => {
                 const rate = statusRates[slot]
@@ -103,7 +100,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
                     key={slot}
                     aria-hidden
                     className={cn(
-                      'h-full w-px shrink-0 rounded-xs',
+                      'h-3 w-[2px] shrink-0 rounded-full',
                       rate != null &&
                         Number.isFinite(rate) &&
                         rate >= 0 &&
@@ -115,15 +112,15 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
                 )
               })}
             </span>
-            <span className='font-mono text-[9px] leading-3'>
+            <span className='shrink-0 font-mono text-[9px] leading-3'>
               {hasSuccessRate ? `${successRate.toFixed(1)}%` : '—%'}
             </span>
           </dd>
         </div>
-        <div className='ms-auto flex shrink-0 items-center gap-x-3'>
+        <div className='ms-auto flex shrink-0 items-center gap-x-1.5'>
           <div
             title={t('Average latency')}
-            className='flex shrink-0 items-center gap-1.5'
+            className='flex shrink-0 items-center gap-1'
           >
             <dt className='text-muted-foreground text-[9px] leading-3'>
               {t('Latency short')}
@@ -134,7 +131,7 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
           </div>
           <div
             title={t('Throughput')}
-            className='flex shrink-0 items-center gap-1.5'
+            className='flex shrink-0 items-center gap-1'
           >
             <dt className='text-muted-foreground text-[9px] leading-3'>
               {t('Throughput short')}

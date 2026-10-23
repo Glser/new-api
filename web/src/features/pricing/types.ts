@@ -121,13 +121,16 @@ export type ModelCapability =
   | 'caching'
   | 'embeddings'
 
+/** group name -> description, as returned by /api/pricing usable_group */
+export type PricingUsableGroup = Record<string, string>
+
 export type PricingData = {
   success: boolean
   message?: string
   data: PricingModel[]
   vendors: PricingVendor[]
   group_ratio: Record<string, number>
-  usable_group: Record<string, { desc: string; ratio: number }>
+  usable_group: PricingUsableGroup
   supported_endpoint: Record<string, string>
   auto_groups: string[]
 }

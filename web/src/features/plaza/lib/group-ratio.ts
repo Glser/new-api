@@ -16,6 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+
+import type { PricingUsableGroup } from '@/features/pricing/types'
+
 export function formatGroupRatio(
   ratio: number | undefined
 ): string | undefined {
@@ -24,4 +27,13 @@ export function formatGroupRatio(
     ? ratio.toString()
     : ratio.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
   return `x${formatted}`
+}
+
+/** /api/pricing usable_group 是「分组名 -> 描述」字符串映射 */
+export function getGroupDescription(
+  usableGroup: PricingUsableGroup | undefined,
+  group: string
+): string {
+  const description = usableGroup?.[group]?.trim()
+  return description || group
 }
