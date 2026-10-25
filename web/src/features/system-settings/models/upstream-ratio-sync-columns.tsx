@@ -29,6 +29,7 @@ import {
 } from './upstream-price-cells'
 import { getUpstreamDisplayName } from './upstream-ratio-sync-helpers'
 import type { PricingSyncRow } from './upstream-ratio-sync-table'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 export function useUpstreamRatioSyncColumns(
   upstreamNames: string[],
@@ -48,12 +49,13 @@ export function useUpstreamRatioSyncColumns(
         minSize: 180,
         meta: { mobileTitle: true },
         cell: ({ row }) => (
-          <span
-            className='block max-w-72 truncate font-medium'
-            title={row.original.model}
-          >
-            {row.original.model}
-          </span>
+          <TooltipHint content={row.original.model}>
+            <span
+              className='block max-w-72 truncate font-medium'
+            >
+              {row.original.model}
+            </span>
+          </TooltipHint>
         ),
       },
       {

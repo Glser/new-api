@@ -196,7 +196,15 @@ function getMetaPinnedColumns<TData>(
       return []
     }
 
-    return [{ columnId: column.id, side }]
+    return [
+      {
+        columnId: column.id,
+        side,
+        headerClassName: column.columnDef.meta?.headerClassName,
+        cellClassName: column.columnDef.meta?.cellClassName,
+        className: column.columnDef.meta?.className,
+      },
+    ]
   })
 }
 

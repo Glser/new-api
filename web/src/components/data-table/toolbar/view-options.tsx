@@ -21,6 +21,7 @@ import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -32,10 +33,12 @@ import {
 
 type DataTableViewOptionsProps<TData> = {
   table: Table<TData>
+  className?: string
 }
 
 export function DataTableViewOptions<TData>({
   table,
+  className,
 }: DataTableViewOptionsProps<TData>) {
   const { t } = useTranslation()
 
@@ -56,7 +59,7 @@ export function DataTableViewOptions<TData>({
         render={
           <Button
             variant='outline'
-            className='shrink-0'
+            className={cn('shrink-0', className)}
             aria-label={t('View')}
           />
         }
@@ -85,3 +88,4 @@ export function DataTableViewOptions<TData>({
     </DropdownMenu>
   )
 }
+

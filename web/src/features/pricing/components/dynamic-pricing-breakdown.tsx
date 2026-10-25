@@ -98,6 +98,12 @@ type DynamicPricingBreakdownProps = {
    * any synthesized combination label.
    */
   usageFacts?: Record<string, string | number>
+  /**
+   * User/group billing ratio from the consume log. When provided, each
+   * configured tier price is shown with a strikethrough and the
+   * ratio-adjusted price is rendered below it.
+   */
+  groupRatio?: number | null
 }
 
 type BreakdownTier = ParsedTier | ParsedTaskTier
@@ -223,6 +229,81 @@ function formatBreakdownPrice(
   return amount
 }
 
+function formatRatioCompact(ratio: number): string {
+  if (ratio % 1 === 0) return String(ratio)
+  return ratio.toFixed(4).replace(/\.?0+$/, '')
+}
+
+function BreakdownPriceValue(props: {
+  value: number
+  field: BreakdownPriceField
+  symbol: string
+  rate: number
+  t: (key: string) => string
+  taskPriceOptions: DynamicPricingBreakdownProps['taskPriceOptions']
+  language: string
+  groupRatio?: number | null
+  compact?: boolean
+  align?: 'start' | 'center' | 'end'
+}) {
+  const hasValue =
+    props.value > 0 ||
+    ((props.field.unit === 'request' || props.field.unit === 'image') &&
+      Number.isFinite(props.value))
+  if (!hasValue) return '-'
+
+  const formatted = formatBreakdownPrice(
+    props.value,
+    props.field,
+    props.symbol,
+    props.rate,
+    props.t,
+    props.taskPriceOptions,
+    props.language
+  )
+  const groupRatio = props.groupRatio
+  if (groupRatio == null || !Number.isFinite(groupRatio)) {
+    return (
+      <span className={cn(!props.compact && 'font-semibold')}>{formatted}</span>
+    )
+  }
+
+  const groupFormatted = formatBreakdownPrice(
+    props.value * groupRatio,
+    props.field,
+    props.symbol,
+    props.rate,
+    props.t,
+    props.taskPriceOptions,
+    props.language
+  )
+  let alignClass = 'items-start text-left'
+  if (props.align === 'end') {
+    alignClass = 'items-end text-right'
+  } else if (props.align === 'center') {
+    alignClass = 'items-center text-center'
+  }
+
+  return (
+    <span className={cn('inline-flex flex-col gap-0.5', alignClass)}>
+      <span className='text-muted-foreground text-[11px]! leading-tight line-through decoration-from-font'>
+        {formatted}
+      </span>
+      <span className='inline-flex items-center gap-1'>
+        <span className='text-foreground text-sm! font-semibold tabular-nums'>
+          {groupFormatted}
+        </span>
+        <span
+          className='shrink-0 rounded bg-lime-400 px-1 py-px text-[10px]! font-semibold text-black tabular-nums'
+          title={props.t('Group Ratio')}
+        >
+          {formatRatioCompact(groupRatio)}x
+        </span>
+      </span>
+    </span>
+  )
+}
+
 function describeCondition(
   cond: RequestCondition,
   t: (key: string) => string
@@ -292,6 +373,7 @@ export function DynamicPricingBreakdown({
   usageSchema,
   taskPriceOptions,
   usageFacts,
+  groupRatio,
 }: DynamicPricingBreakdownProps) {
   const { t, i18n } = useTranslation()
   const expr = billingExpr || ''
@@ -477,14 +559,8 @@ export function DynamicPricingBreakdown({
 
       {!rulesOnly && hasTiers && (
         <div className={cn(compact ? cn(hasRules && 'mb-2') : 'mb-3 sm:mb-4')}>
-          {!usageSchema && (
-            <div
-              className={
-                compact
-                  ? 'text-muted-foreground mb-1.5 text-xs font-medium'
-                  : 'text-foreground mb-2 text-sm font-semibold'
-              }
-            >
+          {!usageSchema && !compact && (
+            <div className='text-foreground mb-2 text-sm font-semibold'>
               {t('Tiered price table')}
             </div>
           )}
@@ -517,7 +593,7 @@ export function DynamicPricingBreakdown({
                     isMatched && 'border-emerald-500/40 bg-emerald-500/10'
                   )}
                 >
-                  <div className='mb-1.5 flex flex-wrap items-center gap-1.5'>
+                  <div className='mb-1.5 flex flex-wrap items-center justify-center gap-1.5'>
                     {!usageSchema && (
                       <Badge
                         variant='secondary'
@@ -536,7 +612,7 @@ export function DynamicPricingBreakdown({
                     )}
                   </div>
                   {condSummary && (
-                    <div className='text-muted-foreground mb-1.5 text-xs'>
+                    <div className='text-muted-foreground mb-1.5 text-center text-xs leading-relaxed'>
                       {condSummary}
                     </div>
                   )}
@@ -549,30 +625,23 @@ export function DynamicPricingBreakdown({
                     {visiblePriceFields.map((field) => {
                       const value = field.value(tier)
                       return (
-                        <div key={field.id} className='min-w-0'>
+                        <div key={field.id} className='min-w-0 text-center'>
                           <div className='text-muted-foreground text-xs font-medium break-words whitespace-normal'>
                             {breakdownPriceFieldLabel(field, t)}
                           </div>
-                          <div
-                            className={cn(
-                              'break-words font-mono',
-                              compact ? 'text-xs' : 'text-sm font-semibold'
-                            )}
-                          >
-                            {value > 0 ||
-                            ((field.unit === 'request' ||
-                              field.unit === 'image') &&
-                              Number.isFinite(value))
-                              ? formatBreakdownPrice(
-                                  value,
-                                  field,
-                                  symbol,
-                                  rate,
-                                  t,
-                                  taskPriceOptions,
-                                  i18n.language
-                                )
-                              : '-'}
+                          <div className='font-mono break-words'>
+                            <BreakdownPriceValue
+                              value={value}
+                              field={field}
+                              symbol={symbol}
+                              rate={rate}
+                              t={t}
+                              taskPriceOptions={taskPriceOptions}
+                              language={i18n.language}
+                              groupRatio={groupRatio}
+                              compact={compact}
+                              align='center'
+                            />
                           </div>
                         </div>
                       )
@@ -583,11 +652,14 @@ export function DynamicPricingBreakdown({
             })}
           </div>
           <StaticDataTable
-            className='hidden rounded-none border-0 sm:block'
+            className={cn(
+              'hidden rounded-none border-0 sm:block',
+              compact && '-mx-2.5'
+            )}
             tableClassName={
               compact
-                ? '[&_td]:text-xs [&_td_*]:text-xs [&_th]:text-xs [&_th_*]:text-xs'
-                : 'text-sm'
+                ? '[&_td]:px-1 [&_td]:text-xs [&_td_*]:text-xs [&_th]:px-1 [&_th]:text-xs [&_th_*]:text-xs'
+                : 'text-sm [&_td]:px-1 [&_th]:px-1'
             }
             headerRowClassName='hover:bg-transparent'
             data={tiers}
@@ -611,11 +683,11 @@ export function DynamicPricingBreakdown({
                 id: 'tier',
                 header: usageSchema ? t('Applicable conditions') : t('Tier'),
                 className: cn(
-                  'text-muted-foreground py-2 font-medium',
+                  'text-muted-foreground py-2 text-center font-medium',
                   compact && 'h-8'
                 ),
                 cellClassName: cn(
-                  'align-top whitespace-normal break-words',
+                  'align-middle text-center whitespace-normal break-words',
                   compact ? 'py-2' : 'py-2.5'
                 ),
                 cell: (tier) => {
@@ -636,7 +708,7 @@ export function DynamicPricingBreakdown({
                   )
                   return (
                     <>
-                      <div className='flex flex-wrap items-center gap-1.5'>
+                      <div className='flex flex-wrap items-center justify-center gap-1.5'>
                         {!usageSchema && (
                           <Badge
                             variant='secondary'
@@ -655,7 +727,7 @@ export function DynamicPricingBreakdown({
                         )}
                       </div>
                       {condSummary && (
-                        <div className='text-muted-foreground mt-1 text-xs'>
+                        <div className='text-muted-foreground mt-1 text-center text-xs leading-relaxed'>
                           {condSummary}
                         </div>
                       )}
@@ -667,33 +739,27 @@ export function DynamicPricingBreakdown({
                 id: field.id,
                 header: breakdownPriceFieldLabel(field, t),
                 className: cn(
-                  'text-muted-foreground py-2 text-right font-medium',
+                  'text-muted-foreground py-2 text-center font-medium',
                   compact && 'h-8'
                 ),
                 cellClassName: cn(
-                  'text-right align-top font-mono',
+                  'text-center align-middle font-mono',
                   compact ? 'py-2' : 'py-2.5'
                 ),
-                cell: (tier: BreakdownTier) => {
-                  const value = field.value(tier)
-                  return value > 0 ||
-                    ((field.unit === 'request' || field.unit === 'image') &&
-                      Number.isFinite(value)) ? (
-                    <span className={cn(!compact && 'font-semibold')}>
-                      {formatBreakdownPrice(
-                        value,
-                        field,
-                        symbol,
-                        rate,
-                        t,
-                        taskPriceOptions,
-                        i18n.language
-                      )}
-                    </span>
-                  ) : (
-                    '-'
-                  )
-                },
+                cell: (tier: BreakdownTier) => (
+                  <BreakdownPriceValue
+                    value={field.value(tier)}
+                    field={field}
+                    symbol={symbol}
+                    rate={rate}
+                    t={t}
+                    taskPriceOptions={taskPriceOptions}
+                    language={i18n.language}
+                    groupRatio={groupRatio}
+                    compact={compact}
+                    align='center'
+                  />
+                ),
               })),
             ]}
           />

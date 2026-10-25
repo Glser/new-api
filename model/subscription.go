@@ -293,7 +293,8 @@ func (s *UserSubscription) BeforeUpdate(tx *gorm.DB) error {
 }
 
 type SubscriptionSummary struct {
-	Subscription *UserSubscription `json:"subscription"`
+	Subscription *UserSubscription         `json:"subscription"`
+	QuotaSummary *SubscriptionQuotaSummary `json:"quota_summary,omitempty"`
 }
 
 type SubscriptionResetResult struct {

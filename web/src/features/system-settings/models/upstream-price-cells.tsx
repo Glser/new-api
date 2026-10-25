@@ -33,6 +33,7 @@ import {
   useSyncPriceSelection,
 } from './upstream-ratio-sync-helpers'
 import type { PricingSyncRow } from './upstream-ratio-sync-table'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 export function SyncPriceCell(props: { values: PricingSyncValues }) {
   const { t } = useTranslation()
@@ -133,9 +134,11 @@ export function SyncSourceHeader(props: { source: string }) {
             : context.onUnselectPrices(state.selectedModels)
         }
       />
-      <span className='min-w-0 flex-1 truncate' title={name}>
-        {name}
-      </span>
+      <TooltipHint content={name}>
+        <span className='min-w-0 flex-1 truncate'>
+          {name}
+        </span>
+      </TooltipHint>
       <span className='text-muted-foreground text-xs tabular-nums'>
         {selected}/{count}
       </span>

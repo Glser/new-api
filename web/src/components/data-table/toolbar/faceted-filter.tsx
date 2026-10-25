@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 type DataTableFacetedFilterProps<TData, TValue> = {
   column?: Column<TData, TValue>
@@ -150,12 +151,13 @@ function DataTableFacetedFilterInner<TData, TValue>({
                     ) : option.icon ? (
                       <option.icon className='text-muted-foreground size-4' />
                     ) : null}
-                    <span
-                      className='min-w-0 flex-1 truncate'
-                      title={t(option.label)}
-                    >
-                      {t(option.label)}
-                    </span>
+                    <TooltipHint content={t(option.label)}>
+                      <span
+                        className='min-w-0 flex-1 truncate'
+                      >
+                        {t(option.label)}
+                      </span>
+                    </TooltipHint>
                     {typeof option.count === 'number' ? (
                       <span className='text-muted-foreground ms-auto flex h-4 min-w-4 items-center justify-center font-mono text-xs'>
                         {option.count}

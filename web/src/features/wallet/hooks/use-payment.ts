@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import i18next from 'i18next'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 
 import { handleServerError } from '@/lib/handle-server-error'
@@ -85,23 +85,25 @@ export function usePayment() {
   const [amount, setAmount] = useState<number>(0)
   const [calculating, setCalculating] = useState(false)
   const [processing, setProcessing] = useState(false)
+  const calculationId = useRef(0)
 
   // Calculate payment amount
   const calculatePaymentAmount = useCallback(
     async (topupAmount: number, paymentType: string) => {
+      const requestId = ++calculationId.current
       try {
         setCalculating(true)
         const calculatedAmount = await requestPaymentAmount(
           topupAmount,
           paymentType
         )
-        setAmount(calculatedAmount)
+        if (requestId === calculationId.current) setAmount(calculatedAmount)
         return calculatedAmount
       } catch {
-        setAmount(0)
+        if (requestId === calculationId.current) setAmount(0)
         return 0
       } finally {
-        setCalculating(false)
+        if (requestId === calculationId.current) setCalculating(false)
       }
     },
     []

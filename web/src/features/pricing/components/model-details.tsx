@@ -113,6 +113,7 @@ import { DynamicPricingBreakdown } from './dynamic-pricing-breakdown'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelDetailsApi } from './model-details-api'
 import { ModelDetailsPerformance } from './model-details-performance'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 // ----------------------------------------------------------------------------
 // Local UI helpers
@@ -796,9 +797,11 @@ function GroupPricingSection(props: GroupPricingSectionProps) {
                 }}
                 size={16}
               />
-              <span className='truncate' title={variant.plugin_name}>
-                {variant.plugin_name}
-              </span>
+              <TooltipHint content={variant.plugin_name}>
+                <span className='truncate'>
+                  {variant.plugin_name}
+                </span>
+              </TooltipHint>
             </TabsTrigger>
           ))}
         </TabsList>
@@ -839,12 +842,7 @@ function ProviderGroupPricingSection(
   )
   const getDisplayGroupRatio = (group: string): number => {
     const rawRatio = getConfiguredGroupRatio(props.groupRatio, group)
-    if (!showUsdOfficial || currency.quotaDisplayType !== 'CNY') {
-      return rawRatio
-    }
-    const billingExchangeRate =
-      currency.usdExchangeRate > 0 ? currency.usdExchangeRate : 1
-    return (rawRatio * billingExchangeRate) / FIXED_USD_EXCHANGE_RATE
+    return showUsdOfficial ? rawRatio / FIXED_USD_EXCHANGE_RATE : rawRatio
   }
 
   const availableGroups = useMemo(
@@ -989,7 +987,10 @@ function ProviderGroupPricingSection(
         )}
         <div className='space-y-3'>
           {availableGroups.map((group) => {
-            const ratio = props.official ? 1 : getDisplayGroupRatio(group)
+            const ratio = props.official
+              ? 1
+              : getConfiguredGroupRatio(props.groupRatio, group)
+            const displayRatio = props.official ? 1 : getDisplayGroupRatio(group)
             const formattedPricesByTier =
               formattedPricesByGroup.get(group) ??
               new Map<DynamicPricingTier, Map<string, string>>()
@@ -1002,7 +1003,7 @@ function ProviderGroupPricingSection(
                       {props.usableGroup[group]?.trim() || group}
                     </span>
                     <span className='text-muted-foreground font-mono text-xs'>
-                      {ratio}x
+                      {formatDetailGroupRatio(displayRatio)}x
                     </span>
                   </div>
                 )}

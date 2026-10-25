@@ -16,8 +16,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Languages, Loader2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { LanguageCircleIcon, Loading03Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -50,11 +51,8 @@ export function LanguagePreferencesCard(props: LanguagePreferencesCardProps) {
     return normalizeInterfaceLanguage(settings.language || i18n.language)
   }, [props.profile?.setting, i18n.language])
 
-  const [currentLanguage, setCurrentLanguage] = useState(savedLanguage)
-
-  useEffect(() => {
-    setCurrentLanguage(savedLanguage)
-  }, [savedLanguage])
+  const [pendingLanguage, setPendingLanguage] = useState<string | null>(null)
+  const currentLanguage = pendingLanguage ?? savedLanguage
 
   const handleLanguageChange = async (language: string | null) => {
     if (!language) return
@@ -62,7 +60,7 @@ export function LanguagePreferencesCard(props: LanguagePreferencesCardProps) {
     if (nextLanguage === currentLanguage) return
 
     const previousLanguage = currentLanguage
-    setCurrentLanguage(nextLanguage)
+    setPendingLanguage(nextLanguage)
     setSaving(true)
     await i18n.changeLanguage(nextLanguage)
 
@@ -86,13 +84,14 @@ export function LanguagePreferencesCard(props: LanguagePreferencesCardProps) {
         })
       }
 
-      props.onProfileUpdate()
+      await props.onProfileUpdate()
       toast.success(t('Language preference saved'))
     } catch (error) {
-      setCurrentLanguage(previousLanguage)
+      setPendingLanguage(previousLanguage)
       await i18n.changeLanguage(previousLanguage)
       handleServerError(error, t('Failed to update settings'))
     } finally {
+      setPendingLanguage(null)
       setSaving(false)
     }
   }
@@ -101,20 +100,30 @@ export function LanguagePreferencesCard(props: LanguagePreferencesCardProps) {
     <TitledCard
       title={t('Language Preferences')}
       description={t('Set the language used across the interface')}
-      icon={<Languages className='h-4 w-4' />}
-      iconTone='chart-4'
+      icon={
+        <HugeiconsIcon
+          icon={LanguageCircleIcon}
+          strokeWidth={2}
+          aria-hidden='true'
+          className='h-4 w-4'
+        />
+      }
+      iconTone='neutral'
+      titleClassName='text-sm font-semibold sm:text-sm'
+      headerClassName='p-4 !pb-4 sm:p-4 sm:!pb-4'
+      contentClassName='p-4 sm:p-4'
       disableHoverEffect
     >
-      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4'>
+      <div className='flex flex-col gap-4'>
         <div className='space-y-1'>
           <div className='text-sm font-medium'>{t('Interface Language')}</div>
-          <p className='text-muted-foreground line-clamp-2 text-xs sm:text-sm'>
+          <p className='text-muted-foreground text-xs sm:text-sm'>
             {t(
               'Language preferences sync across your signed-in devices and affect API error messages.'
             )}
           </p>
         </div>
-        <div className='flex items-center gap-2 sm:min-w-48'>
+        <div className='flex items-center gap-2'>
           <Combobox
             options={INTERFACE_LANGUAGE_OPTIONS.map((language) => ({
               value: language.code,
@@ -122,12 +131,17 @@ export function LanguagePreferencesCard(props: LanguagePreferencesCardProps) {
             }))}
             value={currentLanguage}
             onValueChange={handleLanguageChange}
-            disabled={saving}
-            className='w-full sm:w-48'
+            disabled={saving || !props.profile}
+            className='w-full'
             placeholder={t('Select language')}
           />
           {saving && (
-            <Loader2 className='text-muted-foreground size-4 animate-spin' />
+            <HugeiconsIcon
+              icon={Loading03Icon}
+              strokeWidth={2}
+              aria-hidden='true'
+              className='text-muted-foreground size-4 animate-spin'
+            />
           )}
         </div>
       </div>

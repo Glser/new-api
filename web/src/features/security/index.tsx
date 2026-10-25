@@ -16,11 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link2 } from 'lucide-react'
+import { Link01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { SectionPageLayout } from '@/components/layout/components/section-page-layout'
 import { Button } from '@/components/ui/button'
 import {
   Empty,
@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/empty'
 import { Skeleton } from '@/components/ui/skeleton'
 import { TitledCard } from '@/components/ui/titled-card'
-import { useProfile } from '@/features/profile/hooks/use-profile'
+import type { UserProfile } from '@/features/profile/types'
 
 import { AccessTokenCard } from './components/access-token-card'
 import { AccountActionCard } from './components/account-action-card'
@@ -40,9 +40,17 @@ import { PasskeyCard } from './components/passkey-card'
 import { PrivacyCard } from './components/privacy-card'
 import { TwoFACard } from './components/two-fa-card'
 
-export function Security() {
+interface SecurityProps {
+  profile: UserProfile | null
+  loading: boolean
+  onProfileUpdate: () => void
+  onRetry: () => void
+}
+
+export function Security(props: SecurityProps) {
   const { t } = useTranslation()
-  const { profile, loading, refreshProfile, fetchProfile } = useProfile()
+  const profile = props.profile
+  const loading = props.loading
 
   let content: ReactNode
   if (loading) {
@@ -62,11 +70,7 @@ export function Security() {
             {t('Refresh the list and try again.')}
           </EmptyDescription>
         </EmptyHeader>
-        <Button
-          type='button'
-          variant='outline'
-          onClick={() => void fetchProfile()}
-        >
+        <Button type='button' variant='outline' onClick={props.onRetry}>
           {t('Retry')}
         </Button>
       </Empty>
@@ -86,18 +90,21 @@ export function Security() {
               action='password'
               username={profile.username}
               hasPassword={profile.has_password}
-              onUpdate={refreshProfile}
+              onUpdate={props.onProfileUpdate}
             />
             <TitledCard
               title={t('Account Bindings')}
-              icon={<Link2 className='size-4' />}
+              icon={<HugeiconsIcon icon={Link01Icon} strokeWidth={2} />}
               headerClassName='px-3 py-2.5 !pb-2.5 sm:px-4 sm:py-2.5 sm:!pb-2.5'
               contentClassName='p-3 sm:p-3'
               titleClassName='text-sm sm:text-sm'
               iconClassName='size-7 sm:size-7'
               disableHoverEffect
             >
-              <AccountBindings profile={profile} onUpdate={refreshProfile} />
+              <AccountBindings
+                profile={profile}
+                onUpdate={props.onProfileUpdate}
+              />
             </TitledCard>
           </section>
           <section aria-labelledby='security-access' className='space-y-4'>
@@ -116,7 +123,7 @@ export function Security() {
         </div>
         <aside
           aria-labelledby='security-verification'
-          className='min-w-0 space-y-4 sm:space-y-6 xl:sticky xl:top-0'
+          className='min-w-0 space-y-4 sm:space-y-6'
         >
           <div className='space-y-3'>
             <h3 id='security-verification' className='text-sm font-semibold'>
@@ -129,21 +136,16 @@ export function Security() {
             <h3 id='security-privacy' className='text-sm font-semibold'>
               {t('Privacy')}
             </h3>
-            <PrivacyCard profile={profile} onUpdate={refreshProfile} />
+            <PrivacyCard
+              key={profile.setting ?? ''}
+              profile={profile}
+              onUpdate={props.onProfileUpdate}
+            />
           </section>
         </aside>
       </div>
     )
   }
 
-  return (
-    <SectionPageLayout>
-      <SectionPageLayout.Title>
-        {t('Security & Access')}
-      </SectionPageLayout.Title>
-      <SectionPageLayout.Content>
-        <div className='mx-auto w-full max-w-7xl'>{content}</div>
-      </SectionPageLayout.Content>
-    </SectionPageLayout>
-  )
+  return content
 }

@@ -31,7 +31,6 @@ import {
   Radio,
   ServerCog,
   Settings,
-  ShieldCheck,
   Ticket,
   User,
   Users,
@@ -39,7 +38,9 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { getSystemSettingsNavItems } from '@/components/layout/config/system-settings.config'
 import type { SidebarData } from '@/components/layout/types'
+import { useIsAdmin } from '@/hooks/use-admin'
 import { ROLE } from '@/lib/roles'
 
 /**
@@ -50,6 +51,8 @@ import { ROLE } from '@/lib/roles'
  */
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation()
+  const isAdmin = useIsAdmin()
+  const systemSettingsItems = getSystemSettingsNavItems(t)
 
   return {
     navGroups: [
@@ -74,15 +77,19 @@ export function useSidebarData(): SidebarData {
         title: t('General'),
         items: [
           {
-            title: t('Overview'),
+            title: isAdmin ? t('Overview') : t('Console'),
             url: '/dashboard/overview',
-            icon: Activity,
+            icon: isAdmin ? Activity : LayoutDashboard,
           },
-          {
-            title: t('Dashboard'),
-            url: '/dashboard/models',
-            icon: LayoutDashboard,
-          },
+          ...(isAdmin
+            ? [
+                {
+                  title: t('Dashboard'),
+                  url: '/dashboard/models',
+                  icon: LayoutDashboard,
+                },
+              ]
+            : []),
           {
             title: t('API Keys'),
             url: '/keys',
@@ -93,11 +100,15 @@ export function useSidebarData(): SidebarData {
             url: '/usage-logs/common',
             icon: FileText,
           },
-          {
-            title: t('Audit Logs'),
-            url: '/usage-logs/audit',
-            icon: ClipboardList,
-          },
+          ...(isAdmin
+            ? [
+                {
+                  title: t('Audit Logs'),
+                  url: '/usage-logs/audit',
+                  icon: ClipboardList,
+                },
+              ]
+            : []),
           {
             title: t('Task Logs'),
             url: '/usage-logs/task',
@@ -119,12 +130,8 @@ export function useSidebarData(): SidebarData {
           {
             title: t('Profile'),
             url: '/profile',
+            configUrls: ['/profile', '/security'],
             icon: User,
-          },
-          {
-            title: t('Security & Access'),
-            url: '/security',
-            icon: ShieldCheck,
           },
         ],
       },
@@ -171,9 +178,9 @@ export function useSidebarData(): SidebarData {
           },
           {
             title: t('System Settings'),
-            url: '/system-settings/site',
-            activeUrls: ['/system-settings'],
             icon: Settings,
+            items: systemSettingsItems,
+            requiredRole: ROLE.SUPER_ADMIN,
           },
         ],
       },

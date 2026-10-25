@@ -21,10 +21,11 @@ import * as React from 'react'
 import { enUS, fr, ja, ru, vi, zhCN } from 'react-day-picker/locale'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Input } from '@/components/ui/input'
 import {
+  isPopoverDismissFromTrigger,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -60,6 +61,7 @@ export function DateTimePicker({
     calendarLocales[i18n.language as keyof typeof calendarLocales] ?? enUS
   const currentYear = new Date().getFullYear()
   const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLElement | null>(null)
   const [date, setDate] = React.useState<Date | undefined>(value)
   const [month, setMonth] = React.useState<Date | undefined>(value)
   const [time, setTime] = React.useState<string>('00:00')
@@ -112,22 +114,39 @@ export function DateTimePicker({
 
   return (
     <div className={cn('flex gap-2', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger
-          render={
-            <Button
-              variant='outline'
-              className={cn(
-                'flex-1 justify-between font-normal',
-                !date && 'text-muted-foreground'
-              )}
-            />
+      <Popover
+        open={open}
+        onOpenChange={(nextOpen, eventDetails) => {
+          if (eventDetails.reason === 'trigger-press') {
+            eventDetails.cancel()
+            return
           }
+          if (isPopoverDismissFromTrigger(eventDetails, triggerRef.current)) {
+            eventDetails.cancel()
+            return
+          }
+          setOpen(nextOpen)
+        }}
+      >
+        <PopoverTrigger
+          ref={triggerRef}
+          className={cn(
+            buttonVariants({ variant: 'outline' }),
+            'flex-1 justify-between font-normal',
+            !date && 'text-muted-foreground'
+          )}
+          onClick={() => setOpen((current) => !current)}
         >
           {date ? dayjs(date).format('YYYY-MM-DD') : placeholderText}
           <ChevronDownIcon className='h-4 w-4 opacity-50' />
         </PopoverTrigger>
-        <PopoverContent className='w-auto overflow-hidden p-0' align='start'>
+        <PopoverContent
+          className='w-auto overflow-hidden p-0'
+          align='start'
+          initialFocus={false}
+          animate={false}
+          keepMounted
+        >
           <Calendar
             mode='single'
             selected={date}
@@ -135,6 +154,7 @@ export function DateTimePicker({
             onMonthChange={setMonth}
             captionLayout='dropdown'
             onSelect={handleDateSelect}
+            autoFocus={false}
             locale={calendarLocale}
             startMonth={new Date(currentYear - 100, 0)}
             endMonth={new Date(currentYear + 100, 11)}

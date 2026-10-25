@@ -18,9 +18,9 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, KeyRound, Settings2, WalletCards } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useForm, type SubmitErrorHandler } from 'react-hook-form'
+import { useForm, useWatch, type SubmitErrorHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -62,6 +62,7 @@ import {
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
 import { useStatus } from '@/hooks/use-status'
 import { getUserModels, getUserGroups } from '@/lib/api'
 import { getCurrencyDisplay, getCurrencyLabel } from '@/lib/currency'
@@ -83,11 +84,13 @@ import {
   transformFormDataToPayload,
   transformApiKeyToFormDefaults,
 } from '../lib'
+import { getApiKeyVendorOptions } from '../lib/vendor-groups'
 import type { ApiKey } from '../types'
 import {
   ApiKeyGroupCombobox,
   type ApiKeyGroupOption,
 } from './api-key-group-combobox'
+import { ApiKeyVendorPicker } from './api-key-vendor-picker'
 import { useApiKeys } from './api-keys-provider'
 import { AutoGroupOrderEditor } from './auto-group-order-editor'
 
@@ -95,6 +98,11 @@ type ApiKeyMutateDrawerProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow?: ApiKey
+}
+
+function getBatchKeyName(name: string, index: number): string {
+  if (index === 0 && name) return name
+  return `${name || 'default'}-${Math.random().toString(36).slice(2, 8)}`
 }
 
 export function ApiKeysMutateDrawer({
@@ -109,6 +117,14 @@ export function ApiKeysMutateDrawer({
   const { status, loading: statusLoading } = useStatus()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [selectedVendor, setSelectedVendor] = useState<string | null>(null)
+  const {
+    models: catalogModels,
+    vendors,
+    isLoading: vendorsLoading,
+    error: vendorsError,
+    refetch: refetchVendors,
+  } = usePricingData(open)
   const [initializedTarget, setInitializedTarget] = useState<string | null>(
     null
   )
@@ -169,6 +185,16 @@ export function ApiKeysMutateDrawer({
     [groupsData]
   )
   const backendHasAuto = groups.some((g) => g.value === 'auto')
+  const vendorOptions = useMemo(
+    () => getApiKeyVendorOptions(vendors, catalogModels, groups),
+    [vendors, catalogModels, groups]
+  )
+  const selectedVendorOption = vendorOptions.find(
+    (vendor) => vendor.value === selectedVendor
+  )
+  const filteredGroups = selectedVendorOption?.groups ?? groups
+  const needsVendor =
+    !vendorsError && vendorOptions.length > 0 && !selectedVendor
   const availableAutoGroupNames = useMemo(
     () => groups.filter((group) => group.value !== 'auto').map((g) => g.value),
     [groups]
@@ -202,6 +228,7 @@ export function ApiKeysMutateDrawer({
   })
 
   // Load existing data when updating
+  /* eslint-disable react/set-state-in-effect -- Synchronize the external form with async query results once per drawer opening. */
   useEffect(() => {
     if (!open) {
       setInitializedTarget(null)
@@ -220,6 +247,8 @@ export function ApiKeysMutateDrawer({
 
     const target = isUpdate && currentRow ? `update:${currentRow.id}` : 'create'
     if (initializedTarget === target) return
+    setSelectedVendor(null)
+    setAdvancedOpen(false)
     if (isUpdate && currentRow) {
       if (apiKeyData?.success && apiKeyData.data) {
         form.reset(
@@ -256,11 +285,12 @@ export function ApiKeysMutateDrawer({
     maxAutoGroups,
     initializedTarget,
   ])
+  /* eslint-enable react/set-state-in-effect */
 
   const formTarget =
     isUpdate && currentRow ? `update:${currentRow.id}` : 'create'
   const isFormInitialized = initializedTarget === formTarget
-  const selectedGroup = form.watch('group')
+  const selectedGroup = useWatch({ control: form.control, name: 'group' })
 
   // Correct group after groups load: if the form value is not in available groups, fall back
   useEffect(() => {
@@ -281,6 +311,13 @@ export function ApiKeysMutateDrawer({
   }, [groups, form, selectedGroup])
 
   const onSubmit = async (data: ApiKeyFormValues) => {
+    if (
+      selectedVendorOption &&
+      !filteredGroups.some((group) => group.value === data.group)
+    ) {
+      form.setError('group', { type: 'manual', message: t('Select a group') })
+      return
+    }
     setIsSubmitting(true)
     try {
       const basePayload = transformFormDataToPayload(data)
@@ -305,10 +342,7 @@ export function ApiKeysMutateDrawer({
         for (let i = 0; i < count; i++) {
           const result = await createApiKey({
             ...basePayload,
-            name:
-              i === 0 && data.name
-                ? data.name
-                : `${data.name || 'default'}-${Math.random().toString(36).slice(2, 8)}`,
+            name: getBatchKeyName(data.name, i),
           })
           if (result.success) {
             successCount++
@@ -360,8 +394,14 @@ export function ApiKeysMutateDrawer({
   const quotaPlaceholder = tokensOnly
     ? t('Enter quota in tokens')
     : t('Enter quota in {{currency}}', { currency: currencyLabel })
-  const autoGroupsMode = form.watch('auto_groups_mode')
-  const unlimitedQuota = form.watch('unlimited_quota')
+  const autoGroupsMode = useWatch({
+    control: form.control,
+    name: 'auto_groups_mode',
+  })
+  const unlimitedQuota = useWatch({
+    control: form.control,
+    name: 'unlimited_quota',
+  })
 
   return (
     <Sheet
@@ -374,13 +414,13 @@ export function ApiKeysMutateDrawer({
       }}
     >
       <SheetContent
-        className={sideDrawerContentClassName('max-w-none sm:!max-w-[620px]')}
+        className={sideDrawerContentClassName('max-w-none sm:!max-w-[560px]')}
       >
         <SheetHeader className={sideDrawerHeaderClassName()}>
-          <SheetTitle>
+          <SheetTitle className='pr-8 text-xl font-bold tracking-tight'>
             {isUpdate ? t('Update API Key') : t('Create API Key')}
           </SheetTitle>
-          <SheetDescription>
+          <SheetDescription className='mt-1 text-xs leading-5'>
             {isUpdate
               ? t('Update the API key by providing necessary info.')
               : t('Add a new API key by providing necessary info.')}
@@ -392,15 +432,12 @@ export function ApiKeysMutateDrawer({
             onSubmit={form.handleSubmit(onSubmit, onInvalid)}
             aria-busy={!isFormInitialized}
             inert={!isFormInitialized || isSubmitting ? true : undefined}
-            className={sideDrawerFormClassName('gap-5')}
+            className={sideDrawerFormClassName(
+              'gap-6 [&_[data-slot=input]]:h-9 [&_[data-slot=input]]:rounded-lg [&_[data-slot=textarea]]:rounded-xl'
+            )}
           >
             <SideDrawerSection>
-              <SideDrawerSectionHeader
-                title={t('Basic Information')}
-                description={t('Set API key basic information')}
-                icon={<KeyRound className='size-4' />}
-                iconTone='info'
-              />
+              <SideDrawerSectionHeader title={t('Basic Information')} />
               <FormField
                 control={form.control}
                 name='name'
@@ -415,6 +452,20 @@ export function ApiKeysMutateDrawer({
                 )}
               />
 
+              <ApiKeyVendorPicker
+                options={vendorOptions}
+                value={selectedVendor}
+                onChange={(vendor) => {
+                  setSelectedVendor(vendor)
+                  form.clearErrors('group')
+                }}
+                loading={vendorsLoading}
+                failed={!!vendorsError}
+                onRetry={() => {
+                  void refetchVendors()
+                }}
+              />
+
               <FormField
                 control={form.control}
                 name='group'
@@ -423,7 +474,7 @@ export function ApiKeysMutateDrawer({
                     <FormLabel>{t('Group')}</FormLabel>
                     <FormControl>
                       <ApiKeyGroupCombobox
-                        options={groups}
+                        options={filteredGroups}
                         value={field.value}
                         onValueChange={(group) => {
                           field.onChange(group)
@@ -438,8 +489,18 @@ export function ApiKeysMutateDrawer({
                           })
                         }}
                         placeholder={t('Select a group')}
+                        disabled={vendorsLoading || needsVendor}
                       />
                     </FormControl>
+                    <FormDescription className='text-xs leading-5'>
+                      {needsVendor
+                        ? t(
+                            'Select a vendor to narrow down the available groups.'
+                          )
+                        : t(
+                            'Vendor selection filters groups only. Use Model Limits to restrict models.'
+                          )}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -461,7 +522,7 @@ export function ApiKeysMutateDrawer({
                         <AutoGroupOrderEditor
                           value={field.value}
                           mode={autoGroupsMode}
-                          options={groups}
+                          options={filteredGroups}
                           globalOptions={globalAutoGroupOptions}
                           maxCount={maxAutoGroups}
                           onChange={(value) => {
@@ -491,7 +552,9 @@ export function ApiKeysMutateDrawer({
                   control={form.control}
                   name='cross_group_retry'
                   render={({ field }) => (
-                    <FormItem className={sideDrawerSwitchItemClassName()}>
+                    <FormItem
+                      className={sideDrawerSwitchItemClassName('border-0 py-0')}
+                    >
                       <div className='flex flex-col gap-0.5'>
                         <FormLabel className='text-sm'>
                           {t('Cross-group retry')}
@@ -519,7 +582,7 @@ export function ApiKeysMutateDrawer({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>{t('Expiration Time')}</FormLabel>
-                    <div className='grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center'>
+                    <div className='flex flex-col gap-2'>
                       <FormControl>
                         <DateTimePicker
                           value={field.value}
@@ -528,7 +591,7 @@ export function ApiKeysMutateDrawer({
                           className='min-w-0 [&_input[type=time]]:w-24 sm:[&_input[type=time]]:w-32'
                         />
                       </FormControl>
-                      <div className='grid grid-cols-4 gap-2 sm:flex'>
+                      <div className='flex flex-wrap gap-1.5'>
                         <Button
                           type='button'
                           variant='outline'
@@ -605,12 +668,7 @@ export function ApiKeysMutateDrawer({
             </SideDrawerSection>
 
             <SideDrawerSection>
-              <SideDrawerSectionHeader
-                title={t('Quota Settings')}
-                description={t('Set quota amount and limits')}
-                icon={<WalletCards className='size-4' />}
-                iconTone='success'
-              />
+              <SideDrawerSectionHeader title={t('Quota Settings')} />
               {!unlimitedQuota && (
                 <FormField
                   control={form.control}
@@ -648,7 +706,9 @@ export function ApiKeysMutateDrawer({
                 control={form.control}
                 name='unlimited_quota'
                 render={({ field }) => (
-                  <FormItem className={sideDrawerSwitchItemClassName()}>
+                  <FormItem
+                    className={sideDrawerSwitchItemClassName('border-0 py-0')}
+                  >
                     <div className='flex flex-col gap-0.5'>
                       <FormLabel className='text-sm'>
                         {t('Unlimited Quota')}
@@ -672,17 +732,16 @@ export function ApiKeysMutateDrawer({
               <SideDrawerSection>
                 <CollapsibleTrigger
                   render={
-                    <button
+                    <Button
                       type='button'
-                      className='hover:bg-muted/40 flex w-full items-center gap-3 rounded-md py-1.5 text-left transition-colors'
+                      variant='ghost'
+                      className='h-auto w-full justify-start gap-3 rounded-lg px-0 py-1.5 text-left'
                     />
                   }
                 >
                   <SideDrawerSectionHeader
                     className='flex-1'
                     title={t('Advanced Settings')}
-                    description={t('Set API key access restrictions')}
-                    icon={<Settings2 className='size-4' />}
                   />
                   <ChevronDown
                     className={cn(

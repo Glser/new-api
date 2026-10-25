@@ -91,10 +91,12 @@ export function ActivityTimeCell(props: {
   createdAt: number
   lastAt: number
   lastLabel: string
+  lastEmptyLabel?: string
   lastClassName?: string
   now?: number
   format?: 'relative' | 'absolute'
   layout?: 'rows' | 'columns'
+  compact?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const locale = toIntlLocale(i18n.resolvedLanguage || i18n.language)
@@ -106,10 +108,14 @@ export function ActivityTimeCell(props: {
         'grid min-w-0 gap-y-1 text-xs font-normal',
         props.layout === 'columns'
           ? 'grid-flow-col grid-cols-2 grid-rows-[auto_1fr] items-start gap-x-3'
-          : 'grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2'
+          : 'grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2',
+        props.compact && 'mx-auto w-fit grid-cols-[auto_auto] gap-x-0'
       )}
     >
-      <span className='text-muted-foreground'>{t('Created')}</span>
+      <span className='text-muted-foreground'>
+        {t('Created')}
+        {props.compact && '：'}
+      </span>
       <TimestampCell
         timestamp={props.createdAt}
         now={props.now}
@@ -121,18 +127,27 @@ export function ActivityTimeCell(props: {
           props.layout === 'columns' && 'whitespace-normal'
         )}
       />
-      <span className='text-muted-foreground'>{props.lastLabel}</span>
-      <TimestampCell
-        timestamp={props.lastAt}
-        now={props.now}
-        format={props.format}
-        locale={locale}
-        justNowLabel={t('Just now')}
-        className={cn(
-          props.lastClassName ?? 'text-muted-foreground',
-          props.layout === 'columns' && 'whitespace-normal'
-        )}
-      />
+      <span className='text-muted-foreground'>
+        {props.lastLabel}
+        {props.compact && '：'}
+      </span>
+      {props.lastAt > 0 ? (
+        <TimestampCell
+          timestamp={props.lastAt}
+          now={props.now}
+          format={props.format}
+          locale={locale}
+          justNowLabel={t('Just now')}
+          className={cn(
+            props.lastClassName ?? 'text-muted-foreground',
+            props.layout === 'columns' && 'whitespace-normal'
+          )}
+        />
+      ) : (
+        <span className='text-muted-foreground'>
+          {props.lastEmptyLabel ?? '-'}
+        </span>
+      )}
     </div>
   )
 }

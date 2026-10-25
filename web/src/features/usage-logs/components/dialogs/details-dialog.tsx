@@ -17,24 +17,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { TFunction } from 'i18next'
-/*
-Copyright (C) 2023-2026 QuantumNous
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-For commercial licensing, please contact support@quantumnous.com
-*/
 import {
   Copy,
   Check,
@@ -58,10 +40,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { DynamicPricingBreakdown } from '@/features/pricing/components/dynamic-pricing-breakdown'
 import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
-import { BILLING_PRICING_VARS } from '@/features/pricing/lib/billing-expr'
 import { pluginUsageSchema } from '@/features/pricing/lib/plugin-pricing'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
-import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 import { formatLogQuota, formatTokens, formatUseTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -72,7 +52,6 @@ import {
   getParamOverrideActionLabel,
   parseAuditLine,
   decodeBillingExprB64,
-  getTieredBillingSummary,
   hasAnyCacheTokens,
   isViolationFeeLog,
   getFirstResponseTimeColor,
@@ -80,15 +59,16 @@ import {
   getReasoningEffortVariant,
   renderAuditContent,
 } from '../../lib/format'
-import { buildQuotaAuditOperation } from '../../lib/quota-audit-operation'
 import {
-  getLogTypeConfig,
-  isPerCallBilling,
-  isTimingLogType,
-} from '../../lib/utils'
+  CostFormula,
+  getHitPriceRatio,
+  getOfficialUsdParts,
+} from '../../lib/hit-pricing'
+import { buildQuotaAuditOperation } from '../../lib/quota-audit-operation'
+import { getLogTypeConfig, isTimingLogType } from '../../lib/utils'
 import { USAGE_BILLING_PATH, type LogOtherData } from '../../types'
 import { PluginAuthorLink } from '../plugin-author-link'
-import { DetailRow, DetailSection } from './log-detail-layout'
+import { DetailRow, DetailSection, InlineDetailList } from './log-detail-layout'
 
 // Maps a channel-update changed-field token (as recorded by the backend audit)
 // to its i18n label key for display in the audit details.
@@ -107,11 +87,6 @@ function timingTextColorClass(
   if (variant === 'success') return 'text-emerald-600'
   if (variant === 'warning') return 'text-amber-600'
   return 'text-rose-600'
-}
-
-function formatRatio(ratio: number | undefined): string {
-  if (ratio == null) return '-'
-  return ratio.toFixed(4)
 }
 
 function getUsageBillingPathLabel(
@@ -160,209 +135,39 @@ function quotaSaturationKindLabel(
   return t('Invalid (NaN)')
 }
 
-function BillingBreakdown(props: {
-  log: UsageLog
-  other: LogOtherData
-  isAdmin: boolean
-}) {
+function getCacheWriteTokens(other: LogOtherData): number {
+  const cacheWrite5m = other.cache_creation_tokens_5m || 0
+  const cacheWrite1h = other.cache_creation_tokens_1h || 0
+  if (cacheWrite5m > 0 || cacheWrite1h > 0) return cacheWrite5m + cacheWrite1h
+  return other.cache_creation_tokens || 0
+}
+
+function BillingBreakdown(props: { log: UsageLog; other: LogOtherData }) {
   const { t } = useTranslation()
-  const { log, other, isAdmin } = props
-  const isPerCall = isPerCallBilling(other.model_price)
-  const isClaude = other.claude === true
-  const isTieredExpr = other.billing_mode === 'tiered_expr'
-  const tieredSummary = getTieredBillingSummary(other)
-
-  const rows: Array<{ label: string; value: string }> = []
-  const priceOpts = { digitsLarge: 4, digitsSmall: 6, abbreviate: false }
-  const fmtPrice = (usd: number) => formatBillingCurrencyFromUSD(usd, priceOpts)
-  const baseInputUSD = other.model_ratio != null ? other.model_ratio * 2.0 : 0
-
-  if (isTieredExpr) {
-    rows.push({
-      label: t('Billing Mode'),
-      value: t('Dynamic Pricing'),
-    })
-    if (tieredSummary) {
-      if (tieredSummary.tier.label) {
-        rows.push({
-          label: t('Matched Tier'),
-          value: tieredSummary.tier.label,
-        })
-      }
-      for (const entry of tieredSummary.priceEntries) {
-        rows.push({
-          label: t(entry.shortLabel),
-          value: `${fmtPrice(entry.price)}/${entry.unit ? t(entry.unit) : 'M'}`,
-        })
-      }
-    } else {
-      rows.push({
-        label: t('Matched Tier'),
-        value: other.matched_tier || t('No matching results'),
-      })
-    }
-  } else if (isPerCall) {
-    rows.push({ label: t('Billing Mode'), value: t('Per-call') })
-    if (other.model_price != null) {
-      rows.push({
-        label: t('Model Price'),
-        value: fmtPrice(other.model_price),
-      })
-    }
-  } else {
-    rows.push({ label: t('Billing Mode'), value: t('Per-token') })
-    if (other.model_ratio != null) {
-      rows.push({
-        label: t('Input'),
-        value: `${fmtPrice(baseInputUSD)}/M`,
-      })
-    }
-    if (other.completion_ratio != null && other.model_ratio != null) {
-      rows.push({
-        label: t('Output'),
-        value: `${fmtPrice(baseInputUSD * other.completion_ratio)}/M`,
-      })
-    }
+  const officialPrices = getOfficialUsdParts(props.other)
+  if (!officialPrices) {
+    return (
+      <DetailSection label={t('Billing Details')}>
+        <span className='text-xs tabular-nums'>
+          {formatLogQuota(props.log.quota)}
+        </span>
+      </DetailSection>
+    )
   }
-
-  const userGR = other.user_group_ratio
-  const isUserGR = userGR != null && Number.isFinite(userGR) && userGR !== -1
-  const effectiveGR = isUserGR ? userGR : other.group_ratio
-  if (effectiveGR != null && Number.isFinite(effectiveGR)) {
-    rows.push({
-      label: isUserGR ? t('User Exclusive Ratio') : t('Group Ratio'),
-      value: `${formatRatio(effectiveGR)}x`,
-    })
-  }
-
-  if (!isTieredExpr && isClaude && hasAnyCacheTokens(other)) {
-    if (other.cache_ratio != null && other.cache_ratio !== 1) {
-      rows.push({
-        label: t('Cache Read'),
-        value: `${fmtPrice(baseInputUSD * other.cache_ratio)}/M`,
-      })
-    }
-    if (
-      other.cache_creation_ratio != null &&
-      other.cache_creation_ratio !== 1
-    ) {
-      rows.push({
-        label: t('Cache Creation'),
-        value: `${fmtPrice(baseInputUSD * other.cache_creation_ratio)}/M`,
-      })
-    }
-    if (
-      other.cache_creation_ratio_5m != null &&
-      other.cache_creation_ratio_5m !== 0
-    ) {
-      rows.push({
-        label: t('Cache Creation (5m)'),
-        value: `${fmtPrice(baseInputUSD * other.cache_creation_ratio_5m)}/M`,
-      })
-    }
-    if (
-      other.cache_creation_ratio_1h != null &&
-      other.cache_creation_ratio_1h !== 0
-    ) {
-      rows.push({
-        label: t('Cache Creation (1h)'),
-        value: `${fmtPrice(baseInputUSD * other.cache_creation_ratio_1h)}/M`,
-      })
-    }
-  }
-
-  if (!isTieredExpr) {
-    if (other.audio_ratio != null && other.audio_ratio !== 1) {
-      rows.push({
-        label: t('Audio input'),
-        value: `${fmtPrice(baseInputUSD * other.audio_ratio)}/M`,
-      })
-    }
-
-    if (
-      other.audio_completion_ratio != null &&
-      other.audio_completion_ratio !== 1
-    ) {
-      rows.push({
-        label: t('Audio output'),
-        value: `${fmtPrice(baseInputUSD * other.audio_completion_ratio)}/M`,
-      })
-    }
-
-    if (other.image_ratio != null && other.image_ratio !== 1) {
-      rows.push({
-        label: t('Image input'),
-        value: `${fmtPrice(baseInputUSD * other.image_ratio)}/M`,
-      })
-    }
-  }
-
-  if (other.web_search && other.web_search_call_count) {
-    rows.push({
-      label: t('Web Search'),
-      value: `${other.web_search_call_count}x${other.web_search_price ? ` (${fmtPrice(other.web_search_price)})` : ''}`,
-    })
-  }
-
-  if (other.file_search && other.file_search_call_count) {
-    rows.push({
-      label: t('File Search'),
-      value: `${other.file_search_call_count}x${other.file_search_price ? ` (${fmtPrice(other.file_search_price)})` : ''}`,
-    })
-  }
-
-  if (other.image_generation_call && other.image_generation_call_price) {
-    rows.push({
-      label: t('Image Generation'),
-      value: fmtPrice(other.image_generation_call_price),
-    })
-  }
-
-  if (other.audio_input_seperate_price && other.audio_input_price) {
-    rows.push({
-      label: t('Audio Input Price'),
-      value: fmtPrice(other.audio_input_price),
-    })
-  }
-
-  if (isAdmin && other.admin_info) {
-    rows.push({
-      label: t('Billing Path'),
-      value: getUsageBillingPathLabel(t, other.admin_info),
-    })
-  }
-
-  const usageFacts =
-    other.usage_facts != null &&
-    typeof other.usage_facts === 'object' &&
-    !Array.isArray(other.usage_facts)
-      ? Object.entries(other.usage_facts)
-      : []
 
   return (
     <DetailSection label={t('Billing Details')}>
-      {rows.map((row) => (
-        <DetailRow key={row.label} label={row.label} value={row.value} mono />
-      ))}
-      {usageFacts.length > 0 && (
-        <>
-          <Label className='text-xs font-semibold'>
-            {t('Usage parameters')}
-          </Label>
-          {usageFacts.map(([key, value]) => (
-            <DetailRow
-              key={`usage-fact-${key}`}
-              label={key}
-              value={String(value)}
-              mono
-            />
-          ))}
-        </>
-      )}
-      <DetailRow
-        label={t('Total Cost')}
-        value={formatLogQuota(log.quota)}
-        mono
+      <CostFormula
+        parts={officialPrices.parts}
+        perCall={officialPrices.perCall}
+        ratio={getHitPriceRatio(props.other)}
+        quota={props.log.quota}
+        tokens={{
+          input: props.log.prompt_tokens || 0,
+          output: props.log.completion_tokens || 0,
+          cacheRead: props.other.cache_tokens || 0,
+          cacheWrite: getCacheWriteTokens(props.other),
+        }}
       />
     </DetailSection>
   )
@@ -370,96 +175,44 @@ function BillingBreakdown(props: {
 
 function TokenBreakdown(props: { log: UsageLog; other: LogOtherData }) {
   const { t } = useTranslation()
-  const { log, other } = props
-
-  const promptTokens = log.prompt_tokens || 0
-  const completionTokens = log.completion_tokens || 0
-  const cacheRead = other.cache_tokens || 0
-  const cacheWrite = other.cache_creation_tokens || 0
-  const cacheWrite5m = other.cache_creation_tokens_5m || 0
-  const cacheWrite1h = other.cache_creation_tokens_1h || 0
+  const promptTokens = props.log.prompt_tokens || 0
+  const completionTokens = props.log.completion_tokens || 0
   const hasTokens = promptTokens > 0 || completionTokens > 0
-
   if (!hasTokens) return null
 
-  const rows: Array<{ label: string; value: string }> = []
-
-  rows.push({ label: t('Input Tokens'), value: promptTokens.toLocaleString() })
-  rows.push({
-    label: t('Output Tokens'),
-    value: completionTokens.toLocaleString(),
-  })
-
-  if (cacheRead > 0) {
-    rows.push({
-      label: t('Cache Read'),
-      value: cacheRead.toLocaleString(),
-    })
-  }
-
-  if (other.image_cache_tokens !== undefined) {
-    rows.push({
-      label: t('Image Cache'),
-      value: other.image_cache_tokens.toLocaleString(),
-    })
-  }
-
-  if (cacheWrite > 0 && cacheWrite5m === 0 && cacheWrite1h === 0) {
-    rows.push({
-      label: t('Cache Write'),
-      value: cacheWrite.toLocaleString(),
-    })
-  }
-
-  if (cacheWrite5m > 0) {
-    rows.push({
-      label: t('Cache Write (5m)'),
-      value: cacheWrite5m.toLocaleString(),
-    })
-  }
-
-  if (cacheWrite1h > 0) {
-    rows.push({
-      label: t('Cache Write (1h)'),
-      value: cacheWrite1h.toLocaleString(),
-    })
-  }
-
-  if (other.image && other.image_output) {
-    rows.push({
-      label: t('Image Tokens'),
-      value: other.image_output.toLocaleString(),
-    })
-  }
+  const unit = t('tokens')
+  const items = [
+    { label: t('Input'), value: promptTokens },
+    { label: t('Output'), value: completionTokens },
+    { label: t('Cache Read'), value: props.other.cache_tokens || 0 },
+    { label: t('Cache Write'), value: getCacheWriteTokens(props.other) },
+  ]
 
   return (
-    <DetailSection label={t('Token Breakdown')}>
-      {rows.map((row) => (
-        <DetailRow key={row.label} label={row.label} value={row.value} mono />
-      ))}
-      {other.billing_tokens && (
-        <div
-          role='group'
-          aria-label={t('Billable token breakdown')}
-          className='space-y-2'
-        >
-          <Label className='text-xs font-semibold'>
-            {t('Billable token breakdown')}
-          </Label>
-          {BILLING_PRICING_VARS.map((variable) => {
-            const count = other.billing_tokens?.[variable.key]
-            if (count === undefined || !Number.isFinite(count)) return null
-            return (
-              <DetailRow
-                key={variable.key}
-                label={t(variable.shortLabel)}
-                value={count.toLocaleString()}
-                mono
-              />
-            )
-          })}
-        </div>
-      )}
+    <DetailSection
+      label={t('Token Breakdown')}
+      contentClassName='border-0 bg-transparent p-0'
+    >
+      <div className='grid grid-cols-2 overflow-hidden rounded-md border sm:grid-cols-4'>
+        {items.map((item, index) => (
+          <div
+            key={item.label}
+            className={cn(
+              'min-w-0 px-2.5 py-2',
+              index < items.length - 1 &&
+                'border-border/60 border-r max-sm:[&:nth-child(2)]:border-r-0',
+              index > 1 && 'border-border/60 border-t sm:border-t-0'
+            )}
+          >
+            <div className='text-muted-foreground truncate text-[11px]'>
+              {item.label}
+            </div>
+            <div className='mt-0.5 truncate text-xs font-medium tabular-nums'>
+              {item.value.toLocaleString()} {unit}
+            </div>
+          </div>
+        ))}
+      </div>
     </DetailSection>
   )
 }
@@ -497,6 +250,31 @@ export function DetailsDialog(props: DetailsDialogProps) {
     other?.admin_info?.task_plugin?.key
   )
   const hasAudioTokens = other?.ws || other?.audio
+  const audioTokenItems: Array<{ label: string; value: string }> = []
+  if (other?.audio_input != null && other.audio_input > 0) {
+    audioTokenItems.push({
+      label: t('Audio Input'),
+      value: formatTokens(other.audio_input),
+    })
+  }
+  if (other?.audio_output != null && other.audio_output > 0) {
+    audioTokenItems.push({
+      label: t('Audio Output'),
+      value: formatTokens(other.audio_output),
+    })
+  }
+  if (other?.text_input != null && other.text_input > 0) {
+    audioTokenItems.push({
+      label: t('Text Input'),
+      value: formatTokens(other.text_input),
+    })
+  }
+  if (other?.text_output != null && other.text_output > 0) {
+    audioTokenItems.push({
+      label: t('Text Output'),
+      value: formatTokens(other.text_output),
+    })
+  }
   const showTiming = isTimingLogType(props.log.type)
   const showAdminIp =
     !!props.log.ip && (showTiming || (props.isAdmin && isTopup))
@@ -1051,42 +829,15 @@ export function DetailsDialog(props: DetailsDialogProps) {
         )}
 
         {/* Audio/WebSocket token breakdown */}
-        {hasAudioTokens && other && (
+        {hasAudioTokens && audioTokenItems.length > 0 ? (
           <DetailSection
             icon={<Headphones className='size-3.5' aria-hidden='true' />}
             iconTone='chart-4'
             label={t('Audio Tokens')}
           >
-            {other.audio_input != null && other.audio_input > 0 && (
-              <DetailRow
-                label={t('Audio Input')}
-                value={formatTokens(other.audio_input)}
-                mono
-              />
-            )}
-            {other.audio_output != null && other.audio_output > 0 && (
-              <DetailRow
-                label={t('Audio Output')}
-                value={formatTokens(other.audio_output)}
-                mono
-              />
-            )}
-            {other.text_input != null && other.text_input > 0 && (
-              <DetailRow
-                label={t('Text Input')}
-                value={formatTokens(other.text_input)}
-                mono
-              />
-            )}
-            {other.text_output != null && other.text_output > 0 && (
-              <DetailRow
-                label={t('Text Output')}
-                value={formatTokens(other.text_output)}
-                mono
-              />
-            )}
+            <InlineDetailList items={audioTokenItems} />
           </DetailSection>
-        )}
+        ) : null}
 
         {/* Reasoning effort */}
         {other?.reasoning_effort && (
@@ -1139,15 +890,6 @@ export function DetailsDialog(props: DetailsDialogProps) {
           <TokenBreakdown log={props.log} other={other} />
         )}
 
-        {/* Billing breakdown (consume type) */}
-        {isConsume && other && !isViolation && (
-          <BillingBreakdown
-            log={props.log}
-            other={other}
-            isAdmin={props.isAdmin}
-          />
-        )}
-
         {/* Tiered pricing breakdown (when billing_mode is tiered_expr) */}
         {isTieredBilling && other?.expr_b64 && (
           <DetailSection label={t('Dynamic Pricing')}>
@@ -1167,9 +909,15 @@ export function DetailsDialog(props: DetailsDialogProps) {
               hideCacheColumns={!hasAnyCacheTokens(other)}
               usageSchema={billingUsageSchema}
               usageFacts={other.usage_facts}
+              groupRatio={getHitPriceRatio(other)}
             />
           </DetailSection>
         )}
+
+        {/* Billing breakdown (consume type) */}
+        {isConsume && other && !isViolation ? (
+          <BillingBreakdown log={props.log} other={other} />
+        ) : null}
 
         {/* Admin billing mode indicator for non-consume */}
         {props.isAdmin &&

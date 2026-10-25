@@ -35,7 +35,7 @@ import { getOperationsSectionNavItems } from '@/features/system-settings/operati
 import { getSecuritySectionNavItems } from '@/features/system-settings/security/section-registry.tsx'
 import { getSiteSectionNavItems } from '@/features/system-settings/site/section-registry.tsx'
 
-import type { NavGroup, SidebarView } from '../types'
+import type { NavCollapsible, NavGroup, SidebarView } from '../types'
 
 /**
  * Sidebar nav groups for the System Settings nested view.
@@ -88,6 +88,26 @@ function getSystemSettingsNavGroups(t: TFunction): NavGroup[] {
       ],
     },
   ]
+}
+
+/**
+ * Flatten every settings section into second-level items for the main console
+ * sidebar. Item titles stay short; the parent "System Settings" group already
+ * provides the category context.
+ */
+export function getSystemSettingsNavItems(
+  t: TFunction
+): NavCollapsible['items'] {
+  const settingsGroup = getSystemSettingsNavGroups(t)[0]
+
+  return settingsGroup.items.flatMap((category) => {
+    if (!('items' in category)) return []
+
+    return category.items.map((item) => ({
+      ...item,
+      icon: category.icon,
+    }))
+  })
 }
 
 /**

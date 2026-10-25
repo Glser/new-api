@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/popover'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 interface ModelBadgeProps {
   modelName: string
@@ -35,6 +36,7 @@ interface ModelBadgeProps {
   className?: string
   wrapText?: boolean
   onInspect?: () => void
+  size?: 'sm' | 'md'
 }
 
 interface ModelProvider {
@@ -127,16 +129,19 @@ function resolveModelProvider(modelName: string): ModelProvider | null {
 
 function ModelBadgeContent(props: ModelBadgeProps) {
   const provider = resolveModelProvider(props.modelName)
+  const isMd = props.size === 'md'
+  const iconSize = isMd ? 20 : 18
 
   return (
     <StatusBadge
       copyText={props.modelName}
       copyable={!props.onInspect}
-      size='sm'
+      size={isMd ? 'md' : 'sm'}
       showDot={!provider}
       autoColor={provider ? undefined : props.modelName}
       className={cn(
-        'border-border/60 bg-muted/30 h-6 max-w-none gap-1.5 rounded-md border px-2 [font-family:var(--font-body)]',
+        'border-border/60 bg-muted/30 max-w-none rounded-md border [font-family:var(--font-body)]',
+        isMd ? 'h-7 gap-2 px-2.5 text-[13px]' : 'h-6 gap-1.5 px-2 text-xs',
         provider && 'text-foreground',
         props.wrapText && 'h-auto min-h-6 max-w-full py-0.5 whitespace-normal',
         props.className
@@ -144,18 +149,23 @@ function ModelBadgeContent(props: ModelBadgeProps) {
     >
       <span
         className={cn(
-          'flex items-center gap-1.5',
+          'flex items-center',
+          isMd ? 'gap-2' : 'gap-1.5',
           props.wrapText ? 'max-w-full min-w-0' : 'max-w-none'
         )}
       >
         {provider && (
-          <span
-            className='flex h-[18px] w-[18px] shrink-0 items-center justify-center'
-            title={provider.label}
-            aria-label={provider.label}
-          >
-            {getLobeIcon(provider.icon, 18)}
-          </span>
+          <TooltipHint content={provider.label}>
+            <span
+              className={cn(
+                'flex shrink-0 items-center justify-center',
+                isMd ? 'h-5 w-5' : 'h-[18px] w-[18px]'
+              )}
+              aria-label={provider.label}
+            >
+              {getLobeIcon(provider.icon, iconSize)}
+            </span>
+          </TooltipHint>
         )}
         <span
           className={

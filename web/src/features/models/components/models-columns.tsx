@@ -25,7 +25,7 @@ import { BadgeListCell, TruncatedCell } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
+import { TooltipHint,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
@@ -125,11 +125,13 @@ export function useModelsColumns(
                 />
               </div>
               <div className='text-muted-foreground mt-1 flex min-w-0 items-center gap-2 text-xs'>
-                <span className='truncate' title={vendor?.name}>
-                  {model.id > 0
-                    ? (vendor?.name ?? t('No vendor'))
-                    : t('Missing metadata')}
-                </span>
+                <TooltipHint content={vendor?.name}>
+                  <span className='truncate'>
+                    {model.id > 0
+                      ? (vendor?.name ?? t('No vendor'))
+                      : t('Missing metadata')}
+                  </span>
+                </TooltipHint>
                 {model.name_rule !== 0 && (
                   <span className='shrink-0'>
                     {rules[model.name_rule as 0 | 1 | 2 | 3]?.label} ·{' '}
@@ -218,7 +220,6 @@ export function useModelsColumns(
                 render={
                   <span
                     tabIndex={0}
-                    title={t(state.description)}
                     aria-description={t(state.description)}
                     className='block whitespace-normal sm:truncate'
                   />

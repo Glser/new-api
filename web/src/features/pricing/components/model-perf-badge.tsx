@@ -26,6 +26,7 @@ import {
 } from '@/features/performance-metrics/lib/format'
 import type { SuccessRatePoint } from '@/features/performance-metrics/types'
 import { cn } from '@/lib/utils'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 export type ModelPerfBadgeData = {
   avg_latency_ms: number
@@ -83,63 +84,66 @@ export const ModelPerfBadge = memo(function ModelPerfBadge(
             {t('Request success rate sampled over the last 24 hours')}
           </dt>
           <dd className='flex min-w-0 items-center gap-1'>
-            <span
-              role='img'
-              aria-label={t(
+            <TooltipHint content={t(
                 'Recent success-rate samples; gray bars indicate missing data.'
-              )}
-              title={t(
-                'Recent success-rate samples; gray bars indicate missing data.'
-              )}
-              className='flex shrink-0 items-center gap-px'
-            >
-              {STATUS_SLOTS.map((slot) => {
-                const rate = statusRates[slot]
-                return (
-                  <span
-                    key={slot}
-                    aria-hidden
-                    className={cn(
-                      'h-3 w-[2px] shrink-0 rounded-full',
-                      rate != null &&
-                        Number.isFinite(rate) &&
-                        rate >= 0 &&
-                        rate <= 100
-                        ? getSuccessRateDotClass(rate)
-                        : 'bg-muted-foreground/15'
-                    )}
-                  />
-                )
-              })}
-            </span>
+              )}>
+              <span
+                role='img'
+                aria-label={t(
+                  'Recent success-rate samples; gray bars indicate missing data.'
+                )}
+                className='flex shrink-0 items-center gap-px'
+              >
+                {STATUS_SLOTS.map((slot) => {
+                  const rate = statusRates[slot]
+                  return (
+                    <span
+                      key={slot}
+                      aria-hidden
+                      className={cn(
+                        'h-3 w-[2px] shrink-0 rounded-full',
+                        rate != null &&
+                          Number.isFinite(rate) &&
+                          rate >= 0 &&
+                          rate <= 100
+                          ? getSuccessRateDotClass(rate)
+                          : 'bg-muted-foreground/15'
+                      )}
+                    />
+                  )
+                })}
+              </span>
+            </TooltipHint>
             <span className='shrink-0 font-mono text-[9px] leading-3'>
               {hasSuccessRate ? `${successRate.toFixed(1)}%` : '—%'}
             </span>
           </dd>
         </div>
         <div className='ms-auto flex shrink-0 items-center gap-x-1.5'>
-          <div
-            title={t('Average latency')}
-            className='flex shrink-0 items-center gap-1'
-          >
-            <dt className='text-muted-foreground text-[9px] leading-3'>
-              {t('Latency short')}
-            </dt>
-            <dd className='font-mono text-[9px] leading-3 whitespace-nowrap'>
-              {latencyText === '—' ? '—s' : latencyText}
-            </dd>
-          </div>
-          <div
-            title={t('Throughput')}
-            className='flex shrink-0 items-center gap-1'
-          >
-            <dt className='text-muted-foreground text-[9px] leading-3'>
-              {t('Throughput short')}
-            </dt>
-            <dd className='font-mono text-[9px] leading-3 whitespace-nowrap'>
-              {throughputText === '—' ? '—t/s' : throughputText}
-            </dd>
-          </div>
+          <TooltipHint content={t('Average latency')}>
+            <div
+              className='flex shrink-0 items-center gap-1'
+            >
+              <dt className='text-muted-foreground text-[9px] leading-3'>
+                {t('Latency short')}
+              </dt>
+              <dd className='font-mono text-[9px] leading-3 whitespace-nowrap'>
+                {latencyText === '—' ? '—s' : latencyText}
+              </dd>
+            </div>
+          </TooltipHint>
+          <TooltipHint content={t('Throughput')}>
+            <div
+              className='flex shrink-0 items-center gap-1'
+            >
+              <dt className='text-muted-foreground text-[9px] leading-3'>
+                {t('Throughput short')}
+              </dt>
+              <dd className='font-mono text-[9px] leading-3 whitespace-nowrap'>
+                {throughputText === '—' ? '—t/s' : throughputText}
+              </dd>
+            </div>
+          </TooltipHint>
         </div>
       </dl>
       {props.children}

@@ -40,12 +40,12 @@ function KpiValue(props: {
   className?: string
 }) {
   if (props.loading) {
-    return <Skeleton className='mt-3 h-10 w-28' />
+    return <Skeleton className='mt-2 h-8 w-24 @min-[48rem]/console:mt-3 @min-[48rem]/console:h-10 @min-[48rem]/console:w-28' />
   }
   return (
     <div
       className={cn(
-        'mt-3 font-mono text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl',
+        'mt-2 font-mono text-2xl font-semibold tracking-tight tabular-nums @min-[48rem]/console:mt-3 @min-[48rem]/console:text-3xl @min-[80rem]/console:text-4xl',
         props.className
       )}
     >
@@ -56,7 +56,7 @@ function KpiValue(props: {
 
 function KpiMeta(props: { detail?: ReactNode; action?: ReactNode }) {
   return (
-    <div className='mt-4 flex min-h-8 items-center justify-between gap-2'>
+    <div className='mt-3 flex min-h-8 flex-wrap items-center justify-between gap-2 @min-[48rem]/console:mt-4'>
       <div className='min-w-0 flex-1'>{props.detail}</div>
       {props.action ? <div className='shrink-0'>{props.action}</div> : null}
     </div>
@@ -68,18 +68,10 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
 
   return (
     <div className='bg-muted/30 overflow-hidden rounded-2xl border'>
-      <div className='grid grid-cols-1 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-4'>
-        <div className='px-4 py-5 sm:px-5 sm:py-6'>
-          <div className='text-muted-foreground text-xs font-medium'>
-            {props.spendTitle}
-          </div>
-          <KpiValue loading={props.loading} value={formatQuota(props.spend)} />
-          <KpiMeta detail={<p className='text-muted-foreground truncate text-xs'>{t('API usage for the selected range')}</p>} />
-        </div>
-
-        <div className='px-4 py-5 sm:px-5 sm:py-6'>
-          <div className='text-muted-foreground text-xs font-medium'>
-            {t('Recharge balance')}
+      <div className='grid grid-cols-1 @min-[32rem]/console:grid-cols-2 @min-[72rem]/console:grid-cols-4'>
+        <div className='min-w-0 border-b px-3 py-4 @min-[32rem]/console:border-r @min-[48rem]/console:px-5 @min-[48rem]/console:py-6 @min-[72rem]/console:border-b-0'>
+          <div className='text-muted-foreground text-[11px] font-medium @min-[48rem]/console:text-xs'>
+            {t('Current Balance')}
           </div>
           <KpiValue loading={props.loading} value={formatQuota(props.balance)} />
           <KpiMeta
@@ -98,8 +90,16 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
           />
         </div>
 
-        <div className='px-4 py-5 sm:px-5 sm:py-6'>
-          <div className='text-muted-foreground text-xs font-medium'>
+        <div className='min-w-0 border-b px-3 py-4 @min-[48rem]/console:px-5 @min-[48rem]/console:py-6 @min-[72rem]/console:border-r @min-[72rem]/console:border-b-0'>
+          <div className='text-muted-foreground text-[11px] font-medium @min-[48rem]/console:text-xs'>
+            {props.spendTitle}
+          </div>
+          <KpiValue loading={props.loading} value={formatQuota(props.spend)} />
+          <KpiMeta detail={<p className='text-muted-foreground truncate text-[11px] @min-[48rem]/console:text-xs'>{t('API usage for the selected range')}</p>} />
+        </div>
+
+        <div className='min-w-0 border-b px-3 py-4 @min-[32rem]/console:border-r @min-[32rem]/console:border-b-0 @min-[48rem]/console:px-5 @min-[48rem]/console:py-6'>
+          <div className='text-muted-foreground text-[11px] font-medium @min-[48rem]/console:text-xs'>
             {t('Request records')}
           </div>
           <KpiValue
@@ -108,7 +108,7 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
           />
           <KpiMeta
             detail={
-              <p className='text-muted-foreground truncate text-xs'>
+              <p className='text-muted-foreground truncate text-[11px] @min-[48rem]/console:text-xs'>
                 {t('Token usage {{amount}}', {
                   amount: formatTokens(props.tokens),
                 })}
@@ -118,7 +118,7 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
               <Link
                 to='/usage-logs/$section'
                 params={{ section: 'common' }}
-                className='text-muted-foreground hover:text-foreground inline-flex text-xs underline-offset-2 hover:underline'
+                className='text-muted-foreground hover:text-foreground inline-flex text-[11px] underline-offset-2 hover:underline @min-[48rem]/console:text-xs'
               >
                 {t('Usage logs')} →
               </Link>
@@ -126,8 +126,8 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
           />
         </div>
 
-        <div className='px-4 py-5 sm:px-5 sm:py-6'>
-          <div className='text-muted-foreground text-xs font-medium'>
+        <div className='min-w-0 px-3 py-4 @min-[48rem]/console:px-5 @min-[48rem]/console:py-6'>
+          <div className='text-muted-foreground text-[11px] font-medium @min-[48rem]/console:text-xs'>
             {t('In-progress tasks')}
           </div>
           <KpiValue
@@ -136,7 +136,7 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
           />
           <KpiMeta
             detail={
-              <p className='text-muted-foreground truncate text-xs'>
+              <p className='text-muted-foreground truncate text-[11px] @min-[48rem]/console:text-xs'>
                 {t('Images and videos submitted today')}
               </p>
             }
@@ -144,7 +144,7 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
               <Link
                 to='/usage-logs/$section'
                 params={{ section: 'task' }}
-                className='text-muted-foreground hover:text-foreground inline-flex text-xs underline-offset-2 hover:underline'
+                className='text-muted-foreground hover:text-foreground inline-flex text-[11px] underline-offset-2 hover:underline @min-[48rem]/console:text-xs'
               >
                 {t('View tasks')} →
               </Link>

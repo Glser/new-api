@@ -27,6 +27,7 @@ import {
 import { classifyValue, type FadeRun } from './response-fade'
 import { ResponseImage } from './response-renderer-image'
 import type { RenderChildren } from './response-types'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 const STREAM_FADE_DELAY_VAR = '--stream-fade-delay'
 
@@ -73,16 +74,16 @@ export function renderLink(
   const target = opensInNewTab ? '_blank' : undefined
 
   return (
-    <a
-      className='text-primary underline-offset-4 hover:underline'
-      href={node.href}
-      key={key}
-      rel={rel}
-      target={target}
-      title={node.title ?? undefined}
-    >
-      {renderChildren(node.children)}
-    </a>
+    <TooltipHint key={key} content={node.title ?? undefined}>
+      <a
+        className='text-primary underline-offset-4 hover:underline'
+        href={node.href}
+        rel={rel}
+        target={target}
+      >
+        {renderChildren(node.children)}
+      </a>
+    </TooltipHint>
   )
 }
 

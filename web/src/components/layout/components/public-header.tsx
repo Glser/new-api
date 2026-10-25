@@ -39,6 +39,7 @@ import type { TopNavLink } from '../types'
 import { HeaderLogo } from './header-logo'
 import { PillNav } from './pill-nav'
 import { PillNavSheet } from './pill-nav-sheet'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -244,12 +245,13 @@ export function PublicHeader(props: PublicHeaderProps) {
               <div className='flex size-8 shrink-0 -translate-y-0.5 items-center justify-center transition-all duration-300 group-hover:scale-105'>
                 {logoContent}
               </div>
-              <span
-                className='max-w-48 truncate text-[0.9375rem] leading-none font-semibold tracking-tight'
-                title={displaySiteName}
-              >
-                {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
-              </span>
+              <TooltipHint content={displaySiteName}>
+                <span
+                  className='max-w-48 truncate text-[0.9375rem] leading-none font-semibold tracking-tight'
+                >
+                  {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
+                </span>
+              </TooltipHint>
             </Link>
           </div>
 

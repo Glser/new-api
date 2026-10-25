@@ -16,7 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Shield, Trash2 } from 'lucide-react'
+import { Shield01Icon, Delete02Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -47,12 +48,12 @@ export function AccountActionCard(props: AccountActionCardProps) {
           ? 'Add a password after verifying your identity'
           : 'Update your password to keep your account secure'
       ),
-      icon: Shield,
+      icon: Shield01Icon,
     },
     delete: {
       title: t('Delete Account'),
       description: t('Permanently delete your account and all data'),
-      icon: Trash2,
+      icon: Delete02Icon,
     },
   }
   const action = actions[props.action]
@@ -62,11 +63,11 @@ export function AccountActionCard(props: AccountActionCardProps) {
         data-card-hover='false'
         className={`gap-0 py-0 ${props.action === 'delete' ? 'ring-destructive/30' : ''}`}
       >
-        <div className='flex items-center gap-3 px-3 py-2.5 sm:px-4'>
+        <div className='flex flex-wrap items-center gap-3 px-3 py-2.5 sm:px-4'>
           <IconBadge tone='neutral' size='sm'>
-            <action.icon />
+            <HugeiconsIcon icon={action.icon} strokeWidth={2} />
           </IconBadge>
-          <div className='min-w-0 flex-1 space-y-0.5'>
+          <div className='min-w-40 flex-1 space-y-0.5'>
             <p className='text-sm font-medium'>{action.title}</p>
             <p className='text-muted-foreground text-xs'>
               {action.description}

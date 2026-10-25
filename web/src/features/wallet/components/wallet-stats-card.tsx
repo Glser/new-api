@@ -16,87 +16,128 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Activity, BarChart3, WalletCards } from 'lucide-react'
+import {
+  ArrowRight01Icon,
+  ChartHistogramIcon,
+  Invoice01Icon,
+  Wallet01Icon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Link } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatQuota } from '@/lib/format'
 
 import type { UserWalletData } from '../types'
 
 interface WalletStatsCardProps {
+  children: ReactNode
   user: UserWalletData | null
   loading?: boolean
+  onAddFunds: () => void
 }
 
 export function WalletStatsCard(props: WalletStatsCardProps) {
   const { t } = useTranslation()
-  if (props.loading) {
-    return (
-      <div className='grid grid-cols-3 divide-x rounded-lg border'>
-        {['balance', 'usage', 'requests'].map((key) => (
-          <div key={key} className='min-w-0 px-2.5 py-2.5 sm:px-5 sm:py-4'>
-            <Skeleton className='h-3.5 w-full' />
-            <Skeleton className='mt-2 h-6 w-full sm:h-7' />
-            <Skeleton className='mt-1.5 hidden h-3.5 w-24 md:block' />
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  const stats: {
-    label: string
-    value: string
-    description: string
-    icon: typeof WalletCards
-    tone: IconBadgeTone
-  }[] = [
-    {
-      label: t('Current Balance'),
-      value: formatQuota(props.user?.quota ?? 0),
-      description: t('Remaining quota'),
-      icon: WalletCards,
-      tone: 'success',
-    },
-    {
-      label: t('Total Usage'),
-      value: formatQuota(props.user?.used_quota ?? 0),
-      description: t('Total consumed quota'),
-      icon: BarChart3,
-      tone: 'info',
-    },
-    {
-      label: t('API Requests'),
-      value: (props.user?.request_count ?? 0).toLocaleString(),
-      description: t('Total requests made'),
-      icon: Activity,
-      tone: 'chart-4',
-    },
-  ]
 
   return (
-    <div className='grid grid-cols-3 divide-x rounded-lg border'>
-      {stats.map((item) => (
-        <div key={item.label} className='min-w-0 px-2.5 py-2.5 sm:px-5 sm:py-4'>
-          <div className='flex items-center gap-1.5 sm:gap-2.5'>
-            <IconBadge tone={item.tone} size='stat'>
-              <item.icon />
-            </IconBadge>
-            <div className='text-muted-foreground truncate text-[11px] font-medium tracking-wider uppercase sm:text-xs'>
-              {item.label}
-            </div>
+    <section
+      aria-label={t('Wallet')}
+      className='bg-card grid min-w-0 overflow-hidden rounded-2xl border @min-[56rem]/wallet:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1.15fr)]'
+    >
+      <div className='flex min-w-0 flex-col gap-3 px-5 py-4 sm:px-6 sm:py-5'>
+        <div>
+          <div className='flex min-h-10 items-center justify-between gap-3'>
+            <span className='flex items-center gap-2 text-sm font-medium'>
+              <HugeiconsIcon
+                icon={Wallet01Icon}
+                size={18}
+                strokeWidth={1.7}
+                aria-hidden='true'
+              />
+              {t('Current Balance')}
+            </span>
           </div>
-
-          <div className='text-foreground mt-1.5 font-mono text-sm font-bold tracking-tight break-all tabular-nums sm:mt-2.5 sm:text-2xl'>
-            {item.value}
-          </div>
-          <div className='text-muted-foreground/60 mt-1 hidden text-xs md:block'>
-            {item.description}
-          </div>
+          <p className='text-muted-foreground mt-1.5 text-xs leading-relaxed'>
+            {t('Available for pay-as-you-go usage')}
+          </p>
         </div>
-      ))}
-    </div>
+        <div className='flex min-h-16 flex-1 items-center justify-between gap-4'>
+          {props.loading ? (
+            <Skeleton className='h-12 w-48 min-w-0' />
+          ) : (
+            <p className='min-w-0 text-4xl leading-tight font-semibold tracking-tight break-all tabular-nums sm:text-5xl'>
+              {formatQuota(props.user?.quota ?? 0)}
+            </p>
+          )}
+          <Button
+            size='lg'
+            className='relative top-1.5 h-10 overflow-hidden rounded-md bg-lime-400 px-5 text-sm font-semibold text-black shadow-[0_4px_14px_rgba(163,230,53,0.28)] duration-300 hover:-translate-y-px hover:bg-lime-400 hover:shadow-[0_8px_24px_rgba(163,230,53,0.4)] active:translate-y-px'
+            onClick={props.onAddFunds}
+            aria-haspopup='dialog'
+          >
+            <span
+              aria-hidden='true'
+              className='pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover/button:translate-x-full'
+            />
+            <span className='relative'>{t('Top up now')}</span>
+          </Button>
+        </div>
+      </div>
+      <div className='flex min-w-0 flex-col gap-3 border-t px-5 py-4 sm:px-6 sm:py-5 @min-[56rem]/wallet:border-t-0 @min-[56rem]/wallet:border-l'>
+        <div>
+          <div className='flex min-h-10 items-center justify-between gap-3'>
+            <span className='flex items-center gap-2 text-sm font-medium'>
+              <HugeiconsIcon
+                icon={ChartHistogramIcon}
+                size={18}
+                strokeWidth={1.7}
+                aria-hidden='true'
+              />
+              {t('Total Usage')}
+            </span>
+            <Button
+              variant='ghost'
+              size='lg'
+              className='h-10'
+              render={
+                <Link
+                  to='/usage-logs/$section'
+                  params={{ section: 'common' }}
+                />
+              }
+            >
+              <HugeiconsIcon
+                icon={Invoice01Icon}
+                data-icon='inline-start'
+                aria-hidden='true'
+              />
+              {t('Billing History')}
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
+                data-icon='inline-end'
+                aria-hidden='true'
+              />
+            </Button>
+          </div>
+          <p className='text-muted-foreground mt-1.5 text-xs leading-relaxed'>
+            {t('Total consumed quota')}
+          </p>
+        </div>
+        <div className='flex min-h-16 flex-1 flex-col justify-center'>
+          {props.loading ? (
+            <Skeleton className='h-9 w-40' />
+          ) : (
+            <p className='text-3xl leading-tight font-semibold tracking-tight break-all tabular-nums'>
+              {formatQuota(props.user?.used_quota ?? 0)}
+            </p>
+          )}
+        </div>
+      </div>
+      {props.children}
+    </section>
   )
 }

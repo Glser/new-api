@@ -34,14 +34,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useMediaQuery } from '@/hooks'
 import { cn } from '@/lib/utils'
 
-import {
-  AUTO_GROUP_FRAME_CLASS_NAME,
-  AutoGroupFlowBorder,
-  GroupRatioBadge,
-} from './auto-group-visuals'
+import { GroupRatioBadge } from './auto-group-visuals'
 
 export type ApiKeyGroupOption = {
   value: string
@@ -68,7 +63,6 @@ export function ApiKeyGroupCombobox({
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [searchValue, setSearchValue] = useState('')
-  const shouldReduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const selectedOption = options.find((option) => option.value === value)
   const isAutoSelected = selectedOption?.value === 'auto'
 
@@ -102,38 +96,28 @@ export function ApiKeyGroupCombobox({
             variant='outline'
             role='combobox'
             aria-expanded={open}
-            data-auto-group-effect={isAutoSelected ? 'trigger' : undefined}
             disabled={disabled}
-            className={cn(
-              'border-input bg-muted/40 hover:bg-muted/55 hover:text-foreground active:bg-background data-popup-open:border-ring data-popup-open:bg-background data-popup-open:ring-ring/20 relative h-auto min-h-14 w-full justify-between gap-2 rounded-lg px-3 py-2 text-start shadow-none transition-[background-color,border-color,box-shadow] duration-150 data-popup-open:ring-[3px] sm:min-h-20 sm:gap-3 sm:px-4 sm:py-3',
-              isAutoSelected &&
-                cn(
-                  AUTO_GROUP_FRAME_CLASS_NAME,
-                  'hover:border-primary/55 data-popup-open:border-primary/55 data-popup-open:ring-primary/20'
-                )
-            )}
+            className='h-auto min-h-11 w-full justify-between gap-2 rounded-lg px-3 py-2 text-start shadow-none'
           />
         }
       >
-        {isAutoSelected && (
-          <AutoGroupFlowBorder shouldReduceMotion={shouldReduceMotion} />
-        )}
         <span className='flex min-w-0 flex-1 items-center justify-between gap-2 sm:gap-3'>
           <span className='min-w-0'>
             <span className='block truncate font-medium'>
               {selectedOption?.label || placeholder || t('Select a group')}
             </span>
-            {selectedOption?.desc && (
-              <span className='text-muted-foreground block truncate text-[11px] sm:text-xs'>
-                {selectedOption.desc}
-              </span>
-            )}
+            {selectedOption?.desc &&
+              selectedOption.desc !== selectedOption.label && (
+                <span className='text-muted-foreground block truncate text-xs font-normal'>
+                  {selectedOption.desc}
+                </span>
+              )}
           </span>
-          <span className='hidden sm:block'>
+          <span className='shrink-0'>
             <GroupRatioBadge
               ratio={selectedOption?.ratio}
               isAuto={isAutoSelected}
-              shouldReduceMotion={shouldReduceMotion}
+              shouldReduceMotion
             />
           </span>
         </span>
@@ -143,7 +127,7 @@ export function ApiKeyGroupCombobox({
         />
       </PopoverTrigger>
       <PopoverContent
-        className='data-closed:zoom-out-100 data-open:zoom-in-100 data-[side=bottom]:slide-in-from-top-0 data-[side=left]:slide-in-from-right-0 data-[side=right]:slide-in-from-left-0 data-[side=top]:slide-in-from-bottom-0 w-[var(--anchor-width)] overflow-hidden rounded-xl p-0 shadow-lg data-closed:duration-75 data-open:duration-100'
+        className='w-[var(--anchor-width)] overflow-hidden rounded-xl p-0'
         onWheel={(event) => event.stopPropagation()}
         onTouchMove={(event) => event.stopPropagation()}
         onPointerDown={(event) => event.stopPropagation()}
@@ -164,26 +148,13 @@ export function ApiKeyGroupCombobox({
                   <CommandItem
                     key={option.value}
                     value={option.value}
-                    data-auto-group-effect={isAutoOption ? 'option' : undefined}
                     onSelect={() => handleSelect(option.value)}
-                    className={cn(
-                      'data-[selected=true]:bg-muted items-start gap-3 rounded-lg px-3 py-3 transition-colors',
-                      isAutoOption &&
-                        cn(
-                          AUTO_GROUP_FRAME_CLASS_NAME,
-                          'border-primary/35 data-[selected=true]:border-primary/55'
-                        )
-                    )}
+                    className='items-center gap-2 rounded-lg px-2 py-2.5'
                   >
-                    {isAutoOption && (
-                      <AutoGroupFlowBorder
-                        shouldReduceMotion={shouldReduceMotion}
-                      />
-                    )}
                     <Check
                       aria-hidden='true'
                       className={cn(
-                        'mt-0.5 size-4',
+                        'size-3.5 shrink-0',
                         value === option.value ? 'opacity-100' : 'opacity-0'
                       )}
                     />
@@ -191,7 +162,7 @@ export function ApiKeyGroupCombobox({
                       <span className='block truncate font-medium'>
                         {option.label}
                       </span>
-                      {option.desc && (
+                      {option.desc && option.desc !== option.label && (
                         <span className='text-muted-foreground block truncate text-xs'>
                           {option.desc}
                         </span>
@@ -200,7 +171,7 @@ export function ApiKeyGroupCombobox({
                     <GroupRatioBadge
                       ratio={option.ratio}
                       isAuto={isAutoOption}
-                      shouldReduceMotion={shouldReduceMotion}
+                      shouldReduceMotion
                     />
                   </CommandItem>
                 )

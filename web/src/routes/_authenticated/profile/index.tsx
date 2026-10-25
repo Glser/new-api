@@ -21,5 +21,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Profile } from '@/features/profile'
 
 export const Route = createFileRoute('/_authenticated/profile/')({
+  validateSearch: (
+    search: Record<string, unknown>
+  ): { section?: 'preferences' | 'security' } => ({
+    section: search.section === 'security' ? 'security' : 'preferences',
+  }),
   component: Profile,
 })

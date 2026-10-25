@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
 import { getLobeIcon } from '@/lib/lobe-icon'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 interface AgentItem {
   id: string
@@ -195,12 +196,13 @@ export function HeroAgentShowcase() {
                     {getLobeIcon(agent.icon_key, 26)}
                   </span>
                 </div>
-                <h4
-                  className='text-foreground min-w-0 text-[14.5px] leading-tight font-semibold tracking-tight antialiased sm:text-[15px]'
-                  title={agent.name}
-                >
-                  {agent.name}
-                </h4>
+                <TooltipHint content={agent.name}>
+                  <h4
+                    className='text-foreground min-w-0 text-[14.5px] leading-tight font-semibold tracking-tight antialiased sm:text-[15px]'
+                  >
+                    {agent.name}
+                  </h4>
+                </TooltipHint>
               </div>
 
               {/* Description */}

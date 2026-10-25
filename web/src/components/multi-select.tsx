@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/combobox'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { cn } from '@/lib/utils'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 export type Option = {
   label: string
@@ -304,17 +305,18 @@ export function MultiSelect(props: MultiSelectProps) {
                   return (
                     <ComboboxChip key={value}>
                       {props.copyChipOnClick ? (
-                        <button
-                          type='button'
-                          onClick={(event) =>
-                            handleCopyChip(event, value, label)
-                          }
-                          onPointerDown={(event) => event.stopPropagation()}
-                          title={t('Click to copy')}
-                          className='max-w-[16rem] cursor-pointer truncate rounded-sm hover:underline'
-                        >
-                          {label}
-                        </button>
+                        <TooltipHint content={t('Click to copy')}>
+                          <button
+                            type='button'
+                            onClick={(event) =>
+                              handleCopyChip(event, value, label)
+                            }
+                            onPointerDown={(event) => event.stopPropagation()}
+                            className='max-w-[16rem] cursor-pointer truncate rounded-sm hover:underline'
+                          >
+                            {label}
+                          </button>
+                        </TooltipHint>
                       ) : (
                         <span className='max-w-[16rem] truncate'>{label}</span>
                       )}
@@ -322,36 +324,38 @@ export function MultiSelect(props: MultiSelectProps) {
                   )
                 })}
                 {hiddenCount > 0 && (
-                  <button
-                    type='button'
-                    onClick={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      setExpanded(true)
-                    }}
-                    onPointerDown={(event) => event.stopPropagation()}
-                    title={t('Show All')}
-                    className='bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-[calc(--spacing(5.25))] w-fit cursor-pointer items-center justify-center rounded-sm px-1.5 text-xs font-medium whitespace-nowrap transition-colors'
-                  >
-                    {t('+{{count}} more', { count: hiddenCount })}
-                  </button>
-                )}
-                {expanded &&
-                  typeof props.maxVisibleChips === 'number' &&
-                  values.length > props.maxVisibleChips && (
+                  <TooltipHint content={t('Show All')}>
                     <button
                       type='button'
                       onClick={(event) => {
                         event.preventDefault()
                         event.stopPropagation()
-                        setExpanded(false)
+                        setExpanded(true)
                       }}
                       onPointerDown={(event) => event.stopPropagation()}
-                      title={t('Collapse')}
                       className='bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-[calc(--spacing(5.25))] w-fit cursor-pointer items-center justify-center rounded-sm px-1.5 text-xs font-medium whitespace-nowrap transition-colors'
                     >
-                      {t('Collapse')}
+                      {t('+{{count}} more', { count: hiddenCount })}
                     </button>
+                  </TooltipHint>
+                )}
+                {expanded &&
+                  typeof props.maxVisibleChips === 'number' &&
+                  values.length > props.maxVisibleChips && (
+                    <TooltipHint content={t('Collapse')}>
+                      <button
+                        type='button'
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          setExpanded(false)
+                        }}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        className='bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-[calc(--spacing(5.25))] w-fit cursor-pointer items-center justify-center rounded-sm px-1.5 text-xs font-medium whitespace-nowrap transition-colors'
+                      >
+                        {t('Collapse')}
+                      </button>
+                    </TooltipHint>
                   )}
               </>
             )

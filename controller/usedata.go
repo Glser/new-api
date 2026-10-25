@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const maxUserQuotaRangeSeconds int64 = 31 * 24 * 60 * 60
+
 func parseFlowQuotaTimeRange(c *gin.Context) (int64, int64, bool) {
 	startTimestamp, err := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	if err != nil || startTimestamp <= 0 {
@@ -64,8 +66,8 @@ func GetUserQuotaDates(c *gin.Context) {
 	userId := c.GetInt("id")
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	// 判断时间跨度是否超过 1 个月
-	if endTimestamp-startTimestamp > 2592000 {
+	// 允许覆盖最长 31 天的自然月，避免 31 天月份被误判为超限。
+	if endTimestamp-startTimestamp > maxUserQuotaRangeSeconds {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "时间跨度不能超过 1 个月",
@@ -110,7 +112,7 @@ func GetUserFlowQuotaDates(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if endTimestamp-startTimestamp > 2592000 {
+	if endTimestamp-startTimestamp > maxUserQuotaRangeSeconds {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,
 			"message": "时间跨度不能超过 1 个月",

@@ -134,7 +134,6 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
       pagination.pageSize,
       columnFilters,
       searchParams,
-      t,
     ],
     queryFn: async () => {
       const result = await fetchLogsByCategory({
@@ -164,7 +163,12 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
   })
 
   const logs = data?.items || []
-  const columns = useColumnsByCategory(logCategory, isAdmin, isRoot)
+  const isCommon = logCategory === 'common'
+  const taskCellAlignment =
+    logCategory === 'drawing' || logCategory === 'task'
+      ? '[&_[data-slot=table]_td_*]:text-center [&_[data-slot=table]_td_*]:justify-center [&_[data-slot=table]_td_*]:items-center'
+      : ''
+  const columns = useColumnsByCategory(logCategory, isAdmin, isRoot, isCommon)
   const isLoadingData = isLoading || (isFetching && !data)
 
   const { table } = useDataTable({
@@ -185,12 +189,10 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
     ensurePageInRange,
   })
 
-  const isCommon = logCategory === 'common'
-
   return (
     <DataTablePage
       table={table}
-      compactPagination={isMobile && isCommon}
+      compactPagination={isMobile}
       columns={columns as ColumnDef<Record<string, unknown>>[]}
       isLoading={isLoadingData}
       isFetching={isFetching}
@@ -201,7 +203,8 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
       skeletonKeyPrefix='usage-log-skeleton'
       applyHeaderSize
       tableClassName={cn(
-        '[&_[data-slot=table]]:text-[13px] [&_[data-slot=table]_td]:text-[13px] [&_[data-slot=table]_td_*]:text-[13px] [&_[data-slot=table]_th]:text-[13px] [&_[data-slot=table]_th_*]:text-[13px]'
+        '@container/activity [&_[data-slot=table]]:min-w-[70rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-transparent [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/activity:[&_[data-slot=table]_td]:text-sm @min-[48rem]/activity:[&_[data-slot=table]_th]:text-sm @min-[80rem]/activity:[&_[data-slot=table]_td]:px-3 @min-[80rem]/activity:[&_[data-slot=table]_th]:px-3',
+        taskCellAlignment
       )}
       mobile={
         <UsageLogsMobileList
@@ -237,7 +240,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
             key={row.id}
             row={row}
             className={cn('transition-colors', tintClass)}
-            getColumnClassName={() => (isCommon ? 'py-2' : 'py-3.5')}
+            getColumnClassName={() => 'py-2.5 text-center'}
           />
         )
       }}

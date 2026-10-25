@@ -174,6 +174,21 @@ export function getMinTopupAmount(topupInfo: TopupInfo | null): number {
   return DEFAULT_MIN_TOPUP
 }
 
+export function getPaymentMethodMinTopup(
+  topupInfo: TopupInfo | null,
+  method: PaymentMethod
+): number {
+  let minimum = topupInfo?.min_topup || DEFAULT_MIN_TOPUP
+  if (isStripePayment(method.type)) {
+    minimum = topupInfo?.stripe_min_topup || DEFAULT_MIN_TOPUP
+  } else if (isWaffoPayment(method.type)) {
+    minimum = topupInfo?.waffo_min_topup || DEFAULT_MIN_TOPUP
+  } else if (isWaffoPancakePayment(method.type)) {
+    minimum = topupInfo?.waffo_pancake_min_topup || DEFAULT_MIN_TOPUP
+  }
+  return Math.max(minimum, method.min_topup || 0)
+}
+
 /**
  * Generate preset amounts based on minimum topup
  */

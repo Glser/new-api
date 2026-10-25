@@ -48,6 +48,7 @@ import type { Vendor } from '../types'
 import { vendorErrorMessage, type VendorOperation } from '../vendor-api'
 import { VendorOperationDialog } from './dialogs/vendor-operation-dialog'
 import { useModels } from './models-provider'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 const route = getRouteApi('/_authenticated/models/$section')
 
@@ -144,12 +145,13 @@ export function VendorsTable() {
       header: t('Description'),
       size: 350,
       cell: ({ row }) => (
-        <p
-          className='text-muted-foreground line-clamp-2 max-w-lg break-words whitespace-normal'
-          title={row.original.description}
-        >
-          {row.original.description || '—'}
-        </p>
+        <TooltipHint content={row.original.description}>
+          <p
+            className='text-muted-foreground line-clamp-2 max-w-lg break-words whitespace-normal'
+          >
+            {row.original.description || '—'}
+          </p>
+        </TooltipHint>
       ),
     },
     {

@@ -175,8 +175,10 @@ export function LoginSessionsCard() {
   return (
     <>
       <Card data-card-hover='false'>
-        <CardHeader>
-          <CardTitle>{t('Login sessions')}</CardTitle>
+        <CardHeader className='max-sm:flex max-sm:flex-col max-sm:gap-3'>
+          <CardTitle className='text-sm font-semibold'>
+            {t('Login sessions')}
+          </CardTitle>
           <CardDescription>
             {t('Review and sign out devices currently using your account.')}
           </CardDescription>
@@ -197,7 +199,11 @@ export function LoginSessionsCard() {
             </Button>
           </CardAction>
         </CardHeader>
-        <CardContent>{sessionsContent}</CardContent>
+        <CardContent>
+          <div className='max-h-96 overflow-y-auto overscroll-contain'>
+            {sessionsContent}
+          </div>
+        </CardContent>
       </Card>
 
       <LoginSessionDialogs

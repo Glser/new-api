@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
@@ -16,7 +17,8 @@ import (
 // ---- Shared types ----
 
 type SubscriptionPlanDTO struct {
-	Plan model.SubscriptionPlan `json:"plan"`
+	Plan         model.SubscriptionPlan          `json:"plan"`
+	QuotaSummary *model.SubscriptionQuotaSummary `json:"quota_summary,omitempty"`
 }
 
 type BillingPreferenceRequest struct {
@@ -41,10 +43,12 @@ func GetSubscriptionPlans(c *gin.Context) {
 		return
 	}
 	result := make([]SubscriptionPlanDTO, 0, len(plans))
+	previewStart := time.Unix(model.GetDBTimestamp(), 0)
 	for _, p := range plans {
 		p.NormalizeDefaults()
 		result = append(result, SubscriptionPlanDTO{
-			Plan: p,
+			Plan:         p,
+			QuotaSummary: model.GetSubscriptionPlanQuotaSummary(&p, previewStart),
 		})
 	}
 	common.ApiSuccess(c, result)
@@ -66,12 +70,47 @@ func GetSubscriptionSelf(c *gin.Context) {
 	if err != nil {
 		activeSubscriptions = []model.SubscriptionSummary{}
 	}
+	populateSubscriptionQuotaSummaries(allSubscriptions, activeSubscriptions)
 
 	common.ApiSuccess(c, gin.H{
 		"billing_preference": pref,
 		"subscriptions":      activeSubscriptions, // all active subscriptions
 		"all_subscriptions":  allSubscriptions,    // all subscriptions including expired
 	})
+}
+
+func populateSubscriptionQuotaSummaries(groups ...[]model.SubscriptionSummary) {
+	planIDs := make(map[int]struct{})
+	for _, group := range groups {
+		for _, item := range group {
+			if item.Subscription != nil {
+				planIDs[item.Subscription.PlanId] = struct{}{}
+			}
+		}
+	}
+	if len(planIDs) == 0 {
+		return
+	}
+	ids := make([]int, 0, len(planIDs))
+	for id := range planIDs {
+		ids = append(ids, id)
+	}
+	var plans []model.SubscriptionPlan
+	if err := model.DB.Where("id IN ?", ids).Find(&plans).Error; err != nil {
+		return
+	}
+	planByID := make(map[int]*model.SubscriptionPlan, len(plans))
+	for i := range plans {
+		planByID[plans[i].Id] = &plans[i]
+	}
+	for _, group := range groups {
+		for i := range group {
+			sub := group[i].Subscription
+			if sub != nil {
+				group[i].QuotaSummary = model.GetUserSubscriptionQuotaSummary(sub, planByID[sub.PlanId])
+			}
+		}
+	}
 }
 
 func UpdateSubscriptionPreference(c *gin.Context) {

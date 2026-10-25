@@ -217,6 +217,24 @@ For commercial licensing, please contact support@quantumnous.com
   scrollbar-width: none; /* Firefox */
 }
 
+/* VChart writes inline panel styles; match the shared popover surface in both themes. */
+.vchart-tooltip-container [vchart-tooltip-id] {
+  border-radius: var(--radius-lg) !important;
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border: 1px solid color-mix(in oklab, var(--foreground) 10%, transparent) !important;
+  box-shadow: 0 8px 24px color-mix(in oklab, var(--foreground) 12%, transparent) !important;
+}
+
+.vchart-tooltip-container [vchart-tooltip-id] .vchart-tooltip-title,
+.vchart-tooltip-container [vchart-tooltip-id] .vchart-tooltip-value-column {
+  color: var(--popover-foreground) !important;
+}
+
+.vchart-tooltip-container [vchart-tooltip-id] .vchart-tooltip-key-column {
+  color: var(--muted-foreground) !important;
+}
+
 /* Tooltip content can still scroll, but should not show a distracting axis. */
 [data-slot='tooltip-content'],
 [data-slot='tooltip-content'] * {

@@ -215,6 +215,7 @@ import {
   ChannelEditorLoadingState,
   ChannelModelsSection,
 } from './sections'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 type ChannelMutateDrawerProps = {
   open: boolean
@@ -4271,19 +4272,20 @@ export function ChannelMutateDrawer({
                     )}
                   </Badge>
                 )}
-                <SheetDescription
-                  className={cn(
-                    'mt-1',
-                    showProviderPicker && providerTarget && 'truncate'
-                  )}
-                  title={
+                <TooltipHint content={
                     showProviderPicker && providerTarget
                       ? description
                       : undefined
-                  }
-                >
-                  {description}
-                </SheetDescription>
+                  }>
+                  <SheetDescription
+                    className={cn(
+                      'mt-1',
+                      showProviderPicker && providerTarget && 'truncate'
+                    )}
+                  >
+                    {description}
+                  </SheetDescription>
+                </TooltipHint>
               </div>
               {!isEditing && !showProviderPicker && (
                 <Button

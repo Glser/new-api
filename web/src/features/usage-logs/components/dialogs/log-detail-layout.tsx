@@ -46,11 +46,34 @@ export function DetailRow(props: {
   )
 }
 
+export function InlineDetailList(props: {
+  items: Array<{ key?: string; label: ReactNode; value: ReactNode }>
+  className?: string
+}) {
+  if (props.items.length === 0) return null
+
+  return (
+    <div
+      className={cn(
+        'flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-xs tabular-nums',
+        props.className
+      )}
+    >
+      {props.items.map((item, index) => (
+        <span key={item.key ?? `${index}`} className='whitespace-nowrap'>
+          {item.label} {item.value}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export function DetailSection(props: {
   icon?: ReactNode
   iconTone?: IconBadgeTone
   label: string
   variant?: 'default' | 'danger'
+  contentClassName?: string
   children: ReactNode
 }) {
   const isDanger = props.variant === 'danger'
@@ -75,7 +98,8 @@ export function DetailSection(props: {
           'min-w-0 space-y-1 overflow-hidden rounded-md border p-2.5 max-sm:p-2',
           isDanger
             ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20'
-            : 'bg-muted/30'
+            : 'bg-muted/30',
+          props.contentClassName
         )}
       >
         {props.children}

@@ -50,6 +50,10 @@ export type SubscriptionPlan = z.infer<typeof subscriptionPlanSchema>
 
 export interface PlanRecord {
   plan: SubscriptionPlan
+  quota_summary?: {
+    total_amount: number
+    cycle_count: number
+  }
 }
 
 // ============================================================================
@@ -73,6 +77,7 @@ export type UserSubscription = z.infer<typeof userSubscriptionSchema>
 
 export interface UserSubscriptionRecord {
   subscription: UserSubscription
+  quota_summary?: PlanRecord['quota_summary']
 }
 
 // ============================================================================

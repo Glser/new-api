@@ -39,6 +39,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { formatTimestampToDate } from '@/lib/format'
 
 import { MJ_TASK_TYPES } from '../../constants'
@@ -94,7 +95,7 @@ export function useDrawingLogsColumns(
         const submitTime = row.getValue('submit_time') as number
 
         return (
-          <div className='flex min-w-0 flex-col gap-0.5'>
+          <div className='flex min-w-0 items-center gap-1.5 whitespace-nowrap'>
             <span className='truncate font-mono text-xs tabular-nums'>
               {formatTimestampToDate(submitTime, 'milliseconds')}
             </span>
@@ -103,6 +104,7 @@ export function useDrawingLogsColumns(
               variant={mjStatusMapper.getVariant(log.status)}
               size='sm'
               copyable={false}
+              className='h-4 shrink-0 px-1 text-[11px]! [&_span]:text-[11px]!'
             />
           </div>
         )
@@ -204,16 +206,17 @@ export function useDrawingLogsColumns(
 
         return (
           <>
-            <button
-              type='button'
-              className='group text-left text-xs'
-              onClick={() => setDialogOpen(true)}
-              title={t('Click to view image')}
-            >
-              <span className='text-foreground truncate leading-snug group-hover:underline'>
-                {t('View')}
-              </span>
-            </button>
+            <TooltipHint content={t('Click to view image')}>
+              <button
+                type='button'
+                className='group text-left text-xs'
+                onClick={() => setDialogOpen(true)}
+              >
+                <span className='text-foreground truncate leading-snug group-hover:underline'>
+                  {t('View')}
+                </span>
+              </button>
+            </TooltipHint>
             <ImageDialog
               imageUrl={imageUrl}
               taskId={log.mj_id}
@@ -238,16 +241,17 @@ export function useDrawingLogsColumns(
 
         return (
           <>
-            <button
-              type='button'
-              className='group flex max-w-[220px] items-center text-left text-xs'
-              onClick={() => setDialogOpen(true)}
-              title={t('Click to view full prompt')}
-            >
-              <span className='text-muted-foreground truncate leading-snug group-hover:underline'>
-                {prompt}
-              </span>
-            </button>
+            <TooltipHint content={t('Click to view full prompt')}>
+              <button
+                type='button'
+                className='group mx-auto flex w-full max-w-[220px] items-center justify-center text-center text-xs'
+                onClick={() => setDialogOpen(true)}
+              >
+                <span className='text-muted-foreground truncate leading-snug group-hover:underline'>
+                  {prompt}
+                </span>
+              </button>
+            </TooltipHint>
             <PromptDialog
               prompt={prompt}
               promptEn={log.prompt_en}

@@ -16,7 +16,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { AlertTriangle, KeyRound, Loader2, ShieldAlert } from 'lucide-react'
+import {
+  Alert02Icon,
+  Key01Icon,
+  Loading03Icon,
+  SecurityCheckIcon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -163,7 +169,7 @@ export function PasskeyCard({ loading: pageLoading }: PasskeyCardProps) {
     <>
       <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
         <CardHeader className='p-3 sm:p-5'>
-          <CardTitle className='text-lg tracking-tight sm:text-xl'>
+          <CardTitle className='text-sm font-semibold sm:text-sm'>
             {t('Passkey Login')}
           </CardTitle>
           <CardDescription className='text-xs sm:text-sm'>
@@ -173,10 +179,14 @@ export function PasskeyCard({ loading: pageLoading }: PasskeyCardProps) {
 
         <CardContent className='p-3 sm:p-5'>
           <div className='space-y-6'>
-            <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between xl:flex-col 2xl:flex-row'>
+            <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between xl:flex-col'>
               <div className='flex items-start gap-4'>
-                <IconBadge tone='info' size='sm'>
-                  <KeyRound />
+                <IconBadge tone='neutral' size='sm'>
+                  <HugeiconsIcon
+                    icon={Key01Icon}
+                    strokeWidth={2}
+                    aria-hidden='true'
+                  />
                 </IconBadge>
                 <div className='space-y-1'>
                   <div className='flex flex-wrap items-center gap-2'>
@@ -204,12 +214,18 @@ export function PasskeyCard({ loading: pageLoading }: PasskeyCardProps) {
 
               {!enabled && (
                 <Button
-                  className='w-full sm:w-auto xl:w-full 2xl:w-auto'
+                  className='w-full sm:w-auto xl:w-full'
                   onClick={handleRegister}
                   disabled={!supported || registering || verification.isActive}
                 >
                   {registering && (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    <HugeiconsIcon
+                      icon={Loading03Icon}
+                      strokeWidth={2}
+                      aria-hidden='true'
+                      data-icon='inline-start'
+                      className='animate-spin'
+                    />
                   )}
                   {t('Enable Passkey')}
                 </Button>
@@ -217,7 +233,7 @@ export function PasskeyCard({ loading: pageLoading }: PasskeyCardProps) {
             </div>
 
             {enabled && (
-              <div className='flex flex-col gap-3 border-t pt-6 sm:flex-row xl:flex-col 2xl:flex-row'>
+              <div className='flex flex-col gap-3 border-t pt-6 sm:flex-row xl:flex-col'>
                 <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                   <AlertDialogTrigger
                     render={
@@ -229,9 +245,20 @@ export function PasskeyCard({ loading: pageLoading }: PasskeyCardProps) {
                     }
                   >
                     {removing ? (
-                      <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      <HugeiconsIcon
+                        icon={Loading03Icon}
+                        strokeWidth={2}
+                        aria-hidden='true'
+                        data-icon='inline-start'
+                        className='animate-spin'
+                      />
                     ) : (
-                      <AlertTriangle className='mr-2 h-4 w-4' />
+                      <HugeiconsIcon
+                        icon={Alert02Icon}
+                        strokeWidth={2}
+                        aria-hidden='true'
+                        data-icon='inline-start'
+                      />
                     )}
                     {t('Remove Passkey')}
                   </AlertDialogTrigger>
@@ -268,7 +295,12 @@ export function PasskeyCard({ loading: pageLoading }: PasskeyCardProps) {
 
             {showUnsupportedNotice && (
               <div className='bg-muted/60 text-muted-foreground flex items-start gap-3 rounded-md p-4 text-sm'>
-                <ShieldAlert className='mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500' />
+                <HugeiconsIcon
+                  icon={SecurityCheckIcon}
+                  strokeWidth={2}
+                  aria-hidden='true'
+                  className='mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500'
+                />
                 <div>
                   <p className='text-foreground font-medium'>
                     {t('Passkey not supported on this device')}

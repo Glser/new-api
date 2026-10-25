@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { LucideIcon } from 'lucide-react'
+import { TooltipHint } from '@/components/ui/tooltip'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -179,7 +180,8 @@ export function StatusBadge({
     : label || undefined
 
   return (
-    <span
+    <TooltipHint content={'title' in props ? props.title : title}>
+      <span
       data-slot='status-badge'
       className={cn(
         'inline-flex w-fit max-w-full min-w-0 shrink items-center font-medium tracking-normal whitespace-nowrap transition-colors',
@@ -196,8 +198,8 @@ export function StatusBadge({
         className
       )}
       onClick={handleClick}
-      title={title}
       {...props}
+      title={undefined}
     >
       {showDot && (
         <span
@@ -210,7 +212,8 @@ export function StatusBadge({
       )}
       {Icon && <Icon className='size-3.5 shrink-0' />}
       {content}
-    </span>
+      </span>
+    </TooltipHint>
   )
 }
 

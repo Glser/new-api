@@ -25,6 +25,7 @@ import { MOTION_TRANSITION } from '@/lib/motion'
 
 import type { TopNavLink } from '../types'
 import { useSlidingIndicator } from '../lib/use-sliding-indicator'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 /**
  * Which header a pill rail lives in.
@@ -192,35 +193,35 @@ export function PillNav(props: PillNavProps) {
 
         if (link.external) {
           return (
-            <a
-              key={items[index].key}
-              ref={registerItem(index)}
-              href={link.href}
-              title={link.title}
-              target='_blank'
-              rel='noopener noreferrer'
-              aria-disabled={link.disabled}
-              aria-current={active ? 'page' : undefined}
-              tabIndex={link.disabled ? -1 : undefined}
-              className={slotClassName}
-            >
-              {content}
-            </a>
+            <TooltipHint key={items[index].key} content={link.title}>
+              <a
+                ref={registerItem(index)}
+                href={link.href}
+                target='_blank'
+                rel='noopener noreferrer'
+                aria-disabled={link.disabled}
+                aria-current={active ? 'page' : undefined}
+                tabIndex={link.disabled ? -1 : undefined}
+                className={slotClassName}
+              >
+                {content}
+              </a>
+            </TooltipHint>
           )
         }
 
         return (
-          <Link
-            key={items[index].key}
-            ref={registerItem(index)}
-            to={link.href}
-            title={link.title}
-            disabled={link.disabled}
-            aria-current={active ? 'page' : undefined}
-            className={slotClassName}
-          >
-            {content}
-          </Link>
+          <TooltipHint key={items[index].key} content={link.title}>
+            <Link
+              ref={registerItem(index)}
+              to={link.href}
+              disabled={link.disabled}
+              aria-current={active ? 'page' : undefined}
+              className={slotClassName}
+            >
+              {content}
+            </Link>
+          </TooltipHint>
         )
       })}
     </nav>

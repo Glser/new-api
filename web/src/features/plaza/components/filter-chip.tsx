@@ -71,6 +71,7 @@ export function PlazaFilterChip(props: {
   option: PlazaFilterChipOption
   active: boolean
   onClick: () => void
+  iconOnly?: boolean
 }) {
   const { active, option } = props
 
@@ -81,13 +82,15 @@ export function PlazaFilterChip(props: {
       size='sm'
       onClick={props.onClick}
       aria-pressed={active}
+      aria-label={props.iconOnly ? option.label : undefined}
       title={option.label}
       className={cn(
         'relative h-[25px] max-w-full shrink-0 gap-1 overflow-hidden rounded-full border px-2.5 text-xs font-medium',
         'transition duration-200 hover:-translate-y-px',
         active
           ? 'border-foreground/25 bg-muted text-foreground shadow-none hover:border-foreground/25 hover:bg-muted hover:text-foreground dark:border-foreground/30 dark:bg-foreground/[0.18] dark:text-foreground dark:hover:border-foreground/30 dark:hover:bg-foreground/[0.18] dark:hover:text-foreground'
-          : 'border-border bg-muted/50 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:border-foreground/20 hover:bg-muted hover:text-foreground dark:border-foreground/20 dark:bg-foreground/[0.10] dark:text-foreground/90 dark:shadow-none dark:hover:border-foreground/35 dark:hover:bg-foreground/[0.16] dark:hover:text-foreground'
+          : 'border-border bg-muted/50 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:border-foreground/20 hover:bg-muted hover:text-foreground dark:border-foreground/20 dark:bg-foreground/[0.10] dark:text-foreground/90 dark:shadow-none dark:hover:border-foreground/35 dark:hover:bg-foreground/[0.16] dark:hover:text-foreground',
+        props.iconOnly && 'size-11 rounded-xl p-0 shadow-none'
       )}
     >
       <span
@@ -97,7 +100,7 @@ export function PlazaFilterChip(props: {
           active ? 'via-foreground/[0.10]' : 'via-foreground/[0.07]'
         )}
       />
-      {active && (
+      {active && !props.iconOnly && (
         <span
           aria-hidden='true'
           className='relative flex shrink-0 items-center'
@@ -109,34 +112,41 @@ export function PlazaFilterChip(props: {
         // Button 基类的 [&_svg:not([class*='size-'])]:size-4 会把未标注尺寸的 svg
         // 一律压成 16px，盖掉 getLobeIcon 传的 size；这里用 ! 覆盖，让供应商 logo
         // 跟上缩小后的字号。
-        <span className='relative flex shrink-0 items-center [&_svg]:size-3.5!'>
+        <span
+          className={cn(
+            'relative flex shrink-0 items-center',
+            props.iconOnly ? '[&_svg]:size-5!' : '[&_svg]:size-3.5!'
+          )}
+        >
           {option.icon}
         </span>
       )}
       {/* 名称和右侧数量/倍率同一行高、垂直居中，避免小字偏上或偏下。 */}
-      <span className='relative inline-flex min-w-0 items-center gap-1'>
-        <span className='truncate leading-none'>{option.label}</span>
-        {option.suffix && (
-          <span
-            className={cn(
-              'flex items-center rounded px-1 py-px text-[10px] leading-none tabular-nums',
-              getSuffixClassName()
-            )}
-          >
-            {option.suffix}
-          </span>
-        )}
-        {option.countLabel && (
-          <span
-            className={cn(
-              'text-[10px] leading-none tabular-nums',
-              active ? 'text-foreground/60' : 'text-muted-foreground/70'
-            )}
-          >
-            {option.countLabel}
-          </span>
-        )}
-      </span>
+      {!props.iconOnly && (
+        <span className='relative inline-flex min-w-0 items-center gap-1'>
+          <span className='truncate leading-none'>{option.label}</span>
+          {option.suffix && (
+            <span
+              className={cn(
+                'flex items-center rounded px-1 py-px text-[10px] leading-none tabular-nums',
+                getSuffixClassName()
+              )}
+            >
+              {option.suffix}
+            </span>
+          )}
+          {option.countLabel && (
+            <span
+              className={cn(
+                'text-[10px] leading-none tabular-nums',
+                active ? 'text-foreground/60' : 'text-muted-foreground/70'
+              )}
+            >
+              {option.countLabel}
+            </span>
+          )}
+        </span>
+      )}
     </Button>
   )
 }

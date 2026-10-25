@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { Table } from '@tanstack/react-table'
-import { ChevronDown, Loader2 } from 'lucide-react'
+import { ChevronDown, Loader2, Search } from 'lucide-react'
 import { useState, type ComponentProps, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -46,7 +46,9 @@ interface LogsFilterToolbarProps<TData> {
   mobileFilters?: ReactNode
   mobileFilterCount?: number
   stats?: ReactNode
+  startFilters?: ReactNode
   actionStart?: ReactNode
+  showViewOptions?: boolean
   hasActiveFilters: boolean
   hasAdvancedActiveFilters?: boolean
   advancedFilterCount?: number
@@ -66,8 +68,8 @@ export function LogsFilterField(props: LogsFilterFieldProps) {
   return (
     <div
       className={cn(
-        'min-w-0 [&_[data-slot=select-trigger]]:w-full [&_[data-slot=select-trigger]]:text-sm [&_[data-slot=select-value]]:leading-5',
-        props.wide && 'sm:col-span-2',
+        'w-36 shrink-0 [&_[data-slot=select-trigger]]:w-full [&_[data-slot=select-trigger]]:text-sm [&_[data-slot=select-value]]:leading-5',
+        props.wide && 'w-auto min-w-0',
         props.className
       )}
     >
@@ -88,12 +90,10 @@ export function LogsFilterInput(props: ComponentProps<typeof Input>) {
 
 export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
   const { t } = useTranslation()
-  const [advancedOpen, setAdvancedOpen] = useState(false)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [mobilePanelCollapsed, setMobilePanelCollapsed] = useState(false)
   const isMobile = useMediaQuery('(max-width: 640px)')
 
-  const hasAdvancedFilters = props.advancedFilters != null
   const activeAdvancedCount =
     props.advancedFilterCount ?? (props.hasAdvancedActiveFilters ? 1 : 0)
   const activeMobileFilterCount = props.mobileFilterCount ?? activeAdvancedCount
@@ -108,102 +108,87 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
     setMobileFiltersOpen(false)
   }
 
-  const advancedToggle = hasAdvancedFilters ? (
-    <Button
-      type='button'
-      variant='ghost'
-      onClick={() => setAdvancedOpen((open) => !open)}
-      aria-expanded={advancedOpen}
-      className={cn(
-        'text-muted-foreground hover:text-foreground gap-1 px-2',
-        props.hasAdvancedActiveFilters &&
-          !advancedOpen &&
-          'text-primary hover:text-primary'
-      )}
-    >
-      {advancedOpen ? t('Collapse') : t('Expand')}
-      {activeAdvancedCount > 0 && (
-        <Badge className='ml-0.5 size-5 justify-center p-0 text-[10px]'>
-          {activeAdvancedCount}
-        </Badge>
-      )}
-      <ChevronDown
-        className={cn(
-          'size-3.5 transition-transform duration-200',
-          advancedOpen && 'rotate-180'
-        )}
-      />
-    </Button>
+  const showViewOptions = props.showViewOptions ?? true
+  const viewOptions = showViewOptions ? (
+    <DataTableViewOptions
+      table={props.table}
+      className='h-8 text-xs font-medium'
+    />
   ) : null
 
   if (isMobile && props.mobilePinnedFilters != null) {
     return (
       <Drawer open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
         {props.compactMobile ? (
-          <div
-            className={cn(
-              'bg-card/50 min-w-0 space-y-2.5 rounded-lg border p-2.5',
-              props.className
-            )}
-          >
-            {!mobilePanelCollapsed && (
-              <>
-                {props.stats}
+          <div className={cn('flex min-w-0 flex-col gap-2.5', props.className)}>
+            {!mobilePanelCollapsed && props.stats}
+            <div className='bg-card/50 min-w-0 space-y-2.5 rounded-lg border p-2.5'>
+              {!mobilePanelCollapsed && (
                 <div className='w-full min-w-0 [&_button]:min-h-9'>
                   {props.mobilePinnedFilters}
                 </div>
-              </>
-            )}
-            <div className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2'>
-              <Button
-                type='button'
-                variant='ghost'
-                size='icon'
-                className='text-muted-foreground hover:text-foreground size-9'
-                aria-expanded={!mobilePanelCollapsed}
-                aria-label={mobilePanelCollapsed ? t('Expand') : t('Collapse')}
-                onClick={() =>
-                  setMobilePanelCollapsed((collapsed) => !collapsed)
-                }
-              >
-                <ChevronDown
-                  aria-hidden='true'
-                  className={cn(
-                    'size-4 transition-transform',
-                    !mobilePanelCollapsed && 'rotate-180'
-                  )}
-                />
-              </Button>
-              <div
-                role='group'
-                aria-label={t('Actions')}
-                className='flex min-w-0 flex-wrap items-center justify-end gap-1.5 [&_button]:h-auto [&_button]:min-h-9 [&_button]:max-w-full [&_button]:[overflow-wrap:anywhere] [&_button]:whitespace-normal'
-              >
-                {props.actionStart}
-                <DrawerTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    aria-label={t('Filter')}
-                    className={cn(
-                      'text-muted-foreground min-h-9 gap-1.5 px-2',
-                      activeMobileFilterCount > 0 && 'text-primary'
-                    )}
-                  >
-                    {t('Filter')}
-                    {activeMobileFilterCount > 0 && (
-                      <Badge>{activeMobileFilterCount}</Badge>
-                    )}
-                  </Button>
-                </DrawerTrigger>
+              )}
+              <div className='grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2'>
                 <Button
-                  onClick={props.onSearch}
-                  disabled={props.searchLoading}
-                  aria-busy={props.searchLoading}
+                  type='button'
+                  variant='ghost'
+                  size='icon'
+                  className='text-muted-foreground hover:text-foreground size-9'
+                  aria-expanded={!mobilePanelCollapsed}
+                  aria-label={
+                    mobilePanelCollapsed ? t('Expand') : t('Collapse')
+                  }
+                  onClick={() =>
+                    setMobilePanelCollapsed((collapsed) => !collapsed)
+                  }
                 >
-                  {props.searchLoading && <Loader2 className='animate-spin' />}
-                  {t('Search')}
+                  <ChevronDown
+                    aria-hidden='true'
+                    className={cn(
+                      'size-4 transition-transform',
+                      !mobilePanelCollapsed && 'rotate-180'
+                    )}
+                  />
                 </Button>
-                <DataTableViewOptions table={props.table} />
+                <div
+                  role='group'
+                  aria-label={t('Actions')}
+                  className='flex min-w-0 flex-wrap items-center justify-end gap-1.5 [&_button]:h-auto [&_button]:min-h-9 [&_button]:max-w-full [&_button]:[overflow-wrap:anywhere] [&_button]:whitespace-normal'
+                >
+                  {props.actionStart}
+                  <DrawerTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      aria-label={t('Filter')}
+                      className={cn(
+                        'text-muted-foreground min-h-9 gap-1.5 px-2',
+                        activeMobileFilterCount > 0 && 'text-primary'
+                      )}
+                    >
+                      {t('Filter')}
+                      {activeMobileFilterCount > 0 && (
+                        <Badge>{activeMobileFilterCount}</Badge>
+                      )}
+                    </Button>
+                  </DrawerTrigger>
+                  <Button
+                    className='bg-foreground text-background hover:bg-foreground/90 h-8 rounded-md px-3 text-xs font-medium shadow-xs transition-colors'
+                    onClick={props.onSearch}
+                    disabled={props.searchLoading}
+                    aria-busy={props.searchLoading}
+                  >
+                    {props.searchLoading ? (
+                      <Loader2
+                        data-icon='inline-start'
+                        className='size-3.5 animate-spin'
+                      />
+                    ) : (
+                      <Search data-icon='inline-start' className='size-3.5' />
+                    )}
+                    {t('Search')}
+                  </Button>
+                  {viewOptions}
+                </div>
               </div>
             </div>
           </div>
@@ -267,13 +252,21 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
                 </DrawerTrigger>
                 <Button
                   type='button'
+                  className='bg-foreground text-background hover:bg-foreground/90 h-8 rounded-md px-3 text-xs font-medium shadow-xs transition-colors'
                   onClick={props.onSearch}
                   disabled={props.searchLoading}
                 >
-                  {props.searchLoading && <Loader2 className='animate-spin' />}
+                  {props.searchLoading ? (
+                    <Loader2
+                      data-icon='inline-start'
+                      className='size-3.5 animate-spin'
+                    />
+                  ) : (
+                    <Search data-icon='inline-start' className='size-3.5' />
+                  )}
                   {t('Search')}
                 </Button>
-                <DataTableViewOptions table={props.table} />
+                {viewOptions}
               </div>
             </div>
           </div>
@@ -298,19 +291,30 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
             <DrawerFooter className='border-border/70 grid grid-cols-2 gap-2 border-t px-4 py-3'>
               <Button
                 type='button'
+                size='sm'
+                className='bg-foreground text-background hover:bg-foreground/90 h-8 rounded-md text-xs font-medium shadow-xs transition-colors'
+                onClick={handleMobileSearch}
+                disabled={props.searchLoading}
+              >
+                {props.searchLoading ? (
+                  <Loader2
+                    data-icon='inline-start'
+                    className='size-3.5 animate-spin'
+                  />
+                ) : (
+                  <Search data-icon='inline-start' className='size-3.5' />
+                )}
+                {t('Search')}
+              </Button>
+              <Button
+                type='button'
                 variant='outline'
+                size='sm'
+                className='h-8 rounded-md text-xs font-medium'
                 onClick={handleMobileReset}
                 disabled={!props.hasActiveFilters}
               >
                 {t('Reset')}
-              </Button>
-              <Button
-                type='button'
-                onClick={handleMobileSearch}
-                disabled={props.searchLoading}
-              >
-                {props.searchLoading && <Loader2 className='animate-spin' />}
-                {t('Search')}
               </Button>
             </DrawerFooter>
           </div>
@@ -319,51 +323,59 @@ export function LogsFilterToolbar<TData>(props: LogsFilterToolbarProps<TData>) {
     )
   }
 
-  return (
-    <div
-      className={cn(
-        'bg-card/50 rounded-lg border p-2.5 sm:p-3',
-        props.className
-      )}
-    >
-      <div className='flex flex-wrap items-start gap-2'>
-        <div className='grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]'>
-          {props.primaryFilters}
-        </div>
-        {advancedToggle && (
-          <div className='flex shrink-0 items-center justify-end'>
-            {advancedToggle}
-          </div>
+  const actionCluster = (
+    <div className='flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
+      {props.actionStart}
+      <Button
+        type='button'
+        size='sm'
+        className='bg-foreground text-background hover:bg-foreground/90 h-8 rounded-md px-3 text-xs font-medium shadow-xs transition-colors'
+        onClick={props.onSearch}
+        disabled={props.searchLoading}
+      >
+        {props.searchLoading ? (
+          <Loader2 data-icon='inline-start' className='size-3.5 animate-spin' />
+        ) : (
+          <Search data-icon='inline-start' className='size-3.5' />
         )}
-      </div>
+        {t('Search')}
+      </Button>
+      <Button
+        type='button'
+        variant='outline'
+        size='sm'
+        className='h-8 rounded-md px-2.5 text-xs font-medium'
+        onClick={props.onReset}
+        disabled={!props.hasActiveFilters}
+      >
+        {t('Reset')}
+      </Button>
+      {viewOptions}
+    </div>
+  )
 
-      {advancedOpen && props.advancedFilters && (
-        <div className='mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]'>
+  if (props.stats == null) {
+    return (
+      <div className={cn('flex flex-wrap items-center gap-2', props.className)}>
+        {props.startFilters}
+        <div className='flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2'>
+          {props.primaryFilters}
           {props.advancedFilters}
         </div>
-      )}
+        {actionCluster}
+      </div>
+    )
+  }
 
-      <div className='mt-2 flex flex-wrap items-center gap-2'>
-        {props.stats}
-        <div className='ms-auto flex flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
-          {props.actionStart}
-          <Button
-            type='button'
-            variant='outline'
-            onClick={props.onReset}
-            disabled={!props.hasActiveFilters}
-          >
-            {t('Reset')}
-          </Button>
-          <Button
-            type='button'
-            onClick={props.onSearch}
-            disabled={props.searchLoading}
-          >
-            {props.searchLoading && <Loader2 className='animate-spin' />}
-            {t('Search')}
-          </Button>
-          <DataTableViewOptions table={props.table} />
+  return (
+    <div className={cn('flex flex-col gap-2 sm:gap-3', props.className)}>
+      {props.stats}
+      <div className='flex min-w-0 flex-wrap items-center gap-2 pr-3 sm:pr-4'>
+        {props.startFilters}
+        <div className='flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2'>
+          {props.primaryFilters}
+          {props.advancedFilters}
+          {actionCluster}
         </div>
       </div>
     </div>

@@ -16,15 +16,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Activity, BarChart3, WalletCards } from 'lucide-react'
+import {
+  Activity01Icon,
+  ChartHistogramIcon,
+  Wallet01Icon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Card, CardContent } from '@/components/ui/card'
-import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
+import { IconBadge } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
+import { getUserAvatarFallback } from '@/lib/avatar'
 import { formatCompactNumber, formatQuota } from '@/lib/format'
 import { getRoleLabel } from '@/lib/roles'
 
@@ -82,35 +87,30 @@ export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
   const displayName = getDisplayName(profile)
   const avatarName = profile.username || displayName
   const avatarFallback = getUserAvatarFallback(avatarName)
-  const avatarFallbackStyle = getUserAvatarStyle(avatarName)
   const roleLabel = getRoleLabel(profile.role)
   const stats: {
     label: string
     value: string
     description: string
-    icon: typeof WalletCards
-    tone: IconBadgeTone
+    icon: typeof Wallet01Icon
   }[] = [
     {
       label: t('Current Balance'),
       value: formatQuota(profile.quota),
       description: t('Remaining quota'),
-      icon: WalletCards,
-      tone: 'success',
+      icon: Wallet01Icon,
     },
     {
       label: t('Total Usage'),
       value: formatQuota(profile.used_quota),
       description: t('Total consumed quota'),
-      icon: BarChart3,
-      tone: 'info',
+      icon: ChartHistogramIcon,
     },
     {
       label: t('API Requests'),
       value: formatCompactNumber(profile.request_count),
       description: t('Total requests made'),
-      icon: Activity,
-      tone: 'chart-4',
+      icon: Activity01Icon,
     },
   ]
 
@@ -119,19 +119,16 @@ export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
       <CardContent className='p-3 sm:p-5'>
         <div className='flex items-center gap-3 text-left sm:gap-4'>
           <Avatar className='ring-background h-12 w-12 rounded-xl text-sm ring-2 sm:h-16 sm:w-16 sm:rounded-2xl sm:text-lg sm:ring-4'>
-            <AvatarFallback
-              className='rounded-xl font-semibold text-white sm:rounded-2xl'
-              style={avatarFallbackStyle}
-            >
+            <AvatarFallback className='bg-muted text-foreground rounded-xl font-semibold sm:rounded-2xl'>
               {avatarFallback}
             </AvatarFallback>
           </Avatar>
 
           <div className='min-w-0 flex-1 space-y-1.5 sm:space-y-3'>
-            <div className='flex min-w-0 items-center gap-2'>
-              <h1 className='truncate text-xl font-semibold tracking-tight sm:text-2xl'>
+            <div className='flex min-w-0 flex-wrap items-center gap-2'>
+              <h2 className='truncate text-xl font-semibold tracking-tight sm:text-2xl'>
                 {displayName}
-              </h1>
+              </h2>
               <StatusBadge
                 label={roleLabel}
                 variant='neutral'
@@ -139,7 +136,7 @@ export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
               />
               <StatusBadge
                 label={`${t('User ID')} ${profile.id}`}
-                variant='info'
+                variant='neutral'
                 copyText={String(profile.id)}
               />
             </div>
@@ -167,8 +164,8 @@ export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
           {stats.map((item) => (
             <div key={item.label} className='min-w-0 px-3 py-3 sm:px-5 sm:py-4'>
               <div className='flex items-center gap-2'>
-                <IconBadge tone={item.tone} size='stat'>
-                  <item.icon />
+                <IconBadge tone='neutral' size='stat'>
+                  <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                 </IconBadge>
                 <div className='text-muted-foreground truncate text-xs font-medium tracking-wider uppercase'>
                   {item.label}
@@ -178,7 +175,7 @@ export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
               <div className='text-foreground mt-1.5 truncate font-mono text-lg font-bold tracking-tight tabular-nums sm:mt-2 sm:text-2xl'>
                 {item.value}
               </div>
-              <div className='text-muted-foreground/60 mt-1 hidden text-xs md:block'>
+              <div className='text-muted-foreground mt-1 hidden text-xs md:block'>
                 {item.description}
               </div>
             </div>

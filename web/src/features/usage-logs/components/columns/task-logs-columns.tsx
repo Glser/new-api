@@ -51,10 +51,10 @@ function TaskDetailsCell(props: {
 
   return (
     <>
-      <div className='flex max-w-[220px] flex-col items-start gap-1'>
+      <div className='mx-auto flex w-full max-w-[220px] flex-col items-center justify-center gap-1 text-center'>
         <button
           type='button'
-          className='text-foreground inline-flex items-center gap-1 text-xs font-medium hover:underline'
+          className='text-foreground inline-flex w-full items-center justify-center gap-1 text-center text-xs font-medium hover:underline'
           onClick={() => setDialogOpen(true)}
         >
           <HugeiconsIcon
@@ -66,7 +66,7 @@ function TaskDetailsCell(props: {
           {t('View details')}
         </button>
         {props.log.fail_reason ? (
-          <span className='max-w-full truncate text-xs text-red-600 dark:text-red-400'>
+          <span className='w-full max-w-full truncate text-center text-xs text-red-600 dark:text-red-400'>
             {props.log.fail_reason}
           </span>
         ) : null}
@@ -92,25 +92,31 @@ export function useTaskLogsColumns(
       accessorKey: 'submit_time',
       header: t('Submit Time'),
       cell: ({ row }) => {
-        const log = row.original
         const submitTime = row.getValue('submit_time') as number
 
         return (
-          <div className='flex min-w-0 flex-col gap-0.5'>
-            <span className='truncate font-mono text-xs tabular-nums'>
-              {formatTimestampToDate(submitTime, 'seconds')}
-            </span>
-            {log.finish_time ? (
-              <span className='text-muted-foreground/60 truncate font-mono text-[11px] tabular-nums'>
-                {formatTimestampToDate(log.finish_time, 'seconds')}
-              </span>
-            ) : (
-              <span className='text-muted-foreground/50 text-[11px]'>-</span>
-            )}
-          </div>
+          <span className='truncate font-mono text-xs tabular-nums'>
+            {formatTimestampToDate(submitTime, 'seconds')}
+          </span>
         )
       },
-      size: 180,
+      size: 160,
+    },
+    {
+      accessorKey: 'finish_time',
+      header: t('Finish Time'),
+      cell: ({ row }) => {
+        const finishTime = row.getValue('finish_time') as number
+
+        return finishTime ? (
+          <span className='text-muted-foreground truncate font-mono text-xs tabular-nums'>
+            {formatTimestampToDate(finishTime, 'seconds')}
+          </span>
+        ) : (
+          <span className='text-muted-foreground/50 text-xs'>-</span>
+        )
+      },
+      size: 160,
     },
   ]
 

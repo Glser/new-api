@@ -25,8 +25,55 @@ function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot='popover' {...props} />
 }
 
-function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
-  return <PopoverPrimitive.Trigger data-slot='popover-trigger' {...props} />
+const PopoverTrigger = React.forwardRef<
+  HTMLElement,
+  PopoverPrimitive.Trigger.Props
+>(function PopoverTrigger(props, ref) {
+  return (
+    <PopoverPrimitive.Trigger
+      data-slot='popover-trigger'
+      ref={ref}
+      {...props}
+    />
+  )
+})
+
+function isPopoverDismissFromTrigger(
+  eventDetails: {
+    reason: string
+    event: Event
+    cancel: () => void
+  },
+  trigger: Element | null
+): boolean {
+  if (!trigger) {
+    return false
+  }
+  if (
+    eventDetails.reason !== 'outside-press' &&
+    eventDetails.reason !== 'focus-out'
+  ) {
+    return false
+  }
+
+  const event = eventDetails.event
+  if (event.target instanceof Node && trigger.contains(event.target)) {
+    return true
+  }
+  if (
+    event instanceof FocusEvent &&
+    event.relatedTarget instanceof Node &&
+    trigger.contains(event.relatedTarget)
+  ) {
+    return true
+  }
+  if (
+    typeof event.composedPath === 'function' &&
+    event.composedPath().includes(trigger)
+  ) {
+    return true
+  }
+  return false
 }
 
 function PopoverContent({
@@ -38,6 +85,9 @@ function PopoverContent({
   collisionPadding,
   collisionBoundary,
   collisionAvoidance,
+  anchor,
+  animate = true,
+  keepMounted = false,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
@@ -49,9 +99,13 @@ function PopoverContent({
     | 'collisionPadding'
     | 'collisionBoundary'
     | 'collisionAvoidance'
-  >) {
+    | 'anchor'
+  > & {
+    animate?: boolean
+    keepMounted?: boolean
+  }) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal keepMounted={keepMounted}>
       <PopoverPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
@@ -60,12 +114,15 @@ function PopoverContent({
         collisionPadding={collisionPadding}
         collisionBoundary={collisionBoundary}
         collisionAvoidance={collisionAvoidance}
+        anchor={anchor}
         className='isolate z-50'
       >
         <PopoverPrimitive.Popup
           data-slot='popover-content'
           className={cn(
-            'bg-popover text-popover-foreground ring-foreground/10 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 z-50 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg p-2.5 text-sm shadow-md ring-1 outline-hidden duration-100',
+            'bg-popover text-popover-foreground ring-foreground/10 z-50 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg p-2.5 text-sm shadow-md ring-1 outline-hidden',
+            animate &&
+              'data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-100',
             className
           )}
           {...props}
@@ -109,6 +166,7 @@ function PopoverDescription({
 }
 
 export {
+  isPopoverDismissFromTrigger,
   Popover,
   PopoverContent,
   PopoverDescription,

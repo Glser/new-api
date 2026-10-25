@@ -339,7 +339,8 @@ export function hasAnyCacheTokens(
 }
 
 export function getTieredBillingSummary(
-  other: LogOtherData | null
+  other: LogOtherData | null,
+  options: { includeUnusedPrices?: boolean } = {}
 ): TieredBillingSummary | null {
   if (!other || other.billing_mode !== 'tiered_expr') return null
   const exprStr = decodeBillingExprB64(other.expr_b64)
@@ -402,8 +403,15 @@ export function getTieredBillingSummary(
   const priceEntries: TieredBillingSummary['priceEntries'] = []
   for (const v of BILLING_PRICING_VARS) {
     if (!v.field) continue
-    if (v.group === 'cache' && !cacheTokensPresent) continue
+    if (
+      v.group === 'cache' &&
+      !cacheTokensPresent &&
+      !options.includeUnusedPrices
+    ) {
+      continue
+    }
     const raw = tier[v.field as keyof ParsedTier]
+    if (raw == null) continue
     const price = Number(raw)
     if (Number.isFinite(price) && price >= 0) {
       priceEntries.push({

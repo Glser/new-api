@@ -36,6 +36,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
+import { formatQuotaWithCurrency, getCurrencyDisplay } from '@/lib/currency'
+import { formatTimestampToDate } from '@/lib/format'
+import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import type { ApiKey } from '../types'
 import { useApiKeys } from './api-keys-provider'
@@ -85,9 +88,11 @@ export function ApiKeyCell({ apiKey }: { apiKey: ApiKey }) {
   }
 
   return (
-    <div className='flex max-w-full min-w-0 items-center'>
+    <div className='flex w-full max-w-full min-w-0 items-center justify-center'>
       <Popover open={popoverOpen} onOpenChange={handlePopoverOpen}>
-        <PopoverTrigger render={<MaskedValueTrigger />}>
+        <PopoverTrigger
+          render={<MaskedValueTrigger className='justify-center' />}
+        >
           <span className='truncate'>{maskedKey}</span>
         </PopoverTrigger>
         <PopoverContent
@@ -131,6 +136,74 @@ export function ApiKeyCell({ apiKey }: { apiKey: ApiKey }) {
         </TooltipTrigger>
         <TooltipContent>{copyTooltip}</TooltipContent>
       </Tooltip>
+    </div>
+  )
+}
+
+export function ApiKeyQuotaOverviewCell({ apiKey }: { apiKey: ApiKey }) {
+  const { t } = useTranslation()
+  useSystemConfigStore((state) => state.config.currency)
+  const { meta: currency } = getCurrencyDisplay()
+  const used = formatQuotaWithCurrency(apiKey.used_quota, { showSymbol: false })
+  const total = apiKey.unlimited_quota
+    ? t('Unlimited')
+    : formatQuotaWithCurrency(apiKey.used_quota + apiKey.remain_quota, {
+        showSymbol: false,
+      })
+  const unit = currency.kind === 'tokens' ? t('Tokens') : currency.symbol
+
+  return (
+    <div className='space-y-1 text-center text-sm leading-5'>
+      <div className='text-muted-foreground'>
+        {t('Used amount')}:{' '}
+        <span className='text-foreground tabular-nums'>{used}</span>
+      </div>
+      <div className='text-muted-foreground'>
+        {t('Current total quota')}:{' '}
+        <span className='text-foreground tabular-nums'>{total}</span>
+        <span className='ml-1 text-xs'>({unit})</span>
+      </div>
+    </div>
+  )
+}
+
+export function ApiKeyRateLimitCell() {
+  return (
+    <div className='text-muted-foreground space-y-1 text-center text-sm leading-5'>
+      <div>RPS: ∞</div>
+      <div>RPM: ∞</div>
+      <div>Concurrency: ∞</div>
+    </div>
+  )
+}
+
+export function ApiKeyTimeInfoCell({ apiKey }: { apiKey: ApiKey }) {
+  const { t } = useTranslation()
+  const format = (timestamp: number) =>
+    timestamp > 0 ? formatTimestampToDate(timestamp) : t('Never')
+
+  return (
+    <div className='text-muted-foreground space-y-1 text-center text-sm leading-5'>
+      <div>
+        {t('Created')}:{' '}
+        <span className='text-foreground tabular-nums'>
+          {format(apiKey.created_time)}
+        </span>
+      </div>
+      <div>
+        {t('Last Used')}:{' '}
+        <span className='text-foreground tabular-nums'>
+          {format(apiKey.accessed_time)}
+        </span>
+      </div>
+      {apiKey.expired_time !== -1 && (
+        <div>
+          {t('Expires')}:{' '}
+          <span className='text-foreground tabular-nums'>
+            {format(apiKey.expired_time)}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

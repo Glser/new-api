@@ -16,8 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Bell, Loader2, Mail, Server, Webhook } from 'lucide-react'
-import { useState, useEffect, useCallback } from 'react'
+import {
+  Notification01Icon,
+  Loading03Icon,
+  Mail01Icon,
+  ServerStack01Icon,
+  WebhookIcon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -35,11 +42,11 @@ import { NOTIFICATION_METHODS } from '../../constants'
 import { normalizeUserSettings } from '../../lib/user-settings'
 import type { UserProfile, NotifyType } from '../../types'
 
-const NOTIFICATION_ICONS: Record<NotifyType, typeof Mail> = {
-  email: Mail,
-  webhook: Webhook,
-  bark: Bell,
-  gotify: Server,
+const NOTIFICATION_ICONS: Record<NotifyType, typeof Mail01Icon> = {
+  email: Mail01Icon,
+  webhook: WebhookIcon,
+  bark: Notification01Icon,
+  gotify: ServerStack01Icon,
 }
 
 // ============================================================================
@@ -55,7 +62,9 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
   const { t } = useTranslation()
   const isAdmin = (profile?.role ?? 0) >= ROLE.ADMIN
   const [loading, setLoading] = useState(false)
-  const [settings, setSettings] = useState(() => normalizeUserSettings())
+  const [settings, setSettings] = useState(() =>
+    normalizeUserSettings(profile?.setting)
+  )
 
   // Update form field helper
   const updateField = useCallback(
@@ -67,12 +76,6 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
     },
     []
   )
-
-  useEffect(() => {
-    if (profile?.setting) {
-      setSettings(normalizeUserSettings(profile.setting))
-    }
-  }, [profile])
 
   const handleSave = async () => {
     try {
@@ -120,7 +123,12 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
                 value={method.value}
                 className='h-auto min-h-14 w-full flex-col gap-1.5 px-3 py-3 sm:min-h-16'
               >
-                <Icon className='h-4 w-4 sm:h-5 sm:w-5' />
+                <HugeiconsIcon
+                  icon={Icon}
+                  strokeWidth={2}
+                  aria-hidden='true'
+                  className='h-4 w-4 sm:h-5 sm:w-5'
+                />
                 <span className='max-w-full truncate text-xs font-medium sm:text-sm'>
                   {t(method.label)}
                 </span>
@@ -340,7 +348,14 @@ export function NotificationTab({ profile, onUpdate }: NotificationTabProps) {
       {/* Save Button */}
       <div className='flex justify-end'>
         <Button onClick={handleSave} disabled={loading}>
-          {loading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+          {loading && (
+            <HugeiconsIcon
+              icon={Loading03Icon}
+              strokeWidth={2}
+              aria-hidden='true'
+              className='mr-2 h-4 w-4 animate-spin'
+            />
+          )}
           {loading ? t('Saving...') : t('Save Settings')}
         </Button>
       </div>

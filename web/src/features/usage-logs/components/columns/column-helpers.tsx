@@ -23,7 +23,7 @@ import { useState } from 'react'
 
 import { DataTableColumnHeader } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
-import {
+import { TooltipHint,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -219,16 +219,17 @@ export function createFailReasonColumn<T>(config: {
 
       return (
         <>
-          <button
-            type='button'
-            className='group flex max-w-[200px] items-center gap-1 text-left text-xs'
-            onClick={() => setDialogOpen(true)}
-            title={cellTitle}
-          >
-            <span className='truncate leading-snug text-red-600 group-hover:underline dark:text-red-400'>
-              {failReason}
-            </span>
-          </button>
+          <TooltipHint content={cellTitle}>
+            <button
+              type='button'
+              className='group flex max-w-[200px] items-center gap-1 text-left text-xs'
+              onClick={() => setDialogOpen(true)}
+            >
+              <span className='truncate leading-snug text-red-600 group-hover:underline dark:text-red-400'>
+                {failReason}
+              </span>
+            </button>
+          </TooltipHint>
           <FailReasonDialog
             failReason={failReason}
             open={dialogOpen}

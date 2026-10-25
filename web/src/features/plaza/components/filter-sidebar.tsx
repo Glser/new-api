@@ -38,6 +38,7 @@ import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
 import { formatGroupRatio, getGroupDescription } from '../lib/group-ratio'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 function countByVendor(models: PricingModel[], vendorName: string): number {
   return models.reduce(
@@ -76,44 +77,45 @@ function PlazaFilterListItem(props: {
   suffix?: string
 }) {
   return (
-    <button
-      type='button'
-      onClick={props.onClick}
-      aria-pressed={props.active}
-      title={props.label}
-      className={cn(
-        'flex h-9 w-full min-w-0 items-center gap-2 rounded-md border px-2 text-left text-sm',
-        'outline-none transition-colors duration-200',
-        'focus-visible:ring-ring/50 focus-visible:ring-2',
-        props.active
-          ? 'border-foreground/25 bg-muted font-medium text-foreground dark:border-foreground/30 dark:bg-foreground/[0.18]'
-          : 'text-foreground/75 hover:text-foreground border-transparent hover:bg-muted dark:text-foreground/85 dark:hover:bg-foreground/[0.10]'
-      )}
-    >
-      {props.icon && (
-        <span
-          aria-hidden='true'
-          className='flex size-5 shrink-0 items-center justify-center [&_img]:size-full [&_svg]:size-4'
-        >
-          {props.icon}
+    <TooltipHint content={props.label}>
+      <button
+        type='button'
+        onClick={props.onClick}
+        aria-pressed={props.active}
+        className={cn(
+          'flex h-9 w-full min-w-0 items-center gap-2 rounded-md border px-2 text-left text-sm',
+          'outline-none transition-colors duration-200',
+          'focus-visible:ring-ring/50 focus-visible:ring-2',
+          props.active
+            ? 'border-foreground/25 bg-muted font-medium text-foreground dark:border-foreground/30 dark:bg-foreground/[0.18]'
+            : 'text-foreground/75 hover:text-foreground border-transparent hover:bg-muted dark:text-foreground/85 dark:hover:bg-foreground/[0.10]'
+        )}
+      >
+        {props.icon && (
+          <span
+            aria-hidden='true'
+            className='flex size-5 shrink-0 items-center justify-center [&_img]:size-full [&_svg]:size-4'
+          >
+            {props.icon}
+          </span>
+        )}
+        <span className='min-w-0 flex-1 truncate'>{props.label}</span>
+        {props.suffix && (
+          <span className='shrink-0 rounded bg-lime-400 px-1.5 py-px text-[11px] leading-none font-semibold text-black tabular-nums'>
+            {props.suffix}
+          </span>
+        )}
+        <span className='text-muted-foreground shrink-0 text-xs leading-none tabular-nums'>
+          {props.count}
         </span>
-      )}
-      <span className='min-w-0 flex-1 truncate'>{props.label}</span>
-      {props.suffix && (
-        <span className='shrink-0 rounded bg-lime-400 px-1.5 py-px text-[11px] leading-none font-semibold text-black tabular-nums'>
-          {props.suffix}
-        </span>
-      )}
-      <span className='text-muted-foreground shrink-0 text-xs leading-none tabular-nums'>
-        {props.count}
-      </span>
-      {props.active && (
-        <Check
-          aria-hidden='true'
-          className='text-foreground/70 size-3.5 shrink-0'
-        />
-      )}
-    </button>
+        {props.active && (
+          <Check
+            aria-hidden='true'
+            className='text-foreground/70 size-3.5 shrink-0'
+          />
+        )}
+      </button>
+    </TooltipHint>
   )
 }
 

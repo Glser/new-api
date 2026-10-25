@@ -27,7 +27,6 @@ import {
   DISABLED_ROW_DESKTOP,
   DISABLED_ROW_MOBILE,
   DataTablePage,
-  useDebouncedColumnFilter,
   useDataTable,
 } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
@@ -38,34 +37,27 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
-import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { createServerError } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 
-import { getApiKeys, searchApiKeys } from '../api'
-import {
-  API_KEY_STATUS,
-  API_KEY_STATUS_OPTIONS,
-  API_KEY_STATUSES,
-  ERROR_MESSAGES,
-} from '../constants'
+import { getApiKeys } from '../api'
+import { API_KEY_STATUS, API_KEY_STATUSES, ERROR_MESSAGES } from '../constants'
 import type { ApiKey } from '../types'
 import { ApiKeyQuotaCell } from './api-key-quota-cell'
 import { ApiKeyActivityCell } from './api-key-timestamp-cell'
 import {
   ApiKeyCell,
-  ModelLimitsCell,
   IpRestrictionsCell,
+  ModelLimitsCell,
 } from './api-keys-cells'
 import { useApiKeysColumns } from './api-keys-columns'
 import { useApiKeys } from './api-keys-provider'
-import { DataTableBulkActions } from './data-table-bulk-actions'
 import { DataTableRowActions } from './data-table-row-actions'
 
 const route = getRouteApi('/_authenticated/keys/')
-const API_KEYS_COLUMN_VISIBILITY_STORAGE_KEY = 'api-keys:column-visibility'
+const API_KEYS_COLUMN_VISIBILITY_STORAGE_KEY = 'api-keys:column-visibility:v2'
 const API_KEYS_MOBILE_SKELETON_IDS = Array.from(
   { length: 5 },
   (_, index) => `api-key-mobile-skeleton-${index + 1}`
@@ -77,12 +69,9 @@ function isDisabledApiKeyRow(apiKey: ApiKey) {
 
 function ApiKeysMobileSkeleton() {
   return (
-    <div className='min-w-0 space-y-3'>
+    <div className='min-w-0 divide-y'>
       {API_KEYS_MOBILE_SKELETON_IDS.map((id) => (
-        <div
-          key={id}
-          className='border-border/60 bg-card space-y-2 rounded-xl border p-3.5'
-        >
+        <div key={id} className='space-y-2.5 px-3 py-3 sm:px-4'>
           <div className='flex items-center justify-between'>
             <Skeleton className='h-4 w-32' />
             <Skeleton className='h-5 w-16 rounded-md' />
@@ -133,7 +122,7 @@ function ApiKeysMobileList({
   }
 
   return (
-    <div className='min-w-0 space-y-3'>
+    <div className='min-w-0 divide-y'>
       {rows.map((row) => {
         const apiKey = row.original
         const statusConfig = API_KEY_STATUSES[apiKey.status]
@@ -143,12 +132,11 @@ function ApiKeysMobileList({
         const expiryCell = row
           .getAllCells()
           .find((cell) => cell.column.id === 'expired_time')
-
         return (
           <div
             key={row.id}
             className={cn(
-              'border-border/60 bg-card min-w-0 space-y-2 rounded-xl border p-3.5 text-xs leading-4',
+              'min-w-0 space-y-2.5 px-3 py-3 text-xs leading-4 sm:px-4',
               isDisabledApiKeyRow(apiKey) && DISABLED_ROW_MOBILE
             )}
           >
@@ -191,7 +179,7 @@ function ApiKeysMobileList({
               <IpRestrictionsCell apiKey={apiKey} detailsTrigger='click' />
             </div>
 
-            <div className='grid grid-cols-3 items-start gap-3 border-t pt-2'>
+            <div className='grid grid-cols-3 items-start gap-3 border-t pt-2.5'>
               <div className='col-span-2 min-w-0'>
                 <ApiKeyActivityCell
                   apiKey={apiKey}
@@ -222,42 +210,17 @@ export function ApiKeysTable() {
   const columns = useApiKeysColumns(now)
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setNow(Date.now())
-    }, 30_000)
-
+    const intervalId = window.setInterval(() => setNow(Date.now()), 30_000)
     return () => window.clearInterval(intervalId)
   }, [])
 
-  const {
-    globalFilter,
-    onGlobalFilterChange,
-    columnFilters,
-    onColumnFiltersChange,
-    pagination,
-    onPaginationChange,
-    ensurePageInRange,
-  } = useTableUrlState({
-    search: route.useSearch(),
-    navigate: route.useNavigate(),
-    pagination: { defaultPage: 1, defaultPageSize: 20 },
-    globalFilter: { enabled: true, key: 'filter' },
-    columnFilters: [
-      { columnId: 'status', searchKey: 'status', type: 'array' },
-      { columnId: '_tokenSearch', searchKey: 'token', type: 'string' },
-    ],
-  })
-
-  const {
-    value: tokenFilter,
-    inputValue: tokenFilterInput,
-    setInputValue: setTokenFilterInput,
-  } = useDebouncedColumnFilter({
-    columnFilters,
-    columnId: '_tokenSearch',
-    onColumnFiltersChange,
-  })
-  const shouldSearch = Boolean(globalFilter?.trim() || tokenFilter.trim())
+  const { pagination, onPaginationChange, ensurePageInRange } =
+    useTableUrlState({
+      search: route.useSearch(),
+      navigate: route.useNavigate(),
+      pagination: { defaultPage: 1, defaultPageSize: 20 },
+      globalFilter: { enabled: false },
+    })
 
   // Fetch data with React Query
   // eslint-disable-next-line @tanstack/query/exhaustive-deps
@@ -266,32 +229,16 @@ export function ApiKeysTable() {
       'keys',
       pagination.pageIndex + 1,
       pagination.pageSize,
-      globalFilter,
-      tokenFilter,
       refreshTrigger,
     ],
     queryFn: async () => {
-      const result = shouldSearch
-        ? await searchApiKeys({
-            keyword: globalFilter,
-            token: tokenFilter,
-            p: pagination.pageIndex + 1,
-            size: pagination.pageSize,
-          })
-        : await getApiKeys({
-            p: pagination.pageIndex + 1,
-            size: pagination.pageSize,
-          })
+      const result = await getApiKeys({
+        p: pagination.pageIndex + 1,
+        size: pagination.pageSize,
+      })
 
       if (!result.success) {
-        throw createServerError(
-          result,
-          t(
-            shouldSearch
-              ? ERROR_MESSAGES.SEARCH_FAILED
-              : ERROR_MESSAGES.LOAD_FAILED
-          )
-        )
+        throw createServerError(result, t(ERROR_MESSAGES.LOAD_FAILED))
       }
 
       return {
@@ -307,36 +254,18 @@ export function ApiKeysTable() {
   const { table } = useDataTable({
     data: apiKeys,
     columns,
-    enableRowSelection: true,
-    columnFilters,
     columnVisibilityStorageKey: API_KEYS_COLUMN_VISIBILITY_STORAGE_KEY,
-    globalFilter,
     pagination,
-    globalFilterFn: () => true,
     onPaginationChange,
-    onGlobalFilterChange,
-    onColumnFiltersChange,
     manualPagination: true,
     totalCount: data?.total || 0,
     ensurePageInRange,
   })
 
-  const columnVisibility = table.getState().columnVisibility
-  useEffect(() => {
-    // Restore the dates hidden by the previous default when adopting the combined time column.
-    if (
-      columnVisibility.activity_time === undefined &&
-      columnVisibility.created_time === false &&
-      columnVisibility.accessed_time === false &&
-      columnVisibility.expired_time === false
-    ) {
-      table.setColumnVisibility((previous) => ({
-        ...previous,
-        activity_time: true,
-        expired_time: true,
-      }))
-    }
-  }, [columnVisibility, table])
+  const getColumnClassName = (_columnId: string, kind: 'header' | 'cell') =>
+    kind === 'header'
+      ? 'text-center [&>div]:mx-auto [&>div]:justify-center'
+      : 'text-center [&>div]:mx-auto [&>div]:items-center [&>div]:justify-center'
 
   return (
     <DataTablePage
@@ -350,34 +279,15 @@ export function ApiKeysTable() {
       )}
       skeletonKeyPrefix='api-keys-skeleton'
       applyHeaderSize
-      toolbarProps={{
-        searchPlaceholder: t('Filter by name...'),
-        searchDebounceMs: 500,
-        additionalSearch: (
-          <Input
-            placeholder={t('Filter by API key...')}
-            aria-label={t('Filter by API key...')}
-            value={tokenFilterInput}
-            onChange={(e) => setTokenFilterInput(e.target.value)}
-            className='w-full sm:w-50 lg:w-60'
-          />
-        ),
-        filters: [
-          {
-            columnId: 'status',
-            title: t('Status'),
-            options: API_KEY_STATUS_OPTIONS,
-            singleSelect: true,
-          },
-        ],
-      }}
+      tableClassName='@container/keys [&_[data-slot=table]]:min-w-[68rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-transparent [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/keys:[&_[data-slot=table]_td]:text-sm @min-[48rem]/keys:[&_[data-slot=table]_th]:text-sm @min-[80rem]/keys:[&_[data-slot=table]_td]:px-3 @min-[80rem]/keys:[&_[data-slot=table]_th]:px-3'
+      getColumnClassName={getColumnClassName}
+      toolbar={null}
       mobile={
         <ApiKeysMobileList table={table} isLoading={isLoading} now={now} />
       }
       getRowClassName={(row) =>
         isDisabledApiKeyRow(row.original) ? DISABLED_ROW_DESKTOP : undefined
       }
-      bulkActions={<DataTableBulkActions table={table} />}
     />
   )
 }

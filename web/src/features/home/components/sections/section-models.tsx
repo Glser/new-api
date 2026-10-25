@@ -31,7 +31,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
-import { TooltipProvider } from '@/components/ui/tooltip'
+import { TooltipHint, TooltipProvider } from '@/components/ui/tooltip'
 import {
   SectionBackdrop,
   SectionHeader,
@@ -1013,32 +1013,33 @@ function FeaturedModelCard(props: { model: ModelItem }) {
             </TooltipProvider>
 
             {/* 可用率：与模型广场同源的 24h 性能监控，无监控数据时展示占位符 */}
-            <span
-              className='text-muted-foreground/90 flex items-center gap-1.5 text-[11px]'
-              title={
+            <TooltipHint content={
                 model.successRate != null
                   ? t('Availability (last 24h)')
                   : undefined
-              }
-            >
+              }>
               <span
-                aria-hidden
-                className={cn(
-                  'size-1.5 shrink-0 rounded-full',
-                  model.successRate != null
-                    ? getSuccessRateDotClass(model.successRate)
-                    : 'bg-muted-foreground/40'
-                )}
-              />
-              <span className='hidden sm:inline'>
-                {t('sec_models_availability')}
+                className='text-muted-foreground/90 flex items-center gap-1.5 text-[11px]'
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    'size-1.5 shrink-0 rounded-full',
+                    model.successRate != null
+                      ? getSuccessRateDotClass(model.successRate)
+                      : 'bg-muted-foreground/40'
+                  )}
+                />
+                <span className='hidden sm:inline'>
+                  {t('sec_models_availability')}
+                </span>
+                <span className='font-mono tabular-nums'>
+                  {model.successRate != null
+                    ? `${model.successRate.toFixed(1)}%`
+                    : '—'}
+                </span>
               </span>
-              <span className='font-mono tabular-nums'>
-                {model.successRate != null
-                  ? `${model.successRate.toFixed(1)}%`
-                  : '—'}
-              </span>
-            </span>
+            </TooltipHint>
           </div>
 
           <Link

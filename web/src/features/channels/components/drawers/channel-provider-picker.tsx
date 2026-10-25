@@ -54,6 +54,7 @@ import {
   LEGACY_TASK_PLUGIN_KEYS,
 } from '../../lib/channel-plugin-extensions'
 import { ChannelTypeLogo } from '../channel-type-badge'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 type ChannelProviderPickerProps = {
   isCreating?: boolean
@@ -311,12 +312,13 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                     </span>
                     <span className='min-w-0 flex-1'>
                       <span className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
-                        <span
-                          className='max-w-full truncate font-medium'
-                          title={option.label}
-                        >
-                          {option.label}
-                        </span>
+                        <TooltipHint content={option.label}>
+                          <span
+                            className='max-w-full truncate font-medium'
+                          >
+                            {option.label}
+                          </span>
+                        </TooltipHint>
                         {option.badge && (
                           <StatusBadge
                             label={t(option.badge.labelKey)}
@@ -336,12 +338,13 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                         )}
                       </span>
                       {option.description && (
-                        <span
-                          className='text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed break-words'
-                          title={option.detail || option.description}
-                        >
-                          {option.description}
-                        </span>
+                        <TooltipHint content={option.detail || option.description}>
+                          <span
+                            className='text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed break-words'
+                          >
+                            {option.description}
+                          </span>
+                        </TooltipHint>
                       )}
                     </span>
                   </span>
@@ -359,24 +362,26 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                         (option.plugin ? t('Plugin') : t('Built-in'))}
                     </Badge>
                     {option.extensionNames && (
-                      <span
-                        aria-label={t('Plugin extensions')}
-                        title={option.extensionSummary}
-                        className='text-muted-foreground flex min-w-0 items-center gap-1 text-xs'
-                      >
-                        <Puzzle className='size-3' aria-hidden='true' />
-                        <span className='truncate'>
-                          {option.extensionNames}
+                      <TooltipHint content={option.extensionSummary}>
+                        <span
+                          aria-label={t('Plugin extensions')}
+                          className='text-muted-foreground flex min-w-0 items-center gap-1 text-xs'
+                        >
+                          <Puzzle className='size-3' aria-hidden='true' />
+                          <span className='truncate'>
+                            {option.extensionNames}
+                          </span>
                         </span>
-                      </span>
+                      </TooltipHint>
                     )}
                     {option.plugin && (
-                      <span
-                        className='text-muted-foreground min-w-0 truncate text-xs'
-                        title={option.plugin.key}
-                      >
-                        {option.plugin.key}
-                      </span>
+                      <TooltipHint content={option.plugin.key}>
+                        <span
+                          className='text-muted-foreground min-w-0 truncate text-xs'
+                        >
+                          {option.plugin.key}
+                        </span>
+                      </TooltipHint>
                     )}
                     {option.target.kind === 'builtin' && (
                       <span className='text-muted-foreground ml-auto shrink-0 text-[11px] tabular-nums'>

@@ -16,16 +16,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useQuery } from '@tanstack/react-query'
 import {
-  CalendarDays,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  Sparkles,
-} from 'lucide-react'
-import { useEffect, useState, useMemo, useCallback } from 'react'
+  Calendar03Icon,
+  ArrowDown01Icon,
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ArrowUp01Icon,
+  Tick02Icon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -69,8 +70,9 @@ export function CheckinCalendarCard({
   const [checkinLoading, setCheckinLoading] = useState(false)
   const [turnstileModalVisible, setTurnstileModalVisible] = useState(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
-  const [initialLoaded, setInitialLoaded] = useState(false)
-  const [collapsed, setCollapsed] = useState<boolean>(false)
+  const [collapsedOverride, setCollapsedOverride] = useState<boolean | null>(
+    null
+  )
 
   const currentMonthStr = useMemo(() => {
     const y = currentMonth.getFullYear()
@@ -115,21 +117,15 @@ export function CheckinCalendarCard({
     )
   }, [checkinData?.stats?.records])
 
-  const todayString = useMemo(() => {
+  const [todayString] = useState(() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }, [])
+  })
 
   const checkedToday = checkinData?.stats?.checked_in_today === true
   const todayAward = checkinRecordsMap[todayString]
 
-  useEffect(() => {
-    if (initialLoaded) return
-    if (isLoading) return
-    if (!checkinData) return
-    setCollapsed(checkedToday)
-    setInitialLoaded(true)
-  }, [checkinData, checkedToday, initialLoaded, isLoading])
+  const collapsed = collapsedOverride ?? checkedToday
 
   const shouldTriggerTurnstile = useCallback(
     (message?: string) => {
@@ -285,35 +281,51 @@ export function CheckinCalendarCard({
 
       <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
         {/* Header */}
-        <div className='border-b p-4 sm:p-6'>
-          <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4'>
-            <button
+        <div className='border-b p-4'>
+          <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 xl:flex-col'>
+            <Button
               type='button'
-              className='flex min-w-0 flex-1 items-start gap-3 rounded-lg text-left whitespace-normal outline-none'
-              onClick={() => setCollapsed((v) => !v)}
+              variant='ghost'
+              aria-expanded={!collapsed}
+              className='h-auto min-w-0 flex-1 items-start justify-start gap-3 p-0 text-left whitespace-normal hover:bg-transparent'
+              onClick={() => setCollapsedOverride(!collapsed)}
             >
-              <IconBadge tone='neutral' size='lg' className='sm:size-11'>
-                <CalendarDays
+              <IconBadge tone='neutral' size='title'>
+                <HugeiconsIcon
+                  icon={Calendar03Icon}
+                  aria-hidden='true'
                   className='h-4 w-4 sm:h-5 sm:w-5'
                   strokeWidth={2}
                 />
               </IconBadge>
               <div className='min-w-0 flex-1'>
                 <div className='flex flex-wrap items-center gap-1.5 sm:gap-2'>
-                  <h3 className='text-base font-semibold tracking-tight sm:text-lg'>
+                  <h3 className='text-sm font-semibold'>
                     {t('Daily Check-in')}
                   </h3>
                   {checkedToday && (
-                    <div className='inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-600 sm:gap-1.5 sm:px-2.5 sm:text-xs dark:text-emerald-400'>
-                      <Sparkles className='h-2.5 w-2.5 sm:h-3 sm:w-3' />
+                    <div className='bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium sm:gap-1.5 sm:px-2.5 sm:text-xs'>
+                      <HugeiconsIcon
+                        icon={Tick02Icon}
+                        aria-hidden='true'
+                        className='h-2.5 w-2.5 sm:h-3 sm:w-3'
+                      />
                       {t('Checked in')}
                     </div>
                   )}
                   <span className='text-muted-foreground inline-flex items-center'>
                     {collapsed ? (
-                      <ChevronDown className='h-4 w-4' />
+                      <HugeiconsIcon
+                        icon={ArrowDown01Icon}
+                        aria-hidden='true'
+                        className='h-4 w-4'
+                      />
                     ) : (
-                      <ChevronUp className='h-4 w-4' />
+                      <HugeiconsIcon
+                        icon={ArrowUp01Icon}
+                        aria-hidden='true'
+                        className='h-4 w-4'
+                      />
                     )}
                   </span>
                 </div>
@@ -323,12 +335,12 @@ export function CheckinCalendarCard({
                     : t('Check in daily to receive random quota rewards')}
                 </p>
               </div>
-            </button>
+            </Button>
             <Button
               onClick={() => doCheckin()}
               disabled={checkinLoading || checkedToday}
               size='sm'
-              className='w-full shrink-0 sm:w-auto'
+              className='w-full shrink-0 sm:w-auto xl:w-full'
             >
               {checkinButtonLabel}
             </Button>
@@ -383,17 +395,27 @@ export function CheckinCalendarCard({
                       variant='ghost'
                       size='icon'
                       className='h-7 w-7 sm:h-8 sm:w-8'
+                      aria-label={t('Previous')}
                       onClick={handlePrevMonth}
                     >
-                      <ChevronLeft className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+                      <HugeiconsIcon
+                        icon={ArrowLeft01Icon}
+                        aria-hidden='true'
+                        strokeWidth={2}
+                      />
                     </Button>
                     <Button
                       variant='ghost'
                       size='icon'
                       className='h-7 w-7 sm:h-8 sm:w-8'
+                      aria-label={t('Next')}
                       onClick={handleNextMonth}
                     >
-                      <ChevronRight className='h-3.5 w-3.5 sm:h-4 sm:w-4' />
+                      <HugeiconsIcon
+                        icon={ArrowRight01Icon}
+                        aria-hidden='true'
+                        strokeWidth={2}
+                      />
                     </Button>
                   </div>
                 </div>

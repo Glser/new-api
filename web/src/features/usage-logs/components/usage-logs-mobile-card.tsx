@@ -251,7 +251,7 @@ export function UsageLogsMobileList<TData>({
     t('No usage logs available. Logs will appear here once API calls are made.')
 
   if (isLoading) {
-    return <UsageLogsMobileSkeleton separate={logCategory === 'common'} />
+    return <UsageLogsMobileSkeleton separate />
   }
 
   const rows = table.getRowModel().rows
@@ -273,13 +273,7 @@ export function UsageLogsMobileList<TData>({
   }
 
   return (
-    <div
-      className={cn(
-        logCategory === 'common'
-          ? 'min-w-0 space-y-3'
-          : 'border-border/50 bg-card overflow-hidden rounded-lg border'
-      )}
-    >
+    <div className='min-w-0 space-y-3'>
       {rows.map((row) => {
         const cells = new Map(
           row.getVisibleCells().map((cell) => [cell.column.id, cell])
@@ -294,9 +288,7 @@ export function UsageLogsMobileList<TData>({
           <div
             key={row.id}
             className={cn(
-              logCategory === 'common'
-                ? 'border-border/60 bg-card min-w-0 rounded-xl border p-3.5'
-                : 'border-border/40 border-b border-l-2 border-l-transparent p-3 transition-colors last:border-b-0',
+              'border-border/60 bg-card min-w-0 rounded-xl border p-3.5',
               tintClass
             )}
           >

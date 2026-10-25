@@ -49,6 +49,7 @@ import {
 import type { PricingModel, PriceType, TokenUnit } from '../types'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelPerfBadge, type ModelPerfBadgeData } from './model-perf-badge'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 const MAX_VISIBLE_CARD_GROUPS = 1
 
@@ -554,28 +555,30 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             </span>
           )}
         </div>
-        <span
-          title={props.model.model_name}
-          className='min-w-0 flex-1 truncate font-mono text-xs leading-none font-semibold [overflow-wrap:anywhere]'
-        >
-          {props.model.model_name}
-        </span>
-        <button
-          type='button'
-          onClick={(event) => {
-            event.stopPropagation()
-            void copyToClipboard(props.model.model_name || '')
-          }}
-          title={t('Copy model name')}
-          aria-label={t('Copy model name')}
-          className='text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] flex size-5 shrink-0 items-center justify-center rounded-md transition-colors'
-        >
-          {isCopied ? (
-            <Check aria-hidden className='size-3' />
-          ) : (
-            <Copy aria-hidden className='size-3' />
-          )}
-        </button>
+        <TooltipHint content={props.model.model_name}>
+          <span
+            className='min-w-0 flex-1 truncate font-mono text-xs leading-none font-semibold [overflow-wrap:anywhere]'
+          >
+            {props.model.model_name}
+          </span>
+        </TooltipHint>
+        <TooltipHint content={t('Copy model name')}>
+          <button
+            type='button'
+            onClick={(event) => {
+              event.stopPropagation()
+              void copyToClipboard(props.model.model_name || '')
+            }}
+            aria-label={t('Copy model name')}
+            className='text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] flex size-5 shrink-0 items-center justify-center rounded-md transition-colors'
+          >
+            {isCopied ? (
+              <Check aria-hidden className='size-3' />
+            ) : (
+              <Copy aria-hidden className='size-3' />
+            )}
+          </button>
+        </TooltipHint>
       </CardHeader>
       <CardContent className='flex flex-1 flex-col gap-2'>
         <p className='text-muted-foreground line-clamp-2 min-h-8 text-[11px] leading-4 break-words'>
@@ -625,12 +628,13 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
                 className='text-[11px] font-semibold'
               />
               {siteDiscountPercent > 0 ? (
-                <span
-                  className='bg-destructive/10 text-destructive shrink-0 translate-x-[5px] justify-self-end rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums'
-                  title={`${t('Official price')} · ${t('% off', { percent: siteDiscountPercent })}`}
-                >
-                  -{siteDiscountPercent}%
-                </span>
+                <TooltipHint content={`${t('Official price')} · ${t('% off', { percent: siteDiscountPercent })}`}>
+                  <span
+                    className='bg-destructive/10 text-destructive shrink-0 translate-x-[5px] justify-self-end rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums'
+                  >
+                    -{siteDiscountPercent}%
+                  </span>
+                </TooltipHint>
               ) : (
                 <span />
               )}
@@ -648,22 +652,25 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             className='bg-foreground/[0.05] border-border/60 text-foreground/75 -ms-1 shrink-0 rounded-md border px-1.5 py-px text-[10px] font-medium'
           />
           {groups.length > 0 && (
-            <span
-              className='text-muted-foreground flex min-w-0 items-center justify-end gap-1 text-[10px]'
-              title={`${t('Available groups')}: ${groups.join(', ')}`}
-            >
-              <span className='shrink-0'>{t('Available groups')}</span>
-              {visibleGroups.map((group) => (
-                <span key={group} className='max-w-16 truncate' title={group}>
-                  {group}
-                </span>
-              ))}
-              {hiddenGroupCount > 0 ? (
-                <span className='text-muted-foreground/80 shrink-0'>
-                  +{hiddenGroupCount}
-                </span>
-              ) : null}
-            </span>
+            <TooltipHint content={`${t('Available groups')}: ${groups.join(', ')}`}>
+              <span
+                className='text-muted-foreground flex min-w-0 items-center justify-end gap-1 text-[10px]'
+              >
+                <span className='shrink-0'>{t('Available groups')}</span>
+                {visibleGroups.map((group) => (
+                  <TooltipHint key={group} content={group}>
+                    <span className='max-w-16 truncate'>
+                      {group}
+                    </span>
+                  </TooltipHint>
+                ))}
+                {hiddenGroupCount > 0 ? (
+                  <span className='text-muted-foreground/80 shrink-0'>
+                    +{hiddenGroupCount}
+                  </span>
+                ) : null}
+              </span>
+            </TooltipHint>
           )}
         </div>
       </CardContent>

@@ -20,6 +20,7 @@ import { Button as ButtonPrimitive } from '@base-ui/react/button'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { isValidElement } from 'react'
 
+import { TooltipHint } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
@@ -27,7 +28,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground [a]:hover:bg-primary/80',
+        default:
+          'bg-foreground text-background hover:bg-foreground/90 [a]:hover:bg-foreground/90',
         outline:
           'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
         secondary:
@@ -72,16 +74,19 @@ function Button({
   size = 'default',
   nativeButton,
   render,
+  title,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
-    <ButtonPrimitive
-      data-slot='button'
-      className={cn(buttonVariants({ variant, size, className }))}
-      nativeButton={nativeButton ?? isNativeButtonRender(render)}
-      render={render}
-      {...props}
-    />
+    <TooltipHint content={title}>
+      <ButtonPrimitive
+        data-slot='button'
+        className={cn(buttonVariants({ variant, size, className }))}
+        nativeButton={nativeButton ?? isNativeButtonRender(render)}
+        render={render}
+        {...props}
+      />
+    </TooltipHint>
   )
 }
 

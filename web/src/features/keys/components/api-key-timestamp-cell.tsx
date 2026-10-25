@@ -28,6 +28,7 @@ export { TimestampCell as ApiKeyTimestampCell } from '@/components/activity-time
 export function ApiKeyActivityCell(props: {
   apiKey: ApiKey
   now: number
+  format?: 'relative' | 'absolute'
   layout?: 'rows' | 'columns'
 }) {
   const { t } = useTranslation()
@@ -41,9 +42,12 @@ export function ApiKeyActivityCell(props: {
       createdAt={props.apiKey.created_time}
       lastAt={accessedTime}
       lastLabel={t('Last Used')}
+      lastEmptyLabel={t('Never')}
       lastClassName={isStale ? 'text-warning' : 'text-muted-foreground'}
       now={props.now}
+      format={props.format}
       layout={props.layout}
+      compact={props.format === 'absolute' && props.layout !== 'columns'}
     />
   )
 }

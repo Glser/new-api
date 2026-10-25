@@ -16,7 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
 import { VChart } from '@visactor/react-vchart'
 import { LayoutGrid } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -26,7 +25,6 @@ import { EmptyState } from '@/components/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useThemeCustomization } from '@/context/theme-customization-provider'
 import { useTheme } from '@/context/theme-provider'
-import { processChartData } from '@/features/dashboard/lib'
 import type { QuotaDataItem } from '@/features/dashboard/types'
 import { formatQuota } from '@/lib/format'
 import { formatChartTime, type TimeGranularity } from '@/lib/time'
@@ -87,16 +85,22 @@ function buildTrendSpec(args: {
   data: QuotaDataItem[]
   metric: TrendMetric
   timeGranularity: TimeGranularity
+  resolvedTheme: string
   spendLabel: string
   requestsLabel: string
+  tokensLabel: string
 }) {
-  const buckets = new Map<string, { spend: number; requests: number }>()
+  const buckets = new Map<
+    string,
+    { spend: number; requests: number; tokens: number }
+  >()
 
   for (const item of args.data) {
     const time = formatChartTime(Number(item.created_at) || 0, args.timeGranularity)
-    const current = buckets.get(time) ?? { spend: 0, requests: 0 }
+    const current = buckets.get(time) ?? { spend: 0, requests: 0, tokens: 0 }
     current.spend += Number(item.quota) || 0
     current.requests += Number(item.count) || 0
+    current.tokens += Number(item.token_used) || 0
     buckets.set(time, current)
   }
 
@@ -104,11 +108,37 @@ function buildTrendSpec(args: {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([time, totals]) => ({
       Time: time,
+      Spend: totals.spend,
+      Requests: totals.requests,
+      Tokens: totals.tokens,
       Value: args.metric === 'spend' ? totals.spend : totals.requests,
     }))
+  const isDark = args.resolvedTheme === 'dark'
+  const palette = isDark
+    ? ['#9CC8EE', '#78D0C3']
+    : ['#5A86B8', '#3E9B91']
+  const color = palette[args.metric === 'spend' ? 0 : 1]
+  const tooltipContent = [
+    {
+      key: args.spendLabel,
+      value: (datum: Record<string, unknown>) =>
+        formatQuota(Number(datum?.Spend) || 0),
+    },
+    {
+      key: args.requestsLabel,
+      value: (datum: Record<string, unknown>) =>
+        (Number(datum?.Requests) || 0).toLocaleString(),
+    },
+    {
+      key: args.tokensLabel,
+      value: (datum: Record<string, unknown>) =>
+        (Number(datum?.Tokens) || 0).toLocaleString(),
+    },
+  ]
 
   return {
     type: 'area',
+    color: [color],
     data: [{ id: 'trend', values }],
     xField: 'Time',
     yField: 'Value',
@@ -122,7 +152,7 @@ function buildTrendSpec(args: {
     },
     area: {
       style: {
-        fillOpacity: 0.12,
+        fillOpacity: isDark ? 0.16 : 0.08,
         curveType: 'monotone',
       },
     },
@@ -131,16 +161,231 @@ function buildTrendSpec(args: {
       { orient: 'left', label: { visible: true } },
     ],
     tooltip: {
+      style: {
+        panel: {
+          border: { radius: 12 },
+        },
+      },
       mark: {
-        content: [
-          {
-            key: args.metric === 'spend' ? args.spendLabel : args.requestsLabel,
-            value: (datum: Record<string, unknown>) => {
-              const value = Number(datum?.Value) || 0
-              return args.metric === 'spend' ? formatQuota(value) : value
-            },
+        content: tooltipContent,
+      },
+      dimension: {
+        content: tooltipContent,
+      },
+    },
+    background: { fill: 'transparent' },
+    animation: true,
+  }
+}
+
+const AURORA_RANK_COLORS_LIGHT = [
+  '#8FCFC4',
+  '#9FBFEA',
+  '#B9A9E8',
+  '#E5B6A7',
+  '#8FC8D8',
+  '#D2CC9A',
+  '#A8B9E0',
+  '#D6A9C2',
+  '#A8D0A5',
+  '#BDB8D0',
+]
+
+const AURORA_RANK_COLORS_DARK = [
+  '#8CD8C7',
+  '#9FC8F4',
+  '#C0AEF2',
+  '#E9B9AA',
+  '#8BD0E1',
+  '#D9D19C',
+  '#AFC0EA',
+  '#DCAAC5',
+  '#A7D9A5',
+  '#C2BCD8',
+]
+
+function buildModelSpendRankSpec(args: {
+  data: QuotaDataItem[]
+  resolvedTheme: string
+  chartRadius: number
+  t: (key: string) => string
+}) {
+  const { data, resolvedTheme, chartRadius, t } = args
+  const otherLabel = t('Other')
+
+  const modelMap = new Map<
+    string,
+    { quota: number; count: number; tokens: number }
+  >()
+  let totalQuota = 0
+
+  for (const item of data) {
+    const model = item.model_name || 'unknown'
+    const quota = Number(item.quota) || 0
+    const count = Number(item.count) || 0
+    const tokens = Number(item.token_used) || 0
+    totalQuota += quota
+    const cur = modelMap.get(model) ?? { quota: 0, count: 0, tokens: 0 }
+    cur.quota += quota
+    cur.count += count
+    cur.tokens += tokens
+    modelMap.set(model, cur)
+  }
+
+  const isSpend = totalQuota > 0
+  const sorted = [...modelMap.entries()]
+    .map(([model, stats]) => ({
+      Model: model,
+      Quota: stats.quota,
+      Count: stats.count,
+      Tokens: stats.tokens,
+      Value: isSpend ? stats.quota : stats.count,
+    }))
+    .sort((a, b) => b.Value - a.Value)
+
+  const MAX_MODELS = 8
+  let values: Array<{
+    Model: string
+    Quota: number
+    Count: number
+    Tokens: number
+    Value: number
+  }>
+  if (sorted.length > MAX_MODELS) {
+    const top = sorted.slice(0, MAX_MODELS)
+    const rest = sorted.slice(MAX_MODELS)
+    const restQuota = rest.reduce((sum, item) => sum + item.Quota, 0)
+    const restCount = rest.reduce((sum, item) => sum + item.Count, 0)
+    const restTokens = rest.reduce((sum, item) => sum + item.Tokens, 0)
+    values = [
+      ...top,
+      {
+        Model: otherLabel,
+        Quota: restQuota,
+        Count: restCount,
+        Tokens: restTokens,
+        Value: isSpend ? restQuota : restCount,
+      },
+    ]
+  } else {
+    values = sorted
+  }
+
+  const modelNames = values.map((v) => v.Model)
+  const isDark = resolvedTheme === 'dark'
+  const palette = isDark
+    ? AURORA_RANK_COLORS_DARK
+    : AURORA_RANK_COLORS_LIGHT
+  const colorRange = values.map((item, index) =>
+    item.Model === otherLabel
+      ? (palette.at(-1) ?? palette.at(0) ?? '')
+      : (palette.at(index % (palette.length - 1)) ?? palette.at(0) ?? '')
+  )
+  const textColor = isDark
+    ? 'rgba(255, 255, 255, 0.65)'
+    : 'rgba(15, 23, 42, 0.65)'
+  const axisLineColor = isDark
+    ? 'rgba(255, 255, 255, 0.1)'
+    : 'rgba(15, 23, 42, 0.08)'
+  const gridLineColor = isDark
+    ? 'rgba(255, 255, 255, 0.08)'
+    : 'rgba(15, 23, 42, 0.06)'
+  const radius = Math.min(Math.max(chartRadius || 4, 3), 8)
+  const tooltipContent = [
+    {
+      key: t('Spend'),
+      value: (datum: Record<string, unknown>) =>
+        formatQuota(Number(datum?.Quota) || 0),
+    },
+    {
+      key: t('Requests'),
+      value: (datum: Record<string, unknown>) =>
+        (Number(datum?.Count) || 0).toLocaleString(),
+    },
+    {
+      key: t('Tokens'),
+      value: (datum: Record<string, unknown>) =>
+        (Number(datum?.Tokens) || 0).toLocaleString(),
+    },
+  ]
+
+  return {
+    type: 'bar',
+    data: [{ id: 'modelSpendRank', values }],
+    xField: 'Model',
+    yField: 'Value',
+    seriesField: 'Model',
+    legends: { visible: false },
+    color: {
+      type: 'ordinal',
+      domain: modelNames,
+      range: colorRange,
+    },
+    bar: {
+      style: {
+        cornerRadius: [radius, radius, 0, 0],
+        barMaxWidth: 30,
+        barMinWidth: 8,
+      },
+      state: {
+        hover: {
+          fillOpacity: 0.82,
+          cursor: 'pointer',
+        },
+      },
+    },
+    axes: [
+      {
+        orient: 'bottom',
+        label: {
+          visible: true,
+          autoRotate: true,
+          autoHide: true,
+          style: {
+            fontSize: 11,
+            fill: textColor,
           },
-        ],
+        },
+        tick: { visible: false },
+        domainLine: {
+          style: { stroke: axisLineColor },
+        },
+      },
+      {
+        orient: 'left',
+        label: {
+          visible: true,
+          style: {
+            fontSize: 10,
+            fill: textColor,
+          },
+          formatMethod: (val: number | string) => {
+            const num = Number(val) || 0
+            return isSpend ? formatQuota(num) : num.toLocaleString()
+          },
+        },
+        grid: {
+          visible: true,
+          style: {
+            lineDash: [3, 3],
+            stroke: gridLineColor,
+          },
+        },
+        domainLine: { visible: false },
+        tick: { visible: false },
+      },
+    ],
+    tooltip: {
+      style: {
+        panel: {
+          border: { radius: 12 },
+        },
+      },
+      mark: {
+        content: tooltipContent,
+      },
+      dimension: {
+        content: tooltipContent,
       },
     },
     background: { fill: 'transparent' },
@@ -183,37 +428,31 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
         data: props.loading ? [] : props.data,
         metric,
         timeGranularity: props.timeGranularity,
+        resolvedTheme,
         spendLabel: t('Spend'),
         requestsLabel: t('Requests'),
+        tokensLabel: t('Tokens'),
       }),
-    [metric, props.data, props.loading, props.timeGranularity, t]
+    [metric, props.data, props.loading, props.timeGranularity, resolvedTheme, t]
   )
-  const chartData = useMemo(
+  const rankSpec = useMemo(
     () =>
-      processChartData(
-        props.loading ? [] : props.data,
-        props.timeGranularity,
+      buildModelSpendRankSpec({
+        data: props.loading ? [] : props.data,
+        resolvedTheme,
+        chartRadius: chartRadius ?? 4,
         t,
-        chartRadius
-      ),
-    [chartRadius, props.data, props.loading, props.timeGranularity, t]
+      }),
+    [chartRadius, props.data, props.loading, resolvedTheme, t]
   )
-  const rankSpec = useMemo(() => {
-    const spec = chartData.spec_rank_bar
-    return {
-      ...spec,
-      title: { visible: false },
-      legends: { visible: false },
-    }
-  }, [chartData.spec_rank_bar])
 
   return (
-    <div className='grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(18rem,1fr)]'>
-      <section className='bg-card overflow-hidden rounded-2xl border'>
-        <div className='flex flex-wrap items-start justify-between gap-3 px-4 py-3 sm:px-5'>
+    <div className='grid min-w-0 grid-cols-1 gap-3 @min-[48rem]/console:gap-4 @min-[72rem]/console:grid-cols-[minmax(0,1.4fr)_minmax(18rem,1fr)]'>
+      <section className='bg-card min-w-0 overflow-hidden rounded-2xl border'>
+        <div className='flex flex-wrap items-start justify-between gap-2 px-3 py-3 @min-[48rem]/console:gap-3 @min-[48rem]/console:px-5'>
           <div>
-            <h3 className='text-sm font-semibold'>{t('Usage trend')}</h3>
-            <p className='text-muted-foreground mt-0.5 text-xs'>{props.rangeLabel}</p>
+            <h3 className='text-xs font-semibold @min-[48rem]/console:text-sm'>{t('Usage trend')}</h3>
+            <p className='text-muted-foreground mt-0.5 text-[11px] @min-[48rem]/console:text-xs'>{props.rangeLabel}</p>
           </div>
           <div className='bg-muted/70 inline-flex rounded-lg p-0.5'>
             {(['spend', 'requests'] as const).map((item) => (
@@ -222,7 +461,7 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
                 type='button'
                 onClick={() => setMetric(item)}
                 className={cn(
-                  'h-7 rounded-md px-2.5 text-xs font-medium transition-colors',
+                  'h-8 rounded-md px-2 text-[11px] font-medium transition-colors @min-[48rem]/console:px-2.5 @min-[48rem]/console:text-xs',
                   metric === item
                     ? 'bg-foreground text-background shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
@@ -233,7 +472,7 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
             ))}
           </div>
         </div>
-        <div className='h-64 px-3 pb-3 pl-4 sm:h-72 sm:pl-5'>
+        <div className='h-56 px-2 pb-3 pl-3 @min-[32rem]/console:h-64 @min-[48rem]/console:h-72 @min-[48rem]/console:pr-3 @min-[48rem]/console:pl-5'>
           <ChartBody
             loading={props.loading || !themeReady}
             hasData={hasData}
@@ -245,23 +484,16 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
         </div>
       </section>
 
-      <section className='bg-card overflow-hidden rounded-2xl border'>
-        <div className='flex items-start justify-between gap-3 px-4 py-3 sm:px-5'>
+      <section className='bg-card min-w-0 overflow-hidden rounded-2xl border'>
+        <div className='flex flex-wrap items-start justify-between gap-2 px-3 py-3 @min-[48rem]/console:gap-3 @min-[48rem]/console:px-5'>
           <div>
-            <h3 className='text-sm font-semibold'>{t('Model spend distribution')}</h3>
-            <p className='text-muted-foreground mt-0.5 text-xs'>
+            <h3 className='text-xs font-semibold @min-[48rem]/console:text-sm'>{t('Model spend distribution')}</h3>
+            <p className='text-muted-foreground mt-0.5 text-[11px] @min-[48rem]/console:text-xs'>
               {t('Ranked by spend')}
             </p>
           </div>
-          <Link
-            to='/dashboard/$section'
-            params={{ section: 'models' }}
-            className='text-muted-foreground hover:text-foreground shrink-0 text-xs underline-offset-2 hover:underline'
-          >
-            {t('30-day details')} →
-          </Link>
         </div>
-        <div className='h-64 px-2 pb-3 sm:h-72'>
+        <div className='h-56 px-2 pb-3 @min-[32rem]/console:h-64 @min-[48rem]/console:h-72'>
           <ChartBody
             loading={props.loading || !themeReady}
             hasData={hasData}

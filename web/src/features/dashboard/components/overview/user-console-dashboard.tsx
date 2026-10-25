@@ -76,18 +76,22 @@ export function UserConsoleDashboard() {
   return (
     <SectionPageLayout>
       <SectionPageLayout.Title>
-        <span className='truncate text-2xl font-bold tracking-tight sm:text-3xl'>{t('Console')}</span>
+        <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+          {t('Console')}
+        </span>
       </SectionPageLayout.Title>
       <SectionPageLayout.Content>
-        <div className='flex flex-col gap-4'>
+        <div className='@container/console flex min-w-0 flex-col gap-3 sm:gap-4'>
           {latestAnnouncement ? (
             <UserConsoleBanner announcement={latestAnnouncement} />
           ) : null}
 
           <div className='flex flex-wrap items-center justify-between gap-3'>
-            <div className='flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 pl-3 sm:pl-4'>
-              <span className='text-base font-semibold'>{presetLabel}</span>
-              <span className='text-muted-foreground text-sm tabular-nums'>
+            <div className='flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 pl-3 @min-[48rem]/console:gap-x-3 @min-[48rem]/console:pl-4'>
+              <span className='text-sm font-semibold @min-[48rem]/console:text-base'>
+                {presetLabel}
+              </span>
+              <span className='text-muted-foreground text-xs leading-relaxed tabular-nums @min-[48rem]/console:text-sm'>
                 {rangeLabel}
                 <span className='mx-2'>·</span>
                 {t('Updated at {{time}} ({{timezone}})', {
@@ -96,11 +100,11 @@ export function UserConsoleDashboard() {
                 })}
               </span>
             </div>
-            <div className='flex flex-wrap items-center justify-end gap-2'>
+            <div className='flex w-full min-w-0 flex-wrap items-center justify-start gap-2 @min-[64rem]/console:w-auto @min-[64rem]/console:justify-end'>
               <Button
                 variant='outline'
                 size='default'
-                className='h-9 px-3'
+                className='h-9 px-2.5 text-xs @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm'
                 onClick={consoleData.refresh}
                 disabled={consoleData.refreshing}
               >

@@ -126,7 +126,9 @@ function UsageLogsContent() {
     <>
       <SectionPageLayout fixedContent>
         <SectionPageLayout.Title>
-          {t(pageMeta.titleKey)}
+          <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+            {t(pageMeta.titleKey)}
+          </span>
         </SectionPageLayout.Title>
         <SectionPageLayout.Actions>
           {canManageScope && (
@@ -139,7 +141,7 @@ function UsageLogsContent() {
           )}
         </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
-          <div className='flex h-full min-h-0 flex-col gap-4'>
+          <div className='@container/console flex h-full min-h-0 flex-col gap-3 sm:gap-4'>
             {showTaskSwitcher && (
               <Tabs value={activeCategory} onValueChange={handleSectionChange}>
                 <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
@@ -192,3 +194,4 @@ export function UsageLogs() {
     </UsageLogsProvider>
   )
 }
+

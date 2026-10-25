@@ -16,7 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Shield, AlertTriangle, RefreshCw } from 'lucide-react'
+import {
+  Shield01Icon,
+  Alert02Icon,
+  ArrowReloadHorizontalIcon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
@@ -87,7 +92,7 @@ export function TwoFACard({ loading: pageLoading }: TwoFACardProps) {
     <>
       <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
         <CardHeader className='p-3 sm:p-5'>
-          <CardTitle className='text-lg tracking-tight sm:text-xl'>
+          <CardTitle className='text-sm font-semibold sm:text-sm'>
             {t('Two-Factor Authentication')}
           </CardTitle>
           <CardDescription className='text-xs sm:text-sm'>
@@ -98,13 +103,17 @@ export function TwoFACard({ loading: pageLoading }: TwoFACardProps) {
         <CardContent className='p-3 sm:p-5'>
           <div className='space-y-6'>
             {/* Status Section */}
-            <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between xl:flex-col 2xl:flex-row'>
+            <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between xl:flex-col'>
               <div className='flex items-start gap-4'>
-                <IconBadge tone='success' size='sm'>
-                  <Shield />
+                <IconBadge tone='neutral' size='sm'>
+                  <HugeiconsIcon
+                    icon={Shield01Icon}
+                    strokeWidth={2}
+                    aria-hidden='true'
+                  />
                 </IconBadge>
                 <div className='space-y-1'>
-                  <div className='flex items-center gap-2'>
+                  <div className='flex flex-wrap items-center gap-2'>
                     <p className='font-medium'>{t('Two-Step Verification')}</p>
                     {status.enabled ? (
                       <StatusBadge
@@ -142,7 +151,7 @@ export function TwoFACard({ loading: pageLoading }: TwoFACardProps) {
 
               {!status.enabled && (
                 <Button
-                  className='w-full sm:w-auto xl:w-full 2xl:w-auto'
+                  className='w-full sm:w-auto xl:w-full'
                   onClick={setup.start}
                   disabled={setup.active}
                 >
@@ -153,13 +162,18 @@ export function TwoFACard({ loading: pageLoading }: TwoFACardProps) {
 
             {/* Actions Section - Only show when enabled */}
             {status.enabled && (
-              <div className='flex flex-col gap-3 border-t pt-6 sm:flex-row xl:flex-col 2xl:flex-row'>
+              <div className='flex flex-col gap-3 border-t pt-6 sm:flex-row xl:flex-col'>
                 <Button
                   variant='outline'
                   className='flex-1'
                   onClick={() => dialogs.open('backup')}
                 >
-                  <RefreshCw className='mr-2 h-4 w-4' />
+                  <HugeiconsIcon
+                    icon={ArrowReloadHorizontalIcon}
+                    strokeWidth={2}
+                    aria-hidden='true'
+                    data-icon='inline-start'
+                  />
                   {t('Regenerate Backup Codes')}
                 </Button>
                 <Button
@@ -167,7 +181,12 @@ export function TwoFACard({ loading: pageLoading }: TwoFACardProps) {
                   className='flex-1'
                   onClick={() => dialogs.open('disable')}
                 >
-                  <AlertTriangle className='mr-2 h-4 w-4' />
+                  <HugeiconsIcon
+                    icon={Alert02Icon}
+                    strokeWidth={2}
+                    aria-hidden='true'
+                    data-icon='inline-start'
+                  />
                   {t('Disable 2FA')}
                 </Button>
               </div>

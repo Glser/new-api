@@ -16,9 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Loading03Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useMutation } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -42,11 +43,6 @@ export function PrivacyCard(props: PrivacyCardProps) {
   const [recordIpLog, setRecordIpLog] = useState(() =>
     Boolean(parseUserSettings(props.profile.setting).record_ip_log)
   )
-  useEffect(() => {
-    setRecordIpLog(
-      Boolean(parseUserSettings(props.profile.setting).record_ip_log)
-    )
-  }, [props.profile.setting])
 
   const save = useMutation({
     mutationFn: async () => {
@@ -84,7 +80,14 @@ export function PrivacyCard(props: PrivacyCardProps) {
           onClick={() => save.mutate()}
           disabled={save.isPending}
         >
-          {save.isPending && <Loader2 className='size-4 animate-spin' />}
+          {save.isPending && (
+            <HugeiconsIcon
+              icon={Loading03Icon}
+              strokeWidth={2}
+              aria-hidden='true'
+              className='size-4 animate-spin'
+            />
+          )}
           {save.isPending ? t('Saving...') : t('Save Settings')}
         </Button>
       </div>

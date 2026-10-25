@@ -72,7 +72,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
-import {
+import { TooltipHint,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -858,9 +858,11 @@ function ChannelTestDialogContent({
 
           return (
             <div className='flex w-max items-center gap-2 whitespace-nowrap'>
-              <span className='font-medium whitespace-nowrap' title={model}>
-                {model}
-              </span>
+              <TooltipHint content={model}>
+                <span className='font-medium whitespace-nowrap'>
+                  {model}
+                </span>
+              </TooltipHint>
               {isDefault && (
                 <StatusBadge
                   label={t('Default')}

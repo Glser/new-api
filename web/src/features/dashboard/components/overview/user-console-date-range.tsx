@@ -17,14 +17,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { CalendarDays } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useMemo, useRef, useState } from 'react'
 import type { DateRange } from 'react-day-picker'
 import { enUS, zhCN } from 'react-day-picker/locale'
+import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
+  isPopoverDismissFromTrigger,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -64,6 +65,7 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
   const isZh = i18n.language === 'zhCN' || i18n.language.startsWith('zh')
   const calendarLocale = isZh ? zhCN : enUS
   const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLElement | null>(null)
   const [draft, setDraft] = useState<DateRange | undefined>()
   const [month, setMonth] = useState<Date>(() =>
     getVisibleStartMonth({ from: props.range.start, to: props.range.end })
@@ -84,7 +86,27 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
     })
   }
 
-  const handleOpenChange = (nextOpen: boolean) => {
+  const handleOpenChange = (
+    nextOpen: boolean,
+    eventDetails: { reason: string; event: Event; cancel: () => void }
+  ) => {
+    if (eventDetails.reason === 'trigger-press') {
+      eventDetails.cancel()
+      return
+    }
+    if (isPopoverDismissFromTrigger(eventDetails, triggerRef.current)) {
+      eventDetails.cancel()
+      return
+    }
+    if (nextOpen) {
+      setDraft(selectedRange)
+      setMonth(getVisibleStartMonth(selectedRange))
+    }
+    setOpen(nextOpen)
+  }
+
+  const handleTriggerClick = () => {
+    const nextOpen = !open
     if (nextOpen) {
       setDraft(selectedRange)
       setMonth(getVisibleStartMonth(selectedRange))
@@ -112,7 +134,9 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
   const applyDraft = () => {
     if (!draft?.from) return
     const start = dayjs(draft.from).startOf('day').toDate()
-    const end = dayjs(draft.to ?? draft.from).endOf('day').toDate()
+    const end = dayjs(draft.to ?? draft.from)
+      .endOf('day')
+      .toDate()
     props.onChange({
       preset: matchUserConsolePreset(start, end),
       start,
@@ -122,7 +146,7 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
   }
 
   return (
-    <div className='flex flex-wrap items-center justify-end gap-2'>
+    <div className='flex min-w-0 flex-wrap items-center justify-start gap-2 @min-[64rem]/console:justify-end'>
       <div className='bg-muted/70 inline-flex flex-wrap items-center rounded-lg p-0.5'>
         {USER_CONSOLE_RANGE_PRESETS.map((preset) => (
           <button
@@ -130,7 +154,7 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
             type='button'
             onClick={() => handlePreset(preset.value)}
             className={cn(
-              'h-8 rounded-md px-3 text-sm font-medium transition-colors',
+              'h-8 rounded-md px-2 text-xs font-medium transition-colors @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm',
               props.range.preset === preset.value
                 ? 'bg-foreground text-background shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -143,19 +167,23 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
 
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger
-          render={
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              className='h-9 min-w-56 justify-start gap-2 px-3 text-sm font-normal tabular-nums'
-            />
-          }
+          ref={triggerRef}
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'h-9 min-w-0 justify-start gap-1.5 px-2.5 text-xs font-normal tabular-nums @min-[48rem]/console:min-w-56 @min-[48rem]/console:gap-2 @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm'
+          )}
+          onClick={handleTriggerClick}
         >
           <CalendarDays className='text-muted-foreground size-4' />
           {formatRangeLabel(props.range.start, props.range.end)}
         </PopoverTrigger>
-        <PopoverContent align='end' className='w-auto p-3'>
+        <PopoverContent
+          align='end'
+          initialFocus={false}
+          animate={false}
+          keepMounted
+          className='max-h-[80dvh] w-auto max-w-[calc(100vw-2rem)] overflow-auto p-3'
+        >
           <Calendar
             mode='range'
             numberOfMonths={2}
@@ -164,9 +192,10 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
             onMonthChange={setMonth}
             selected={draft ?? selectedRange}
             onSelect={handleSelect}
+            autoFocus={false}
             disabled={{ after: new Date() }}
             classNames={{
-              months: 'relative flex flex-row gap-4',
+              months: 'relative flex flex-col gap-4 sm:flex-row',
             }}
             formatters={
               isZh
@@ -176,8 +205,9 @@ export function UserConsoleDateRangeControl(props: UserConsoleDateRangeProps) {
                     formatMonthDropdown: (date: Date) =>
                       `${date.getMonth() + 1}月`,
                     formatWeekdayName: (date: Date) =>
-                      ['日', '一', '二', '三', '四', '五', '六'][date.getDay()] ??
-                      '',
+                      ['日', '一', '二', '三', '四', '五', '六'][
+                        date.getDay()
+                      ] ?? '',
                   }
                 : undefined
             }

@@ -50,6 +50,7 @@ import {
   OFFICIAL_CHANNEL_ID,
 } from './constants'
 import { getUpstreamDisplayName } from './upstream-ratio-sync-helpers'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 type ChannelSelectorDialogProps = {
   open: boolean
@@ -179,12 +180,13 @@ export function ChannelSelectorDialog({
         cell: ({ row }) => {
           const url = row.getValue('base_url') as string
           return (
-            <span
-              className='text-muted-foreground block max-w-xs truncate font-mono text-xs'
-              title={url}
-            >
-              {url}
-            </span>
+            <TooltipHint content={url}>
+              <span
+                className='text-muted-foreground block max-w-xs truncate font-mono text-xs'
+              >
+                {url}
+              </span>
+            </TooltipHint>
           )
         },
       },

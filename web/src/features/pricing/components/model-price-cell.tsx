@@ -34,6 +34,7 @@ import { isTokenBasedModel } from '../lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '../lib/price'
 import { taskUsageUnitLabel } from '../lib/task-price-display'
 import type { PricingModel, TokenUnit } from '../types'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 export type ModelPriceCellOptions = {
   tokenUnit?: TokenUnit
@@ -243,27 +244,30 @@ export function ModelPriceCell(props: {
             key={metric.label}
             className='flex min-w-0 flex-col items-start gap-y-0.5 sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-1.5'
           >
-            <span
-              className='text-muted-foreground min-w-0 truncate text-xs font-normal'
-              title={metric.label}
-            >
-              {metric.label}
-            </span>
-            <span
-              className='min-w-0 font-mono text-sm break-words whitespace-normal tabular-nums'
-              title={metric.value}
-            >
-              {metric.value}
-            </span>
+            <TooltipHint content={metric.label}>
+              <span
+                className='text-muted-foreground min-w-0 truncate text-xs font-normal'
+              >
+                {metric.label}
+              </span>
+            </TooltipHint>
+            <TooltipHint content={metric.value}>
+              <span
+                className='min-w-0 font-mono text-sm break-words whitespace-normal tabular-nums'
+              >
+                {metric.value}
+              </span>
+            </TooltipHint>
           </span>
         ))}
       </span>
-      <span
-        className='text-muted-foreground block text-xs font-normal break-words whitespace-normal sm:truncate'
-        title={caption}
-      >
-        {caption}
-      </span>
+      <TooltipHint content={caption}>
+        <span
+          className='text-muted-foreground block text-xs font-normal break-words whitespace-normal sm:truncate'
+        >
+          {caption}
+        </span>
+      </TooltipHint>
     </span>
   )
 }

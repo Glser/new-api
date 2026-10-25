@@ -21,23 +21,19 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { useMediaQuery } from '@/hooks'
 import { toIntlLocale } from '@/i18n/languages'
 import { getUserGroups } from '@/lib/api'
-import { getCurrencyDisplay } from '@/lib/currency'
 import { requireServerSuccess } from '@/lib/server-error-message'
-import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { API_KEY_STATUSES } from '../constants'
 import type { ApiKey } from '../types'
 import { ApiKeyGroupCell } from './api-key-group-cell'
-import { ApiKeyQuotaCell } from './api-key-quota-cell'
 import {
   ApiKeyActivityCell,
   ApiKeyTimestampCell,
 } from './api-key-timestamp-cell'
 import {
+  ApiKeyQuotaOverviewCell,
   ApiKeyCell,
   IpRestrictionsCell,
   ModelLimitsCell,
@@ -66,37 +62,11 @@ function useGroupRatios(): Record<string, number | string> {
 
 export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
   const { t, i18n } = useTranslation()
-  useSystemConfigStore((state) => state.config.currency)
-  const { meta: currency } = getCurrencyDisplay()
-  const quotaUnit = currency.kind === 'tokens' ? t('Tokens') : currency.symbol
   const groupRatios = useGroupRatios()
-  const shouldReduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
   const locale = toIntlLocale(i18n.resolvedLanguage || i18n.language)
   const justNowLabel = t('Just now')
+
   return [
-    {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          indeterminate={table.getIsSomePageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label={t('Select all')}
-          className='translate-y-[2px]'
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label={t('Select row')}
-          className='translate-y-[2px]'
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-      size: 40,
-    },
     {
       accessorKey: 'name',
       header: t('Name'),
@@ -131,13 +101,13 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
       header: t('API Key'),
       cell: ({ row }) => <ApiKeyCell apiKey={row.original} />,
       enableSorting: false,
-      size: 260,
+      size: 280,
     },
     {
       id: 'quota',
       accessorKey: 'remain_quota',
-      header: `${t('Quota')} (${quotaUnit})`,
-      cell: ({ row }) => <ApiKeyQuotaCell apiKey={row.original} now={now} />,
+      header: `${t('Used amount')} / ${t('Quota')}`,
+      cell: ({ row }) => <ApiKeyQuotaOverviewCell apiKey={row.original} />,
       size: 260,
       minSize: 260,
     },
@@ -152,7 +122,6 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
             group={group}
             ratio={groupRatios[group]}
             crossGroupRetry={apiKey.cross_group_retry}
-            shouldReduceMotion={shouldReduceMotion}
           />
         )
       },
@@ -181,8 +150,10 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
       id: 'activity_time',
       accessorKey: 'created_time',
       header: t('Time'),
-      cell: ({ row }) => <ApiKeyActivityCell apiKey={row.original} now={now} />,
-      size: 220,
+      cell: ({ row }) => (
+        <ApiKeyActivityCell apiKey={row.original} now={now} format='absolute' />
+      ),
+      size: 240,
       meta: { mobileHidden: true },
     },
     {
@@ -221,7 +192,10 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
       id: 'actions',
       header: () => t('Actions'),
       cell: ({ row }) => <DataTableRowActions row={row} />,
-      meta: { pinned: 'right' as const },
+      meta: {
+        pinned: 'right' as const,
+        headerClassName: 'bg-transparent [background-color:transparent]',
+      },
     },
   ]
 }

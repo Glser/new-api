@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Crown, CalendarClock, Package } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -67,15 +67,17 @@ export function SubscriptionPurchaseDialog(props: Props) {
   const { t } = useTranslation()
   const { currency } = useSystemConfig()
   const [paying, setPaying] = useState(false)
-  const [selectedEpayMethod, setSelectedEpayMethod] = useState('')
+  const [epayMethod, setSelectedEpayMethod] = useState('')
+  const selectedEpayMethod = props.epayMethods?.some(
+    (method) => method.type === epayMethod
+  )
+    ? epayMethod
+    : (props.epayMethods?.[0]?.type ?? '')
 
-  useEffect(() => {
-    if (props.open && props.epayMethods && props.epayMethods.length > 0) {
-      setSelectedEpayMethod(props.epayMethods[0].type)
-    } else if (!props.open) {
-      setSelectedEpayMethod('')
-    }
-  }, [props.open, props.epayMethods])
+  const handleOpenChange = (open: boolean) => {
+    if (!open) setSelectedEpayMethod('')
+    props.onOpenChange(open)
+  }
 
   const plan = props.plan?.plan
   if (!plan) return null
@@ -88,6 +90,11 @@ export function SubscriptionPurchaseDialog(props: Props) {
     props.enableOnlineTopUp && (props.epayMethods || []).length > 0
   const hasAnyPayment = hasStripe || hasCreem || hasWaffoPancake || hasEpay
   const totalAmount = Number(plan.total_amount || 0)
+  const termTotalAmount = props.plan?.quota_summary?.total_amount
+  const showTermTotal =
+    totalAmount > 0 &&
+    formatResetPeriod(plan, t) !== t('No Reset') &&
+    termTotalAmount !== undefined
   const quotaPerUnit =
     currency?.quotaPerUnit && currency.quotaPerUnit > 0
       ? currency.quotaPerUnit
@@ -110,7 +117,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
       if (res.message === 'success' && res.data?.pay_link) {
         window.open(res.data.pay_link, '_blank')
         toast.success(t('Payment page opened'))
-        props.onOpenChange(false)
+        handleOpenChange(false)
       } else {
         handleServerError(res, t('Payment request failed'))
       }
@@ -128,7 +135,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
       if (res.message === 'success' && res.data?.checkout_url) {
         window.open(res.data.checkout_url, '_blank')
         toast.success(t('Payment page opened'))
-        props.onOpenChange(false)
+        handleOpenChange(false)
       } else {
         handleServerError(res, t('Payment request failed'))
       }
@@ -191,7 +198,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
         form.submit()
         document.body.removeChild(form)
         toast.success(t('Payment initiated'))
-        props.onOpenChange(false)
+        handleOpenChange(false)
       } else {
         handleServerError(res, t('Payment request failed'))
       }
@@ -213,7 +220,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
       if (res.success) {
         toast.success(t('Subscription purchased successfully'))
         void props.onPurchaseSuccess?.()
-        props.onOpenChange(false)
+        handleOpenChange(false)
       } else {
         handleServerError(res, t('Payment request failed'))
       }
@@ -227,7 +234,7 @@ export function SubscriptionPurchaseDialog(props: Props) {
   return (
     <Dialog
       open={props.open}
-      onOpenChange={props.onOpenChange}
+      onOpenChange={handleOpenChange}
       title={
         <>
           <Crown className='h-5 w-5' />
@@ -268,13 +275,30 @@ export function SubscriptionPurchaseDialog(props: Props) {
           )}
           <div className='flex items-center justify-between'>
             <span className='text-muted-foreground text-sm'>
-              {t('Plan Quota')}
+              {showTermTotal ? t('Estimated term quota') : t('Plan Quota')}
             </span>
             <span className='flex items-center gap-1 text-sm'>
               <Package className='h-3.5 w-3.5' />
-              {totalAmount > 0 ? formatQuota(totalAmount) : t('Unlimited')}
+              {totalAmount > 0
+                ? formatQuota(termTotalAmount ?? totalAmount)
+                : t('Unlimited')}
             </span>
           </div>
+          {showTermTotal && (
+            <>
+              <div className='flex items-center justify-between gap-3'>
+                <span className='text-muted-foreground text-sm'>
+                  {t('Quota per reset')}
+                </span>
+                <span className='text-sm'>{formatQuota(totalAmount)}</span>
+              </div>
+              <p className='text-muted-foreground text-xs leading-relaxed'>
+                {t(
+                  'Estimated across the full validity period. Quota resets each period; unused quota does not roll over.'
+                )}
+              </p>
+            </>
+          )}
           {plan.upgrade_group && (
             <div className='flex items-center justify-between'>
               <span className='text-muted-foreground text-sm'>

@@ -16,8 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Mail, Shield, Send, Link2, Unlink } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Mail01Icon,
+  Shield01Icon,
+  SentIcon,
+  Link01Icon,
+  Unlink01Icon,
+} from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SiGithub, SiWechat, SiLinux } from 'react-icons/si'
 import { toast } from 'sonner'
@@ -26,6 +34,7 @@ import { IconDiscord } from '@/assets/brand-icons'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { createOAuthAuthorization } from '@/features/auth/api'
 import {
   openOAuthPopup,
@@ -52,6 +61,7 @@ import {
   authRequestOptions,
   authResult,
 } from '@/lib/secure-verification'
+import { useAuthStore } from '@/stores/auth-store'
 
 import { useAccountSecurity } from '../hooks/use-account-security'
 import { EmailBindDialog } from './dialogs/email-bind-dialog'
@@ -74,11 +84,54 @@ type PreparedOAuthBinding = AccountSecurityResult & {
   url: string
 }
 
-export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
+function EmailBindingIcon(props: { className?: string }) {
+  return (
+    <HugeiconsIcon
+      icon={Mail01Icon}
+      className={props.className}
+      strokeWidth={2}
+      aria-hidden='true'
+    />
+  )
+}
+
+function IdentityBindingIcon(props: { className?: string }) {
+  return (
+    <HugeiconsIcon
+      icon={Shield01Icon}
+      className={props.className}
+      strokeWidth={2}
+      aria-hidden='true'
+    />
+  )
+}
+
+function TelegramBindingIcon(props: { className?: string }) {
+  return (
+    <HugeiconsIcon
+      icon={SentIcon}
+      className={props.className}
+      strokeWidth={2}
+      aria-hidden='true'
+    />
+  )
+}
+
+export function AccountBindings(props: AccountBindingsProps) {
+  const userId = useAuthStore((state) => state.auth.user?.id)
+  const sessionId = useAuthStore((state) => state.auth.session?.sid)
+  return (
+    <AccountBindingsContent
+      key={`${userId ?? ''}:${sessionId ?? ''}`}
+      {...props}
+    />
+  )
+}
+
+function AccountBindingsContent({ profile, onUpdate }: AccountBindingsProps) {
   const { t } = useTranslation()
   const dialogs = useDialogs<DialogKey>()
   const { status, loading } = useStatus()
-  const [customBindings, setCustomBindings] = useState<CustomOAuthBinding[]>([])
   const [unbindTarget, setUnbindTarget] = useState<CustomOAuthBinding | null>(
     null
   )
@@ -92,26 +145,22 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
   const customProviders = status?.custom_oauth_providers as
     | CustomOAuthProviderInfo[]
     | undefined
+  const customBindingsQuery = useQuery({
+    queryKey: ['profile', 'oauth-bindings', security.sessionKey],
+    enabled: Boolean(customProviders?.length),
+    queryFn: async () => {
+      const response = await getSelfOAuthBindings()
+      return response.success && response.data ? response.data : []
+    },
+    meta: { errorToast: false },
+  })
   const customBindingsByProviderId = useMemo(
-    () => indexCustomOAuthBindings(customBindings),
-    [customBindings]
+    () => indexCustomOAuthBindings(customBindingsQuery.data ?? []),
+    [customBindingsQuery.data]
   )
-
-  const fetchCustomBindings = useCallback(async () => {
-    if (!customProviders || customProviders.length === 0) return
-    try {
-      const res = await getSelfOAuthBindings()
-      if (res.success && res.data) {
-        setCustomBindings(res.data)
-      }
-    } catch {
-      // ignore
-    }
-  }, [customProviders])
-
-  useEffect(() => {
-    fetchCustomBindings()
-  }, [fetchCustomBindings])
+  const fetchCustomBindings = async () => {
+    if (customProviders?.length) await customBindingsQuery.refetch()
+  }
 
   const handleUnbindCustom = async () => {
     if (!unbindTarget) return
@@ -216,20 +265,13 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
   const handleBindCustomOAuth = (provider: CustomOAuthProviderInfo) =>
     startOAuthBinding(provider.slug)
 
-  const closeDialogs = dialogs.closeAll
-  useEffect(() => {
-    setPreparedBinding(null)
-    setUnbindTarget(null)
-    closeDialogs()
-  }, [security.sessionKey, closeDialogs])
-
   if (!profile || !status || loading) return null
 
   const bindings: BindingItem[] = [
     {
       id: 'email',
       label: t('Email'),
-      icon: Mail,
+      icon: EmailBindingIcon,
       value: profile.email,
       isBound: Boolean(profile.email),
       isEnabled: true,
@@ -275,7 +317,7 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     {
       id: 'oidc',
       label: t('OIDC'),
-      icon: Shield,
+      icon: IdentityBindingIcon,
       value: (profile as unknown as Record<string, unknown>).oidc_id as
         | string
         | undefined,
@@ -286,7 +328,7 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     {
       id: 'telegram',
       label: t('Telegram'),
-      icon: Send,
+      icon: TelegramBindingIcon,
       value: (profile as unknown as Record<string, unknown>).telegram_id as
         | string
         | undefined,
@@ -315,7 +357,7 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     <>
       <ul
         aria-label={t('Account Bindings')}
-        className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3'
+        className='grid grid-cols-1 gap-2 sm:grid-cols-2'
       >
         {bindings.map((binding) => {
           let actionLabel = t('Bind')
@@ -336,12 +378,11 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
                 </div>
                 <div className='min-w-0'>
                   <div className='flex items-center gap-1.5'>
-                    <p
-                      className='truncate text-sm font-medium'
-                      title={binding.label}
-                    >
-                      {binding.label}
-                    </p>
+                    <TooltipHint content={binding.label}>
+                      <p className='truncate text-sm font-medium'>
+                        {binding.label}
+                      </p>
+                    </TooltipHint>
                     {binding.isBound && (
                       <StatusBadge
                         label={t('Bound')}
@@ -379,16 +420,20 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
             >
               <div className='flex min-w-0 items-center gap-2'>
                 <div className='bg-muted shrink-0 rounded-md p-1.5'>
-                  <Link2 className='h-4 w-4' />
+                  <HugeiconsIcon
+                    icon={Link01Icon}
+                    className='size-4'
+                    strokeWidth={2}
+                    aria-hidden='true'
+                  />
                 </div>
                 <div className='min-w-0'>
                   <div className='flex items-center gap-1.5'>
-                    <p
-                      className='truncate text-sm font-medium'
-                      title={provider.name}
-                    >
-                      {provider.name}
-                    </p>
+                    <TooltipHint content={provider.name}>
+                      <p className='truncate text-sm font-medium'>
+                        {provider.name}
+                      </p>
+                    </TooltipHint>
                     {isBound && (
                       <StatusBadge
                         label={t('Bound')}
@@ -412,7 +457,11 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
                   onClick={() => setUnbindTarget(binding)}
                   disabled={bindingsLocked}
                 >
-                  <Unlink className='mr-1 h-3 w-3' />
+                  <HugeiconsIcon
+                    icon={Unlink01Icon}
+                    strokeWidth={2}
+                    data-icon='inline-start'
+                  />
                   {t('Unbind')}
                 </Button>
               ) : (

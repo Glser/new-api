@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sanitizeImageSrc, type ImageNode } from 'stream-markdown-parser'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 type ResponseImageProps = {
   node: ImageNode
@@ -38,13 +39,14 @@ export function ResponseImage(props: ResponseImageProps) {
   }
 
   return (
-    <img
-      alt={props.node.alt}
-      className='border-border/70 my-4 block h-auto max-h-96 max-w-full rounded-lg border object-contain'
-      loading='lazy'
-      onError={() => setHasError(true)}
-      src={src}
-      title={props.node.title ?? undefined}
-    />
+    <TooltipHint content={props.node.title ?? undefined}>
+      <img
+        alt={props.node.alt}
+        className='border-border/70 my-4 block h-auto max-h-96 max-w-full rounded-lg border object-contain'
+        loading='lazy'
+        onError={() => setHasError(true)}
+        src={src}
+      />
+    </TooltipHint>
   )
 }

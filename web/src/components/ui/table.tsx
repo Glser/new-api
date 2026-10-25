@@ -21,6 +21,7 @@ For commercial licensing, please contact support@quantumnous.com
 import * as React from 'react'
 
 import { cn } from '@/lib/utils'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 function Table({
   className,
@@ -97,8 +98,8 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   )
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
-  return (
+function TableHead({ className, title, ...props }: React.ComponentProps<'th'>) {
+  const element = (
     <th
       data-slot='table-head'
       className={cn(
@@ -108,10 +109,12 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
       {...props}
     />
   )
+
+  return <TooltipHint content={title}>{element}</TooltipHint>
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
-  return (
+function TableCell({ className, title, ...props }: React.ComponentProps<'td'>) {
+  const element = (
     <td
       data-slot='table-cell'
       className={cn(
@@ -121,6 +124,8 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
       {...props}
     />
   )
+
+  return <TooltipHint content={title}>{element}</TooltipHint>
 }
 
 function TableCaption({

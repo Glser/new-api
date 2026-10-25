@@ -21,6 +21,7 @@ import { useState, useEffect, useRef } from 'react'
 
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 interface NumericSpinnerInputProps {
   value: number | null | undefined
@@ -177,18 +178,19 @@ export function NumericSpinnerInput({
             autoFocus
           />
         ) : (
-          <button
-            type='button'
-            onClick={handleStartEdit}
-            disabled={disabled}
-            title={localValue}
-            className={cn(
-              'h-7 min-w-8 max-w-16 cursor-text truncate px-1 text-center font-mono text-sm tabular-nums',
-              disabled && 'cursor-default opacity-50'
-            )}
-          >
-            {localValue}
-          </button>
+          <TooltipHint content={localValue}>
+            <button
+              type='button'
+              onClick={handleStartEdit}
+              disabled={disabled}
+              className={cn(
+                'h-7 min-w-8 max-w-16 cursor-text truncate px-1 text-center font-mono text-sm tabular-nums',
+                disabled && 'cursor-default opacity-50'
+              )}
+            >
+              {localValue}
+            </button>
+          </TooltipHint>
         )}
 
         <button

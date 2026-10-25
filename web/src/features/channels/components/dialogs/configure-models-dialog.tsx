@@ -26,6 +26,7 @@ import { PluginIcon } from '@/features/task-plugins/components/plugin-icon'
 
 import type { TaskPluginOption } from '../../api'
 import { UpstreamModelSelection } from '../upstream-model-selection'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 type ConfigureModelsDialogProps = {
   open: boolean
@@ -120,16 +121,16 @@ export function ConfigureModelsDialog(props: ConfigureModelsDialogProps) {
             >
               <TabsTrigger value='all'>{t('All')}</TabsTrigger>
               {plugins.map((item) => (
-                <TabsTrigger
-                  key={item.key}
-                  value={`plugin:${item.key}`}
-                  title={item.name}
-                >
-                  <span aria-hidden='true'>
-                    <PluginIcon plugin={item} size={16} />
-                  </span>
-                  <span className='max-w-40 truncate'>{item.name}</span>
-                </TabsTrigger>
+                <TooltipHint key={item.key} content={item.name}>
+                  <TabsTrigger
+                    value={`plugin:${item.key}`}
+                  >
+                    <span aria-hidden='true'>
+                      <PluginIcon plugin={item} size={16} />
+                    </span>
+                    <span className='max-w-40 truncate'>{item.name}</span>
+                  </TabsTrigger>
+                </TooltipHint>
               ))}
             </TabsList>
           </div>

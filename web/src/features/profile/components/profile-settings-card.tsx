@@ -16,7 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Settings } from 'lucide-react'
+import { Settings01Icon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { useTranslation } from 'react-i18next'
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -61,13 +62,26 @@ export function ProfileSettingsCard({
 
   return (
     <TitledCard
-      title={t('Settings')}
-      description={t('Settings & Preferences')}
-      icon={<Settings className='h-4 w-4' />}
-      iconTone='info'
+      title={t('Settings & Preferences')}
+      icon={
+        <HugeiconsIcon
+          icon={Settings01Icon}
+          strokeWidth={2}
+          aria-hidden='true'
+          className='h-4 w-4'
+        />
+      }
+      iconTone='neutral'
+      titleClassName='text-sm font-semibold sm:text-sm'
+      headerClassName='p-4 !pb-4 sm:p-4 sm:!pb-4'
+      contentClassName='p-4 sm:p-4'
       disableHoverEffect
     >
-      <NotificationTab profile={profile} onUpdate={onProfileUpdate} />
+      <NotificationTab
+        key={profile?.setting ?? ''}
+        profile={profile}
+        onUpdate={onProfileUpdate}
+      />
     </TitledCard>
   )
 }

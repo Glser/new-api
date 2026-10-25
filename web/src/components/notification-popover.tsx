@@ -32,7 +32,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from '@/components/ui/empty'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { getAnnouncementKey, useNotifications } from '@/hooks/use-notifications'
 import { formatDateTimeObject } from '@/lib/time'
 import { cn } from '@/lib/utils'
@@ -289,9 +288,21 @@ export function NotificationPopover({ className }: { className?: string }) {
         }
         description={dialogDescription}
         contentClassName='sm:max-w-xl'
+        headerClassName='pr-10'
         initialFocus={false}
         contentHeight='auto'
         bodyClassName='p-0'
+        footerClassName='bg-transparent -mx-0 -mb-0 rounded-none border-0 p-0 pt-1 sm:mx-0 sm:mb-0 sm:p-0'
+        footer={
+          <Button
+            variant='outline'
+            size='sm'
+            className='rounded-lg px-4'
+            onClick={() => handleOpenChange(false)}
+          >
+            {t('Close')}
+          </Button>
+        }
       >
         {selected ? (
           <NotificationDetail item={selected} t={t} />
@@ -303,16 +314,6 @@ export function NotificationPopover({ className }: { className?: string }) {
             onSelect={handleSelect}
           />
         )}
-        <div className='flex justify-end pt-3'>
-          <Button
-            variant='outline'
-            size='sm'
-            className='rounded-lg px-4'
-            onClick={() => handleOpenChange(false)}
-          >
-            {t('Close')}
-          </Button>
-        </div>
       </Dialog>
     </>
   )
@@ -359,8 +360,7 @@ function NotificationList({
   }
 
   return (
-    <ScrollArea className='max-h-[min(58vh,28rem)]'>
-      <div className='flex flex-col gap-2.5 py-1 pr-1'>
+    <div className='flex flex-col gap-2.5 py-1'>
         {items.map((item) => {
           const created = item.publishDate
             ? formatDateTimeObject(new Date(item.publishDate))
@@ -407,8 +407,7 @@ function NotificationList({
             </button>
           )
         })}
-      </div>
-    </ScrollArea>
+    </div>
   )
 }
 
@@ -420,8 +419,7 @@ function NotificationDetail({
   t: TFunction
 }) {
   return (
-    <ScrollArea className='max-h-[min(58vh,28rem)] pr-3'>
-      <div className='space-y-3 py-1'>
+    <div className='space-y-3 py-1'>
         <div className='flex flex-wrap items-center gap-1.5'>
           <StatusChip className={TYPE_BADGE_CLASS[item.type || 'default']}>
             {getTypeLabel(item.type, t)}
@@ -443,7 +441,6 @@ function NotificationDetail({
             </div>
           </div>
         ) : null}
-      </div>
-    </ScrollArea>
+    </div>
   )
 }

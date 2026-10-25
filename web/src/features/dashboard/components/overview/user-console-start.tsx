@@ -18,7 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
 import { BrainCircuit, KeyRound, Palette } from 'lucide-react'
-import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
@@ -34,7 +33,7 @@ function ShineAction(props: {
       variant={props.solid ? 'default' : 'outline'}
       size='default'
       className={cn(
-        'relative h-9 overflow-hidden px-3 shadow-none transition-all duration-300',
+        'relative h-9 overflow-hidden px-2.5 text-xs shadow-none transition-all duration-300 @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm',
         'hover:-translate-y-px active:translate-y-px',
         props.solid &&
           'bg-foreground text-background hover:bg-foreground [a]:hover:bg-foreground'
@@ -58,15 +57,15 @@ export function UserConsoleStart() {
 
   return (
     <div className='flex flex-wrap items-center justify-between gap-3'>
-      <div className='flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1 pl-3 sm:pl-4'>
-        <span className='text-base font-semibold'>
+      <div className='flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 pl-3 @min-[48rem]/console:gap-x-3 @min-[48rem]/console:pl-4'>
+        <span className='text-sm font-semibold @min-[48rem]/console:text-base'>
           {t('Start the next creation')}
         </span>
-        <span className='text-muted-foreground text-sm'>
+        <span className='text-muted-foreground text-xs @min-[48rem]/console:text-sm'>
           {t('Chat, image, and video API calls')}
         </span>
       </div>
-      <div className='flex flex-wrap items-center justify-end gap-2'>
+      <div className='flex w-full flex-wrap items-center justify-start gap-2 @min-[48rem]/console:w-auto @min-[48rem]/console:justify-end'>
         <ShineAction to='/keys'>
           <KeyRound data-icon='inline-start' />
           {t('API Key')}

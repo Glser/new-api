@@ -1,0 +1,52 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+.wallet-recharge-dialog {
+  --wallet-accent: #c4f82a;
+  --wallet-accent-foreground: #28350a;
+  --wallet-choice-border: #a3ce22;
+  --wallet-choice-surface: #f5fadf;
+  --wallet-choice-foreground: #435615;
+}
+
+.dark .wallet-recharge-dialog {
+  --wallet-choice-border: #a3ce22;
+  --wallet-choice-surface: #29331c;
+  --wallet-choice-foreground: #d6ed9e;
+}
+
+.wallet-recharge-dialog .wallet-recharge-choice[data-selected='true'] {
+  background: var(--wallet-choice-surface);
+  border-color: var(--wallet-choice-border);
+  color: var(--wallet-choice-foreground);
+  box-shadow: inset 0 0 0 1px var(--wallet-choice-border);
+}
+
+.wallet-recharge-discount {
+  color: var(--wallet-choice-foreground);
+}
+
+.wallet-recharge-icon,
+.wallet-recharge-dialog .wallet-recharge-submit {
+  background: var(--wallet-accent);
+  color: var(--wallet-accent-foreground);
+}
+
+.wallet-recharge-dialog .wallet-recharge-submit:hover:not(:disabled) {
+  background: #b8ec1d;
+}

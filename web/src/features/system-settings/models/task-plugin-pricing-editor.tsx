@@ -43,6 +43,7 @@ import { PluginIcon } from '@/features/task-plugins/components/plugin-icon'
 
 import { SettingsSwitchField } from '../components/settings-form-layout'
 import { TaskUsagePricingEditor } from './task-usage-pricing-editor'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 type TaskPluginPricingEditorProps = {
   variants: ModelPricingPluginVariant[]
@@ -101,9 +102,11 @@ export function TaskPluginPricingEditor(props: TaskPluginPricingEditorProps) {
               }}
               size={16}
             />
-            <span className='truncate' title={variant.plugin_name}>
-              {variant.plugin_name}
-            </span>
+            <TooltipHint content={variant.plugin_name}>
+              <span className='truncate'>
+                {variant.plugin_name}
+              </span>
+            </TooltipHint>
           </TabsTrigger>
         ))}
       </TabsList>

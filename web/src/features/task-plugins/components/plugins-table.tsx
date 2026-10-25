@@ -49,6 +49,7 @@ import type { TaskPluginListItem, TaskPluginUsage } from '../types'
 import { PluginCard } from './plugin-card'
 import { PluginIcon } from './plugin-icon'
 import { PluginWebsiteLink } from './plugin-website-link'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 const VIEW_MODE_STORAGE_KEY = 'task-plugins-view-mode'
 
@@ -134,29 +135,30 @@ export function PluginsTable(props: PluginsTableProps) {
             i18n.language
           )
           return (
-            <div
-              className='flex min-w-0 items-center gap-2'
-              title={description || undefined}
-            >
-              <span className='shrink-0'>
-                <PluginIcon
-                  plugin={{
-                    ...row.original.meta,
-                    hasIcon: row.original.has_icon,
-                  }}
-                  size={18}
-                />
-              </span>
-              <div className='min-w-0'>
-                <div className='truncate text-sm font-medium'>
-                  {row.original.meta.name}
+            <TooltipHint content={description || undefined}>
+              <div
+                className='flex min-w-0 items-center gap-2'
+              >
+                <span className='shrink-0'>
+                  <PluginIcon
+                    plugin={{
+                      ...row.original.meta,
+                      hasIcon: row.original.has_icon,
+                    }}
+                    size={18}
+                  />
+                </span>
+                <div className='min-w-0'>
+                  <div className='truncate text-sm font-medium'>
+                    {row.original.meta.name}
+                  </div>
+                  <div className='text-muted-foreground truncate font-mono text-xs'>
+                    {row.original.meta.key}
+                  </div>
+                  <PluginWebsiteLink website={row.original.meta.website} />
                 </div>
-                <div className='text-muted-foreground truncate font-mono text-xs'>
-                  {row.original.meta.key}
-                </div>
-                <PluginWebsiteLink website={row.original.meta.website} />
               </div>
-            </div>
+            </TooltipHint>
           )
         },
       },
@@ -183,18 +185,20 @@ export function PluginsTable(props: PluginsTableProps) {
                 )
               : undefined
             return (
-              <div className='flex min-w-0 flex-col gap-0.5' title={staleHint}>
-                <Badge>
-                  {t('Custom (overrides factory {{version}})', {
-                    version: factoryVersion,
-                  })}
-                </Badge>
-                {staleHint ? (
-                  <span className='text-muted-foreground text-xs'>
-                    {staleHint}
-                  </span>
-                ) : null}
-              </div>
+              <TooltipHint content={staleHint}>
+                <div className='flex min-w-0 flex-col gap-0.5'>
+                  <Badge>
+                    {t('Custom (overrides factory {{version}})', {
+                      version: factoryVersion,
+                    })}
+                  </Badge>
+                  {staleHint ? (
+                    <span className='text-muted-foreground text-xs'>
+                      {staleHint}
+                    </span>
+                  ) : null}
+                </div>
+              </TooltipHint>
             )
           }
           return <Badge>{t('Third-party')}</Badge>
