@@ -20,7 +20,9 @@ import { Tags } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
+import { matchesPrefix } from '@/features/pricing/lib/usd-price'
 import type { PricingModel, PricingUsableGroup } from '@/features/pricing/types'
+import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { formatGroupRatio } from '../lib/group-ratio'
 import { PlazaFilterChip, type PlazaFilterChipOption } from './filter-chip'
@@ -56,6 +58,9 @@ export function PlazaGroupRow(props: {
   onChange: (value: string) => void
 }) {
   const { t } = useTranslation()
+  const prefixes = useSystemConfigStore(
+    (state) => state.config.currency.modelSquareUsdPricePrefixes
+  )
   const label = t('Price')
 
   const options: PlazaFilterChipOption[] = [
@@ -71,11 +76,25 @@ export function PlazaGroupRow(props: {
         return []
       }
       const ratio = props.groupRatios?.[group]
+      const groupModels = props.models.filter((model) =>
+        model.enable_groups?.includes(group)
+      )
+      const usdCount = groupModels.filter((model) =>
+        matchesPrefix(model.model_name, prefixes)
+      ).length
+      const usdOfficial = usdCount > 0
+      const mixedCurrencies = usdCount > 0 && usdCount < groupModels.length
       return [
         {
           value: group,
           label: group,
+          // 这里的标签语义是分组倍率，始终展示后台配置的原始倍率。
+          // 汇率换算和折扣解释保留在悬浮提示及模型详情中。
           suffix: formatRatioBadge(ratio),
+          priceDiscount:
+            ratio == null
+              ? undefined
+              : { groupRatio: ratio, usdOfficial, mixedCurrencies },
         },
       ]
     }),

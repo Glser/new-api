@@ -29,10 +29,18 @@ const PopoverTrigger = React.forwardRef<
   HTMLElement,
   PopoverPrimitive.Trigger.Props
 >(function PopoverTrigger(props, ref) {
+  const setTriggerRef = React.useCallback(
+    (element: HTMLButtonElement | null) => {
+      if (typeof ref === 'function') return ref(element)
+      if (ref) ref.current = element
+    },
+    [ref]
+  )
+
   return (
     <PopoverPrimitive.Trigger
       data-slot='popover-trigger'
-      ref={ref}
+      ref={setTriggerRef}
       {...props}
     />
   )

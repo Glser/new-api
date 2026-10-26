@@ -1,0 +1,15 @@
+{
+  "database": "D:\\go\\new-api\\one-api.db",
+  "backup": "D:\\go\\new-api\\logs\\mock-backups\\one-api-20261026T145836986268Z.db",
+  "logs_inserted": 0,
+  "logs_already_present": 100,
+  "pricing_options_merged": 14,
+  "imported_enabled_channels": 13,
+  "counts": {
+    "channels": 26,
+    "models": 30,
+    "logs": 143,
+    "vendors": 7
+  },
+  "integrity": "ok"
+}

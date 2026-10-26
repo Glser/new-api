@@ -49,11 +49,19 @@ import { parseModelTags } from '@/features/models/lib/model-utils'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import { getSuccessRateDotClass } from '@/features/performance-metrics/lib/format'
 import { getPricing } from '@/features/pricing/api'
+import { PriceDiscountHint } from '@/features/pricing/components/price-discount'
 import { getModelTokenPrices } from '@/features/pricing/lib/dynamic-price'
-import { FIXED_USD_EXCHANGE_RATE } from '@/features/pricing/lib/usd-price'
+import {
+  formatOfficialPrice,
+  getPriceDiscount,
+  matchesPrefix,
+} from '@/features/pricing/lib/usd-price'
 import type { PricingModel, PricingVendor } from '@/features/pricing/types'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
+import { useSystemConfigStore } from '@/stores/system-config-store'
+
+import { useCarouselActivity } from '../../hooks/use-carousel-activity'
 
 interface ModelItem {
   id: string
@@ -77,8 +85,10 @@ interface ModelItem {
   officialOutputUSD?: number | null
   /** 后台配置的标签，用于卡片底部标签行 */
   tags: string[]
-  /** 分组最低倍率相对 1.0 的节省比例，无折扣时为 null */
+  /** 分组最低倍率与官方价同币种对比后的节省比例，无折扣时为 null */
   discountPercent: number | null
+  groupRatio?: number
+  usdOfficial?: boolean
   /** 是否取不到 token 价格（按次/任务计费、特殊表达式等），此时不展示价格数值 */
   priceUnavailable: boolean
   /** 最近 24h 请求成功率（可用率），取自模型广场同源的性能监控；无监控数据时为 null */
@@ -122,52 +132,7 @@ function formatProviderName(raw?: string): string {
   return clean.replaceAll(/\b([a-z])/g, (c) => c.toUpperCase())
 }
 
-/* 国内供应商集合：官方价按人民币展示，国外供应商按美元展示 */
-const DOMESTIC_PROVIDERS = new Set([
-  'deepseek',
-  'zhipu',
-  'qwen',
-  'alibaba',
-  'baidu',
-  'tencent',
-  'bytedance',
-  'doubao',
-  'moonshot',
-  'minimax',
-  'kimi',
-  'yi',
-  '360',
-  'spark',
-  'hunyuan',
-  'ernie',
-])
-
-/** 判断是否为国内供应商 */
-function isDomesticProvider(
-  providerName?: string,
-  modelName?: string
-): boolean {
-  const p = (providerName || '').toLowerCase()
-  const m = (modelName || '').toLowerCase()
-  for (const domestic of DOMESTIC_PROVIDERS) {
-    if (p.includes(domestic) || m.includes(domestic)) {
-      return true
-    }
-  }
-  return false
-}
-
-/* 站内价固定人民币展示：这是「用户实际支付」的口径，不随后台显示设置变化 */
 const SITE_CURRENCY_SYMBOL = '¥'
-
-/**
- * 美元兑人民币汇率，写死为 7。
- *
- * 刻意不读后台的 `usd_exchange_rate`：那个字段服务于控制台的配额展示，运营可能
- * 按展示需要调整；而首页的「官方价 vs 站内价」要的是一把稳定的尺子，让折扣比例
- * 可解释、不随后台配置漂移。
- */
-const USD_TO_CNY_RATE = FIXED_USD_EXCHANGE_RATE
 
 /**
  * 去掉二进制浮点的累计误差：3 * 0.2 会得到 0.6000000000000001，
@@ -177,25 +142,6 @@ function formatPriceAmount(value: number): string {
   if (!Number.isFinite(value)) return '-'
   const rounded = Number(value.toFixed(4))
   return String(rounded)
-}
-
-/**
- * 官方价按供应商所在地区选择货币：国外模型展示美元，国内模型本身就是人民币报价。
- *
- * 这里刻意不走 `formatBillingCurrencyFromUSD`：那个函数跟随管理员配置的展示货币
- * （可能是 USD / CNY / 自定义 / 积分），而官方价是一行「原产地标价」，必须按模型
- * 所属地区固定货币，不受后台显示设置影响。
- */
-function formatOfficialPrice(
-  valueUSD: number | null | undefined,
-  isDomestic: boolean
-): string {
-  if (valueUSD === null || valueUSD === undefined) return '-'
-  if (!isDomestic) {
-    return `$${formatPriceAmount(valueUSD)}`
-  }
-  // 国内厂商在后台配的就是人民币价，无需再折算
-  return `${SITE_CURRENCY_SYMBOL}${formatPriceAmount(valueUSD)}`
 }
 
 /**
@@ -242,37 +188,6 @@ const BADGES = ['SOTA 推理', '旗舰精选', '高性能模型', '前沿推理'
 
 function resolveBadge(index: number): string {
   return BADGES[index % BADGES.length]
-}
-
-/**
- * 计算折扣：把官方价与站内价换算到同一货币后比较。
- *
- * 官方价是美元、站内价是人民币，按 `USD_TO_CNY_RATE` 把美元折算成人民币再比；
- * 差额同时包含汇率优势与后台分组倍率优惠。国内外厂商同币种时无汇率优势，返回 null。
- */
-function resolveExchangeRateDiscount(
-  officialInputUSD: number | null | undefined,
-  officialOutputUSD: number | null | undefined,
-  groupRatioMultiplier: number,
-  isDomestic: boolean
-): number | null {
-  if (isDomestic) return null
-  if (officialInputUSD == null || officialOutputUSD == null) return null
-
-  const officialInputCNY = officialInputUSD * USD_TO_CNY_RATE
-  const officialOutputCNY = officialOutputUSD * USD_TO_CNY_RATE
-  if (officialInputCNY <= 0 || officialOutputCNY <= 0) return null
-
-  const siteInput = officialInputUSD * groupRatioMultiplier
-  const siteOutput = officialOutputUSD * groupRatioMultiplier
-  const inputDiscount = 1 - siteInput / officialInputCNY
-  const outputDiscount = 1 - siteOutput / officialOutputCNY
-  // 取输入/输出中较小的折扣，避免用较优的一侧夸大优惠力度
-  const discount = Math.min(inputDiscount, outputDiscount)
-  if (discount <= 0) return null
-
-  const pct = Math.round(discount * 100)
-  return pct > 0 ? pct : null
 }
 
 const MODELS: ModelItem[] = [
@@ -426,8 +341,7 @@ function resolveIconKey(model: PricingModel, vendor?: PricingVendor): string {
  * 将 PricingModel 转换为展示用的 ModelItem
  *
  * 价格统一走定价广场的 `getModelTokenPrices`：动态计费模型取表达式首个 tier 的
- * 输入/输出单价，倍率模型走 model_ratio 推导。官方价按模型所属地区定货币（国外美元、
- * 国内人民币），站内价直接取同一数值以人民币展示（面向中国区运营）。折扣徽章是二者
+ * 输入/输出单价，倍率模型走 model_ratio 推导。官方价按后台模型前缀选择美元或人民币，站内价直接取同一数值以人民币展示（面向中国区运营）。折扣徽章是二者
  * 换算到同一货币后的差额，即汇率带来的优势。取不到 token 价格时不编造数值。
  */
 function convertPricingModelToItem(
@@ -435,7 +349,8 @@ function convertPricingModelToItem(
   vendors: PricingVendor[],
   groupRatio: Record<string, number>,
   index: number,
-  perfRates: Map<string, number>
+  perfRates: Map<string, number>,
+  prefixes: readonly string[]
 ): ModelItem {
   const vendorObj = vendors.find((v) => v.id === model.vendor_id)
   const rawVendorName =
@@ -446,13 +361,16 @@ function convertPricingModelToItem(
   const palette = ACCENT_PALETTE[index % ACCENT_PALETTE.length]
 
   const prices = getModelTokenPrices(model, { groupRatio })
-  const isDomestic = isDomesticProvider(rawVendorName, model.model_name)
+  const usdOfficial = matchesPrefix(model.model_name, prefixes)
   const groupRatioMultiplier = resolveLowestGroupRatio(model, groupRatio)
-  const officialInput = formatOfficialPrice(prices.officialInputUSD, isDomestic)
-  const officialOutput = formatOfficialPrice(
-    prices.officialOutputUSD,
-    isDomestic
-  )
+  const officialInput =
+    prices.officialInputUSD == null
+      ? '-'
+      : formatOfficialPrice(prices.officialInputUSD, usdOfficial)
+  const officialOutput =
+    prices.officialOutputUSD == null
+      ? '-'
+      : formatOfficialPrice(prices.officialOutputUSD, usdOfficial)
   const siteInput = formatSitePrice(
     prices.officialInputUSD,
     groupRatioMultiplier
@@ -462,12 +380,12 @@ function convertPricingModelToItem(
     groupRatioMultiplier
   )
 
-  const discountPercent = resolveExchangeRateDiscount(
-    prices.officialInputUSD,
-    prices.officialOutputUSD,
-    groupRatioMultiplier,
-    isDomestic
+  const comparable = [prices.officialInputUSD, prices.officialOutputUSD].some(
+    (price) => price != null && price > 0
   )
+  const discountPercent = comparable
+    ? getPriceDiscount(groupRatioMultiplier, usdOfficial).discountPercent
+    : null
   const tags = parseModelTags(model.tags).filter(
     (tag) => tag.toLowerCase() !== 'featured'
   )
@@ -492,6 +410,8 @@ function convertPricingModelToItem(
     officialOutputUSD: prices.officialOutputUSD,
     tags,
     discountPercent,
+    groupRatio: groupRatioMultiplier,
+    usdOfficial,
     priceUnavailable: !prices.hasTokenPrices,
     successRate: perfRates.get(model.model_name) ?? null,
     accentColor: palette.accentColor,
@@ -510,7 +430,8 @@ function hydrateModels(
   backendModels: PricingModel[],
   vendors: PricingVendor[] = [],
   groupRatio: Record<string, number> = {},
-  perfRates: Map<string, number> = new Map()
+  perfRates: Map<string, number> = new Map(),
+  prefixes: readonly string[] = []
 ): ModelItem[] {
   if (!backendModels.length) {
     // 后端不可用时退回静态预设，价格一律标记为不可用，不展示推导数值
@@ -552,7 +473,8 @@ function hydrateModels(
         vendors,
         groupRatio,
         idx,
-        perfRates
+        perfRates,
+        prefixes
       )
       return {
         ...preset,
@@ -570,6 +492,8 @@ function hydrateModels(
         specs: converted.specs,
         extraTags: converted.extraTags,
         discountPercent: converted.discountPercent,
+        groupRatio: converted.groupRatio,
+        usdOfficial: converted.usdOfficial,
         priceUnavailable: converted.priceUnavailable,
         successRate: converted.successRate,
       }
@@ -580,7 +504,14 @@ function hydrateModels(
   if (candidateModels.length === 0) return MODELS
 
   return candidateModels.map((model, idx) =>
-    convertPricingModelToItem(model, vendors, groupRatio, idx, perfRates)
+    convertPricingModelToItem(
+      model,
+      vendors,
+      groupRatio,
+      idx,
+      perfRates,
+      prefixes
+    )
   )
 }
 
@@ -851,13 +782,18 @@ function SitePriceCard(props: { model: ModelItem }) {
           {t('sec_models_site_rate')}
         </span>
         {discount ? (
-          <span
-            className='inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold text-white shadow-sm'
-            style={{ backgroundColor: model.accentColor }}
+          <PriceDiscountHint
+            groupRatio={model.groupRatio ?? 1}
+            usdOfficial={model.usdOfficial ?? false}
           >
-            <TrendingDown className='size-2.5' aria-hidden />-{discount}%
-            <span className='sr-only'>{t('sec_models_save')}</span>
-          </span>
+            <span
+              className='inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold text-white shadow-sm'
+              style={{ backgroundColor: model.accentColor }}
+            >
+              <TrendingDown className='size-2.5' aria-hidden />-{discount}%
+              <span className='sr-only'>{t('sec_models_save')}</span>
+            </span>
+          </PriceDiscountHint>
         ) : null}
         <span className='sr-only'>{t('sec_models_pricing')}</span>
         {/* "/ 1M tokens" 单位说明在窄屏时隐藏，宽屏再显示 */}
@@ -1013,14 +949,14 @@ function FeaturedModelCard(props: { model: ModelItem }) {
             </TooltipProvider>
 
             {/* 可用率：与模型广场同源的 24h 性能监控，无监控数据时展示占位符 */}
-            <TooltipHint content={
+            <TooltipHint
+              content={
                 model.successRate != null
                   ? t('Availability (last 24h)')
                   : undefined
-              }>
-              <span
-                className='text-muted-foreground/90 flex items-center gap-1.5 text-[11px]'
-              >
+              }
+            >
+              <span className='text-muted-foreground/90 flex items-center gap-1.5 text-[11px]'>
                 <span
                   aria-hidden
                   className={cn(
@@ -1187,13 +1123,18 @@ function CompactModelCard(props: {
               showLabels
             />
             {discount ? (
-              <span
-                className='shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-xs'
-                style={{ backgroundColor: model.accentColor }}
+              <PriceDiscountHint
+                groupRatio={model.groupRatio ?? 1}
+                usdOfficial={model.usdOfficial ?? false}
               >
-                -{discount}%
-                <span className='sr-only'>{t('sec_models_save')}</span>
-              </span>
+                <span
+                  className='shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-xs'
+                  style={{ backgroundColor: model.accentColor }}
+                >
+                  -{discount}%
+                  <span className='sr-only'>{t('sec_models_save')}</span>
+                </span>
+              </PriceDiscountHint>
             ) : null}
           </>
         )}
@@ -1212,6 +1153,10 @@ const PAGE_SIZE = 4
 
 export function SectionModels() {
   const { t } = useTranslation()
+  const { ref, isActive } = useCarouselActivity<HTMLElement>()
+  const prefixes = useSystemConfigStore(
+    (state) => state.config.currency.modelSquareUsdPricePrefixes
+  )
   const [activeIndex, setActiveIndex] = useState(0)
   const [page, setPage] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -1270,14 +1215,19 @@ export function SectionModels() {
         backendData.models,
         backendData.vendors,
         backendData.groupRatio,
-        perfRates
+        perfRates,
+        prefixes
       ),
-    [backendData, perfRates]
+    [backendData, perfRates, prefixes]
   )
   const totalPages = Math.ceil(displayModels.length / PAGE_SIZE)
   const currentPage = Math.min(page, Math.max(0, totalPages - 1))
   const pageModels = useMemo(
-    () => displayModels.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE),
+    () =>
+      displayModels.slice(
+        currentPage * PAGE_SIZE,
+        (currentPage + 1) * PAGE_SIZE
+      ),
     [displayModels, currentPage]
   )
 
@@ -1285,7 +1235,7 @@ export function SectionModels() {
 
   // 轮播展示到左侧大卡，间隔 5 秒，悬浮或交互时暂停
   useEffect(() => {
-    if (isPaused || displayModels.length <= 1) return
+    if (!isActive || isPaused || displayModels.length <= 1) return
 
     const timer = setInterval(() => {
       setActiveIndex((prev) => {
@@ -1300,10 +1250,11 @@ export function SectionModels() {
     return () => {
       clearInterval(timer)
     }
-  }, [isPaused, displayModels.length])
+  }, [isActive, isPaused, displayModels.length])
 
   return (
     <section
+      ref={ref}
       id='models'
       className='home-section-offscreen relative overflow-hidden px-4 pt-16 pb-24 sm:px-6 sm:pt-20 sm:pb-28 lg:px-8'
       onMouseEnter={() => setIsPaused(true)}

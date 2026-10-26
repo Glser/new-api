@@ -93,21 +93,20 @@ export function useSlidingIndicator(
     }
 
     let frame = 0
+    let disposed = false
 
     const measure = () => {
-      const active = itemsRef.current[activeIndex]
-      if (!active) {
-        // The slot's callback ref has not run yet on this pass. Layout effects
-        // run before refs are attached in some remounts, so retry on the next
-        // frame rather than leaving the indicator hidden for good.
-        if (!frame) frame = requestAnimationFrame(measure)
-        return
-      }
       frame = 0
+      if (disposed) return
+
+      const active = itemsRef.current[activeIndex]
+      if (!active) return
+
       const activeRect = active.getBoundingClientRect()
       const railRect = rail.getBoundingClientRect()
       if (activeRect.width === 0 || activeRect.height === 0) {
-        if (!frame) frame = requestAnimationFrame(measure)
+        // Hidden responsive rails are measured when ResizeObserver reports
+        // that they become visible, without keeping a per-frame retry alive.
         return
       }
       setState((previous) =>
@@ -129,21 +128,27 @@ export function useSlidingIndicator(
       )
     }
 
-    measure()
+    const scheduleMeasure = () => {
+      if (!disposed && !frame) frame = requestAnimationFrame(measure)
+    }
 
-    const observer = new ResizeObserver(measure)
+    measure()
+    // One deferred pass covers slots registered after this layout effect.
+    scheduleMeasure()
+
+    const observer = new ResizeObserver(scheduleMeasure)
     observer.observe(rail)
     // `itemsRef.current` is sparse: `forEach` skips holes, so a slot that has
-    // not registered yet is simply not observed. `measure` retries on the next
-    // frame instead, so the indicator still lands once the ref attaches.
+    // not registered yet is covered by the deferred measurement above.
     itemsRef.current.forEach((item) => {
       if (item) observer.observe(item)
     })
 
     // Fonts land after the first paint and change every slot's geometry.
-    document.fonts?.ready.then(measure).catch(() => {})
+    document.fonts?.ready.then(scheduleMeasure).catch(() => {})
 
     return () => {
+      disposed = true
       if (frame) cancelAnimationFrame(frame)
       observer.disconnect()
     }

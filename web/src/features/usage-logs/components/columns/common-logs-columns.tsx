@@ -151,7 +151,7 @@ function renderTokenUsageStat({
   )
 }
 
-function buildDetailSegments(
+export function buildDetailSegments(
   log: UsageLog,
   other: LogOtherData | null,
   t: (key: string, opts?: Record<string, unknown>) => string,
@@ -470,7 +470,7 @@ export function useCommonLogsColumns(
                 <Tooltip>
                   <TooltipTrigger
                     render={
-                        <div className='mx-auto flex max-w-[160px] flex-col items-center gap-0.5' />
+                      <div className='mx-auto flex max-w-[160px] flex-col items-center gap-0.5' />
                     }
                   >
                     <div className='relative inline-flex w-fit items-center gap-1'>
@@ -896,8 +896,7 @@ export function useCommonLogsColumns(
                 <PopoverContent align='center' className='w-auto p-3 text-xs'>
                   <div className='flex flex-col gap-1 whitespace-nowrap tabular-nums'>
                     <div>
-                      {t('Input')}: {formatTokens(promptTokens)}，{' '}
-                      {t('Output')}
+                      {t('Input')}: {formatTokens(promptTokens)}， {t('Output')}
                       : {formatTokens(completionTokens)}
                     </div>
                     <div>

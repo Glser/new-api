@@ -95,7 +95,7 @@ For commercial licensing, please contact support@quantumnous.com
     @apply overflow-x-hidden font-sans;
   }
   @media (prefers-reduced-motion: no-preference) {
-    html:not(.lenis) {
+    html {
       scroll-behavior: smooth;
     }
   }
@@ -796,31 +796,24 @@ For commercial licensing, please contact support@quantumnous.com
   }
 }
 
-/* Lenis smooth scrolling integration & hardware acceleration */
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-.lenis:not(.lenis-autoToggle).lenis-stopped {
-  overflow: clip;
-}
-.lenis [data-lenis-prevent],
-.lenis [data-lenis-prevent-wheel],
-.lenis [data-lenis-prevent-touch],
-.lenis [data-lenis-prevent-vertical],
-.lenis [data-lenis-prevent-horizontal] {
-  overscroll-behavior: contain;
-}
-.lenis.lenis-smooth iframe {
-  pointer-events: none;
+/* Release entrance transforms after playback so text is painted at native scale. */
+.home-scroll-frame .landing-animate-fade-up {
+  animation-fill-mode: backwards;
 }
 
-/* Home landing page scroll performance & layer composition optimizations */
-.home-scroll-frame {
-  transform: translateZ(0);
+.home-agent-card {
+  transition:
+    transform 480ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 360ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-agent-card {
+    transition: none;
+  }
 }
 
 .home-section-offscreen {
   content-visibility: auto;
-  contain-intrinsic-size: 1px 900px;
+  contain-intrinsic-size: auto 900px;
 }

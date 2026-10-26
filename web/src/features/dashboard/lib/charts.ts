@@ -45,7 +45,7 @@ export function getDashboardChartColors(domainLength: number): string[] {
       (item) => !item.maxDomainLength || domainLength <= item.maxDomainLength
     ) ?? vchartDefaultDataScheme.at(-1)
 
-  return scheme.scheme.filter(
+  return (scheme?.scheme ?? []).filter(
     (color): color is string => typeof color === 'string'
   )
 }
@@ -234,10 +234,8 @@ export function processChartData(
     const tokens = Number(item.token_used) || 0
 
     // Aggregate by time and model
-    if (!timeModelMap.has(timeKey)) {
-      timeModelMap.set(timeKey, new Map())
-    }
-    const modelMap = timeModelMap.get(timeKey)!
+    const modelMap = timeModelMap.get(timeKey) ?? new Map()
+    timeModelMap.set(timeKey, modelMap)
     const existing = modelMap.get(model) || { quota: 0, count: 0, tokens: 0 }
     modelMap.set(model, {
       quota: existing.quota + quota,
@@ -279,12 +277,9 @@ export function processChartData(
     const lastTime = Math.max(
       ...data.map((item) => Number(item.created_at) || 0)
     )
-    const intervalSec =
-      timeGranularity === 'week'
-        ? 604800
-        : timeGranularity === 'day'
-          ? 86400
-          : 3600
+    let intervalSec = 3600
+    if (timeGranularity === 'week') intervalSec = 604800
+    else if (timeGranularity === 'day') intervalSec = 86400
     const padded = Array.from({ length: MAX_TREND_POINTS }, (_, i) =>
       formatChartTime(
         lastTime - (MAX_TREND_POINTS - 1 - i) * intervalSec,
@@ -785,8 +780,8 @@ export function processUserChartData(
     allTimePoints.add(timeKey)
     const user = item.username || 'unknown'
     if (!topUserSet.has(user)) return
-    if (!timeUserMap.has(timeKey)) timeUserMap.set(timeKey, new Map())
-    const map = timeUserMap.get(timeKey)!
+    const map = timeUserMap.get(timeKey) ?? new Map<string, number>()
+    timeUserMap.set(timeKey, map)
     map.set(user, (map.get(user) || 0) + (Number(item.quota) || 0))
   })
 

@@ -1,0 +1,14 @@
+{
+  "amount": "2.16",
+  "billingStatus": "captured",
+  "completed_at": 1793024838,
+  "created_at": 1793024563,
+  "id": "task_rCNX2tk7filw8LYpfvt2lykoQ1fqQgDS",
+  "ingestStatus": "ready",
+  "model": "seedance-2.5",
+  "object": "video",
+  "processingStage": "completed",
+  "progress": 100,
+  "status": "completed",
+  "unit": "站内额度"
+}

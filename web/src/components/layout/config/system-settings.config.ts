@@ -101,7 +101,7 @@ export function getSystemSettingsNavItems(
   const settingsGroup = getSystemSettingsNavGroups(t)[0]
 
   return settingsGroup.items.flatMap((category) => {
-    if (!('items' in category)) return []
+    if (!('items' in category) || !category.items) return []
 
     return category.items.map((item) => ({
       ...item,

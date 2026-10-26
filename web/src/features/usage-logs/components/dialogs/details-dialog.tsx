@@ -39,9 +39,9 @@ import { StatusBadge, type StatusBadgeProps } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { DynamicPricingBreakdown } from '@/features/pricing/components/dynamic-pricing-breakdown'
-import { evalExprLocally } from '@/features/pricing/lib/tier-expr'
 import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
 import { pluginUsageSchema } from '@/features/pricing/lib/plugin-pricing'
+import { evalExprLocally } from '@/features/pricing/lib/tier-expr'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { formatLogQuota, formatTokens, formatUseTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -941,6 +941,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
             )}
             <DynamicPricingBreakdown
               compact
+              modelName={props.log.model_name}
               billingExpr={billingExpr}
               matchedTierLabel={matchedTierLabel}
               matchedBillingUnit={other?.billing_unit}

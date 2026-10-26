@@ -2,12 +2,15 @@ import { ArrowUpRight } from 'lucide-react'
 /*
 Copyright (C) 2023-2026 QuantumNous
 */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Button } from '@/components/ui/button'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { useStatus } from '@/hooks/use-status'
 import { getLobeIcon } from '@/lib/lobe-icon'
-import { TooltipHint } from '@/components/ui/tooltip'
+
+import { useCarouselActivity } from '../hooks/use-carousel-activity'
 
 interface AgentItem {
   id: string
@@ -84,7 +87,8 @@ export function HeroAgentShowcase() {
   const { status } = useStatus()
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [isFocused, setIsFocused] = useState(false)
+  const { ref, isActive } = useCarouselActivity<HTMLDivElement>()
 
   // 动态读取后台 /api/status 中配置的 agents 数组
   const agents: AgentItem[] = useMemo(() => {
@@ -96,37 +100,42 @@ export function HeroAgentShowcase() {
   }, [status])
 
   const total = agents.length
+  const currentIndex = activeIndex % total
 
   useEffect(() => {
-    if (isPaused || total <= 1) return
-    timerRef.current = setInterval(() => {
+    if (!isActive || isPaused || isFocused || total <= 1) return
+    const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % total)
     }, 6000)
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
+      clearInterval(timer)
     }
-  }, [isPaused, total])
+  }, [isActive, isPaused, isFocused, total])
 
   return (
     <div
+      ref={ref}
       className='relative flex w-full max-w-[560px] flex-col items-center select-none'
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
+      onFocusCapture={() => setIsFocused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setIsFocused(false)
+        }
+      }}
     >
-      {/* 3D Stack Stage */}
-      <div
-        className='relative flex h-[310px] w-full items-center justify-center overflow-visible'
-        style={{ perspective: '1200px' }}
-      >
+      {/* Keep card content at its native size throughout the transition. */}
+      <div className='relative flex h-[310px] w-full items-center justify-center overflow-visible'>
         {agents.map((agent, index) => {
-          let offset = index - activeIndex
+          let offset = index - currentIndex
           if (offset > total / 2) offset -= total
           if (offset < -total / 2) offset += total
 
           const isCenter = offset === 0
           const absOffset = Math.abs(offset)
-          const isVisible = absOffset <= 2
+          const isVisible = absOffset <= 1
 
           let zIndex: number
           if (isCenter) {
@@ -137,13 +146,8 @@ export function HeroAgentShowcase() {
             zIndex = 10 - absOffset
           }
 
-          const translateX = offset * 135
+          const translateX = offset * 110
           const translateY = isCenter ? 0 : 14 + absOffset * 4
-          // Keep a 1px Z offset on the center card so the compositor stays on
-          // a 3D layer. Identity 2D matrix + CSS zoom makes inner SVGs snap.
-          const translateZ = isCenter ? 1 : -absOffset * 80
-          const rotateY = isCenter ? 0 : offset * -14
-          const scale = isCenter ? 1 : 0.88 - (absOffset - 1) * 0.1
           let opacity: number
           if (isCenter) {
             opacity = 1
@@ -154,16 +158,15 @@ export function HeroAgentShowcase() {
           }
 
           const accentColor = agent.accent_color || '#3b82f6'
-          let pointerEvents: 'auto' | 'none' = 'none'
-          if (!isCenter && isVisible) {
-            pointerEvents = 'auto'
-          }
+          const pointerEvents = isVisible ? 'auto' : 'none'
 
           return (
             <div
               key={agent.id || index}
+              aria-hidden={!isVisible}
+              inert={!isVisible}
               role={isCenter ? undefined : 'button'}
-              tabIndex={isCenter ? undefined : 0}
+              tabIndex={!isCenter && isVisible ? 0 : undefined}
               onClick={() => {
                 if (!isCenter) setActiveIndex(index)
               }}
@@ -175,21 +178,19 @@ export function HeroAgentShowcase() {
                 }
               }}
               style={{
-                transform: `translate3d(${translateX}px, ${translateY}px, ${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+                transform: isCenter
+                  ? 'none'
+                  : `translate(${translateX}px, ${translateY}px)`,
                 zIndex,
                 opacity: isVisible ? opacity : 0,
                 pointerEvents,
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
                 boxShadow: isCenter
                   ? `0 20px 45px -18px ${accentColor}44, 0 10px 24px -12px rgba(0,0,0,0.18)`
                   : '0 8px 24px -16px rgba(0,0,0,0.14)',
-                transition:
-                  'transform 560ms cubic-bezier(0.16, 1, 0.3, 1), opacity 450ms ease, box-shadow 450ms ease',
               }}
-              className={`group border-border/70 bg-card absolute top-2 flex w-[260px] flex-col rounded-2xl border p-5 select-none sm:w-[275px] ${isCenter ? 'cursor-default' : 'hover:border-border/90 cursor-pointer hover:opacity-90'}`}
+              className={`home-agent-card group border-border/70 bg-card absolute top-2 flex w-[260px] flex-col rounded-2xl border p-5 select-none sm:w-[275px] ${isCenter ? 'cursor-default' : 'hover:border-border/90 cursor-pointer hover:opacity-90'}`}
             >
-              {/* Header: pinned icon box so SVG does not snap on 3D settle */}
+              {/* Header */}
               <div className='flex items-center gap-3'>
                 <div className='bg-foreground/5 flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl'>
                   <span className='pointer-events-none flex size-[26px] items-center justify-center [&>svg]:block [&>svg]:size-[26px] [&>svg]:shrink-0'>
@@ -197,9 +198,7 @@ export function HeroAgentShowcase() {
                   </span>
                 </div>
                 <TooltipHint content={agent.name}>
-                  <h4
-                    className='text-foreground min-w-0 text-[14.5px] leading-tight font-semibold tracking-tight antialiased sm:text-[15px]'
-                  >
+                  <h4 className='text-foreground min-w-0 text-[14.5px] leading-tight font-semibold tracking-tight antialiased sm:text-[15px]'>
                     {agent.name}
                   </h4>
                 </TooltipHint>
@@ -231,6 +230,7 @@ export function HeroAgentShowcase() {
                   href={agent.guide_url || DEFAULT_GUIDE_URL}
                   target='_blank'
                   rel='noopener noreferrer'
+                  tabIndex={isCenter ? 0 : -1}
                   onClick={(event) => {
                     event.stopPropagation()
                     if (!isCenter) {
@@ -238,7 +238,7 @@ export function HeroAgentShowcase() {
                       setActiveIndex(index)
                     }
                   }}
-                  className={`group/btn pointer-events-auto relative inline-flex h-8 cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:translate-y-px sm:h-8.5 ${isCenter ? 'bg-foreground text-background hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]' : 'bg-foreground/80 text-background opacity-90'}`}
+                  className={`group/btn relative inline-flex h-8 cursor-pointer items-center gap-1.5 overflow-hidden rounded-lg px-3.5 text-xs font-semibold shadow-[0_3px_10px_rgba(0,0,0,0.1)] transition-all duration-300 active:translate-y-px sm:h-8.5 ${isCenter ? 'bg-foreground text-background hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] dark:shadow-[0_3px_12px_rgba(255,255,255,0.06)]' : 'bg-foreground/80 text-background pointer-events-none opacity-90'}`}
                 >
                   <span
                     aria-hidden='true'
@@ -254,19 +254,21 @@ export function HeroAgentShowcase() {
 
         {total > 1 ? (
           <>
-            <button
+            <Button
+              variant='ghost'
               type='button'
-              aria-label={agents[(activeIndex - 1 + total) % total]?.name}
-              className='absolute top-4 left-0 z-50 h-[210px] cursor-pointer bg-transparent'
+              aria-label={agents[(currentIndex - 1 + total) % total]?.name}
+              className='absolute top-4 left-0 z-50 h-[210px] cursor-pointer border-0 bg-transparent p-0 hover:bg-transparent'
               style={{ width: 'max(72px, calc((100% - 17.25rem) / 2))' }}
               onClick={() =>
                 setActiveIndex((prev) => (prev - 1 + total) % total)
               }
             />
-            <button
+            <Button
+              variant='ghost'
               type='button'
-              aria-label={agents[(activeIndex + 1) % total]?.name}
-              className='absolute top-4 right-0 z-50 h-[210px] cursor-pointer bg-transparent'
+              aria-label={agents[(currentIndex + 1) % total]?.name}
+              className='absolute top-4 right-0 z-50 h-[210px] cursor-pointer border-0 bg-transparent p-0 hover:bg-transparent'
               style={{ width: 'max(72px, calc((100% - 17.25rem) / 2))' }}
               onClick={() => setActiveIndex((prev) => (prev + 1) % total)}
             />
@@ -275,15 +277,17 @@ export function HeroAgentShowcase() {
       </div>
 
       {/* Indicator & Bottom Footnote */}
-      <div className='-mt-[72px] flex w-full flex-col items-center gap-2.5'>
+      <div className='relative z-50 -mt-[72px] flex w-full flex-col items-center gap-2.5'>
         <div className='flex items-center gap-1.5'>
           {agents.map((agent, index) => (
-            <button
+            <Button
+              variant='ghost'
               key={agent.id || index}
               type='button'
               onClick={() => setActiveIndex(index)}
               aria-label={agent.name}
-              className={`h-1.5 cursor-pointer rounded-full transition-all duration-300 ${index === activeIndex ? 'bg-foreground w-6' : 'bg-muted-foreground/30 hover:bg-muted-foreground/60 w-1.5'}`}
+              aria-pressed={index === currentIndex}
+              className={`h-1.5 cursor-pointer rounded-full border-0 p-0 transition-[width,background-color] duration-300 motion-reduce:transition-none ${index === currentIndex ? 'bg-foreground hover:bg-foreground w-6' : 'bg-muted-foreground/30 hover:bg-muted-foreground/60 w-1.5'}`}
             />
           ))}
         </div>

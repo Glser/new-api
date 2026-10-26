@@ -1,0 +1,24 @@
+{
+  "source": "ec2",
+  "imported_at_utc": "2026-10-26T14:58:37.115881+00:00",
+  "counts": {
+    "channels": 24,
+    "models": 26,
+    "logs": 100
+  },
+  "database": "D:\\go\\new-api\\one-api.db",
+  "sanitization": {
+    "channel_key": "replaced with mock-channel-key-{id}",
+    "channel_base_url": "replaced with https://mock.invalid/channel/{id}; original retained as source_base_url",
+    "channel_status": "preserved from source, with matching ability enabled flags",
+    "channel_param_and_header_override": "cleared",
+    "usage_user_token_ip_request_identity": "replaced",
+    "usage_content_and_other": "redacted",
+    "usage_owner": {
+      "id": 3,
+      "username": "test",
+      "token_id": 1,
+      "token_name": "console-debug"
+    }
+  }
+}

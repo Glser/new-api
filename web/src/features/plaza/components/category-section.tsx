@@ -88,7 +88,7 @@ export function PlazaCategorySection(props: {
           {t('{{count}} models', { count: props.models.length })}
         </span>
       </div>
-      <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 sm:gap-4'>
+      <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-3 sm:gap-4'>
         {props.models.map((model) => (
           <ModelCard
             key={model.id ?? model.model_name}

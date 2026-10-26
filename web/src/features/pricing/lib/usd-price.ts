@@ -43,10 +43,42 @@ export type UsdPriceComparison = {
 export type OfficialVsSiteOptions = {
   /** Used to pick the current time-based tier, matching the card's site price. */
   now?: Date
+  usdOfficial?: boolean
 }
 
-/** 官方价对比站内价时使用的固定汇率（1 USD = 7 站内币种） */
+/** Official USD prices are compared with site CNY prices at 1 USD = 7 CNY. */
 export const FIXED_USD_EXCHANGE_RATE = 7
+
+export function getPriceDiscount(groupRatio: number, usdOfficial: boolean) {
+  const ratio = Number.isFinite(groupRatio) && groupRatio >= 0 ? groupRatio : 1
+  const exchangeRate = usdOfficial ? FIXED_USD_EXCHANGE_RATE : 1
+  const effectiveRatio = ratio / exchangeRate
+  const rawDiscount = (1 - effectiveRatio) * 100
+  return {
+    groupRatio: ratio,
+    exchangeRate,
+    effectiveRatio,
+    discountPercent:
+      rawDiscount >= MIN_DISCOUNT_PERCENT ? Math.round(rawDiscount) : 0,
+  }
+}
+
+/** Format the configured list amount without applying the site's quota exchange rate. */
+export function formatOfficialPrice(
+  amount: number,
+  usdOfficial: boolean,
+  tokenUnit: TokenUnit = 'M'
+): string {
+  if (!Number.isFinite(amount)) return '-'
+  return `${usdOfficial ? '$' : '¥'}${formatUsdPrice(amount, tokenUnit, false)}`
+}
+
+export function formatPriceRatio(ratio: number): string {
+  if (ratio !== 0 && Math.abs(ratio) < 0.0001) {
+    return Number(ratio.toPrecision(4)).toString()
+  }
+  return Number(ratio.toFixed(4)).toString()
+}
 
 /** Check if model name matches any prefix in the list (case-insensitive prefix match). */
 export function matchesPrefix(
@@ -86,10 +118,13 @@ export function getOfficialVsSitePrice(
   options?: OfficialVsSiteOptions
 ): UsdPriceComparison | null {
   const multiplier =
-    Number.isFinite(groupRatioMultiplier) && groupRatioMultiplier > 0
+    Number.isFinite(groupRatioMultiplier) && groupRatioMultiplier >= 0
       ? groupRatioMultiplier
       : 1
-  const discountPercent = discountFromMultiplier(multiplier)
+  const { discountPercent } = getPriceDiscount(
+    multiplier,
+    options?.usdOfficial ?? false
+  )
 
   const prices = getModelTokenPrices(model, { now: options?.now })
   const officialInputUSD = readOfficialAmount(prices.officialInputUSD)
@@ -111,6 +146,7 @@ export function getOfficialVsSitePrice(
 
   const requestUSD = readOfficialAmount(
     getDynamicPricingSummary(model, {
+      tokenUnit: 'M',
       now: options?.now,
       groupRatioMultiplier: 1,
     })?.primaryEntries.find((entry) => entry.field === 'fixedPrice')?.value
@@ -126,15 +162,6 @@ export function getOfficialVsSitePrice(
     siteRequestUSD: scaleOfficialAmount(requestUSD, multiplier),
     discountPercent,
   }
-}
-
-function discountFromMultiplier(multiplier: number): number {
-  // Plaza USD-vs-site discount always uses the fixed showcase rate, not the
-  // admin quota-display exchange rate (which may be 1 when display is CNY).
-  // 官方 $10 → ¥70，站内按倍率实付 ¥2：1 - (multiplier / 7)
-  const effectiveRatio = multiplier / FIXED_USD_EXCHANGE_RATE
-  const rawDiscount = (1 - effectiveRatio) * 100
-  return rawDiscount >= MIN_DISCOUNT_PERCENT ? Math.round(rawDiscount) : 0
 }
 
 function scaleOfficialAmount(

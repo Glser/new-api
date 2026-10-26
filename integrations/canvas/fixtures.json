@@ -1,0 +1,2236 @@
+{
+  "unixNow": 1793000000,
+  "cases": [
+    {
+      "name": "Build quote request with Bearer auth",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/quotes",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer fixture-key"
+        },
+        "body": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "720p"
+          },
+          "references": {}
+        },
+        "action": "text_to_video",
+        "rewriteModel": "sd2.5-qd"
+      }
+    },
+    {
+      "name": "Respect model mapping in quote request",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "model": "friendly-alias",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/quotes",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer fixture-key"
+        },
+        "body": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "720p"
+          },
+          "references": {}
+        },
+        "action": "text_to_video",
+        "rewriteModel": "sd2.5-qd"
+      }
+    },
+    {
+      "name": "Persist complete quote workflow before generation",
+      "hook": "parseSubmitResponse",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        },
+        {
+          "statusCode": 200,
+          "body": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "quote_fixture",
+              "modelId": "sd2.5-qd",
+              "amount": "1.20",
+              "unit": "CNY",
+              "expiresAt": "2026-10-27T12:00:00Z",
+              "pricingVersion": "v1",
+              "inputFingerprint": "fingerprint",
+              "environment": "production"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "taskId": "task_canvas_fixture",
+        "taskData": {
+          "status": "queued",
+          "processingStage": "quoted",
+          "amount": "1.20",
+          "unit": "CNY"
+        },
+        "state": {
+          "version": 1,
+          "phase": "submit",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "Reject expired quotes",
+      "hook": "parseSubmitResponse",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        },
+        {
+          "statusCode": 200,
+          "body": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "quote_fixture",
+              "modelId": "sd2.5-qd",
+              "amount": "1.20",
+              "unit": "CNY",
+              "expiresAt": "2020-01-01T00:00:00Z",
+              "pricingVersion": "v1",
+              "inputFingerprint": "fingerprint",
+              "environment": "production"
+            }
+          }
+        }
+      ],
+      "expectedError": "quote has expired"
+    },
+    {
+      "name": "Reject model mismatch in quote",
+      "hook": "parseSubmitResponse",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        },
+        {
+          "statusCode": 200,
+          "body": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "quote_fixture",
+              "modelId": "other",
+              "amount": "1.20",
+              "unit": "CNY",
+              "expiresAt": "2026-10-27T12:00:00Z",
+              "pricingVersion": "v1",
+              "inputFingerprint": "fingerprint",
+              "environment": "production"
+            }
+          }
+        }
+      ],
+      "expectedError": "quote model does not match"
+    },
+    {
+      "name": "Reject business error on quote",
+      "hook": "parseSubmitResponse",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        },
+        {
+          "statusCode": 200,
+          "body": {
+            "code": "DENIED",
+            "message": "not allowed"
+          }
+        }
+      ],
+      "expectedError": "Canvas DENIED"
+    },
+    {
+      "name": "Generate from persisted quote and stable request ID",
+      "hook": "buildQueryRequest",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "submit",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/generate",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer fixture-key"
+        },
+        "body": {
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture"
+        }
+      }
+    },
+    {
+      "name": "Replay exactly the same submission after restart",
+      "hook": "buildQueryRequest",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "submit",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/generate",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer fixture-key"
+        },
+        "body": {
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture"
+        }
+      }
+    },
+    {
+      "name": "Do not create a new quote after an uncertain expired submission",
+      "hook": "buildQueryRequest",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "submit",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2020-01-01T00:00:00Z"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/generate",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer fixture-key"
+        },
+        "body": {
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture"
+        }
+      }
+    },
+    {
+      "name": "Query actual upstream task ID saved in state",
+      "hook": "buildQueryRequest",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/query/canvas_task_1",
+        "method": "GET",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer fixture-key"
+        }
+      }
+    },
+    {
+      "name": "Reject missing workflow state",
+      "hook": "buildQueryRequest",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": null
+        }
+      ],
+      "expectedError": "invalid Canvas workflow state"
+    },
+    {
+      "name": "Persist upstream generation ID",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "submit",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "processing",
+            "billingStatus": "reserved",
+            "ingestStatus": "not_ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": []
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "IN_PROGRESS",
+        "progress": "50%",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Keep submission_unknown pending without generating again",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "submission_unknown",
+            "billingStatus": "reserved",
+            "ingestStatus": "not_ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": []
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "IN_PROGRESS",
+        "progress": "50%",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Keep resubmitting pending without generating again",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "resubmitting",
+            "billingStatus": "reserved",
+            "ingestStatus": "not_ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": []
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "IN_PROGRESS",
+        "progress": "50%",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Queue acknowledged generation",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "submit",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "queued",
+            "billingStatus": "reserved",
+            "ingestStatus": "not_ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": []
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "QUEUED",
+        "progress": "15%",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Wait for downloaded asset to be ready",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "success",
+            "billingStatus": "captured",
+            "ingestStatus": "ingesting",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": []
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "IN_PROGRESS",
+        "progress": "90%",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Wait for cost reconciliation on generated video",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "success",
+            "billingStatus": "reconcile_required",
+            "ingestStatus": "ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": [
+              {
+                "kind": "video",
+                "assetId": "asset_video_1",
+                "url": "/api/v1/prot/assets/asset_video_1/content",
+                "ingestStatus": "ready"
+              }
+            ]
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "IN_PROGRESS",
+        "progress": "90%",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Finish only after billing and asset readiness",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "success",
+            "billingStatus": "captured",
+            "ingestStatus": "ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": [
+              {
+                "kind": "video",
+                "assetId": "asset_video_1",
+                "url": "/api/v1/prot/assets/asset_video_1/content",
+                "ingestStatus": "ready"
+              }
+            ]
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "SUCCESS",
+        "progress": "100%",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Refund confirmed failed task",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "failed",
+            "billingStatus": "released",
+            "ingestStatus": "not_ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": [],
+            "error": "provider failed"
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "FAILURE",
+        "progress": "100%",
+        "reason": "provider failed",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Keep uncertain failed charge pending",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "failed",
+            "billingStatus": "reconcile_required",
+            "ingestStatus": "not_ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": []
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "IN_PROGRESS",
+        "progress": "50%",
+        "state": {
+          "version": 1,
+          "phase": "poll",
+          "input": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "quoteId": "quote_fixture",
+          "requestId": "task_canvas_fixture",
+          "expiresAt": "2026-10-27T12:00:00Z",
+          "upstreamTaskId": "canvas_task_1"
+        }
+      }
+    },
+    {
+      "name": "Reject changed upstream task ID",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "wrong_id",
+            "modelId": "sd2.5-qd",
+            "status": "processing",
+            "billingStatus": "reserved",
+            "ingestStatus": "not_ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": []
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expectedError": "different task ID"
+    },
+    {
+      "name": "Reject unknown provider task state",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "poll",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z",
+            "upstreamTaskId": "canvas_task_1"
+          }
+        },
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "unexpected",
+            "billingStatus": "reserved",
+            "ingestStatus": "not_ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": []
+          }
+        },
+        {
+          "status": 200
+        }
+      ],
+      "expected": {
+        "status": "UNKNOWN",
+        "reason": "unrecognized Canvas status: unexpected"
+      }
+    },
+    {
+      "name": "Handle definitive generation rejection",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "submit",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z"
+          }
+        },
+        {
+          "code": "QUOTE_EXPIRED",
+          "message": "quote expired"
+        },
+        {
+          "status": 400
+        }
+      ],
+      "expected": {
+        "status": "FAILURE",
+        "progress": "100%",
+        "reason": "Canvas QUOTE_EXPIRED: quote expired"
+      }
+    },
+    {
+      "name": "Do not treat transient failures as rejection",
+      "hook": "parseTaskResult",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "submit",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z"
+          }
+        },
+        {
+          "code": "UNAVAILABLE"
+        },
+        {
+          "status": 503
+        }
+      ],
+      "expectedError": "Canvas UNAVAILABLE"
+    },
+    {
+      "name": "Meter requested duration without inventing token billing",
+      "hook": "extractUsage",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        }
+      ],
+      "expected": {
+        "seconds": 4,
+        "calls": 1,
+        "resolution": "720p",
+        "reference_video": false
+      }
+    },
+    {
+      "name": "Do not apply Ark pricing ratios",
+      "hook": "extractUsage",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "usagePurpose": "billing_ratios"
+        }
+      ],
+      "expected": null
+    },
+    {
+      "name": "Completion returns actual duration, not currency amount",
+      "hook": "extractUsageOnComplete",
+      "args": [
+        {
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "taskId": "task_canvas_fixture",
+          "state": {
+            "version": 1,
+            "phase": "submit",
+            "input": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            },
+            "quoteId": "quote_fixture",
+            "requestId": "task_canvas_fixture",
+            "expiresAt": "2026-10-27T12:00:00Z"
+          }
+        },
+        {},
+        {
+          "code": "OK",
+          "message": "",
+          "data": {
+            "id": "canvas_task_1",
+            "modelId": "sd2.5-qd",
+            "status": "success",
+            "billingStatus": "captured",
+            "ingestStatus": "ready",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "outputs": [
+              {
+                "kind": "video",
+                "assetId": "asset_video_1",
+                "url": "/api/v1/prot/assets/asset_video_1/content",
+                "ingestStatus": "ready"
+              }
+            ]
+          }
+        }
+      ],
+      "expected": {
+        "seconds": 4
+      }
+    },
+    {
+      "name": "No completed artifacts for pending tasks",
+      "hook": "listArtifacts",
+      "args": [
+        {
+          "status": "IN_PROGRESS",
+          "data": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "canvas_task_1",
+              "modelId": "sd2.5-qd",
+              "status": "success",
+              "billingStatus": "captured",
+              "ingestStatus": "ready",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "outputs": [
+                {
+                  "kind": "video",
+                  "assetId": "asset_video_1",
+                  "url": "/api/v1/prot/assets/asset_video_1/content",
+                  "ingestStatus": "ready"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expected": []
+    },
+    {
+      "name": "List completed video artifact",
+      "hook": "listArtifacts",
+      "args": [
+        {
+          "status": "SUCCESS",
+          "data": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "canvas_task_1",
+              "modelId": "sd2.5-qd",
+              "status": "success",
+              "billingStatus": "captured",
+              "ingestStatus": "ready",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "outputs": [
+                {
+                  "kind": "video",
+                  "assetId": "asset_video_1",
+                  "url": "/api/v1/prot/assets/asset_video_1/content",
+                  "ingestStatus": "ready"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "expected": [
+        {
+          "key": "video",
+          "type": "video"
+        }
+      ]
+    },
+    {
+      "name": "Proxy download with authentication on configured host",
+      "hook": "buildContentRequest",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "data": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "canvas_task_1",
+              "modelId": "sd2.5-qd",
+              "status": "success",
+              "billingStatus": "captured",
+              "ingestStatus": "ready",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "outputs": [
+                {
+                  "kind": "video",
+                  "assetId": "asset_video_1",
+                  "url": "/api/v1/prot/assets/asset_video_1/content",
+                  "ingestStatus": "ready"
+                }
+              ]
+            }
+          },
+          "artifactKey": "video",
+          "clientRequest": {
+            "method": "GET"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/assets/asset_video_1/content",
+        "method": "GET",
+        "headers": {
+          "Authorization": "Bearer fixture-key"
+        }
+      }
+    },
+    {
+      "name": "Ignore hostile output URL and use fixed asset endpoint",
+      "hook": "buildContentRequest",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "data": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "canvas_task_1",
+              "modelId": "sd2.5-qd",
+              "status": "success",
+              "billingStatus": "captured",
+              "ingestStatus": "ready",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "outputs": [
+                {
+                  "kind": "video",
+                  "assetId": "asset_video_1",
+                  "url": "https://untrusted.invalid/steal-key",
+                  "ingestStatus": "ready"
+                }
+              ]
+            }
+          },
+          "artifactKey": "video",
+          "clientRequest": {
+            "method": "HEAD"
+          }
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/assets/asset_video_1/content",
+        "method": "HEAD",
+        "headers": {
+          "Authorization": "Bearer fixture-key"
+        }
+      }
+    },
+    {
+      "name": "Reject unknown artifact key",
+      "hook": "buildContentRequest",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture",
+          "data": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "canvas_task_1",
+              "modelId": "sd2.5-qd",
+              "status": "success",
+              "billingStatus": "captured",
+              "ingestStatus": "ready",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "outputs": [
+                {
+                  "kind": "video",
+                  "assetId": "asset_video_1",
+                  "url": "/api/v1/prot/assets/asset_video_1/content",
+                  "ingestStatus": "ready"
+                }
+              ]
+            }
+          },
+          "artifactKey": "video_999",
+          "clientRequest": {
+            "method": "GET"
+          }
+        }
+      ],
+      "expectedError": "artifact_not_found"
+    },
+    {
+      "name": "Decode native Canvas input",
+      "hook": "native",
+      "args": [
+        {
+          "body": {
+            "kind": "json",
+            "value": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {}
+            }
+          }
+        }
+      ],
+      "expected": {
+        "kind": "submit",
+        "model": "sd2.5-qd",
+        "action": "text_to_video",
+        "requestBody": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "720p"
+          },
+          "references": {}
+        }
+      },
+      "member": "createVideo"
+    },
+    {
+      "name": "Decode OpenAI video JSON",
+      "hook": "protocols",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "body": {
+            "kind": "json",
+            "value": {
+              "model": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "seconds": "4",
+              "metadata": {
+                "params": {
+                  "aspectRatio": "16:9",
+                  "resolution": "720p"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expected": {
+        "kind": "submit",
+        "model": "sd2.5-qd",
+        "action": "text_to_video",
+        "requestBody": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "720p"
+          },
+          "references": {}
+        }
+      },
+      "path": [
+        "openai_video",
+        "decodeRequest"
+      ]
+    },
+    {
+      "name": "Preserve reference asset IDs",
+      "hook": "native",
+      "args": [
+        {
+          "body": {
+            "kind": "json",
+            "value": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {
+                "image": [
+                  "asset_image_1"
+                ],
+                "video": [
+                  "asset_video_2"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "expected": {
+        "kind": "submit",
+        "model": "sd2.5-qd",
+        "action": "image_to_video",
+        "requestBody": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "720p"
+          },
+          "references": {
+            "image": [
+              "asset_image_1"
+            ],
+            "video": [
+              "asset_video_2"
+            ]
+          }
+        }
+      },
+      "member": "createVideo"
+    },
+    {
+      "name": "Reject remote URL references",
+      "hook": "native",
+      "args": [
+        {
+          "body": {
+            "kind": "json",
+            "value": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "references": {
+                "image": [
+                  "https://example.invalid/img.png"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "expectedError": "requires Canvas asset IDs",
+      "member": "createVideo"
+    },
+    {
+      "name": "Reject silently dropping OpenAI input reference",
+      "hook": "protocols",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "body": {
+            "kind": "json",
+            "value": {
+              "model": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "seconds": "4",
+              "metadata": {
+                "params": {
+                  "aspectRatio": "16:9",
+                  "resolution": "720p"
+                }
+              },
+              "input_reference": "https://example.invalid/img.png"
+            }
+          }
+        }
+      ],
+      "expectedError": "pre-uploaded Canvas asset IDs",
+      "path": [
+        "openai_video",
+        "decodeRequest"
+      ]
+    },
+    {
+      "name": "Reject unsupported raw file upload",
+      "hook": "protocols",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "body": {
+            "kind": "multipart",
+            "files": [
+              {
+                "ref": "request_file:input_reference"
+              }
+            ]
+          }
+        }
+      ],
+      "expectedError": "pre-uploaded Canvas asset IDs",
+      "path": [
+        "openai_video",
+        "decodeRequest"
+      ]
+    },
+    {
+      "name": "Render public task ID without leaking provider task ID",
+      "hook": "protocols",
+      "args": [
+        {},
+        {
+          "task_id": "task_canvas_fixture",
+          "status": "IN_PROGRESS",
+          "progress": "50%",
+          "properties": {
+            "origin_model_name": "sd2.5-qd"
+          },
+          "created_at": 10,
+          "updated_at": 20,
+          "data": {
+            "code": "OK",
+            "message": "",
+            "data": {
+              "id": "canvas_task_1",
+              "modelId": "sd2.5-qd",
+              "status": "processing",
+              "billingStatus": "reserved",
+              "ingestStatus": "not_ready",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "720p"
+              },
+              "outputs": []
+            }
+          }
+        }
+      ],
+      "expected": {
+        "id": "task_canvas_fixture",
+        "object": "video",
+        "model": "sd2.5-qd",
+        "status": "in_progress",
+        "progress": 50,
+        "created_at": 10,
+        "completed_at": null,
+        "billingStatus": "reserved",
+        "ingestStatus": "not_ready"
+      },
+      "path": [
+        "openai_video",
+        "render"
+      ]
+    },
+    {
+      "name": "Render native errors",
+      "hook": "native",
+      "args": [
+        {},
+        {
+          "code": "bad_request",
+          "message": "bad input"
+        }
+      ],
+      "expected": {
+        "error": {
+          "code": "bad_request",
+          "message": "bad input"
+        }
+      },
+      "member": "error"
+    },
+    {
+      "name": "Map public seedance-2.5 alias to sd2.5-qd",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "model": "seedance-2.5",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/quotes",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer fixture-key"
+        },
+        "body": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "720p"
+          },
+          "references": {}
+        },
+        "action": "text_to_video",
+        "rewriteModel": "sd2.5-qd"
+      }
+    },
+    {
+      "name": "Meter 720p fractional seconds for per-second pricing",
+      "hook": "extractUsage",
+      "args": [
+        {
+          "model": "seedance-2.5",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 5.5,
+              "resolution": "720p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        }
+      ],
+      "expected": {
+        "seconds": 5.5,
+        "calls": 1,
+        "resolution": "720p",
+        "reference_video": false
+      }
+    },
+    {
+      "name": "Reject unpriced 4k before any quote request",
+      "hook": "extractUsage",
+      "args": [
+        {
+          "model": "seedance-2.5",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 5.5,
+              "resolution": "4k"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        }
+      ],
+      "expectedError": "unsupported resolution"
+    },
+    {
+      "name": "480p: Build quote request with Bearer auth",
+      "hook": "buildSubmitRequest",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "480p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        }
+      ],
+      "expected": {
+        "url": "https://canvas.yydsapi.uno/api/v1/prot/quotes",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Bearer fixture-key"
+        },
+        "body": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "480p"
+          },
+          "references": {}
+        },
+        "action": "text_to_video",
+        "rewriteModel": "sd2.5-qd"
+      }
+    },
+    {
+      "name": "480p: Meter requested duration without inventing token billing",
+      "hook": "extractUsage",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "upstreamModel": "sd2.5-qd",
+          "requestBody": {
+            "modelId": "sd2.5-qd",
+            "prompt": "A forest at sunrise",
+            "params": {
+              "aspectRatio": "16:9",
+              "duration": 4,
+              "resolution": "480p"
+            },
+            "references": {}
+          },
+          "baseUrl": "https://canvas.yydsapi.uno/api/v1/prot",
+          "apiKey": "fixture-key",
+          "authHeader": "fixture-key",
+          "publicTaskId": "task_canvas_fixture"
+        }
+      ],
+      "expected": {
+        "seconds": 4,
+        "calls": 1,
+        "resolution": "480p",
+        "reference_video": false
+      }
+    },
+    {
+      "name": "480p: Decode native Canvas input",
+      "hook": "native",
+      "args": [
+        {
+          "body": {
+            "kind": "json",
+            "value": {
+              "modelId": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "params": {
+                "aspectRatio": "16:9",
+                "duration": 4,
+                "resolution": "480p"
+              },
+              "references": {}
+            }
+          }
+        }
+      ],
+      "expected": {
+        "kind": "submit",
+        "model": "sd2.5-qd",
+        "action": "text_to_video",
+        "requestBody": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "480p"
+          },
+          "references": {}
+        }
+      },
+      "member": "createVideo"
+    },
+    {
+      "name": "480p: Decode OpenAI video JSON",
+      "hook": "protocols",
+      "args": [
+        {
+          "model": "sd2.5-qd",
+          "body": {
+            "kind": "json",
+            "value": {
+              "model": "sd2.5-qd",
+              "prompt": "A forest at sunrise",
+              "seconds": "4",
+              "metadata": {
+                "params": {
+                  "aspectRatio": "16:9",
+                  "resolution": "480p"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "expected": {
+        "kind": "submit",
+        "model": "sd2.5-qd",
+        "action": "text_to_video",
+        "requestBody": {
+          "modelId": "sd2.5-qd",
+          "prompt": "A forest at sunrise",
+          "params": {
+            "aspectRatio": "16:9",
+            "duration": 4,
+            "resolution": "480p"
+          },
+          "references": {}
+        }
+      },
+      "path": [
+        "openai_video",
+        "decodeRequest"
+      ]
+    }
+  ]
+}

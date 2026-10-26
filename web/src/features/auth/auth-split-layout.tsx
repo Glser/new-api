@@ -36,7 +36,7 @@ import {
 import { isTokenBasedModel } from '@/features/pricing/lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '@/features/pricing/lib/price'
 import { taskPriceLabel, taskUsageUnitLabel } from '@/features/pricing/lib/task-price-display'
-import { formatUsdPrice, getOfficialVsSitePrice } from '@/features/pricing/lib/usd-price'
+import { formatUsdPrice, getOfficialVsSitePrice, matchesPrefix } from '@/features/pricing/lib/usd-price'
 import type { PriceType, PricingModel, PricingVendor, TokenUnit } from '@/features/pricing/types'
 import { useStatus } from '@/hooks/use-status'
 import { getLobeIcon } from '@/lib/lobe-icon'
@@ -268,9 +268,15 @@ function ModelCardItem(props: { item: ModelCardData }) {
     () =>
       getOfficialVsSitePrice(
         props.item.rawModel,
-        getDynamicDisplayGroupRatio(props.item.rawModel, undefined)
+        getDynamicDisplayGroupRatio(props.item.rawModel, undefined),
+        {
+          usdOfficial: matchesPrefix(
+            props.item.rawModel.model_name,
+            currency.modelSquareUsdPricePrefixes
+          ),
+        }
       ),
-    [props.item.rawModel]
+    [props.item.rawModel, currency.modelSquareUsdPricePrefixes]
   )
 
   const dynamicSummary = useMemo(

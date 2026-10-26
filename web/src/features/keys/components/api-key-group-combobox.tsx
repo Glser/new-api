@@ -84,11 +84,17 @@ export function ApiKeyGroupCombobox({
   const handleSelect = (selectedValue: string) => {
     onValueChange(selectedValue)
     setOpen(false)
-    setSearchValue('')
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        // Reset before opening so the closing popup keeps its current results.
+        if (nextOpen) setSearchValue('')
+        setOpen(nextOpen)
+      }}
+    >
       <PopoverTrigger
         render={
           <Button
@@ -97,7 +103,7 @@ export function ApiKeyGroupCombobox({
             role='combobox'
             aria-expanded={open}
             disabled={disabled}
-            className='h-auto min-h-11 w-full justify-between gap-2 rounded-lg px-3 py-2 text-start shadow-none'
+            className='h-auto min-h-11 w-full justify-between gap-2 rounded-lg px-3 py-2 text-start shadow-none transition-colors'
           />
         }
       >
@@ -127,6 +133,9 @@ export function ApiKeyGroupCombobox({
         />
       </PopoverTrigger>
       <PopoverContent
+        // Selection can resize the anchor and reveal Auto fields in the drawer.
+        // Unmount immediately instead of repositioning a closing popup.
+        animate={false}
         className='w-[var(--anchor-width)] overflow-hidden rounded-xl p-0'
         onWheel={(event) => event.stopPropagation()}
         onTouchMove={(event) => event.stopPropagation()}

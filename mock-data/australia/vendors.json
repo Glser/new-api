@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "name": "OpenAI",
+    "description": "",
+    "icon": "OpenAI",
+    "status": 1,
+    "created_time": 1785413030,
+    "updated_time": 1785413030,
+    "deleted_at": null
+  },
+  {
+    "id": 2,
+    "name": "DeepSeek",
+    "description": "",
+    "icon": "DeepSeek.Color",
+    "status": 1,
+    "created_time": 1785491405,
+    "updated_time": 1785491405,
+    "deleted_at": null
+  },
+  {
+    "id": 3,
+    "name": "Anthropic",
+    "description": "",
+    "icon": "Claude.Color",
+    "status": 1,
+    "created_time": 1787586720,
+    "updated_time": 1787586720,
+    "deleted_at": null
+  },
+  {
+    "id": 4,
+    "name": "字节跳动",
+    "description": "",
+    "icon": "Doubao.Color",
+    "status": 1,
+    "created_time": 1787992654,
+    "updated_time": 1787992654,
+    "deleted_at": null
+  },
+  {
+    "id": 5,
+    "name": "智谱",
+    "description": "",
+    "icon": "Zhipu.Color",
+    "status": 1,
+    "created_time": 1788268617,
+    "updated_time": 1788268617,
+    "deleted_at": null
+  },
+  {
+    "id": 6,
+    "name": "阿里巴巴",
+    "description": "",
+    "icon": "Qwen.Color",
+    "status": 1,
+    "created_time": 1788268617,
+    "updated_time": 1788268617,
+    "deleted_at": null
+  },
+  {
+    "id": 7,
+    "name": "xAI",
+    "description": "",
+    "icon": "XAI",
+    "status": 1,
+    "created_time": 1788627737,
+    "updated_time": 1788627737,
+    "deleted_at": null
+  }
+]

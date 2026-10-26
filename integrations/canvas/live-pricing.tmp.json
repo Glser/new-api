@@ -1,0 +1,77 @@
+{
+  "model_name": "seedance-2.5",
+  "icon": "Doubao.Color",
+  "quota_type": 0,
+  "model_ratio": 37.5,
+  "model_price": 0,
+  "owner_by": "",
+  "completion_ratio": 1,
+  "enable_groups": [
+    "Seedance-QT"
+  ],
+  "supported_endpoint_types": [
+    "openai"
+  ],
+  "billing_mode": "tiered_expr",
+  "billing_expr": "u(\"resolution\") == \"480p\" ? tier(\"480p\", u(\"seconds\") * 0.67) : u(\"resolution\") == \"720p\" ? tier(\"720p\", u(\"seconds\") * 1.51) : tier(\"1080p\", u(\"seconds\") * 3.74)",
+  "billing_usage_schema": {
+    "calls": {
+      "type": "number",
+      "unit": "count",
+      "unitLabel": {
+        "en": "video",
+        "zh": "个视频"
+      },
+      "description": {
+        "en": "Generated video count",
+        "zh": "生成视频数量"
+      }
+    },
+    "reference_video": {
+      "type": "boolean",
+      "description": {
+        "en": "Reference video included",
+        "zh": "包含参考视频"
+      }
+    },
+    "resolution": {
+      "enum": [
+        "480p",
+        "720p",
+        "1080p"
+      ],
+      "description": {
+        "en": "Requested resolution",
+        "zh": "请求分辨率"
+      }
+    },
+    "seconds": {
+      "type": "number",
+      "unit": "second",
+      "description": {
+        "en": "Requested video duration",
+        "zh": "请求视频时长"
+      }
+    }
+  },
+  "billing_usage_examples": [
+    {
+      "label": "720p / 4s",
+      "facts": {
+        "calls": 1,
+        "reference_video": false,
+        "resolution": "720p",
+        "seconds": 4
+      }
+    },
+    {
+      "label": "1080p / 8s",
+      "facts": {
+        "calls": 1,
+        "reference_video": false,
+        "resolution": "1080p",
+        "seconds": 8
+      }
+    }
+  ]
+}

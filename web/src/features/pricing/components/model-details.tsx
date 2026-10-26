@@ -34,9 +34,11 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
-import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 import { StaticDataTable } from '@/components/data-table'
-import { sideDrawerContentClassName } from '@/components/drawer-layout'
+import {
+  sideDrawerContentClassName,
+  sideDrawerHeaderClassName,
+} from '@/components/drawer-layout'
 import { PublicLayout } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import {
@@ -48,6 +50,7 @@ import {
 } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { getPerfMetrics } from '@/features/performance-metrics/api'
 import {
   formatLatency,
@@ -61,7 +64,7 @@ import { requireServerSuccess } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
-import { DEFAULT_TOKEN_UNIT, TOKEN_UNIT_DIVISORS } from '../constants'
+import { DEFAULT_TOKEN_UNIT } from '../constants'
 import { usePricingData } from '../hooks/use-pricing-data'
 import type { ParsedTaskTier } from '../lib/billing-expr'
 import { formatBillingCondition } from '../lib/billing-expression/condition-display'
@@ -98,10 +101,7 @@ import {
   taskUsageUnitLabel,
   taskPricingConditions,
 } from '../lib/task-price-display'
-import {
-  FIXED_USD_EXCHANGE_RATE,
-  matchesPrefix,
-} from '../lib/usd-price'
+import { formatOfficialPrice, matchesPrefix } from '../lib/usd-price'
 import type {
   ModelCapability,
   PriceType,
@@ -113,7 +113,7 @@ import { DynamicPricingBreakdown } from './dynamic-pricing-breakdown'
 import { ModelBillingModeBadge } from './model-billing-mode-badge'
 import { ModelDetailsApi } from './model-details-api'
 import { ModelDetailsPerformance } from './model-details-performance'
-import { TooltipHint } from '@/components/ui/tooltip'
+import { PriceRatioBadge } from './price-discount'
 
 // ----------------------------------------------------------------------------
 // Local UI helpers
@@ -121,7 +121,7 @@ import { TooltipHint } from '@/components/ui/tooltip'
 
 function SectionTitle(props: { children: React.ReactNode }) {
   return (
-    <h2 className='text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase'>
+    <h2 className='text-foreground mb-3 text-sm font-semibold tracking-tight'>
       {props.children}
     </h2>
   )
@@ -339,7 +339,7 @@ function CatalogPillList(props: { items: string[] }) {
         <span
           key={item}
           role='listitem'
-          className='border-border/70 bg-background/80 text-foreground inline-flex min-w-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-colors hover:border-primary/30 hover:bg-primary/[0.04] dark:shadow-none'
+          className='border-border/70 bg-background/80 text-foreground hover:border-primary/30 hover:bg-primary/[0.04] inline-flex min-w-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium shadow-[0_1px_0_rgba(15,23,42,0.04)] transition-colors dark:shadow-none'
         >
           <span
             aria-hidden='true'
@@ -510,7 +510,7 @@ function ModelBackendSignalsSection(props: { model: PricingModel }) {
       </SectionTitle>
       <div className='grid gap-3 @2xl/details:grid-cols-[minmax(0,1.5fr)_minmax(260px,1fr)]'>
         {capabilities.length > 0 ? (
-          <div className='bg-card/50 min-w-0 rounded-xl border border-border/60 p-3.5'>
+          <div className='bg-card/50 border-border/60 min-w-0 rounded-xl border p-3.5'>
             <div className='mb-3 flex items-center gap-2'>
               <span className='bg-primary/10 text-primary flex size-7 items-center justify-center rounded-lg'>
                 <Sparkles aria-hidden='true' className='size-3.5' />
@@ -531,7 +531,7 @@ function ModelBackendSignalsSection(props: { model: PricingModel }) {
           </div>
         ) : null}
         {(inputModalities.length > 0 || outputModalities.length > 0) && (
-          <div className='bg-card/50 min-w-0 rounded-xl border border-border/60 p-3.5'>
+          <div className='bg-card/50 border-border/60 min-w-0 rounded-xl border p-3.5'>
             <div className='mb-3 flex items-center gap-2'>
               <span className='bg-primary/10 text-primary flex size-7 items-center justify-center rounded-lg'>
                 <FileText aria-hidden='true' className='size-3.5' />
@@ -542,7 +542,7 @@ function ModelBackendSignalsSection(props: { model: PricingModel }) {
             </div>
             <div className='grid gap-2 sm:grid-cols-2'>
               {inputModalities.length > 0 && (
-                <div className='bg-muted/30 flex min-w-0 flex-col gap-1.5 rounded-lg border border-border/50 px-3 py-2.5'>
+                <div className='bg-muted/30 border-border/50 flex min-w-0 flex-col gap-1.5 rounded-lg border px-3 py-2.5'>
                   <span className='text-muted-foreground text-[10px] font-semibold tracking-wider uppercase'>
                     {t('Input')}
                   </span>
@@ -552,7 +552,7 @@ function ModelBackendSignalsSection(props: { model: PricingModel }) {
                 </div>
               )}
               {outputModalities.length > 0 && (
-                <div className='bg-muted/30 flex min-w-0 flex-col gap-1.5 rounded-lg border border-border/50 px-3 py-2.5'>
+                <div className='bg-muted/30 border-border/50 flex min-w-0 flex-col gap-1.5 rounded-lg border px-3 py-2.5'>
                   <span className='text-muted-foreground text-[10px] font-semibold tracking-wider uppercase'>
                     {t('Output')}
                   </span>
@@ -640,7 +640,7 @@ function ModelBackendDetailsSection(props: { model: PricingModel }) {
 // Model header (always visible above the detail sections)
 // ----------------------------------------------------------------------------
 
-function ModelHeader(props: { model: PricingModel }) {
+function ModelHeader(props: { model: PricingModel; compact?: boolean }) {
   const { t } = useTranslation()
   const model = props.model
   const modelIconKey = model.icon || model.vendor_icon
@@ -649,18 +649,39 @@ function ModelHeader(props: { model: PricingModel }) {
   const description = model.description || model.vendor_description || null
 
   return (
-    <header className='relative overflow-hidden rounded-2xl border border-border/70 bg-card/70 p-4 shadow-sm sm:p-5'>
-      <div
-        aria-hidden='true'
-        className='absolute inset-y-0 start-0 w-1 bg-primary/70'
-      />
+    <header
+      className={cn(
+        'relative overflow-hidden',
+        props.compact
+          ? 'min-w-0'
+          : 'border-border/70 bg-card/70 rounded-xl border p-4 shadow-sm sm:p-5'
+      )}
+    >
+      {!props.compact && (
+        <div
+          aria-hidden='true'
+          className='bg-primary/70 absolute inset-y-0 start-0 w-1'
+        />
+      )}
       <div className='flex min-w-0 items-start gap-3'>
-        <div className='bg-primary/10 text-primary ring-primary/10 flex size-11 shrink-0 items-center justify-center rounded-xl ring-4'>
-          {modelIcon || <span className='font-mono text-base font-bold'>{initial}</span>}
+        <div
+          className={cn(
+            'bg-primary/10 text-primary flex shrink-0 items-center justify-center rounded-xl',
+            props.compact ? 'size-9' : 'size-11 ring-4 ring-primary/10'
+          )}
+        >
+          {modelIcon || (
+            <span className='font-mono text-base font-bold'>{initial}</span>
+          )}
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex min-w-0 items-start gap-2'>
-            <h1 className='min-w-0 flex-1 break-words font-mono text-xl font-bold tracking-tight sm:text-2xl'>
+            <h1
+              className={cn(
+                'min-w-0 flex-1 font-mono font-bold tracking-tight break-words',
+                props.compact ? 'text-lg' : 'text-xl sm:text-2xl'
+              )}
+            >
               {model.model_name}
             </h1>
             <CopyButton
@@ -672,16 +693,21 @@ function ModelHeader(props: { model: PricingModel }) {
               aria-label={t('Copy model name')}
             />
           </div>
-          <div className='mt-2 flex flex-wrap items-center gap-2 text-xs'>
+          <div className='mt-1.5 flex flex-wrap items-center gap-1.5 text-xs'>
             {model.vendor_name && (
-              <span className='border-border/70 bg-background/70 text-muted-foreground rounded-full border px-2 py-1 font-medium'>
+              <span className='border-border/70 bg-muted/40 text-muted-foreground rounded-md border px-2 py-0.5 font-medium'>
                 {model.vendor_name}
               </span>
             )}
             <ModelBillingModeBadge model={model} />
           </div>
           {description && (
-            <p className='text-muted-foreground mt-3 max-w-3xl text-sm leading-relaxed'>
+            <p
+              className={cn(
+                'text-muted-foreground max-w-3xl text-sm leading-relaxed',
+                props.compact ? 'mt-2 line-clamp-2 text-xs' : 'mt-3'
+              )}
+            >
               {description}
             </p>
           )}
@@ -715,22 +741,17 @@ function getDynamicPriceFields(
 function formatDetailOfficialPrice(
   amountUSD: number,
   tokenUnit: TokenUnit,
-  perToken: boolean
+  perToken: boolean,
+  usdOfficial: boolean
 ): string {
-  const displayAmount = perToken
-    ? amountUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
-    : amountUSD
-  return formatBillingCurrencyFromUSD(displayAmount, {
-    digitsLarge: 4,
-    digitsSmall: perToken ? 6 : 4,
-    abbreviate: false,
-  })
+  return formatOfficialPrice(amountUSD, usdOfficial, perToken ? tokenUnit : 'M')
 }
 
 function getDynamicFormattedPricesByTier(
   tiers: DynamicPricingTier[],
   options: DynamicPriceOptions,
-  official = false
+  official = false,
+  usdOfficial = false
 ): DynamicFormattedPricesByTier {
   return new Map(
     tiers.map((tier) => [
@@ -742,7 +763,8 @@ function getDynamicFormattedPricesByTier(
             ? formatDetailOfficialPrice(
                 entry.value,
                 options.tokenUnit,
-                Boolean(entry.variable)
+                Boolean(entry.variable),
+                usdOfficial
               )
             : entry.formatted,
         ])
@@ -798,9 +820,7 @@ function GroupPricingSection(props: GroupPricingSectionProps) {
                 size={16}
               />
               <TooltipHint content={variant.plugin_name}>
-                <span className='truncate'>
-                  {variant.plugin_name}
-                </span>
+                <span className='truncate'>{variant.plugin_name}</span>
               </TooltipHint>
             </TabsTrigger>
           ))}
@@ -825,11 +845,6 @@ function GroupPricingSection(props: GroupPricingSectionProps) {
   )
 }
 
-function formatDetailGroupRatio(ratio: number): string {
-  if (Number.isInteger(ratio)) return String(ratio)
-  return ratio.toFixed(4).replace(/0+$/, '').replace(/\.$/, '')
-}
-
 function ProviderGroupPricingSection(
   props: GroupPricingSectionProps & { hideTitle?: boolean }
 ) {
@@ -840,11 +855,6 @@ function ProviderGroupPricingSection(
     props.model.model_name,
     currency.modelSquareUsdPricePrefixes
   )
-  const getDisplayGroupRatio = (group: string): number => {
-    const rawRatio = getConfiguredGroupRatio(props.groupRatio, group)
-    return showUsdOfficial ? rawRatio / FIXED_USD_EXCHANGE_RATE : rawRatio
-  }
-
   const availableGroups = useMemo(
     () =>
       props.official
@@ -972,7 +982,8 @@ function ProviderGroupPricingSection(
               groupRatioMultiplier: ratio,
               usageSchema: props.model.billing_usage_schema,
             },
-            props.official
+            props.official,
+            showUsdOfficial
           ),
         ] as const
       })
@@ -990,7 +1001,6 @@ function ProviderGroupPricingSection(
             const ratio = props.official
               ? 1
               : getConfiguredGroupRatio(props.groupRatio, group)
-            const displayRatio = props.official ? 1 : getDisplayGroupRatio(group)
             const formattedPricesByTier =
               formattedPricesByGroup.get(group) ??
               new Map<DynamicPricingTier, Map<string, string>>()
@@ -999,12 +1009,11 @@ function ProviderGroupPricingSection(
               <div key={group} className='overflow-hidden rounded-lg border'>
                 {!props.official && (
                   <div className='bg-muted/20 flex items-center justify-between gap-3 border-b px-3 py-2'>
-                    <span className='text-sm font-medium'>
-                      {group}
-                    </span>
-                    <span className='text-muted-foreground font-mono text-xs'>
-                      {formatDetailGroupRatio(displayRatio)}x
-                    </span>
+                    <span className='text-sm font-medium'>{group}</span>
+                    <PriceRatioBadge
+                      groupRatio={ratio}
+                      usdOfficial={showUsdOfficial}
+                    />
                   </div>
                 )}
                 <StaticDataTable
@@ -1115,7 +1124,7 @@ function ProviderGroupPricingSection(
                           cellClassName: 'py-2.5 text-right font-mono',
                           cell: (row) => {
                             if (props.official) {
-                              return `≈ ${formatDetailOfficialPrice(row.total, props.tokenUnit, false)}`
+                              return `≈ ${formatDetailOfficialPrice(row.total, props.tokenUnit, false, showUsdOfficial)}`
                             }
                             return `≈ ${formatTaskUsageUnitPrice(row.total, {
                               tokenUnit: props.tokenUnit,
@@ -1166,7 +1175,8 @@ function ProviderGroupPricingSection(
       return formatDetailOfficialPrice(
         calculateTokenPrice(props.model, type, 1),
         props.tokenUnit,
-        true
+        true,
+        showUsdOfficial
       )
     }
     return formatGroupPrice(
@@ -1185,7 +1195,8 @@ function ProviderGroupPricingSection(
       return formatDetailOfficialPrice(
         props.model.model_price ?? Number.NaN,
         props.tokenUnit,
-        false
+        false,
+        showUsdOfficial
       )
     }
     return formatFixedPrice(
@@ -1226,8 +1237,15 @@ function ProviderGroupPricingSection(
                   header: t('Ratio'),
                   className: thClass,
                   cellClassName: 'text-muted-foreground py-2.5 font-mono',
-                  cell: (group: string) =>
-                    `×${formatDetailGroupRatio(getDisplayGroupRatio(group))}`,
+                  cell: (group: string) => (
+                    <PriceRatioBadge
+                      groupRatio={getConfiguredGroupRatio(
+                        props.groupRatio,
+                        group
+                      )}
+                      usdOfficial={showUsdOfficial}
+                    />
+                  ),
                 },
               ]
             : []),
@@ -1299,6 +1317,7 @@ export interface ModelDetailsContentProps {
   usdExchangeRate: number
   tokenUnit: TokenUnit
   showRechargePrice?: boolean
+  hideHeader?: boolean
 }
 
 export function ModelDetailsContent(props: ModelDetailsContentProps) {
@@ -1306,18 +1325,18 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
   const showRechargePrice = props.showRechargePrice ?? false
 
   return (
-    <div className='@container/details space-y-4'>
-      <ModelHeader model={props.model} />
+    <div className='@container/details space-y-5'>
+      {!props.hideHeader && <ModelHeader model={props.model} />}
 
       <Tabs defaultValue='overview' className='gap-4'>
-        <TabsList className='bg-muted/60 grid w-full grid-cols-3 gap-1 rounded-lg p-1 group-data-horizontal/tabs:h-auto'>
+        <TabsList className='border-border/70 bg-muted/30 grid w-full grid-cols-3 gap-1 rounded-lg border p-1 group-data-horizontal/tabs:h-auto'>
           {TAB_VALUES.map((value) => {
             const Icon = TAB_META[value].icon
             return (
               <TabsTrigger
                 key={value}
                 value={value}
-                className='h-8 min-w-0 gap-1.5 rounded-md px-3 text-xs sm:text-sm'
+                className='data-[state=active]:bg-background h-8 min-w-0 gap-1.5 rounded-md px-3 text-xs data-[state=active]:shadow-xs sm:text-sm'
               >
                 <Icon className='size-3.5' />
                 <span className='truncate'>{t(TAB_META[value].labelKey)}</span>
@@ -1329,8 +1348,13 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
         <TabsContent value='overview' className='space-y-6 outline-none'>
           <OverviewSummaryGrid model={props.model} />
 
-          <section className='bg-card/60 space-y-5 rounded-xl border p-4 shadow-sm'>
-            <SectionTitle>{t('Pricing')}</SectionTitle>
+          <section className='border-border/70 bg-card/40 space-y-5 rounded-xl border p-4 sm:p-5'>
+            <div className='flex items-center justify-between gap-3'>
+              <SectionTitle>{t('Pricing')}</SectionTitle>
+              <span className='text-muted-foreground text-[10px] font-medium tracking-wider uppercase'>
+                {props.tokenUnit === 'K' ? '1K' : '1M'} tokens
+              </span>
+            </div>
             <GroupPricingSection
               official
               model={props.model}
@@ -1342,16 +1366,18 @@ export function ModelDetailsContent(props: ModelDetailsContentProps) {
               tokenUnit={props.tokenUnit}
               showRechargePrice={showRechargePrice}
             />
-            <GroupPricingSection
-              model={props.model}
-              groupRatio={props.groupRatio}
-              usableGroup={props.usableGroup}
-              autoGroups={props.autoGroups}
-              priceRate={props.priceRate}
-              usdExchangeRate={props.usdExchangeRate}
-              tokenUnit={props.tokenUnit}
-              showRechargePrice={showRechargePrice}
-            />
+            <div className='border-border/60 border-t pt-5'>
+              <GroupPricingSection
+                model={props.model}
+                groupRatio={props.groupRatio}
+                usableGroup={props.usableGroup}
+                autoGroups={props.autoGroups}
+                priceRate={props.priceRate}
+                usdExchangeRate={props.usdExchangeRate}
+                tokenUnit={props.tokenUnit}
+                showRechargePrice={showRechargePrice}
+              />
+            </div>
             <DynamicPricingBreakdown
               billingExpr={props.model.billing_expr}
               usageSchema={props.model.billing_usage_schema}
@@ -1396,15 +1422,24 @@ export function ModelDetailsDrawer(props: ModelDetailsDrawerProps) {
       <SheetContent
         side='right'
         className={sideDrawerContentClassName(
-          'sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl'
+          'sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl'
         )}
       >
-        <SheetHeader className='sr-only'>
-          <SheetTitle>{props.model.model_name}</SheetTitle>
-          <SheetDescription>{t('Model details')}</SheetDescription>
+        <SheetHeader
+          className={sideDrawerHeaderClassName(
+            'bg-muted/20 pr-14 sm:px-5 sm:py-4'
+          )}
+        >
+          <SheetTitle className='sr-only'>{props.model.model_name}</SheetTitle>
+          <SheetDescription className='sr-only'>
+            {t('Model details')}
+          </SheetDescription>
+          <ModelHeader model={props.model} compact />
         </SheetHeader>
-        <div className='flex-1 overflow-y-auto px-4 pt-11 pb-5 sm:px-6 sm:pt-12 sm:pb-6'>
-          <ModelDetailsContent {...contentProps} />
+        <div className='min-h-0 flex-1 overflow-y-auto'>
+          <div className='px-4 py-4 sm:px-5 sm:py-5'>
+            <ModelDetailsContent {...contentProps} hideHeader />
+          </div>
         </div>
       </SheetContent>
     </Sheet>

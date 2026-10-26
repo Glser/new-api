@@ -11,8 +11,8 @@ import { ArrowUpRight, BookOpen } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { HeaderLogo } from '@/components/layout/components/header-logo'
-import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { cn } from '@/lib/utils'
 
 import { HeroAgentShowcase } from '../hero-agent-showcase'
 import { SectionDivider, SectionScrollCue } from '../section-primitives'
@@ -24,7 +24,6 @@ interface HeroProps {
 
 export function Hero(props: HeroProps) {
   const { t } = useTranslation()
-  const { status } = useStatus()
   const { logo, loading, logoLoaded } = useSystemConfig()
 
   const docsUrl = 'https://api.oioi.lat/pages/codex-guide/#install'
@@ -42,27 +41,25 @@ export function Hero(props: HeroProps) {
         <span>{t('Docs')}</span>
       </>
     )
-    if (docsUrl.startsWith('http')) {
-      return (
-        <a
-          href={docsUrl}
-          target='_blank'
-          rel='noopener noreferrer'
-          className={className}
-        >
-          {content}
-        </a>
-      )
-    }
     return (
-      <Link to={docsUrl} className={className}>
+      <a
+        href={docsUrl}
+        target='_blank'
+        rel='noopener noreferrer'
+        className={className}
+      >
         {content}
-      </Link>
+      </a>
     )
   }
 
   return (
-    <section className='relative z-10 flex min-h-[calc(100svh/var(--home-scale,1))] flex-col justify-between overflow-hidden px-4 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 md:pt-24 md:pb-12 lg:px-8'>
+    <section
+      className={cn(
+        'relative z-10 flex min-h-[calc(100svh/var(--home-scale,1))] flex-col justify-between overflow-hidden px-4 pt-16 pb-8 sm:px-6 sm:pt-20 sm:pb-10 md:pt-24 md:pb-12 lg:px-8',
+        props.className
+      )}
+    >
       {/* Subtle atmospheric lighting */}
       <div
         aria-hidden
@@ -145,7 +142,7 @@ export function Hero(props: HeroProps) {
             >
               {/* Primary Access Button */}
               <Link
-                to={'/dashboard' as any}
+                to='/dashboard'
                 className='group bg-foreground text-background relative inline-flex h-11 cursor-pointer items-center gap-2 overflow-hidden rounded-xl px-6 text-xs font-semibold shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] active:translate-y-px sm:text-sm dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)]'
               >
                 {/* Luminous overlay wave on hover */}
@@ -159,7 +156,7 @@ export function Hero(props: HeroProps) {
 
               {/* Secondary Explore Button */}
               <Link
-                to={'/pricing' as any}
+                to='/pricing'
                 className='group border-border/70 bg-card/60 text-foreground hover:border-foreground/25 hover:bg-card/90 relative inline-flex h-11 cursor-pointer items-center gap-2 overflow-hidden rounded-xl border px-5 text-xs font-medium backdrop-blur-md transition-all duration-300 hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(0,0,0,0.04)] active:translate-y-px sm:text-sm'
               >
                 <span

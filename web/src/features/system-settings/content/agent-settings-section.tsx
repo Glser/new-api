@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
@@ -32,6 +32,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+
 import { SettingsForm } from '../components/settings-form-layout'
 import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
@@ -148,10 +149,11 @@ interface AgentSettingsSectionProps {
   defaultValue?: string
 }
 
-export function AgentSettingsSection({ defaultValue }: AgentSettingsSectionProps) {
+export function AgentSettingsSection({
+  defaultValue,
+}: AgentSettingsSectionProps) {
   const { t } = useTranslation()
-  const { updateOption, isSubmitting } = useUpdateOption()
-  const formRef = useRef<HTMLFormElement>(null)
+  const updateOption = useUpdateOption()
 
   const initialJson = defaultValue
     ? formatJsonForEditor(defaultValue)
@@ -174,8 +176,11 @@ export function AgentSettingsSection({ defaultValue }: AgentSettingsSectionProps
 
   const onSubmit = async (values: AgentFormValues) => {
     const normalized = normalizeJsonString(values.Agents)
-    const success = await updateOption('Agents', normalized)
-    if (success) {
+    const result = await updateOption.mutateAsync({
+      key: 'Agents',
+      value: normalized,
+    })
+    if (result.success) {
       form.reset({
         Agents: formatJsonForEditor(normalized),
       })
@@ -183,15 +188,14 @@ export function AgentSettingsSection({ defaultValue }: AgentSettingsSectionProps
   }
 
   return (
-    <SettingsSection
-      title={t('Agent Showcase Configuration')}
-      description={t(
-        'Configure external AI coding agents, CLI tools and IDE extensions displayed on the landing hero and sign-in page.'
-      )}
-    >
+    <SettingsSection title={t('Agent Showcase Configuration')}>
+      <p className='text-muted-foreground text-sm'>
+        {t(
+          'Configure external AI coding agents, CLI tools and IDE extensions displayed on the landing hero and sign-in page.'
+        )}
+      </p>
       <Form {...form}>
         <SettingsForm
-          ref={formRef}
           onSubmit={form.handleSubmit(onSubmit)}
           className='space-y-4'
         >
@@ -205,8 +209,7 @@ export function AgentSettingsSection({ defaultValue }: AgentSettingsSectionProps
                   <JsonCodeEditor
                     value={field.value}
                     onChange={field.onChange}
-                    minLines={12}
-                    maxLines={24}
+                    heightClassName='h-96 min-h-60 max-h-96'
                     placeholder='[{"id": "...", "name": "...", "tag": "...", "guide_url": "...", "icon_key": "..."}]'
                   />
                 </FormControl>
@@ -221,9 +224,9 @@ export function AgentSettingsSection({ defaultValue }: AgentSettingsSectionProps
           />
 
           <SettingsPageFormActions
-            formRef={formRef}
-            isSubmitting={isSubmitting}
-            isDirty={form.formState.isDirty}
+            onSave={form.handleSubmit(onSubmit)}
+            isSaving={updateOption.isPending}
+            isSaveDisabled={!form.formState.isDirty}
             onReset={() => form.reset()}
           />
         </SettingsForm>

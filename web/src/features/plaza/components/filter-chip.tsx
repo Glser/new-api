@@ -20,6 +20,7 @@ import { Check } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { PriceDiscountHint } from '@/features/pricing/components/price-discount'
 import { cn } from '@/lib/utils'
 
 export type PlazaFilterChipOption = {
@@ -28,6 +29,11 @@ export type PlazaFilterChipOption = {
   countLabel?: string
   suffix?: string
   icon?: ReactNode
+  priceDiscount?: {
+    groupRatio: number
+    usdOfficial: boolean
+    mixedCurrencies?: boolean
+  }
 }
 
 /**
@@ -75,7 +81,7 @@ export function PlazaFilterChip(props: {
 }) {
   const { active, option } = props
 
-  return (
+  const chip = (
     <Button
       type='button'
       variant='ghost'
@@ -149,4 +155,11 @@ export function PlazaFilterChip(props: {
       )}
     </Button>
   )
+
+  if (option.priceDiscount) {
+    return (
+      <PriceDiscountHint {...option.priceDiscount}>{chip}</PriceDiscountHint>
+    )
+  }
+  return chip
 }

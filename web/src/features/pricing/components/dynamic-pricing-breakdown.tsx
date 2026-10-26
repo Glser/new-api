@@ -59,10 +59,13 @@ import {
   taskUsageUnitLabel,
   taskPricingConditions,
 } from '../lib/task-price-display'
+import { formatOfficialPrice, matchesPrefix } from '../lib/usd-price'
 import type { BillingUsageSchema, BillingUsageUnit } from '../types'
+import { PriceRatioBadge } from './price-discount'
 
 type DynamicPricingBreakdownProps = {
   billingExpr: string | null | undefined
+  modelName?: string
   /**
    * Label of the tier that fired for the current request. When provided,
    * the corresponding row is highlighted and tagged as "Matched". Used by
@@ -208,14 +211,25 @@ function formatBreakdownPrice(
   rate: number,
   t: (key: string) => string,
   taskPriceOptions: DynamicPricingBreakdownProps['taskPriceOptions'],
-  language: string
+  language: string,
+  official = false,
+  usdOfficial = false
 ): string {
-  const amount =
+  let amount: string
+  if (official) {
+    amount = formatOfficialPrice(value, usdOfficial)
+  } else if (
     field.labelKind === 'schema' ||
     field.unit === 'request' ||
     field.unit === 'image'
-      ? formatTaskUsageUnitPrice(value, { tokenUnit: 'M', ...taskPriceOptions })
-      : `${symbol}${(value * rate).toFixed(4)}`
+  ) {
+    amount = formatTaskUsageUnitPrice(value, {
+      tokenUnit: 'M',
+      ...taskPriceOptions,
+    })
+  } else {
+    amount = `${symbol}${(value * rate).toFixed(4)}`
+  }
   if (field.unit === 'second') return `${amount}/${t('s')}`
   if (field.unit === 'count') {
     return `${amount}/${taskUsageUnitLabel(field, language, t('unit'))}`
@@ -229,11 +243,6 @@ function formatBreakdownPrice(
   return amount
 }
 
-function formatRatioCompact(ratio: number): string {
-  if (ratio % 1 === 0) return String(ratio)
-  return ratio.toFixed(4).replace(/\.?0+$/, '')
-}
-
 function BreakdownPriceValue(props: {
   value: number
   field: BreakdownPriceField
@@ -243,6 +252,7 @@ function BreakdownPriceValue(props: {
   taskPriceOptions: DynamicPricingBreakdownProps['taskPriceOptions']
   language: string
   groupRatio?: number | null
+  usdOfficial: boolean
   compact?: boolean
   align?: 'start' | 'center' | 'end'
 }) {
@@ -259,13 +269,15 @@ function BreakdownPriceValue(props: {
     props.rate,
     props.t,
     props.taskPriceOptions,
-    props.language
+    props.language,
+    true,
+    props.usdOfficial
   )
   const groupRatio = props.groupRatio
   if (
     groupRatio == null ||
     !Number.isFinite(groupRatio) ||
-    groupRatio === 1
+    (groupRatio === 1 && !props.usdOfficial)
   ) {
     return (
       <span className={cn(!props.compact && 'font-semibold')}>{formatted}</span>
@@ -297,12 +309,11 @@ function BreakdownPriceValue(props: {
         <span className='text-foreground text-sm! font-semibold tabular-nums'>
           {groupFormatted}
         </span>
-        <span
-          className='shrink-0 rounded bg-lime-400 px-1 py-px text-[10px]! font-semibold text-black tabular-nums'
-          title={props.t('Group Ratio')}
-        >
-          {formatRatioCompact(groupRatio)}x
-        </span>
+        <PriceRatioBadge
+          groupRatio={groupRatio}
+          usdOfficial={props.usdOfficial}
+          className='px-1 text-[10px]!'
+        />
       </span>
     </span>
   )
@@ -367,6 +378,7 @@ function nextOccurrenceKey(
 
 export function DynamicPricingBreakdown({
   billingExpr,
+  modelName,
   matchedTierLabel,
   matchedBillingUnit,
   matchedFixedPrice,
@@ -382,6 +394,10 @@ export function DynamicPricingBreakdown({
   const { t, i18n } = useTranslation()
   const expr = billingExpr || ''
   const currency = useSystemConfigStore((s) => s.config.currency)
+  const usdOfficial = matchesPrefix(
+    modelName,
+    currency.modelSquareUsdPricePrefixes
+  )
 
   const { symbol, rate } = useMemo(() => {
     if (currency.quotaDisplayType === 'CNY') {
@@ -643,6 +659,7 @@ export function DynamicPricingBreakdown({
                               taskPriceOptions={taskPriceOptions}
                               language={i18n.language}
                               groupRatio={groupRatio}
+                              usdOfficial={usdOfficial}
                               compact={compact}
                               align='center'
                             />
@@ -760,6 +777,7 @@ export function DynamicPricingBreakdown({
                     taskPriceOptions={taskPriceOptions}
                     language={i18n.language}
                     groupRatio={groupRatio}
+                    usdOfficial={usdOfficial}
                     compact={compact}
                     align='center'
                   />
