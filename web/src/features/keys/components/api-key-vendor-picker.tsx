@@ -37,7 +37,7 @@ export function ApiKeyVendorPicker(props: {
   const { t } = useTranslation()
   return (
     <div className='flex flex-col gap-2.5'>
-      <span className='text-sm font-medium'>{t('Vendor')}</span>
+      <span className='pl-[3px] text-xs font-medium'>{t('Vendor')}</span>
       {props.loading && (
         <div role='status' className='flex gap-2'>
           <span className='sr-only'>{t('Loading...')}</span>
@@ -68,7 +68,7 @@ export function ApiKeyVendorPicker(props: {
         <div
           role='group'
           aria-label={t('Vendor')}
-          className='flex flex-wrap gap-2'
+          className='flex flex-wrap gap-1.5 [&_button[aria-pressed]]:h-7 [&_button[aria-pressed]]:shadow-none'
         >
           <PlazaFilterChip
             option={{

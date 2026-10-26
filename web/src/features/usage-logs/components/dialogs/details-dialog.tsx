@@ -39,6 +39,7 @@ import { StatusBadge, type StatusBadgeProps } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { DynamicPricingBreakdown } from '@/features/pricing/components/dynamic-pricing-breakdown'
+import { evalExprLocally } from '@/features/pricing/lib/tier-expr'
 import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
 import { pluginUsageSchema } from '@/features/pricing/lib/plugin-pricing'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
@@ -52,7 +53,6 @@ import {
   getParamOverrideActionLabel,
   parseAuditLine,
   decodeBillingExprB64,
-  hasAnyCacheTokens,
   isViolationFeeLog,
   getFirstResponseTimeColor,
   getResponseTimeColor,
@@ -173,6 +173,36 @@ function BillingBreakdown(props: { log: UsageLog; other: LogOtherData }) {
   )
 }
 
+function resolveMatchedTierLabel(
+  billingExpr: string,
+  log: UsageLog,
+  other: LogOtherData | null
+): string {
+  if (other?.matched_tier) return other.matched_tier
+  if (!billingExpr) return ''
+  const cacheWrite5m = other?.cache_creation_tokens_5m || 0
+  const cacheWrite1h = other?.cache_creation_tokens_1h || 0
+  const result = evalExprLocally(
+    billingExpr,
+    log.prompt_tokens || 0,
+    log.completion_tokens || 0,
+    {
+      cacheReadTokens: other?.cache_tokens || 0,
+      cacheCreateTokens:
+        cacheWrite5m > 0 || cacheWrite1h > 0
+          ? cacheWrite5m
+          : other?.cache_creation_tokens || 0,
+      cacheCreate1hTokens: cacheWrite1h,
+      imageTokens: 0,
+      imageCacheTokens: other?.image_cache_tokens || 0,
+      imageOutputTokens: other?.image_output || 0,
+      audioInputTokens: other?.audio_input || 0,
+      audioOutputTokens: other?.audio_output || 0,
+    }
+  )
+  return result.error ? '' : result.matchedTier
+}
+
 function TokenBreakdown(props: { log: UsageLog; other: LogOtherData }) {
   const { t } = useTranslation()
   const promptTokens = props.log.prompt_tokens || 0
@@ -237,16 +267,23 @@ export function DetailsDialog(props: DetailsDialogProps) {
   const isTopup = props.log.type === 1
   const isManage = props.log.type === 3
   const isSubscription = other?.billing_source === 'subscription'
+  const pricingData = usePricingData(props.open)
+  const pricingModel = pricingData.models.find(
+    (model) => model.model_name === props.log.model_name
+  )
+  const billingExpr =
+    decodeBillingExprB64(other?.expr_b64) || pricingModel?.billing_expr || ''
   const isTieredBilling =
     isConsume &&
     !isViolation &&
-    other?.billing_mode === 'tiered_expr' &&
-    !!other?.expr_b64
-  const pricingData = usePricingData(props.open && isTieredBilling)
+    Boolean(billingExpr) &&
+    (other?.billing_mode === 'tiered_expr' ||
+      pricingModel?.billing_mode === 'tiered_expr')
+  const matchedTierLabel = isTieredBilling
+    ? resolveMatchedTierLabel(billingExpr, props.log, other)
+    : ''
   const billingUsageSchema = pluginUsageSchema(
-    pricingData.models.find(
-      (model) => model.model_name === props.log.model_name
-    ),
+    pricingModel,
     other?.admin_info?.task_plugin?.key
   )
   const hasAudioTokens = other?.ws || other?.audio
@@ -415,7 +452,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
       contentClassName={cn(
         'min-w-0 overflow-hidden',
         'max-sm:max-h-[calc(100dvh-1.5rem)] max-sm:w-[calc(100vw-1.5rem)] max-sm:max-w-[calc(100vw-1.5rem)] max-sm:p-4',
-        isTieredBilling ? 'sm:max-w-4xl lg:max-w-5xl' : 'sm:max-w-lg'
+        isTieredBilling ? 'sm:max-w-2xl' : 'sm:max-w-lg'
       )}
       headerClassName='max-sm:gap-1'
       titleClassName='flex items-center gap-2 text-base'
@@ -423,7 +460,7 @@ export function DetailsDialog(props: DetailsDialogProps) {
       contentHeight='min(72dvh, 720px)'
       bodyClassName='pr-2 sm:pr-4'
     >
-      <div className='w-full max-w-full min-w-0 space-y-2.5 overflow-x-hidden py-1 sm:space-y-3'>
+      <div className='w-full max-w-full min-w-0 space-y-2.5 py-1 sm:space-y-3'>
         {/* Overview section - key identifiers */}
         <div className='min-w-0 space-y-1'>
           {props.log.request_id && (
@@ -891,9 +928,12 @@ export function DetailsDialog(props: DetailsDialogProps) {
         )}
 
         {/* Tiered pricing breakdown (when billing_mode is tiered_expr) */}
-        {isTieredBilling && other?.expr_b64 && (
-          <DetailSection label={t('Dynamic Pricing')}>
-            {other.image_count !== undefined && (
+        {isTieredBilling && billingExpr ? (
+          <DetailSection
+            label={t('Dynamic Pricing')}
+            contentClassName='overflow-x-auto p-0 max-sm:p-0'
+          >
+            {other?.image_count !== undefined && (
               <DetailRow
                 label={t('Billable image count')}
                 value={other.image_count}
@@ -901,18 +941,22 @@ export function DetailsDialog(props: DetailsDialogProps) {
             )}
             <DynamicPricingBreakdown
               compact
-              billingExpr={decodeBillingExprB64(other.expr_b64)}
-              matchedTierLabel={other.matched_tier}
-              matchedBillingUnit={other.billing_unit}
-              matchedFixedPrice={other.fixed_price}
-              requestRules={other.request_rules}
-              hideCacheColumns={!hasAnyCacheTokens(other)}
-              usageSchema={billingUsageSchema}
-              usageFacts={other.usage_facts}
-              groupRatio={getHitPriceRatio(other)}
+              billingExpr={billingExpr}
+              matchedTierLabel={matchedTierLabel}
+              matchedBillingUnit={other?.billing_unit}
+              matchedFixedPrice={other?.fixed_price}
+              requestRules={other?.request_rules}
+              hideCacheColumns={false}
+              usageSchema={
+                other?.admin_info?.task_plugin?.key
+                  ? billingUsageSchema
+                  : undefined
+              }
+              usageFacts={other?.usage_facts}
+              groupRatio={other ? getHitPriceRatio(other) : null}
             />
           </DetailSection>
-        )}
+        ) : null}
 
         {/* Billing breakdown (consume type) */}
         {isConsume && other && !isViolation ? (

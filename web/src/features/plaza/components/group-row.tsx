@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { FILTER_ALL } from '@/features/pricing/constants'
 import type { PricingModel, PricingUsableGroup } from '@/features/pricing/types'
 
-import { formatGroupRatio, getGroupDescription } from '../lib/group-ratio'
+import { formatGroupRatio } from '../lib/group-ratio'
 import { PlazaFilterChip, type PlazaFilterChipOption } from './filter-chip'
 import { PlazaFilterRow } from './filter-row'
 
@@ -49,7 +49,7 @@ export function PlazaGroupRow(props: {
   groupRatios?: Record<string, number>
   /**
    * /api/pricing usable_group 是「分组名 -> 描述」。
-   * 胶囊优先展示后台填写的描述，没填则回落原始分组名。
+   * 胶囊统一展示分组名称。
    */
   usableGroup?: PricingUsableGroup
   value: string
@@ -64,19 +64,17 @@ export function PlazaGroupRow(props: {
       label: t('All'),
       countLabel: t('{{count}} models short', { count: props.models.length }),
     },
-    // 价格行只保留「描述/分组名 + 倍率」，计数交给「全部」胶囊，避免一粒胶囊里堆三组信息
+    // 价格行只保留「分组名 + 倍率」，计数交给「全部」胶囊，避免一粒胶囊里堆三组信息
     ...props.groups.flatMap((group) => {
       const count = countByGroup(props.models, group)
       if (count === 0) {
         return []
       }
       const ratio = props.groupRatios?.[group]
-      // 后台描述优先，未填写时回落原始分组名，避免胶囊空白
-      const description = getGroupDescription(props.usableGroup, group)
       return [
         {
           value: group,
-          label: description,
+          label: group,
           suffix: formatRatioBadge(ratio),
         },
       ]

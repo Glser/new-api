@@ -262,7 +262,11 @@ function BreakdownPriceValue(props: {
     props.language
   )
   const groupRatio = props.groupRatio
-  if (groupRatio == null || !Number.isFinite(groupRatio)) {
+  if (
+    groupRatio == null ||
+    !Number.isFinite(groupRatio) ||
+    groupRatio === 1
+  ) {
     return (
       <span className={cn(!props.compact && 'font-semibold')}>{formatted}</span>
     )
@@ -564,7 +568,7 @@ export function DynamicPricingBreakdown({
               {t('Tiered price table')}
             </div>
           )}
-          <div className='space-y-1.5 sm:hidden'>
+          <div className={cn('space-y-1.5', compact ? 'hidden' : 'sm:hidden')}>
             {tiers.map((tier) => {
               const condSummary = formatBreakdownConditionSummary(
                 tier,
@@ -653,13 +657,13 @@ export function DynamicPricingBreakdown({
           </div>
           <StaticDataTable
             className={cn(
-              'hidden rounded-none border-0 sm:block',
-              compact && '-mx-2.5'
+              'rounded-none border-0 overflow-x-auto',
+              compact ? 'block' : 'hidden sm:block'
             )}
             tableClassName={
               compact
-                ? '[&_td]:px-1 [&_td]:text-xs [&_td_*]:text-xs [&_th]:px-1 [&_th]:text-xs [&_th_*]:text-xs'
-                : 'text-sm [&_td]:px-1 [&_th]:px-1'
+                ? '[&_td]:px-1 [&_td]:py-1.5 [&_td]:text-xs [&_td_*]:text-xs [&_th]:px-1 [&_th]:py-1.5 [&_th]:text-xs [&_th_*]:text-xs [&_tbody>tr]:h-auto'
+                : 'text-sm [&_td]:px-1 [&_th]:px-1 [&_tbody>tr]:h-auto'
             }
             headerRowClassName='hover:bg-transparent'
             data={tiers}
@@ -684,11 +688,11 @@ export function DynamicPricingBreakdown({
                 header: usageSchema ? t('Applicable conditions') : t('Tier'),
                 className: cn(
                   'text-muted-foreground py-2 text-center font-medium',
-                  compact && 'h-8'
+                  compact && 'h-8 px-1'
                 ),
                 cellClassName: cn(
-                  'align-middle text-center whitespace-normal break-words',
-                  compact ? 'py-2' : 'py-2.5'
+                  'align-middle whitespace-normal break-words text-center',
+                  compact ? 'px-1 py-1.5' : 'py-2.5'
                 ),
                 cell: (tier) => {
                   const condSummary = formatBreakdownConditionSummary(
@@ -740,11 +744,11 @@ export function DynamicPricingBreakdown({
                 header: breakdownPriceFieldLabel(field, t),
                 className: cn(
                   'text-muted-foreground py-2 text-center font-medium',
-                  compact && 'h-8'
+                  compact && 'h-8 px-1'
                 ),
                 cellClassName: cn(
-                  'text-center align-middle font-mono',
-                  compact ? 'py-2' : 'py-2.5'
+                  'overflow-visible align-middle font-mono whitespace-nowrap text-center',
+                  compact ? 'px-1 py-1.5' : 'py-2.5'
                 ),
                 cell: (tier: BreakdownTier) => (
                   <BreakdownPriceValue

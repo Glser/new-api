@@ -269,7 +269,7 @@ export function AutoGroupOrderEditor(props: AutoGroupOrderEditorProps) {
                   className='text-muted-foreground size-3.5 shrink-0'
                 />
               )}
-              <TooltipHint content={option.desc}>
+              <TooltipHint content={option.label}>
                 <span
                   data-slot='global-auto-order-chip'
                   className='bg-muted/30 flex min-w-0 items-center gap-1.5 rounded-md border px-2 py-1'
@@ -287,14 +287,6 @@ export function AutoGroupOrderEditor(props: AutoGroupOrderEditorProps) {
                   >
                     {option.label}
                   </span>
-                  {option.desc && (
-                    <span
-                      data-slot='global-auto-order-description'
-                      className='sr-only'
-                    >
-                      {option.desc}
-                    </span>
-                  )}
                   <GroupRatioBadge ratio={option.ratio} />
                 </span>
               </TooltipHint>

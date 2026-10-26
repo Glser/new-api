@@ -159,7 +159,7 @@ export function ApiKeyQuotaOverviewCell({ apiKey }: { apiKey: ApiKey }) {
         <span className='text-foreground tabular-nums'>{used}</span>
       </div>
       <div className='text-muted-foreground'>
-        {t('Current total quota')}:{' '}
+        {t('Total Quota')}:{' '}
         <span className='text-foreground tabular-nums'>{total}</span>
         <span className='ml-1 text-xs'>({unit})</span>
       </div>

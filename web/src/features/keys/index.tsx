@@ -32,18 +32,18 @@ export function ApiKeys() {
     <ApiKeysProvider>
       <SectionPageLayout fixedContent>
         <SectionPageLayout.Title>
-          <div className='flex min-w-0 flex-col gap-1'>
-            <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
-              {t('API Keys')}
-            </span>
-            <ApiBaseUrl />
-          </div>
+          <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+            {t('API Keys')}
+          </span>
         </SectionPageLayout.Title>
-        <SectionPageLayout.Actions>
-          <ApiKeysPrimaryButtons />
-        </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
           <div className='@container/keys flex h-full min-h-0 flex-col gap-3 sm:gap-4'>
+            <div className='flex shrink-0 items-center justify-between gap-3'>
+              <div className='min-w-0 flex-1'>
+                <ApiBaseUrl />
+              </div>
+              <ApiKeysPrimaryButtons />
+            </div>
             <div className='min-h-0 flex-1'>
               <ApiKeysTable />
             </div>

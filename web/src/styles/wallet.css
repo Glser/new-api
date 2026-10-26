@@ -16,7 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-.wallet-recharge-dialog {
+.wallet-recharge-dialog,
+.wallet-subscription-dialog {
   --wallet-accent: #c4f82a;
   --wallet-accent-foreground: #28350a;
   --wallet-choice-border: #a3ce22;
@@ -24,13 +25,15 @@ For commercial licensing, please contact support@quantumnous.com
   --wallet-choice-foreground: #435615;
 }
 
-.dark .wallet-recharge-dialog {
+.dark .wallet-recharge-dialog,
+.dark .wallet-subscription-dialog {
   --wallet-choice-border: #a3ce22;
   --wallet-choice-surface: #29331c;
   --wallet-choice-foreground: #d6ed9e;
 }
 
-.wallet-recharge-dialog .wallet-recharge-choice[data-selected='true'] {
+.wallet-recharge-dialog .wallet-recharge-choice[data-selected='true'],
+.wallet-subscription-dialog .wallet-recharge-choice[data-selected='true'] {
   background: var(--wallet-choice-surface);
   border-color: var(--wallet-choice-border);
   color: var(--wallet-choice-foreground);

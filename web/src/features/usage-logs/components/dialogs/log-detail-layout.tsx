@@ -95,11 +95,11 @@ export function DetailSection(props: {
       </Label>
       <div
         className={cn(
-          'min-w-0 space-y-1 overflow-hidden rounded-md border p-2.5 max-sm:p-2',
+          'min-w-0 space-y-1 rounded-md border p-2.5 max-sm:p-2',
           isDanger
             ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/20'
             : 'bg-muted/30',
-          props.contentClassName
+          props.contentClassName ?? 'overflow-hidden'
         )}
       >
         {props.children}

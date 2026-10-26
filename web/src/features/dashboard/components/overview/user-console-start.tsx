@@ -18,10 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
 import { BrainCircuit, KeyRound, Palette } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 function ShineAction(props: {
   to: '/keys' | '/pricing' | '/playground'
@@ -32,21 +32,10 @@ function ShineAction(props: {
     <Button
       variant={props.solid ? 'default' : 'outline'}
       size='default'
-      className={cn(
-        'relative h-9 overflow-hidden px-2.5 text-xs shadow-none transition-all duration-300 @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm',
-        'hover:-translate-y-px active:translate-y-px',
-        props.solid &&
-          'bg-foreground text-background hover:bg-foreground [a]:hover:bg-foreground'
-      )}
+      shine
+      className='h-9 px-2.5 text-xs @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm'
       render={<Link to={props.to} />}
     >
-      <span
-        aria-hidden
-        className={cn(
-          'pointer-events-none absolute inset-0 z-[1] -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-transform duration-700 ease-out group-hover/button:translate-x-full',
-          props.solid ? 'via-white/25' : 'via-foreground/5'
-        )}
-      />
       {props.children}
     </Button>
   )

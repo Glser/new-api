@@ -37,7 +37,7 @@ import type {
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
-import { formatGroupRatio, getGroupDescription } from '../lib/group-ratio'
+import { formatGroupRatio } from '../lib/group-ratio'
 import { TooltipHint } from '@/components/ui/tooltip'
 
 function countByVendor(models: PricingModel[], vendorName: string): number {
@@ -196,11 +196,10 @@ export function PlazaFilterSidebar(props: PlazaFilterSidebarProps) {
       return []
     }
     const ratio = props.groupRatios?.[group]
-    const description = getGroupDescription(props.usableGroup, group)
     return [
       {
         value: group,
-        label: description,
+        label: group,
         count,
         suffix: formatRatio(ratio),
       },

@@ -438,15 +438,9 @@ export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
                     <span className='text-foreground truncate text-[11px] font-medium'>
                       {group.label}
                     </span>
-                    {(group.desc || group.description) && (
+                    {group.ratio && (
                       <div className='text-muted-foreground truncate text-[9px] leading-tight'>
-                        {group.desc || group.description}
-                        {group.ratio && (
-                          <>
-                            {' · '}
-                            {t('Ratio: {{value}}', { value: group.ratio })}
-                          </>
-                        )}
+                        {t('Ratio: {{value}}', { value: group.ratio })}
                       </div>
                     )}
                   </div>
@@ -498,17 +492,9 @@ export const GroupSelector: React.FC<GroupSelectorProps> = React.memo(
                       <span className='text-foreground text-sm font-medium'>
                         {group.label}
                       </span>
-                      {(group.desc || group.description) && (
+                      {group.ratio && (
                         <div className='text-muted-foreground mt-0.5 text-xs'>
-                          {group.desc || group.description}
-                          {group.ratio && (
-                            <>
-                              {' · '}
-                              {t('Ratio: {{value}}', {
-                                value: group.ratio,
-                              })}
-                            </>
-                          )}
+                          {t('Ratio: {{value}}', { value: group.ratio })}
                         </div>
                       )}
                     </div>

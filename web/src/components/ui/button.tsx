@@ -75,17 +75,39 @@ function Button({
   nativeButton,
   render,
   title,
+  shine = false,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & { shine?: boolean }) {
   return (
     <TooltipHint content={title}>
       <ButtonPrimitive
         data-slot='button'
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(
+          buttonVariants({ variant, size }),
+          shine &&
+            'relative overflow-hidden shadow-none duration-300 motion-safe:hover:-translate-y-px motion-safe:active:translate-y-px',
+          shine &&
+            variant === 'default' &&
+            'hover:bg-foreground [a]:hover:bg-foreground',
+          className
+        )}
         nativeButton={nativeButton ?? isNativeButtonRender(render)}
         render={render}
         {...props}
-      />
+      >
+        {shine && (
+          <span
+            aria-hidden
+            className={cn(
+              'pointer-events-none absolute inset-0 z-[1] -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-transform duration-700 ease-out motion-safe:group-hover/button:translate-x-full motion-reduce:transition-none',
+              variant === 'default' ? 'via-white/25' : 'via-foreground/5'
+            )}
+          />
+        )}
+        {children}
+      </ButtonPrimitive>
     </TooltipHint>
   )
 }

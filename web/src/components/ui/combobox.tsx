@@ -49,6 +49,7 @@ type LegacyComboboxProps = {
   emptyText?: string
   allowCustomValue?: boolean
   showSelectedIcon?: boolean
+  fitContentWidth?: boolean
   className?: string
   id?: string
   openOnFocus?: boolean
@@ -116,7 +117,9 @@ function OptionCombobox(props: LegacyComboboxProps) {
       }}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen)
-        setSearch('')
+        // Keep the selected value visible when reopening so users can edit it
+        // instead of unexpectedly clearing the filter on the second click.
+        setSearch(nextOpen ? displayedValue : '')
       }}
       onValueChange={(option) => {
         if (option) props.onValueChange?.(option.value)
@@ -157,7 +160,10 @@ function OptionCombobox(props: LegacyComboboxProps) {
           )}
         </ComboboxInput>
       </div>
-      <ComboboxContent anchor={anchor}>
+      <ComboboxContent
+        anchor={anchor}
+        className={props.fitContentWidth ? 'w-max' : undefined}
+      >
         <ComboboxEmpty>
           {props.emptyText ?? t('No results found')}
         </ComboboxEmpty>
@@ -167,9 +173,15 @@ function OptionCombobox(props: LegacyComboboxProps) {
               key={option.value}
               value={option}
               disabled={option.disabled}
+              className='data-selected:bg-accent data-selected:text-accent-foreground data-selected:font-medium'
             >
               {option.icon && <span aria-hidden>{option.icon}</span>}
-              <span className='min-w-0 break-words'>
+              <span
+                className={cn(
+                  'min-w-0',
+                  props.fitContentWidth ? 'whitespace-nowrap' : 'break-words'
+                )}
+              >
                 {option.label}
                 {option.description && (
                   <span className='text-muted-foreground block text-xs break-all'>

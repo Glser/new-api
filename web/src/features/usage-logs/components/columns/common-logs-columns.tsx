@@ -607,7 +607,7 @@ export function useCommonLogsColumns(
             return (
               <button
                 type='button'
-                className='flex items-center justify-center gap-1.5'
+                className='mx-auto flex w-fit items-center justify-center gap-1.5'
                 onClick={(e) => {
                   e.stopPropagation()
                   setSelectedUserId(log.user_id)
@@ -684,7 +684,7 @@ export function useCommonLogsColumns(
         return (
           <div
             className={cn(
-              'mx-auto flex max-w-[200px] flex-col items-center justify-center gap-0.5 text-center'
+              'mx-auto flex max-w-[240px] flex-col items-center justify-center gap-0.5 whitespace-nowrap text-center'
             )}
           >
             <TooltipProvider delay={300}>
@@ -728,7 +728,7 @@ export function useCommonLogsColumns(
                     label={sensitiveVisible ? undefined : '••••'}
                     type='text'
                     size='sm'
-                    className='inline align-baseline text-xs leading-none [&>span]:leading-none'
+                    className='inline max-w-full align-baseline text-xs leading-none whitespace-nowrap [&>span]:leading-none [&>span]:whitespace-nowrap'
                   />
                 ) : null}
                 {group && groupRatio != null && !activityStyle ? ' ' : null}
@@ -753,7 +753,7 @@ export function useCommonLogsColumns(
           </div>
         )
       },
-      size: activityStyle ? 176 : 160,
+      size: activityStyle ? 220 : 200,
     })
     columns.push(
       {
@@ -768,11 +768,11 @@ export function useCommonLogsColumns(
           const reasoningEffort = other?.reasoning_effort?.trim()
 
           return (
-            <div className='flex min-w-0 items-center justify-center gap-1.5 overflow-hidden'>
+            <div className='flex min-w-0 items-center justify-center gap-1.5 overflow-hidden whitespace-nowrap'>
               <ModelBadge
                 size={activityStyle ? 'md' : 'sm'}
                 className={cn(
-                  'max-w-full',
+                  'max-w-full whitespace-nowrap [&_*]:whitespace-nowrap',
                   activityStyle &&
                     'text-[12px]! @min-[48rem]/activity:text-[14px]! [&_span]:text-[12px]! @min-[48rem]/activity:[&_span]:text-[14px]!'
                 )}
@@ -793,6 +793,7 @@ export function useCommonLogsColumns(
             </div>
           )
         },
+        size: activityStyle ? 240 : 220,
         meta: { mobileTitle: true },
       },
       {
@@ -1016,7 +1017,7 @@ export function useCommonLogsColumns(
               completionTokens={log.completion_tokens}
               frtMs={other?.frt}
               isStream={log.is_stream}
-              className='justify-center'
+              className='justify-center [&_.text-muted-foreground]:text-xs!'
             />
           )
         },
@@ -1047,7 +1048,7 @@ export function useCommonLogsColumns(
                       displayParts={officialPrices.displayParts}
                       perCall={officialPrices.perCall}
                       ratio={hitPriceRatio}
-                      className='justify-center'
+                      className='max-w-72 flex-wrap justify-center gap-y-0.5 whitespace-normal [&>span]:whitespace-nowrap'
                     />
                   ) : (
                     <span className='text-muted-foreground'>-</span>

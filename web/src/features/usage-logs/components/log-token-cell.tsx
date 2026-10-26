@@ -61,10 +61,6 @@ function getGroupRatio(
   return parseConfiguredRatio(groups[group]?.ratio)
 }
 
-function getGroupDescription(group: string, groups: UserGroupMap): string {
-  return groups[group]?.desc?.trim() || group
-}
-
 interface LogTokenCellProps {
   tokenName?: string | null
   group?: string | null
@@ -77,7 +73,6 @@ export function LogTokenCell(props: LogTokenCellProps) {
   const groups = props.groups ?? {}
   const tokenName = props.tokenName?.trim() || ''
   const group = (props.group || props.other?.group || '').trim()
-  const groupDesc = group ? getGroupDescription(group, groups) : ''
   const groupRatio = getGroupRatio(props.other, group, groups)
   const sensitiveVisible = props.sensitiveVisible ?? true
   let displayName = '-'
@@ -85,8 +80,8 @@ export function LogTokenCell(props: LogTokenCellProps) {
     displayName = sensitiveVisible ? tokenName : '••••'
   }
   let displayGroup = ''
-  if (groupDesc) {
-    displayGroup = sensitiveVisible ? groupDesc : '••••'
+  if (group) {
+    displayGroup = sensitiveVisible ? group : '••••'
   }
 
   return (

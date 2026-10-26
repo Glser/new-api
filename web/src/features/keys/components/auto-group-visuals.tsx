@@ -89,6 +89,8 @@ export function GroupRatioBadge(props: GroupRatioBadgeProps) {
       ratio={typeof props.ratio === 'number' ? props.ratio : undefined}
       label={typeof props.ratio === 'number' ? undefined : t('Auto')}
       className={cn(
+        typeof props.ratio === 'number' &&
+          'h-auto min-w-0 rounded border-0 bg-lime-400 px-1.5 py-px text-[11px] font-semibold text-black',
         props.isAuto &&
           'overflow-visible rounded-md border-primary/30 bg-primary/10 text-primary'
       )}

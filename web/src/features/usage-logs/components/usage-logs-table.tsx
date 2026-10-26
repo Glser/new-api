@@ -203,7 +203,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
       skeletonKeyPrefix='usage-log-skeleton'
       applyHeaderSize
       tableClassName={cn(
-        '@container/activity [&_[data-slot=table]]:min-w-[70rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-transparent [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/activity:[&_[data-slot=table]_td]:text-sm @min-[48rem]/activity:[&_[data-slot=table]_th]:text-sm @min-[80rem]/activity:[&_[data-slot=table]_td]:px-3 @min-[80rem]/activity:[&_[data-slot=table]_th]:px-3',
+        '@container/activity [&_[data-slot=table]]:min-w-[70rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-(--table-header) [&_[data-slot=table]_th]:bg-(--table-header) [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/activity:[&_[data-slot=table]_td]:text-sm @min-[48rem]/activity:[&_[data-slot=table]_th]:text-sm @min-[80rem]/activity:[&_[data-slot=table]_td]:px-3 @min-[80rem]/activity:[&_[data-slot=table]_th]:px-3',
         taskCellAlignment
       )}
       mobile={

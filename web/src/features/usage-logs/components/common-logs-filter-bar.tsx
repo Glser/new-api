@@ -324,6 +324,7 @@ export function CommonLogsFilterBar<TData>(
     <LogsFilterField>
       <Combobox
         options={modelOptions}
+        fitContentWidth
         aria-label={t('Model Name')}
         emptyText={t('No model found.')}
         placeholder={t('Model Name')}
@@ -338,6 +339,7 @@ export function CommonLogsFilterBar<TData>(
     <LogsFilterField className={sensitiveInputClass}>
       <Combobox
         options={groupOptions}
+        fitContentWidth
         aria-label={t('Group')}
         emptyText={t('No group found.')}
         placeholder={t('Group')}
@@ -392,7 +394,7 @@ export function CommonLogsFilterBar<TData>(
         </SelectTrigger>
         <SelectContent
           alignItemWithTrigger={false}
-          className='max-w-[calc(100vw-2rem)] min-w-52'
+          className='max-w-[calc(100vw-2rem)] min-w-36'
         >
           <SelectGroup>
             {LOG_TYPE_FILTERS.map((type) => (

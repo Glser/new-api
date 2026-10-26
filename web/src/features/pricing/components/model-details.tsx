@@ -1000,7 +1000,7 @@ function ProviderGroupPricingSection(
                 {!props.official && (
                   <div className='bg-muted/20 flex items-center justify-between gap-3 border-b px-3 py-2'>
                     <span className='text-sm font-medium'>
-                      {props.usableGroup[group]?.trim() || group}
+                      {group}
                     </span>
                     <span className='text-muted-foreground font-mono text-xs'>
                       {formatDetailGroupRatio(displayRatio)}x
@@ -1219,8 +1219,7 @@ function ProviderGroupPricingSection(
                   header: t('Group'),
                   className: thClass,
                   cellClassName: 'py-2.5',
-                  cell: (group: string) =>
-                    props.usableGroup[group]?.trim() || group,
+                  cell: (group: string) => group,
                 },
                 {
                   id: 'ratio',

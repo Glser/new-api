@@ -108,7 +108,7 @@ export function ApiKeyGroupCombobox({
             </span>
             {selectedOption?.desc &&
               selectedOption.desc !== selectedOption.label && (
-                <span className='text-muted-foreground block truncate text-xs font-normal'>
+                <span className='text-muted-foreground mt-0.5 block text-xs leading-5 font-normal break-words whitespace-normal'>
                   {selectedOption.desc}
                 </span>
               )}
@@ -163,7 +163,7 @@ export function ApiKeyGroupCombobox({
                         {option.label}
                       </span>
                       {option.desc && option.desc !== option.label && (
-                        <span className='text-muted-foreground block truncate text-xs'>
+                        <span className='text-muted-foreground mt-0.5 block text-xs leading-5 font-normal break-words whitespace-normal'>
                           {option.desc}
                         </span>
                       )}
