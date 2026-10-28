@@ -89,7 +89,7 @@ export function LogTokenCell(props: LogTokenCellProps) {
       <TooltipHint
         content={sensitiveVisible ? tokenName || undefined : undefined}
       >
-        <span className='block w-full max-w-48 truncate text-[13px]! @min-[48rem]/activity:text-[15px]! @min-[80rem]/activity:text-[16px]!'>
+        <span className='block w-full max-w-48 truncate text-[12px]! @min-[48rem]/activity:text-[14px]! @min-[80rem]/activity:text-[15px]!'>
           {displayName}
         </span>
       </TooltipHint>

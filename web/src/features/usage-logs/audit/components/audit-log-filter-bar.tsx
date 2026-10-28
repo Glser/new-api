@@ -1,6 +1,7 @@
 import type { Table } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 
+import { DateRangePickerButton } from '@/components/date-range-picker'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -21,7 +22,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { Combobox } from '@/components/ui/combobox'
 
-import { CompactDateTimeRangePicker } from '../../components/compact-date-time-range-picker'
 import {
   LogsFilterField,
   LogsFilterInput,
@@ -66,7 +66,7 @@ export function AuditLogFilterBar(props: {
   const { t } = useTranslation()
   const dateFilter = (
     <LogsFilterField wide>
-      <CompactDateTimeRangePicker
+      <DateRangePickerButton
         start={
           props.filters.start_timestamp === undefined
             ? undefined
@@ -77,12 +77,13 @@ export function AuditLogFilterBar(props: {
             ? undefined
             : new Date(props.filters.end_timestamp * 1000)
         }
-        onChange={({ start, end }) =>
+        showTime
+        disableFuture
+        align='start'
+        onApply={({ start, end }) =>
           props.onChange({
-            start_timestamp: start
-              ? Math.floor(start.getTime() / 1000)
-              : undefined,
-            end_timestamp: end ? Math.floor(end.getTime() / 1000) : undefined,
+            start_timestamp: Math.floor(start.getTime() / 1000),
+            end_timestamp: Math.floor(end.getTime() / 1000),
           })
         }
       />

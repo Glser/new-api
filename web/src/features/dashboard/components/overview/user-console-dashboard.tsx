@@ -25,8 +25,14 @@ import { Button } from '@/components/ui/button'
 import { USER_CONSOLE_RANGE_PRESETS } from '@/features/dashboard/constants'
 import { useAnnouncements } from '@/features/dashboard/hooks/use-status-data'
 import { useUserConsoleData } from '@/features/dashboard/hooks/use-user-console-data'
-import { buildDefaultUserConsoleRange } from '@/features/dashboard/lib'
+import {
+  buildDefaultUserConsoleRange,
+  getSavedConsoleDataScope,
+  saveConsoleDataScope,
+  type ConsoleDataScope,
+} from '@/features/dashboard/lib'
 import type { UserConsoleDateRange } from '@/features/dashboard/types'
+import { useIsAdmin } from '@/hooks/use-admin'
 import dayjs from '@/lib/dayjs'
 import { cn } from '@/lib/utils'
 
@@ -58,10 +64,16 @@ function getSpendTitle(
 
 export function UserConsoleDashboard() {
   const { t } = useTranslation()
+  const isAdmin = useIsAdmin()
   const [range, setRange] = useState<UserConsoleDateRange>(() =>
     buildDefaultUserConsoleRange()
   )
-  const consoleData = useUserConsoleData(range)
+  const [dataScope, setDataScope] = useState<ConsoleDataScope>(() =>
+    isAdmin ? getSavedConsoleDataScope() : 'self'
+  )
+  const consoleData = useUserConsoleData(range, {
+    siteWide: isAdmin && dataScope === 'site',
+  })
   const { items: announcements } = useAnnouncements()
   const latestAnnouncement = announcements[0]
   const rangeLabel = `${dayjs(range.start).format('YYYY-MM-DD')} — ${dayjs(range.end).format('YYYY-MM-DD')}`
@@ -103,14 +115,17 @@ export function UserConsoleDashboard() {
             <div className='flex w-full min-w-0 flex-wrap items-center justify-start gap-2 @min-[64rem]/console:w-auto @min-[64rem]/console:justify-end'>
               <Button
                 variant='outline'
-                size='default'
-                className='h-9 px-2.5 text-xs @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm'
+                size='sm'
+                className='h-8 px-2.5 text-xs'
                 onClick={consoleData.refresh}
                 disabled={consoleData.refreshing}
               >
                 <RefreshCw
                   data-icon='inline-start'
-                  className={cn(consoleData.refreshing && 'animate-spin')}
+                  className={cn(
+                    'size-3.5',
+                    consoleData.refreshing && 'animate-spin'
+                  )}
                 />
                 {t('Refresh')}
               </Button>
@@ -128,7 +143,14 @@ export function UserConsoleDashboard() {
             loading={consoleData.loading}
           />
 
-          <UserConsoleStart />
+          <UserConsoleStart
+            showDataScope={isAdmin}
+            dataScope={dataScope}
+            onDataScopeChange={(value) => {
+              setDataScope(value)
+              saveConsoleDataScope(value)
+            }}
+          />
           <UserConsoleCharts
             data={consoleData.quotaData}
             loading={consoleData.loading}

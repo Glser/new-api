@@ -116,3 +116,26 @@ export function matchUserConsolePreset(
 
   return 'custom'
 }
+
+const CONSOLE_DATA_SCOPE_KEY = 'console-data-scope'
+
+export type ConsoleDataScope = 'site' | 'self'
+
+export function getSavedConsoleDataScope(): ConsoleDataScope {
+  try {
+    const value = localStorage.getItem(CONSOLE_DATA_SCOPE_KEY)
+    if (value === 'site' || value === 'self') return value
+  } catch {
+    // Ignore storage errors.
+  }
+  return 'self'
+}
+
+export function saveConsoleDataScope(scope: ConsoleDataScope) {
+  try {
+    localStorage.setItem(CONSOLE_DATA_SCOPE_KEY, scope)
+  } catch {
+    // Ignore storage errors.
+  }
+}
+

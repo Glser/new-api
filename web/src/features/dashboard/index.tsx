@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, RefreshCw } from 'lucide-react'
 import { useState, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -32,11 +32,16 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { ROLE } from '@/lib/roles'
+import type { TimeGranularity } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { ModelsChartPreferences } from './components/models/models-chart-preferences'
-import { ModelsFilter } from './components/models/models-filter-dialog'
+import {
+  ModelsFilter,
+  ModelsGranularityTabs,
+  ModelsTimeRangeControls,
+  ModelsUsernameFilter,
+} from './components/models/models-filter-dialog'
 import { OverviewDashboard } from './components/overview/overview-dashboard'
 import { UserConsoleDashboard } from './components/overview/user-console-dashboard'
 import { DEFAULT_TIME_GRANULARITY } from './constants'
@@ -45,7 +50,6 @@ import {
   getDefaultDays,
   getSavedChartPreferences,
   getSavedGranularity,
-  saveChartPreferences,
 } from './lib'
 import {
   type DashboardSectionId,
@@ -173,13 +177,16 @@ function PerformanceOverviewFallback() {
           ))}
         </div>
       </div>
+      <div className='px-4 pb-2.5 sm:px-5 sm:pb-3'>
+        <Skeleton className='h-8 w-40' />
+      </div>
     </div>
   )
 }
 
 const SECTION_META: Record<DashboardSectionId, { titleKey: string }> = {
   overview: {
-    titleKey: 'Overview',
+    titleKey: 'Console',
   },
   models: {
     titleKey: 'Model Call Analytics',
@@ -192,6 +199,26 @@ const SECTION_META: Record<DashboardSectionId, { titleKey: string }> = {
   },
 }
 
+function DashboardSectionTabs(props: {
+  value: DashboardSectionId
+  sections: DashboardSectionId[]
+  onValueChange: (section: string) => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <Tabs value={props.value} onValueChange={props.onValueChange}>
+      <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
+        {props.sections.map((section) => (
+          <TabsTrigger key={section} value={section} className='px-2.5 text-xs'>
+            {t(SECTION_META[section].titleKey)}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  )
+}
+
 export function Dashboard() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -202,8 +229,9 @@ export function Dashboard() {
 
   const [modelData, setModelData] = useState<QuotaDataItem[]>([])
   const [dataLoading, setDataLoading] = useState(false)
-  const [chartPreferences, setChartPreferences] =
-    useState<DashboardChartPreferences>(() => getSavedChartPreferences())
+  const [chartPreferences] = useState<DashboardChartPreferences>(() =>
+    getSavedChartPreferences()
+  )
   const [modelFilters, setModelFilters] = useState<DashboardFilters>(() =>
     buildDefaultDashboardFilters(getSavedChartPreferences())
   )
@@ -218,28 +246,27 @@ export function Dashboard() {
     }
   )
   const [flowSensitiveVisible, setFlowSensitiveVisible] = useState(true)
+  const [dataRefreshKey, setDataRefreshKey] = useState(0)
 
   const handleFilterChange = useCallback((filters: DashboardFilters) => {
     setModelFilters(filters)
   }, [])
 
-  const handleResetFilters = useCallback(() => {
-    setModelFilters(buildDefaultDashboardFilters(chartPreferences))
-  }, [chartPreferences])
+  const handleGranularityChange = useCallback((value: TimeGranularity) => {
+    setModelFilters((prev) => ({
+      ...prev,
+      time_granularity: value,
+    }))
+  }, [])
+
+  const handleRefresh = useCallback(() => {
+    setDataRefreshKey((key) => key + 1)
+  }, [])
 
   const handleDataUpdate = useCallback(
     (data: QuotaDataItem[], loading: boolean) => {
       setModelData(data)
       setDataLoading(loading)
-    },
-    []
-  )
-
-  const handleChartPreferencesChange = useCallback(
-    (preferences: DashboardChartPreferences) => {
-      setChartPreferences(preferences)
-      setModelFilters(buildDefaultDashboardFilters(preferences))
-      saveChartPreferences(preferences)
     },
     []
   )
@@ -264,21 +291,8 @@ export function Dashboard() {
   )
   const showSectionTabs =
     activeSection !== 'overview' && visibleSections.length > 1
-  const modelActions =
-    activeSection === 'models' ? (
-      <>
-        <ModelsChartPreferences
-          preferences={chartPreferences}
-          onPreferencesChange={handleChartPreferencesChange}
-        />
-        <ModelsFilter
-          preferences={chartPreferences}
-          currentFilters={modelFilters}
-          onFilterChange={handleFilterChange}
-          onReset={handleResetFilters}
-        />
-      </>
-    ) : null
+  const timeGranularity =
+    modelFilters.time_granularity || DEFAULT_TIME_GRANULARITY
   const flowActions =
     activeSection === 'flow' ? (
       <>
@@ -307,16 +321,11 @@ export function Dashboard() {
           </TooltipContent>
         </Tooltip>
         <ModelsFilter
-          preferences={chartPreferences}
           currentFilters={modelFilters}
           onFilterChange={handleFilterChange}
-          onReset={handleResetFilters}
-          titleKey='Flow Filters'
-          descriptionKey='Filter the traffic flow view by time range and user.'
         />
       </>
     ) : null
-  const sectionActions = modelActions ?? flowActions
 
   if (activeSection === 'overview') {
     if (isAdmin) return <OverviewDashboard />
@@ -325,34 +334,75 @@ export function Dashboard() {
 
   return (
     <SectionPageLayout>
-      <SectionPageLayout.Title>{t(meta.titleKey)}</SectionPageLayout.Title>
+      <SectionPageLayout.Title>
+        <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+          {t(meta.titleKey)}
+        </span>
+      </SectionPageLayout.Title>
       <SectionPageLayout.Content>
         <div className='space-y-3 sm:space-y-4'>
-          <div className='flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
-            {showSectionTabs ? (
-              <Tabs value={activeSection} onValueChange={handleSectionChange}>
-                <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
-                  {visibleSections.map((section) => (
-                    <TabsTrigger key={section} value={section}>
-                      {t(SECTION_META[section].titleKey)}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            ) : (
-              <div />
-            )}
-            {sectionActions != null && (
-              <div className='flex shrink-0 flex-wrap items-center gap-1.5 sm:gap-2'>
-                {sectionActions}
+          {activeSection === 'models' ? (
+            <div className='flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
+              <div className='flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2'>
+                <ModelsTimeRangeControls
+                  currentFilters={modelFilters}
+                  onFilterChange={handleFilterChange}
+                />
+                {!isAdmin && (
+                  <ModelsGranularityTabs
+                    value={timeGranularity}
+                    onChange={handleGranularityChange}
+                  />
+                )}
               </div>
-            )}
-          </div>
+              <div className='ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
+                {showSectionTabs && (
+                  <DashboardSectionTabs
+                    value={activeSection}
+                    sections={visibleSections}
+                    onValueChange={handleSectionChange}
+                  />
+                )}
+                <ModelsUsernameFilter
+                  currentFilters={modelFilters}
+                  onFilterChange={handleFilterChange}
+                />
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='h-8 px-2.5 text-xs'
+                  onClick={handleRefresh}
+                >
+                  <RefreshCw data-icon='inline-start' className='size-3.5' />
+                  {t('Refresh')}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className='flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
+              {showSectionTabs ? (
+                <DashboardSectionTabs
+                  value={activeSection}
+                  sections={visibleSections}
+                  onValueChange={handleSectionChange}
+                />
+              ) : (
+                <div />
+              )}
+              {flowActions != null && (
+                <div className='ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
+                  {flowActions}
+                </div>
+              )}
+            </div>
+          )}
           {activeSection === 'models' && (
             <>
               <FadeIn>
                 <Suspense fallback={<LogStatCardsFallback />}>
                   <LazyLogStatCards
+                    key={dataRefreshKey}
                     filters={modelFilters}
                     onDataUpdate={handleDataUpdate}
                   />
@@ -361,7 +411,11 @@ export function Dashboard() {
               {isAdmin && (
                 <FadeIn delay={0.05}>
                   <Suspense fallback={<PerformanceOverviewFallback />}>
-                    <LazyPerformanceOverview />
+                    <LazyPerformanceOverview
+                      key={dataRefreshKey}
+                      granularity={timeGranularity}
+                      onGranularityChange={handleGranularityChange}
+                    />
                   </Suspense>
                 </FadeIn>
               )}
@@ -373,9 +427,7 @@ export function Dashboard() {
                     defaultChartType={
                       chartPreferences.consumptionDistributionChart
                     }
-                    timeGranularity={
-                      modelFilters.time_granularity || DEFAULT_TIME_GRANULARITY
-                    }
+                    timeGranularity={timeGranularity}
                   />
                 </Suspense>
               </FadeIn>
@@ -385,9 +437,7 @@ export function Dashboard() {
                     data={modelData}
                     loading={dataLoading}
                     defaultChartTab={chartPreferences.modelAnalyticsChart}
-                    timeGranularity={
-                      modelFilters.time_granularity || DEFAULT_TIME_GRANULARITY
-                    }
+                    timeGranularity={timeGranularity}
                   />
                 </Suspense>
               </FadeIn>
@@ -407,6 +457,7 @@ export function Dashboard() {
             <FadeIn>
               <Suspense fallback={<ModelChartsFallback />}>
                 <LazyFlowCharts
+                  key={dataRefreshKey}
                   filters={modelFilters}
                   sensitiveVisible={flowSensitiveVisible}
                 />

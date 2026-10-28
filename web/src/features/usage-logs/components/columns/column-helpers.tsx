@@ -87,10 +87,10 @@ export function createTimestampColumn<T>(config: {
     cell: ({ row }) => {
       const timestamp = row.getValue(accessorKey) as number
       if (!timestamp) {
-        return <span className='text-muted-foreground/60 text-xs'>-</span>
+        return <span className='text-muted-foreground/60 text-xs!'>-</span>
       }
       return (
-        <span className='font-mono text-xs tabular-nums'>
+        <span className='text-[12px]! tabular-nums'>
           {formatTimestampToDate(timestamp, unit)}
         </span>
       )
@@ -131,7 +131,7 @@ export function createDurationColumn<T>(config: {
       )
 
       if (!duration) {
-        return <span className='text-muted-foreground/60 text-xs'>-</span>
+        return <span className='text-muted-foreground/60 text-xs!'>-</span>
       }
 
       const variant =
@@ -152,7 +152,7 @@ export function createDurationColumn<T>(config: {
           variant={variant}
           size='sm'
           copyable={false}
-          className={cn('rounded-md font-mono', durationBgMap[variant])}
+          className={cn('rounded-md font-mono text-xs!', durationBgMap[variant])}
         />
       )
     },
@@ -177,7 +177,7 @@ export function createChannelColumn<T>(config: {
     cell: ({ row }) => {
       const channelId = row.getValue(accessorKey) as number
       if (!channelId) {
-        return <span className='text-muted-foreground/60 text-xs'>-</span>
+        return <span className='text-muted-foreground/60 text-xs!'>-</span>
       }
       return (
         <StatusBadge
@@ -186,7 +186,7 @@ export function createChannelColumn<T>(config: {
           copyText={String(channelId)}
           size='sm'
           showDot={false}
-          className='font-mono'
+          className='font-mono text-xs!'
         />
       )
     },
@@ -214,7 +214,7 @@ export function createFailReasonColumn<T>(config: {
       const [dialogOpen, setDialogOpen] = useState(false)
 
       if (!failReason) {
-        return <span className='text-muted-foreground/60 text-xs'>-</span>
+        return <span className='text-muted-foreground/60 text-xs!'>-</span>
       }
 
       return (
@@ -222,7 +222,7 @@ export function createFailReasonColumn<T>(config: {
           <TooltipHint content={cellTitle}>
             <button
               type='button'
-              className='group flex max-w-[200px] items-center gap-1 text-left text-xs'
+              className='group flex max-w-[200px] items-center gap-1 text-left text-xs!'
               onClick={() => setDialogOpen(true)}
             >
               <span className='truncate leading-snug text-red-600 group-hover:underline dark:text-red-400'>
@@ -259,10 +259,10 @@ export function createProgressColumn<T>(config: {
     cell: ({ row }) => {
       const progress = row.getValue(accessorKey) as string
       if (!progress) {
-        return <span className='text-muted-foreground/60 text-xs'>-</span>
+        return <span className='text-muted-foreground/60 text-xs!'>-</span>
       }
       return (
-        <span className='border-border/60 bg-muted/30 inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-xs'>
+        <span className='border-border/60 bg-muted/30 inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-xs!'>
           {progress}
         </span>
       )

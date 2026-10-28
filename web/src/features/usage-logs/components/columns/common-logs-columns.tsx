@@ -704,7 +704,7 @@ export function useCommonLogsColumns(
                       copyText={sensitiveVisible ? tokenName : undefined}
                       size='sm'
                       showDot={false}
-                      className='border-border/60 bg-muted/30 text-foreground h-6 max-w-full gap-1.5 overflow-hidden rounded-md border px-2 py-0.5 [font-family:var(--font-body)]'
+                      className='border-border/60 bg-muted/30 text-foreground h-6 max-w-full gap-1.5 overflow-hidden rounded-md border px-2 py-0.5 text-xs! [font-family:var(--font-body)]'
                     />
                   )}
                 </TooltipTrigger>
@@ -1038,7 +1038,7 @@ export function useCommonLogsColumns(
               <TooltipHint content={t('Click to view full details')}>
                 <button
                   type='button'
-                  className='hover:text-foreground mx-auto flex max-w-full items-center justify-center text-xs underline-offset-2 hover:underline'
+                  className='mx-auto flex max-w-full items-center justify-center text-xs! text-black/95 underline-offset-2 hover:underline dark:text-white/95'
                   onClick={() => setDialogOpen(true)}
                 >
                   {officialPrices ? (
@@ -1047,7 +1047,7 @@ export function useCommonLogsColumns(
                       displayParts={officialPrices.displayParts}
                       perCall={officialPrices.perCall}
                       ratio={hitPriceRatio}
-                      className='max-w-72 flex-wrap justify-center gap-y-0.5 whitespace-normal [&>span]:whitespace-nowrap'
+                      className='max-w-72 flex-wrap justify-center gap-y-0.5 whitespace-normal text-xs! text-black/95 dark:text-white/95 [&>span]:whitespace-nowrap'
                     />
                   ) : (
                     <span className='text-muted-foreground'>-</span>

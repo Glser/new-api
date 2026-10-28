@@ -28,8 +28,8 @@ import { getTieredBillingSummary } from './format'
 import { isPerCallBilling } from './utils'
 
 const PRICE_FORMAT_OPTS = {
-  digitsLarge: 4,
-  digitsSmall: 6,
+  digitsLarge: 12,
+  digitsSmall: 12,
   abbreviate: false,
 } as const
 

@@ -39,7 +39,7 @@ export function UserConsoleBanner(props: UserConsoleBannerProps) {
     <>
       <div className='bg-card flex min-w-0 items-center gap-2 rounded-xl border border-foreground/15 px-3 py-2.5 shadow-sm @min-[48rem]/console:gap-3 @min-[48rem]/console:px-4'>
         <span
-          className='bg-foreground text-background inline-flex size-8 shrink-0 items-center justify-center rounded-full @min-[48rem]/console:size-9'
+          className='bg-lime-400 text-black inline-flex size-8 shrink-0 items-center justify-center rounded-full @min-[48rem]/console:size-9'
           aria-hidden='true'
         >
           <Megaphone className='size-4 @min-[48rem]/console:size-[18px]' />

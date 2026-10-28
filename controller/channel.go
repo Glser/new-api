@@ -55,42 +55,11 @@ type OpenAIModelsResponse struct {
 	Success bool          `json:"success"`
 }
 
-func parseStatusFilter(statusParam string) int {
-	switch strings.ToLower(statusParam) {
-	case "enabled", "1":
-		return common.ChannelStatusEnabled
-	case "disabled", "0":
-		return 0
-	default:
-		return -1
-	}
-}
-
 func clearChannelInfo(channel *model.Channel) {
 	if channel.ChannelInfo.IsMultiKey {
 		channel.ChannelInfo.MultiKeyDisabledReason = nil
 		channel.ChannelInfo.MultiKeyDisabledTime = nil
 	}
-}
-
-func applyChannelStatusFilter(query *gorm.DB, statusFilter int) *gorm.DB {
-	if statusFilter == common.ChannelStatusEnabled {
-		return query.Where("status = ?", common.ChannelStatusEnabled)
-	}
-	if statusFilter == 0 {
-		return query.Where("status != ?", common.ChannelStatusEnabled)
-	}
-	return query
-}
-
-func buildChannelListQuery(group string, statusFilter int, typeFilter int) *gorm.DB {
-	query := model.DB.Model(&model.Channel{})
-	query = model.ApplyChannelGroupFilter(query, group)
-	query = applyChannelStatusFilter(query, statusFilter)
-	if typeFilter >= 0 {
-		query = query.Where("type = ?", typeFilter)
-	}
-	return query
 }
 
 func GetChannelOps(c *gin.Context) {
@@ -106,28 +75,20 @@ func GetAllChannels(c *gin.Context) {
 	sortOptions := model.NewChannelSortOptions(c.Query("sort_by"), c.Query("sort_order"), idSort)
 	enableTagMode, _ := strconv.ParseBool(c.Query("tag_mode"))
 	groupFilter := model.NormalizeChannelGroupFilter(c.Query("group"))
-	statusParam := c.Query("status")
-	// statusFilter: -1 all, 1 enabled, 0 disabled (include auto & manual)
-	statusFilter := parseStatusFilter(statusParam)
-	// type filter
-	typeStr := c.Query("type")
-	typeFilter := -1
-	if typeStr != "" {
-		if t, err := strconv.Atoi(typeStr); err == nil {
-			typeFilter = t
-		}
-	}
+	statusFilter := parseStatusFilter(c.Query("status"))
+	typeFilter := parseTypeFilter(c.Query("type"))
+	tagFilter, untaggedOnly := parseTagFilter(c.Query("tag"))
 
 	var total int64
 
-	if enableTagMode {
-		tags, err := model.GetPaginatedChannelTags(buildChannelListQuery(groupFilter, statusFilter, typeFilter), pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	if enableTagMode && !untaggedOnly {
+		tags, err := model.GetPaginatedChannelTags(buildChannelListQuery(groupFilter, statusFilter, typeFilter, tagFilter, untaggedOnly), pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 		if err != nil {
 			common.SysError("failed to get paginated tags: " + err.Error())
 			c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取标签失败，请稍后重试"})
 			return
 		}
-		total, err = model.CountChannelTags(buildChannelListQuery(groupFilter, statusFilter, typeFilter))
+		total, err = model.CountChannelTags(buildChannelListQuery(groupFilter, statusFilter, typeFilter, tagFilter, untaggedOnly))
 		if err != nil {
 			common.SysError("failed to count tags: " + err.Error())
 			c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取标签数量失败，请稍后重试"})
@@ -138,7 +99,7 @@ func GetAllChannels(c *gin.Context) {
 				continue
 			}
 			var tagChannels []*model.Channel
-			err := sortOptions.Apply(buildChannelListQuery(groupFilter, statusFilter, typeFilter).Where("tag = ?", *tag)).
+			err := sortOptions.Apply(buildChannelListQuery(groupFilter, statusFilter, typeFilter, tagFilter, untaggedOnly).Where("tag = ?", *tag)).
 				Omit("key").
 				Find(&tagChannels).Error
 			if err != nil {
@@ -149,13 +110,13 @@ func GetAllChannels(c *gin.Context) {
 			channelData = append(channelData, tagChannels...)
 		}
 	} else {
-		if err := buildChannelListQuery(groupFilter, statusFilter, typeFilter).Count(&total).Error; err != nil {
+		if err := buildChannelListQuery(groupFilter, statusFilter, typeFilter, tagFilter, untaggedOnly).Count(&total).Error; err != nil {
 			common.SysError("failed to count channels: " + err.Error())
 			c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取渠道数量失败，请稍后重试"})
 			return
 		}
 
-		err := sortOptions.Apply(buildChannelListQuery(groupFilter, statusFilter, typeFilter)).
+		err := sortOptions.Apply(buildChannelListQuery(groupFilter, statusFilter, typeFilter, tagFilter, untaggedOnly)).
 			Limit(pageInfo.GetPageSize()).
 			Offset(pageInfo.GetStartIdx()).
 			Omit("key").
@@ -171,26 +132,21 @@ func GetAllChannels(c *gin.Context) {
 		clearChannelInfo(datum)
 	}
 
-	countQuery := buildChannelListQuery(groupFilter, statusFilter, -1)
-	var results []struct {
-		Type  int64
-		Count int64
-	}
-	if err := countQuery.Select("type, count(*) as count").Group("type").Find(&results).Error; err != nil {
-		common.SysError("failed to count channel types: " + err.Error())
-		c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取渠道类型统计失败，请稍后重试"})
+	facets, err := collectChannelListFacets(groupFilter, statusFilter, typeFilter, tagFilter, untaggedOnly)
+	if err != nil {
+		common.SysError("failed to count channel facets: " + err.Error())
+		c.JSON(http.StatusOK, gin.H{"success": false, "message": "获取渠道分类统计失败，请稍后重试"})
 		return
 	}
-	typeCounts := make(map[int64]int64)
-	for _, r := range results {
-		typeCounts[r.Type] = r.Count
-	}
 	common.ApiSuccess(c, gin.H{
-		"items":       channelData,
-		"total":       total,
-		"page":        pageInfo.GetPage(),
-		"page_size":   pageInfo.GetPageSize(),
-		"type_counts": typeCounts,
+		"items":          channelData,
+		"total":          total,
+		"page":           pageInfo.GetPage(),
+		"page_size":      pageInfo.GetPageSize(),
+		"type_counts":    facets.TypeCounts,
+		"status_counts":  facets.StatusCounts,
+		"tag_counts":     facets.TagCounts,
+		"untagged_count": facets.UntaggedCount,
 	})
 	return
 }
@@ -278,13 +234,14 @@ func SearchChannels(c *gin.Context) {
 	keyword := c.Query("keyword")
 	group := c.Query("group")
 	modelKeyword := c.Query("model")
-	statusParam := c.Query("status")
-	statusFilter := parseStatusFilter(statusParam)
+	statusFilter := parseStatusFilter(c.Query("status"))
+	typeFilter := parseTypeFilter(c.Query("type"))
+	tagFilter, untaggedOnly := parseTagFilter(c.Query("tag"))
 	idSort, _ := strconv.ParseBool(c.Query("id_sort"))
 	sortOptions := model.NewChannelSortOptions(c.Query("sort_by"), c.Query("sort_order"), idSort)
 	enableTagMode, _ := strconv.ParseBool(c.Query("tag_mode"))
 	channelData := make([]*model.Channel, 0)
-	if enableTagMode {
+	if enableTagMode && !untaggedOnly {
 		tags, err := model.SearchTags(keyword, group, modelKeyword, idSort)
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{
@@ -296,7 +253,7 @@ func SearchChannels(c *gin.Context) {
 		for _, tag := range tags {
 			if tag != nil && *tag != "" {
 				var tagChannels []*model.Channel
-				err := sortOptions.Apply(buildChannelListQuery(group, -1, -1).Where("tag = ?", *tag)).
+				err := sortOptions.Apply(buildChannelListQuery(group, -1, -1, "", false).Where("tag = ?", *tag)).
 					Omit("key").
 					Find(&tagChannels).Error
 				if err != nil {
@@ -321,43 +278,8 @@ func SearchChannels(c *gin.Context) {
 		channelData = channels
 	}
 
-	if statusFilter == common.ChannelStatusEnabled || statusFilter == 0 {
-		filtered := make([]*model.Channel, 0, len(channelData))
-		for _, ch := range channelData {
-			if statusFilter == common.ChannelStatusEnabled && ch.Status != common.ChannelStatusEnabled {
-				continue
-			}
-			if statusFilter == 0 && ch.Status == common.ChannelStatusEnabled {
-				continue
-			}
-			filtered = append(filtered, ch)
-		}
-		channelData = filtered
-	}
-
-	// calculate type counts for search results
-	typeCounts := make(map[int64]int64)
-	for _, channel := range channelData {
-		typeCounts[int64(channel.Type)]++
-	}
-
-	typeParam := c.Query("type")
-	typeFilter := -1
-	if typeParam != "" {
-		if tp, err := strconv.Atoi(typeParam); err == nil {
-			typeFilter = tp
-		}
-	}
-
-	if typeFilter >= 0 {
-		filtered := make([]*model.Channel, 0, len(channelData))
-		for _, ch := range channelData {
-			if ch.Type == typeFilter {
-				filtered = append(filtered, ch)
-			}
-		}
-		channelData = filtered
-	}
+	facets := countSearchFacets(channelData, statusFilter, typeFilter, tagFilter, untaggedOnly)
+	channelData = filterSearchedChannels(channelData, statusFilter, typeFilter, tagFilter, untaggedOnly)
 
 	page, _ := strconv.Atoi(c.DefaultQuery("p", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -382,9 +304,12 @@ func SearchChannels(c *gin.Context) {
 		"success": true,
 		"message": "",
 		"data": gin.H{
-			"items":       pagedData,
-			"total":       total,
-			"type_counts": typeCounts,
+			"items":          pagedData,
+			"total":          total,
+			"type_counts":    facets.TypeCounts,
+			"status_counts":  facets.StatusCounts,
+			"tag_counts":     facets.TagCounts,
+			"untagged_count": facets.UntaggedCount,
 		},
 	})
 	return

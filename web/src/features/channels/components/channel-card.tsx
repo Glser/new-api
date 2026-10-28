@@ -17,10 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { flexRender, type Row } from '@tanstack/react-table'
-import { memo } from 'react'
+import { memo, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { GroupBadge } from '@/components/group-badge'
+import { StatusBadge } from '@/components/status-badge'
 import { cn } from '@/lib/utils'
 
 import { CHANNEL_STATUS } from '../constants'
@@ -156,10 +157,24 @@ function ChannelCardComponent({
           </div>
         </div>
 
-        {/* Last row: groups span the full width, showing every group (no label) */}
+        {/* Last row: tag + groups span the full width */}
         <div className='min-w-0'>
-          {groups.length > 0 ? (
+          {row.original.tag || groups.length > 0 ? (
             <div className='-ml-1.5 flex flex-wrap gap-1'>
+              {row.original.tag ? (
+                <StatusBadge
+                  label={sensitiveVisible ? row.original.tag : SENSITIVE_MASK}
+                  autoColor={row.original.tag}
+                  size='sm'
+                  copyable={false}
+                  className='cursor-pointer'
+                  onClick={(event: MouseEvent) => {
+                    event.stopPropagation()
+                    const table = row.getAllCells()[0]?.getContext().table
+                    table?.getColumn('tag')?.setFilterValue([row.original.tag])
+                  }}
+                />
+              ) : null}
               {groups.map((g) => (
                 <GroupBadge
                   key={g}

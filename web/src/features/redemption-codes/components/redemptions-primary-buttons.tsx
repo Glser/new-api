@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { Button } from '@/components/ui/button'
+import { Button, ShineButton } from '@/components/ui/button'
 import { handleServerError } from '@/lib/handle-server-error'
 
 import { deleteInvalidRedemptions } from '../api'
@@ -60,14 +60,14 @@ export function RedemptionsPrimaryButtons() {
   return (
     <>
       <div className='flex flex-wrap gap-2'>
-        <Button
+        <ShineButton
           size='sm'
           variant='outline'
           onClick={() => setShowDeleteInvalidConfirm(true)}
         >
           <Trash2 className='text-destructive h-4 w-4' />
           {t('Delete Invalid')}
-        </Button>
+        </ShineButton>
         <Button size='sm' onClick={() => setOpen('create')}>
           <Plus className='h-4 w-4' />
           {t('Create Code')}

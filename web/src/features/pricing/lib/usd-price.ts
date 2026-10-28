@@ -183,6 +183,16 @@ function removeTrailingZeros(str: string): string {
   return str.replace(/(\.[0-9]*?)0+$/, '$1').replace(/\.$/, '')
 }
 
+/** Enough digits to keep configured prices, few enough to hide float noise. */
+const PRICE_MAX_FRACTION_DIGITS = 12
+
+/** Format a price amount, dropping trailing zeros and the decimal point when unused. */
+export function formatPriceNumber(value: number): string {
+  if (!Number.isFinite(value)) return '-'
+  if (value === 0) return '0'
+  return removeTrailingZeros(value.toFixed(PRICE_MAX_FRACTION_DIGITS))
+}
+
 /**
  * Render a USD amount strictly formatted in USD ($ currency symbol),
  * independent of the site's local display currency.
@@ -194,10 +204,6 @@ export function formatUsdPrice(
 ): string {
   const amount = amountUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
   if (!Number.isFinite(amount)) return '-'
-
-  const abs = Math.abs(amount)
-  const digits = abs >= 1 ? 4 : 6
-  const numStr = removeTrailingZeros(amount.toFixed(digits))
-
+  const numStr = formatPriceNumber(amount)
   return showCurrencySymbol ? `$${numStr}` : numStr
 }

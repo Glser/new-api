@@ -44,7 +44,10 @@ export { safeDivide, calculateDashboardStats } from './stats'
 export { getPreviewText } from './text'
 export {
   buildDefaultUserConsoleRange,
+  getSavedConsoleDataScope,
   getUserConsoleGranularity,
   getUserConsolePresetRange,
   matchUserConsolePreset,
+  saveConsoleDataScope,
+  type ConsoleDataScope,
 } from './user-console-range'

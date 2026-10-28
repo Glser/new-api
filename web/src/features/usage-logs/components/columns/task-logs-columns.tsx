@@ -54,7 +54,7 @@ function TaskDetailsCell(props: {
       <div className='mx-auto flex w-full max-w-[220px] flex-col items-center justify-center gap-1 text-center'>
         <button
           type='button'
-          className='text-foreground inline-flex w-full items-center justify-center gap-1 text-center text-xs font-medium hover:underline'
+          className='text-foreground inline-flex w-full items-center justify-center gap-1 text-center text-xs! font-medium hover:underline'
           onClick={() => setDialogOpen(true)}
         >
           <HugeiconsIcon
@@ -66,7 +66,7 @@ function TaskDetailsCell(props: {
           {t('View details')}
         </button>
         {props.log.fail_reason ? (
-          <span className='w-full max-w-full truncate text-center text-xs text-red-600 dark:text-red-400'>
+          <span className='w-full max-w-full truncate text-center text-xs! text-red-600 dark:text-red-400'>
             {props.log.fail_reason}
           </span>
         ) : null}
@@ -95,7 +95,7 @@ export function useTaskLogsColumns(
         const submitTime = row.getValue('submit_time') as number
 
         return (
-          <span className='truncate font-mono text-xs tabular-nums'>
+          <span className='text-foreground truncate text-[12px]! tabular-nums'>
             {formatTimestampToDate(submitTime, 'seconds')}
           </span>
         )
@@ -109,11 +109,11 @@ export function useTaskLogsColumns(
         const finishTime = row.getValue('finish_time') as number
 
         return finishTime ? (
-          <span className='text-muted-foreground truncate font-mono text-xs tabular-nums'>
+          <span className='text-muted-foreground truncate text-[12px]! tabular-nums'>
             {formatTimestampToDate(finishTime, 'seconds')}
           </span>
         ) : (
-          <span className='text-muted-foreground/50 text-xs'>-</span>
+          <span className='text-muted-foreground/50 text-xs!'>-</span>
         )
       },
       size: 160,
@@ -172,14 +172,14 @@ export function useTaskLogsColumns(
         cell: ({ row }) => {
           const plugin = row.original.admin_info?.task_plugin
           if (!plugin) {
-            return <span className='text-muted-foreground/60 text-xs'>-</span>
+            return <span className='text-muted-foreground/60 text-xs!'>-</span>
           }
           return (
             <div className='flex max-w-[170px] flex-col gap-0.5'>
-              <span className='truncate text-xs font-medium'>
+              <span className='truncate text-xs! font-medium'>
                 {plugin.name || plugin.key}
               </span>
-              <span className='text-muted-foreground truncate font-mono text-[11px]'>
+              <span className='text-muted-foreground truncate font-mono text-xs!'>
                 {plugin.key}
                 {plugin.version ? ` @ ${plugin.version}` : ''}
               </span>
@@ -187,7 +187,7 @@ export function useTaskLogsColumns(
                 <PluginAuthorLink
                   author={plugin.author}
                   showUrl
-                  className='text-muted-foreground text-[11px]'
+                  className='text-muted-foreground text-xs!'
                 />
               ) : null}
             </div>
@@ -205,7 +205,7 @@ export function useTaskLogsColumns(
         const log = row.original
         const taskId = row.getValue('task_id') as string
         if (!taskId) {
-          return <span className='text-muted-foreground/60 text-xs'>-</span>
+          return <span className='text-muted-foreground/60 text-xs!'>-</span>
         }
         return (
           <div className='flex max-w-[170px] flex-col gap-0.5'>
@@ -214,9 +214,9 @@ export function useTaskLogsColumns(
               copyText={taskId}
               variant='neutral'
               size='sm'
-              className='border-border/60 bg-muted/30 !text-foreground max-w-full truncate rounded-md border px-1.5 py-0.5 font-mono'
+              className='border-border/60 bg-muted/30 text-foreground h-6 max-w-full truncate rounded-md border px-2 py-0.5 font-mono text-xs!'
             />
-            <span className='text-muted-foreground/60 truncate text-[11px]'>
+            <span className='text-muted-foreground/60 truncate text-xs!'>
               {t(log.platform)} · {t(taskActionMapper.getLabel(log.action))}
             </span>
           </div>
@@ -242,7 +242,7 @@ export function useTaskLogsColumns(
             variant={taskStatusMapper.getVariant(status)}
             size='sm'
             copyable={false}
-            className='-ml-1.5'
+            className='-ml-1.5 text-xs!'
           />
         )
       },

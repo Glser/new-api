@@ -23,6 +23,8 @@ import { useTranslation } from 'react-i18next'
 
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ModelsGranularityTabs } from '@/features/dashboard/components/models/models-filter-dialog'
+import { DEFAULT_TIME_GRANULARITY } from '@/features/dashboard/constants'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import {
   formatLatency,
@@ -33,6 +35,7 @@ import {
 } from '@/features/performance-metrics/lib/format'
 import type { PerfModelSummary } from '@/features/performance-metrics/types'
 import { requireServerSuccess } from '@/lib/server-error-message'
+import type { TimeGranularity } from '@/lib/time'
 import { cn } from '@/lib/utils'
 
 const PERFORMANCE_WINDOW_HOURS = 24
@@ -84,7 +87,10 @@ function buildPerformanceSummary(rows: PerfModelSummary[]): PerformanceSummary {
   }
 }
 
-export function PerformanceOverview() {
+export function PerformanceOverview(props: {
+  granularity?: TimeGranularity
+  onGranularityChange?: (value: TimeGranularity) => void
+}) {
   const { t } = useTranslation()
   const metricsQuery = useQuery({
     queryKey: ['perf-metrics-summary', PERFORMANCE_WINDOW_HOURS],
@@ -104,19 +110,11 @@ export function PerformanceOverview() {
   const topModels = useMemo(() => models.slice(0, TOP_MODEL_LIMIT), [models])
   const loading = metricsQuery.isLoading
   const hasData = models.length > 0
-
-  if (!loading && !hasData) {
-    return (
-      <div className='text-muted-foreground overflow-hidden rounded-lg border px-4 py-3 text-center text-xs'>
-        {t('No performance data available')}
-      </div>
-    )
-  }
+  const granularity = props.granularity ?? DEFAULT_TIME_GRANULARITY
 
   return (
     <div className='overflow-hidden rounded-lg border'>
       <div className='flex flex-wrap items-center gap-x-5 gap-y-2.5 px-4 py-2.5 sm:px-5 sm:py-3'>
-        {/* Title */}
         <div className='flex items-center gap-1.5'>
           <IconBadge tone='success' size='xs'>
             <HeartPulse />
@@ -126,55 +124,68 @@ export function PerformanceOverview() {
           </span>
         </div>
 
-        {/* Separator */}
-        <div className='bg-border hidden h-4 w-px sm:block' />
-
-        {/* 3 KPI inline metrics */}
-        {loading ? (
-          <div className='flex flex-wrap items-center gap-x-5 gap-y-2'>
-            {['success', 'latency', 'throughput'].map((key) => (
-              <div key={key} className='flex items-center gap-1.5'>
-                <Skeleton className='h-3 w-14' />
-                <Skeleton className='h-4 w-16' />
-              </div>
-            ))}
-          </div>
+        {!loading && !hasData ? (
+          <span className='text-muted-foreground text-xs'>
+            {t('No performance data available')}
+          </span>
         ) : (
-          <div className='flex flex-wrap items-center gap-x-5 gap-y-2'>
-            <InlineMetric
-              icon={HeartPulse}
-              label={t('Success rate')}
-              value={formatUptimePct(summary.successRate)}
-              valueClassName={getSuccessRateTextClass(summary.successRate)}
-              tone='success'
-            />
-            <InlineMetric
-              icon={Timer}
-              label={t('Average latency')}
-              value={formatLatency(summary.avgLatencyMs)}
-              tone='warning'
-            />
-            <InlineMetric
-              icon={Gauge}
-              label={t('Throughput')}
-              value={formatThroughput(summary.avgTps)}
-              tone='info'
-            />
-          </div>
-        )}
+          <>
+            <div className='bg-border hidden h-4 w-px sm:block' />
 
-        {/* Separator */}
-        <div className='bg-border hidden h-4 w-px lg:block' />
+            {loading ? (
+              <div className='flex flex-wrap items-center gap-x-5 gap-y-2'>
+                {['success', 'latency', 'throughput'].map((key) => (
+                  <div key={key} className='flex items-center gap-1.5'>
+                    <Skeleton className='h-3 w-14' />
+                    <Skeleton className='h-4 w-16' />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className='flex flex-wrap items-center gap-x-5 gap-y-2'>
+                <InlineMetric
+                  icon={HeartPulse}
+                  label={t('Success rate')}
+                  value={formatUptimePct(summary.successRate)}
+                  valueClassName={getSuccessRateTextClass(summary.successRate)}
+                  tone='success'
+                />
+                <InlineMetric
+                  icon={Timer}
+                  label={t('Average latency')}
+                  value={formatLatency(summary.avgLatencyMs)}
+                  tone='warning'
+                />
+                <InlineMetric
+                  icon={Gauge}
+                  label={t('Throughput')}
+                  value={formatThroughput(summary.avgTps)}
+                  tone='info'
+                />
+              </div>
+            )}
 
-        {/* Top models inline badges */}
-        {!loading && hasData && (
-          <div className='flex flex-wrap items-center gap-1.5'>
-            {topModels.map((model) => (
-              <ModelBadge key={model.model_name} model={model} />
-            ))}
-          </div>
+            <div className='bg-border hidden h-4 w-px lg:block' />
+
+            {!loading && hasData && (
+              <div className='flex flex-wrap items-center gap-1.5'>
+                {topModels.map((model) => (
+                  <ModelBadge key={model.model_name} model={model} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      {props.onGranularityChange != null && (
+        <div className='flex items-center px-4 pb-2.5 sm:px-5 sm:pb-3'>
+          <ModelsGranularityTabs
+            value={granularity}
+            onChange={props.onGranularityChange}
+          />
+        </div>
+      )}
     </div>
   )
 }

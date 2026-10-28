@@ -60,6 +60,46 @@ const buttonVariants = cva(
   }
 )
 
+export const buttonShineClassName =
+  'relative isolate overflow-hidden shadow-none duration-300 motion-safe:hover:-translate-y-px motion-safe:active:translate-y-px'
+
+function isIconButtonSize(
+  size: VariantProps<typeof buttonVariants>['size']
+): boolean {
+  return (
+    size === 'icon' ||
+    size === 'icon-xs' ||
+    size === 'icon-sm' ||
+    size === 'icon-lg'
+  )
+}
+
+function shouldButtonShine(options: {
+  shine?: boolean
+  variant: VariantProps<typeof buttonVariants>['variant']
+  size: VariantProps<typeof buttonVariants>['size']
+}): boolean {
+  if (options.shine != null) return options.shine
+  if (isIconButtonSize(options.size)) return false
+  return (options.variant ?? 'default') === 'default'
+}
+
+function ButtonShineHighlight(props: {
+  variant: VariantProps<typeof buttonVariants>['variant']
+}) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'pointer-events-none absolute inset-0 -z-10 -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-[translate] duration-700 ease-out motion-safe:group-hover/button:translate-x-full motion-reduce:transition-none',
+        (props.variant ?? 'default') === 'default'
+          ? 'via-white/18'
+          : 'via-foreground/5'
+      )}
+    />
+  )
+}
+
 function isNativeButtonRender(render: ButtonPrimitive.Props['render']) {
   if (!render || !isValidElement(render)) {
     return true
@@ -68,6 +108,9 @@ function isNativeButtonRender(render: ButtonPrimitive.Props['render']) {
   return render.type === 'button'
 }
 
+type ButtonProps = ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & { shine?: boolean }
+
 function Button({
   className,
   variant = 'default',
@@ -75,20 +118,20 @@ function Button({
   nativeButton,
   render,
   title,
-  shine = false,
+  shine,
   children,
   ...props
-}: ButtonPrimitive.Props &
-  VariantProps<typeof buttonVariants> & { shine?: boolean }) {
+}: ButtonProps) {
+  const showShine = shouldButtonShine({ shine, variant, size })
+
   return (
     <TooltipHint content={title}>
       <ButtonPrimitive
         data-slot='button'
         className={cn(
           buttonVariants({ variant, size }),
-          shine &&
-            'relative overflow-hidden shadow-none duration-300 motion-safe:hover:-translate-y-px motion-safe:active:translate-y-px',
-          shine &&
+          showShine && buttonShineClassName,
+          showShine &&
             variant === 'default' &&
             'hover:bg-foreground [a]:hover:bg-foreground',
           className
@@ -97,19 +140,16 @@ function Button({
         render={render}
         {...props}
       >
-        {shine && (
-          <span
-            aria-hidden
-            className={cn(
-              'pointer-events-none absolute inset-0 z-[1] -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-transform duration-700 ease-out motion-safe:group-hover/button:translate-x-full motion-reduce:transition-none',
-              variant === 'default' ? 'via-white/25' : 'via-foreground/5'
-            )}
-          />
-        )}
+        {showShine ? <ButtonShineHighlight variant={variant} /> : null}
         {children}
       </ButtonPrimitive>
     </TooltipHint>
   )
 }
 
-export { Button, buttonVariants }
+function ShineButton({ shine = true, ...props }: ButtonProps) {
+  return <Button shine={shine} {...props} />
+}
+
+export { Button, ShineButton, buttonVariants }
+export type { ButtonProps }

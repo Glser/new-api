@@ -24,13 +24,19 @@ import {
   calculateDashboardStats,
   getUserConsoleGranularity,
 } from '@/features/dashboard/lib'
-import type { UserConsoleDateRange } from '@/features/dashboard/types'
+import type {
+  QuotaDataItem,
+  UserConsoleDateRange,
+} from '@/features/dashboard/types'
 import {
   LOG_TYPE_ENUM,
   MJ_TASK_STATUS,
   TASK_STATUS,
 } from '@/features/usage-logs/constants'
 import {
+  getAllLogs,
+  getAllMidjourneyLogs,
+  getAllTaskLogs,
   getUserLogs,
   getUserMidjourneyLogs,
   getUserTaskLogs,
@@ -57,6 +63,19 @@ const IN_PROGRESS_DRAWING_STATUSES = new Set<string>([
   MJ_TASK_STATUS.MODAL,
 ])
 
+const ACTIVITY_LOG_LIMIT = 20
+const CHART_LOG_PAGE_SIZE = 200
+
+function quotaItemsFromLogs(logs: UsageLog[]): QuotaDataItem[] {
+  return logs.map((log) => ({
+    model_name: log.model_name,
+    created_at: log.created_at,
+    quota: log.quota,
+    count: 1,
+    token_used: (log.prompt_tokens ?? 0) + (log.completion_tokens ?? 0),
+  }))
+}
+
 function toUnixRange(range: UserConsoleDateRange) {
   return {
     start_timestamp: dateToUnixTimestamp(range.start),
@@ -73,9 +92,13 @@ function countInProgressDrawings(items: MidjourneyLog[]): number {
     .length
 }
 
-export function useUserConsoleData(range: UserConsoleDateRange) {
+export function useUserConsoleData(
+  range: UserConsoleDateRange,
+  options?: { siteWide?: boolean }
+) {
   const queryClient = useQueryClient()
   const authUser = useAuthStore((state) => state.auth.user)
+  const siteWide = options?.siteWide === true
   const unixRange = useMemo(() => toUnixRange(range), [range])
   const granularity = useMemo(
     () => getUserConsoleGranularity(range),
@@ -97,21 +120,25 @@ export function useUserConsoleData(range: UserConsoleDateRange) {
       'dashboard',
       'user-console',
       'quota',
+      siteWide ? 'site' : 'self',
       unixRange.start_timestamp,
       unixRange.end_timestamp,
       granularity,
     ],
     queryFn: async () => {
-      const result = requireServerSuccess(
-        await getUserQuotaDates(
+      try {
+        const result = await getUserQuotaDates(
           {
             ...unixRange,
             default_time: granularity,
           },
-          false
+          siteWide
         )
-      )
-      return result.success ? (result.data ?? []) : []
+        if (result.success) return result.data ?? []
+      } catch {
+        // Fall back to live logs when quota_data is unavailable.
+      }
+      return []
     },
     staleTime: 30 * 1000,
   })
@@ -121,18 +148,20 @@ export function useUserConsoleData(range: UserConsoleDateRange) {
       'dashboard',
       'user-console',
       'logs',
+      siteWide ? 'site' : 'self',
       unixRange.start_timestamp,
       unixRange.end_timestamp,
     ],
     queryFn: async () => {
+      const logsRequest = {
+        p: 1,
+        page_size: CHART_LOG_PAGE_SIZE,
+        type: LOG_TYPE_ENUM.CONSUME,
+        start_timestamp: unixRange.start_timestamp,
+        end_timestamp: unixRange.end_timestamp,
+      }
       const result = requireServerSuccess(
-        await getUserLogs({
-          p: 1,
-          page_size: 8,
-          type: LOG_TYPE_ENUM.CONSUME,
-          start_timestamp: unixRange.start_timestamp,
-          end_timestamp: unixRange.end_timestamp,
-        })
+        await (siteWide ? getAllLogs(logsRequest) : getUserLogs(logsRequest))
       )
       return result.success ? (result.data?.items ?? []) : []
     },
@@ -144,17 +173,21 @@ export function useUserConsoleData(range: UserConsoleDateRange) {
       'dashboard',
       'user-console',
       'tasks',
+      siteWide ? 'site' : 'self',
       unixRange.start_timestamp,
       unixRange.end_timestamp,
     ],
     queryFn: async () => {
+      const taskRequest = {
+        p: 1,
+        page_size: 50,
+        start_timestamp: unixRange.start_timestamp,
+        end_timestamp: unixRange.end_timestamp,
+      }
       const result = requireServerSuccess(
-        await getUserTaskLogs({
-          p: 1,
-          page_size: 50,
-          start_timestamp: unixRange.start_timestamp,
-          end_timestamp: unixRange.end_timestamp,
-        })
+        await (siteWide
+          ? getAllTaskLogs(taskRequest)
+          : getUserTaskLogs(taskRequest))
       )
       return result.success ? (result.data?.items ?? []) : []
     },
@@ -166,17 +199,21 @@ export function useUserConsoleData(range: UserConsoleDateRange) {
       'dashboard',
       'user-console',
       'drawings',
+      siteWide ? 'site' : 'self',
       unixRange.start_timestamp,
       unixRange.end_timestamp,
     ],
     queryFn: async () => {
+      const drawingRequest = {
+        p: 1,
+        page_size: 50,
+        start_timestamp: unixRange.start_timestamp * 1000,
+        end_timestamp: unixRange.end_timestamp * 1000,
+      }
       const result = requireServerSuccess(
-        await getUserMidjourneyLogs({
-          p: 1,
-          page_size: 50,
-          start_timestamp: unixRange.start_timestamp * 1000,
-          end_timestamp: unixRange.end_timestamp * 1000,
-        })
+        await (siteWide
+          ? getAllMidjourneyLogs(drawingRequest)
+          : getUserMidjourneyLogs(drawingRequest))
       )
       return result.success ? (result.data?.items ?? []) : []
     },
@@ -184,12 +221,17 @@ export function useUserConsoleData(range: UserConsoleDateRange) {
   })
 
   const user = selfQuery.data ?? authUser
+  const consumeLogs = (logsQuery.data ?? []) as UsageLog[]
+  const quotaData = useMemo(() => {
+    const aggregated = quotaQuery.data ?? []
+    if (aggregated.length > 0) return aggregated
+    return quotaItemsFromLogs((logsQuery.data ?? []) as UsageLog[])
+  }, [logsQuery.data, quotaQuery.data])
   const stats = useMemo(
-    () => calculateDashboardStats(quotaQuery.data ?? []),
-    [quotaQuery.data]
+    () => calculateDashboardStats(quotaData),
+    [quotaData]
   )
-  const quotaData = quotaQuery.data ?? []
-  const recentLogs = (logsQuery.data ?? []) as UsageLog[]
+  const recentLogs = consumeLogs.slice(0, ACTIVITY_LOG_LIMIT)
   const inProgressCount =
     countInProgressTasks((taskQuery.data ?? []) as TaskLog[]) +
     countInProgressDrawings((drawingQuery.data ?? []) as MidjourneyLog[])

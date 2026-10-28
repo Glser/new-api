@@ -22,6 +22,7 @@ import type { Table } from '@tanstack/react-table'
 import { startTransition, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { DateRangePickerButton } from '@/components/date-range-picker'
 import { Badge } from '@/components/ui/badge'
 import { Combobox } from '@/components/ui/combobox'
 import {
@@ -41,7 +42,6 @@ import { buildSearchParams } from '../lib/filter'
 import { getDefaultTimeRange } from '../lib/utils'
 import type { CommonLogFilters } from '../types'
 import { CommonLogsStats } from './common-logs-stats'
-import { CompactDateTimeRangePicker } from './compact-date-time-range-picker'
 import {
   LogsFilterField,
   LogsFilterInput,
@@ -302,13 +302,16 @@ export function CommonLogsFilterBar<TData>(
 
   const statsBar = <CommonLogsStats />
   const dateRangeFilter = (
-    <CompactDateTimeRangePicker
+    <DateRangePickerButton
       start={filters.startTime}
       end={filters.endTime}
-      onChange={({ start, end }) => {
+      showTime
+      disableFuture
+      align='start'
+      onApply={({ start, end }) => {
         if (
-          start?.getTime() === filters.startTime?.getTime() &&
-          end?.getTime() === filters.endTime?.getTime()
+          start.getTime() === filters.startTime?.getTime() &&
+          end.getTime() === filters.endTime?.getTime()
         ) {
           return
         }

@@ -59,7 +59,7 @@ import {
   taskUsageUnitLabel,
   taskPricingConditions,
 } from '../lib/task-price-display'
-import { formatOfficialPrice, matchesPrefix } from '../lib/usd-price'
+import { formatOfficialPrice, formatPriceNumber, matchesPrefix } from '../lib/usd-price'
 import type { BillingUsageSchema, BillingUsageUnit } from '../types'
 import { PriceRatioBadge } from './price-discount'
 
@@ -228,7 +228,7 @@ function formatBreakdownPrice(
       ...taskPriceOptions,
     })
   } else {
-    amount = `${symbol}${(value * rate).toFixed(4)}`
+    amount = `${symbol}${formatPriceNumber(value * rate)}`
   }
   if (field.unit === 'second') return `${amount}/${t('s')}`
   if (field.unit === 'count') {
@@ -302,18 +302,18 @@ function BreakdownPriceValue(props: {
 
   return (
     <span className={cn('inline-flex flex-col gap-0.5', alignClass)}>
-      <span className='text-muted-foreground text-[11px]! leading-tight line-through decoration-from-font'>
-        {formatted}
-      </span>
       <span className='inline-flex items-center gap-1'>
-        <span className='text-foreground text-sm! font-semibold tabular-nums'>
-          {groupFormatted}
+        <span className='text-muted-foreground text-[11px]! leading-tight line-through decoration-from-font'>
+          {formatted}
         </span>
         <PriceRatioBadge
           groupRatio={groupRatio}
           usdOfficial={props.usdOfficial}
           className='px-1 text-[10px]!'
         />
+      </span>
+      <span className='text-foreground text-sm! font-semibold tabular-nums'>
+        {groupFormatted}
       </span>
     </span>
   )

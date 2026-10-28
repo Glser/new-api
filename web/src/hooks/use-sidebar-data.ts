@@ -77,16 +77,16 @@ export function useSidebarData(): SidebarData {
         title: t('General'),
         items: [
           {
-            title: isAdmin ? t('Overview') : t('Console'),
+            title: t('Console'),
             url: '/dashboard/overview',
-            icon: isAdmin ? Activity : LayoutDashboard,
+            icon: LayoutDashboard,
           },
           ...(isAdmin
             ? [
                 {
                   title: t('Dashboard'),
                   url: '/dashboard/models',
-                  icon: LayoutDashboard,
+                  icon: Activity,
                 },
               ]
             : []),

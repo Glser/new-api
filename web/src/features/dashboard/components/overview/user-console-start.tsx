@@ -21,7 +21,9 @@ import { BrainCircuit, KeyRound, Palette } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { ShineButton } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { ConsoleDataScope } from '@/features/dashboard/lib'
 
 function ShineAction(props: {
   to: '/keys' | '/pricing' | '/playground'
@@ -29,19 +31,26 @@ function ShineAction(props: {
   solid?: boolean
 }) {
   return (
-    <Button
+    <ShineButton
       variant={props.solid ? 'default' : 'outline'}
       size='default'
-      shine
-      className='h-9 px-2.5 text-xs @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm'
+      className={
+        props.solid
+          ? 'h-9 bg-[oklch(0.24_0_0)] px-2.5 text-xs font-semibold text-white hover:bg-[oklch(0.30_0_0)] @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm dark:bg-[oklch(0.90_0_0)] dark:text-neutral-950 dark:hover:bg-[oklch(0.84_0_0)] [a]:hover:bg-[oklch(0.30_0_0)] dark:[a]:hover:bg-[oklch(0.84_0_0)]'
+          : 'h-9 px-2.5 text-xs @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm'
+      }
       render={<Link to={props.to} />}
     >
       {props.children}
-    </Button>
+    </ShineButton>
   )
 }
 
-export function UserConsoleStart() {
+export function UserConsoleStart(props: {
+  showDataScope?: boolean
+  dataScope?: ConsoleDataScope
+  onDataScopeChange?: (value: ConsoleDataScope) => void
+}) {
   const { t } = useTranslation()
 
   return (
@@ -55,6 +64,26 @@ export function UserConsoleStart() {
         </span>
       </div>
       <div className='flex w-full flex-wrap items-center justify-start gap-2 @min-[48rem]/console:w-auto @min-[48rem]/console:justify-end'>
+        {props.showDataScope && props.dataScope && props.onDataScopeChange ? (
+          <Tabs
+            value={props.dataScope}
+            onValueChange={(value) => {
+              if (value === 'site' || value === 'self') {
+                props.onDataScopeChange(value)
+              }
+            }}
+            className='shrink-0'
+          >
+            <TabsList aria-label={t('Data scope')}>
+              <TabsTrigger value='site' className='px-2.5 text-xs'>
+                {t('Site-wide')}
+              </TabsTrigger>
+              <TabsTrigger value='self' className='px-2.5 text-xs'>
+                {t('My data')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        ) : null}
         <ShineAction to='/keys'>
           <KeyRound data-icon='inline-start' />
           {t('API Key')}

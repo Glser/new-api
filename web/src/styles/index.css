@@ -19,7 +19,11 @@ For commercial licensing, please contact support@quantumnous.com
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/public-sans';
+/* Body sans: Noto Sans SC Variable covers Latin + simplified Chinese in one
+ * family so mixed UI copy shares the same skeleton and weight. Fontsource
+ * splits the variable file by unicode-range, so the browser only fetches
+ * the chunks used on the page. */
+@import '@fontsource-variable/noto-sans-sc';
 /* Editorial serif (Lora) backing the `serif` font axis and the Anthropic
  * preset's default typography. See `--font-serif` in theme.css for the
  * full Latin + CJK fallback stack and `theme-presets.css` for the cascade
@@ -106,7 +110,7 @@ For commercial licensing, please contact support@quantumnous.com
     @apply bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full;
     /* Font is driven by the theme's font axis via `--font-body`
      * (defined in theme.css, swapped by `[data-theme-font='...']` blocks
-     * in theme-presets.css). Defaults to the project's humanist sans. */
+     * in theme-presets.css). Defaults to Noto Sans SC. */
     font-family: var(--font-body);
   }
 

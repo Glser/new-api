@@ -27,7 +27,7 @@ import {
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { Button, ShineButton } from '@/components/ui/button'
 
 type SettingsPageContextValue = {
   actionsContainer: HTMLDivElement | null
@@ -121,7 +121,7 @@ export function SettingsPageFormActions(props: SettingsPageFormActionsProps) {
   return (
     <SettingsPageActionsPortal>
       {props.onReset && (
-        <Button
+        <ShineButton
           type='button'
           size='sm'
           variant={props.resetVariant ?? 'outline'}
@@ -130,7 +130,7 @@ export function SettingsPageFormActions(props: SettingsPageFormActionsProps) {
         >
           <RotateCcw data-icon='inline-start' />
           <span>{t(props.resetLabel ?? 'Reset')}</span>
-        </Button>
+        </ShineButton>
       )}
       <Button
         ref={props.saveButtonRef}

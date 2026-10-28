@@ -167,25 +167,41 @@ function CompactTokenPricePart(props: {
   return (
     <span
       className={cn(
-        'inline-flex min-w-0 items-baseline gap-x-[2px] overflow-hidden whitespace-nowrap font-mono tabular-nums',
+        'inline-flex items-baseline gap-x-1 whitespace-nowrap',
         props.className
       )}
     >
-      <span className='text-muted-foreground shrink-0 font-normal'>
+      <span
+        className={cn(
+          'text-[11px] leading-none font-medium',
+          props.strike
+            ? 'text-muted-foreground line-through decoration-muted-foreground/50'
+            : 'text-muted-foreground'
+        )}
+      >
         {props.part.label}
       </span>
       <span
         className={cn(
-          'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap',
+          'font-mono text-xs leading-none font-semibold tabular-nums tracking-tight',
           props.strike &&
             'text-muted-foreground line-through decoration-muted-foreground/50'
         )}
       >
         {props.part.text}
-        {props.unit ? (
-          <TokenUnitMark unit={props.unit} name={props.unitName} />
-        ) : null}
       </span>
+      {props.unit ? (
+        <span
+          className={cn(
+            'text-[10px] leading-none font-normal',
+            props.strike
+              ? 'text-muted-foreground line-through decoration-muted-foreground/50'
+              : 'text-muted-foreground/75'
+          )}
+        >
+          <TokenUnitMark unit={props.unit} name={props.unitName} />
+        </span>
+      ) : null}
     </span>
   )
 }
@@ -467,12 +483,12 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
         {prices.map((price) => (
           <span
             key={price.type}
-            className='flex min-w-0 items-baseline gap-x-1 font-mono text-[11px] leading-tight font-semibold tabular-nums'
+            className='inline-flex min-w-0 items-baseline gap-x-1 overflow-hidden whitespace-nowrap'
           >
-            <span className='text-muted-foreground text-[10px] font-normal'>
+            <span className='text-muted-foreground shrink-0 text-[11px] leading-none font-medium'>
               {price.label}
             </span>
-            <span>
+            <span className='min-w-0 truncate font-mono text-xs leading-none font-semibold tracking-tight tabular-nums'>
               {formatPrice(
                 props.model,
                 price.type,
@@ -483,7 +499,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
                 props.selectedGroup
               )}
             </span>
-            <span className='text-muted-foreground text-[10px] font-normal'>
+            <span className='text-muted-foreground/75 shrink-0 text-[10px] leading-none font-normal'>
               <TokenUnitMark unit={tokenUnit} name={tokenUnitName} />
             </span>
           </span>
@@ -518,7 +534,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     officialVsSite?.officialRequestUSD != null ? undefined : tokenUnitName
 
   return (
-    <Card
+    <div
       role='button'
       tabIndex={0}
       onClick={props.onClick}
@@ -528,172 +544,174 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           props.onClick()
         }
       }}
-      className='hover:ring-foreground/20 min-w-0 cursor-pointer gap-2 self-start transition-colors'
+      className='group/plaza-card relative z-0 min-w-0 cursor-pointer self-start hover:z-10'
     >
-      <CardHeader className='flex flex-row items-center gap-2'>
-        <div
-          aria-hidden
-          className='bg-muted/50 flex size-8 shrink-0 items-center justify-center rounded-md'
-        >
-          {modelIcon || (
-            <span className='text-muted-foreground text-[10px] font-bold'>
-              {initial}
-            </span>
-          )}
-        </div>
-        <TooltipHint content={props.model.model_name}>
-          <span className='min-w-0 flex-1 truncate font-mono text-xs leading-none font-semibold [overflow-wrap:anywhere]'>
-            {props.model.model_name}
-          </span>
-        </TooltipHint>
-        <TooltipHint content={t('Copy model name')}>
-          <button
-            type='button'
-            onClick={(event) => {
-              event.stopPropagation()
-              void copyToClipboard(props.model.model_name || '')
-            }}
-            aria-label={t('Copy model name')}
-            className='text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] flex size-5 shrink-0 items-center justify-center rounded-md transition-colors'
+      <Card
+        data-card-hover='false'
+        className={cn(
+          'min-w-0 gap-2',
+          // 热区留在外层，避免抬起把鼠标移出卡片后反复进入退出。
+          // 广场页套在非整数 zoom 上，再 scale 会把文字重新栅格化变虚；
+          // 只走 translate + 阴影，合成层平移，字号保持清晰。
+          'transition-[translate,box-shadow] duration-500',
+          'group-hover/plaza-card:-translate-y-1',
+          'group-hover/plaza-card:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_16px_36px_-24px_rgba(15,23,42,0.22)]',
+          'dark:group-hover/plaza-card:shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6)]'
+        )}
+      >
+        <CardHeader className='flex flex-row items-center gap-2'>
+          <div
+            aria-hidden
+            className='bg-muted/50 flex size-8 shrink-0 items-center justify-center rounded-md'
           >
-            {isCopied ? (
-              <Check aria-hidden className='size-3' />
-            ) : (
-              <Copy aria-hidden className='size-3' />
+            {modelIcon || (
+              <span className='text-muted-foreground text-[10px] font-bold'>
+                {initial}
+              </span>
             )}
-          </button>
-        </TooltipHint>
-      </CardHeader>
-      <CardContent className='flex flex-1 flex-col gap-2'>
-        <p className='text-muted-foreground line-clamp-2 min-h-8 text-[11px] leading-4 break-words'>
-          {props.model.description || ' '}
-        </p>
-        <div
-          role='group'
-          aria-label={t('Pricing')}
-          className='mt-auto flex min-w-0 flex-col gap-0.5'
-        >
-          {officialVsSite && officialPriceParts.length > 0 ? (
-            <div className='min-w-0 space-y-0.5'>
-              <div className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 overflow-hidden'>
-                <span className='flex min-w-0 items-baseline gap-x-1.5 overflow-hidden'>
-                  <span className='text-muted-foreground/70 shrink-0 text-[10px] leading-tight'>
-                    {t('Official price')}:
-                  </span>
-                  {officialPriceParts[0] && (
-                    <CompactTokenPricePart
-                      part={officialPriceParts[0]}
-                      strike={siteDiscountPercent > 0}
-                      unit={
-                        officialPriceParts.length === 1
-                          ? requestPriceUnit
-                          : undefined
-                      }
-                      unitName={
-                        officialPriceParts.length === 1
-                          ? requestPriceUnitName
-                          : undefined
-                      }
-                      className='min-w-0 text-[10px] font-semibold'
-                    />
-                  )}
+          </div>
+          <TooltipHint content={props.model.model_name}>
+            <span className='min-w-0 flex-1 truncate font-mono text-base leading-none font-semibold [overflow-wrap:anywhere]'>
+              {props.model.model_name}
+            </span>
+          </TooltipHint>
+          <TooltipHint content={t('Copy model name')}>
+            <button
+              type='button'
+              onClick={(event) => {
+                event.stopPropagation()
+                void copyToClipboard(props.model.model_name || '')
+              }}
+              aria-label={t('Copy model name')}
+              className='text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] flex size-5 shrink-0 items-center justify-center rounded-md transition-colors'
+            >
+              {isCopied ? (
+                <Check aria-hidden className='size-3' />
+              ) : (
+                <Copy aria-hidden className='size-3' />
+              )}
+            </button>
+          </TooltipHint>
+        </CardHeader>
+        <CardContent className='flex flex-1 flex-col gap-2'>
+          <p className='text-muted-foreground line-clamp-2 min-h-8 text-[11px] leading-4 break-words'>
+            {props.model.description || ' '}
+          </p>
+          <div
+            role='group'
+            aria-label={t('Pricing')}
+            className='mt-auto flex min-w-0 flex-col gap-0.5'
+          >
+            {officialVsSite && officialPriceParts.length > 0 ? (
+              <div className='grid min-w-0 grid-cols-[max-content_max-content_minmax(0,1fr)_max-content_max-content] items-baseline gap-x-1.5 gap-y-0.5'>
+                <span className='text-muted-foreground/70 col-start-1 row-start-1 text-left text-[11px] leading-none'>
+                  {t('Official price')}
                 </span>
-                <span className='flex min-w-0 items-baseline justify-end gap-x-2 overflow-hidden'>
-                  {officialPriceParts[1] && (
-                    <CompactTokenPricePart
-                      part={officialPriceParts[1]}
-                      strike={siteDiscountPercent > 0}
-                      unit={requestPriceUnit}
-                      unitName={requestPriceUnitName}
-                      className='min-w-0 text-[10px] font-semibold'
-                    />
-                  )}
-                  {siteDiscountPercent > 0 ? (
-                    <PriceDiscountHint
-                      groupRatio={groupMultiplier}
-                      usdOfficial={showUsdOfficial}
+                {officialPriceParts[0] && (
+                  <CompactTokenPricePart
+                    part={officialPriceParts[0]}
+                    strike={siteDiscountPercent > 0}
+                    unit={
+                      officialPriceParts.length === 1
+                        ? requestPriceUnit
+                        : undefined
+                    }
+                    unitName={
+                      officialPriceParts.length === 1
+                        ? requestPriceUnitName
+                        : undefined
+                    }
+                    className='col-start-2 row-start-1 justify-self-start'
+                  />
+                )}
+                {officialPriceParts[1] && (
+                  <CompactTokenPricePart
+                    part={officialPriceParts[1]}
+                    strike={siteDiscountPercent > 0}
+                    unit={requestPriceUnit}
+                    unitName={requestPriceUnitName}
+                    className='col-start-4 row-start-1 justify-self-start'
+                  />
+                )}
+                {siteDiscountPercent > 0 ? (
+                  <PriceDiscountHint
+                    groupRatio={groupMultiplier}
+                    usdOfficial={showUsdOfficial}
+                  >
+                    <span
+                      tabIndex={0}
+                      className='bg-destructive/10 text-destructive focus-visible:outline-ring col-start-5 row-start-1 inline-flex shrink-0 cursor-help justify-self-end rounded-full px-1.5 py-px text-[10px] font-semibold whitespace-nowrap tabular-nums focus-visible:outline-2'
                     >
-                      <span
-                        tabIndex={0}
-                        className='bg-destructive/10 text-destructive focus-visible:outline-ring inline-flex w-14 shrink-0 cursor-help justify-center rounded-full px-1.5 py-px text-[10px] font-semibold tabular-nums focus-visible:outline-2'
-                      >
-                        -{siteDiscountPercent}%
-                      </span>
-                    </PriceDiscountHint>
-                  ) : null}
+                      -{siteDiscountPercent}%
+                    </span>
+                  </PriceDiscountHint>
+                ) : null}
+                <span className='text-muted-foreground col-start-1 row-start-2 text-left text-[11px] leading-none'>
+                  {t('Site price')}
                 </span>
-              </div>
-              <div className='grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 overflow-hidden'>
-                <span className='flex min-w-0 items-baseline gap-x-1.5 overflow-hidden'>
-                  <span className='text-muted-foreground shrink-0 text-[10px] leading-tight'>
-                    {t('Site price')}:
-                  </span>
-                  {sitePriceParts[0] && (
-                    <CompactTokenPricePart
-                      part={sitePriceParts[0]}
-                      unit={
-                        sitePriceParts.length === 1
-                          ? requestPriceUnit
-                          : undefined
-                      }
-                      unitName={
-                        sitePriceParts.length === 1
-                          ? requestPriceUnitName
-                          : undefined
-                      }
-                      className='min-w-0 text-[10px] font-semibold'
-                    />
-                  )}
-                </span>
+                {sitePriceParts[0] && (
+                  <CompactTokenPricePart
+                    part={sitePriceParts[0]}
+                    unit={
+                      sitePriceParts.length === 1 ? requestPriceUnit : undefined
+                    }
+                    unitName={
+                      sitePriceParts.length === 1
+                        ? requestPriceUnitName
+                        : undefined
+                    }
+                    className='col-start-2 row-start-2 justify-self-start'
+                  />
+                )}
                 {sitePriceParts[1] && (
                   <CompactTokenPricePart
                     part={sitePriceParts[1]}
                     unit={requestPriceUnit}
                     unitName={requestPriceUnitName}
-                    className='text-[10px] font-semibold'
+                    className='col-start-4 row-start-2 justify-self-start'
                   />
                 )}
               </div>
-            </div>
-          ) : (
-            <div className='min-w-0 font-mono text-[11px] leading-tight font-semibold tabular-nums'>
-              {priceSummary}
-            </div>
-          )}
-        </div>
-        {/* 计费标签靠左，可用分组靠右；分组过多时收成 +N */}
-        <div className='flex min-w-0 items-center justify-between gap-2'>
-          <ModelBillingModeBadge
-            model={props.model}
-            className='bg-foreground/[0.05] border-border/60 text-foreground/75 -ms-1 shrink-0 rounded-md border px-1.5 py-px text-[10px] font-medium'
+            ) : (
+              <div className='min-w-0 font-mono text-[11px] leading-tight font-semibold tabular-nums'>
+                {priceSummary}
+              </div>
+            )}
+          </div>
+          {/* 计费标签靠左，可用分组靠右；分组过多时收成 +N */}
+          <div className='flex min-w-0 items-center justify-between gap-2'>
+            <ModelBillingModeBadge
+              model={props.model}
+              className='bg-foreground/[0.05] border-border/60 text-foreground/75 -ms-1 shrink-0 rounded-md border px-1.5 py-px text-[10px] font-medium'
+            />
+            {groups.length > 0 && (
+              <TooltipHint
+                content={`${t('Available groups')}: ${groups.join(', ')}`}
+              >
+                <span className='text-muted-foreground flex min-w-0 items-center justify-end gap-1 text-[10px]'>
+                  <span className='shrink-0'>{t('Available groups')}</span>
+                  {visibleGroups.map((group) => (
+                    <TooltipHint key={group} content={group}>
+                      <span className='max-w-16 truncate'>{group}</span>
+                    </TooltipHint>
+                  ))}
+                  {hiddenGroupCount > 0 ? (
+                    <span className='text-muted-foreground/80 shrink-0'>
+                      +{hiddenGroupCount}
+                    </span>
+                  ) : null}
+                </span>
+              </TooltipHint>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter className='mt-auto border-0 bg-transparent pt-0'>
+          <ModelPerfBadge
+            perf={props.perf}
+            className='border-border/60 border-t pt-2'
           />
-          {groups.length > 0 && (
-            <TooltipHint
-              content={`${t('Available groups')}: ${groups.join(', ')}`}
-            >
-              <span className='text-muted-foreground flex min-w-0 items-center justify-end gap-1 text-[10px]'>
-                <span className='shrink-0'>{t('Available groups')}</span>
-                {visibleGroups.map((group) => (
-                  <TooltipHint key={group} content={group}>
-                    <span className='max-w-16 truncate'>{group}</span>
-                  </TooltipHint>
-                ))}
-                {hiddenGroupCount > 0 ? (
-                  <span className='text-muted-foreground/80 shrink-0'>
-                    +{hiddenGroupCount}
-                  </span>
-                ) : null}
-              </span>
-            </TooltipHint>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter className='mt-auto border-0 bg-transparent pt-0'>
-        <ModelPerfBadge
-          perf={props.perf}
-          className='border-border/60 border-t pt-2'
-        />
-      </CardFooter>
-    </Card>
+        </CardFooter>
+      </Card>
+    </div>
   )
 })

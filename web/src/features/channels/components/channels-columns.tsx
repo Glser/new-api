@@ -653,10 +653,11 @@ export function useChannelsColumns(
         accessorKey: 'name',
         header: t('Name'),
         meta: { mobileTitle: true },
-        cell: ({ row }) => {
+        cell: ({ row, table }) => {
           const isTagRow = isTagAggregateRow(row.original)
           const name = row.getValue('name') as string
           const channel = row.original
+          const channelTag = channel.tag?.trim() || ''
 
           // Tag row with expand/collapse
           if (isTagRow) {
@@ -735,6 +736,20 @@ export function useChannelsColumns(
                     </TooltipProvider>
                   )}
                   <UpstreamUpdateTags channel={channel} />
+                  {channelTag ? (
+                    <StatusBadge
+                      label={sensitiveVisible ? channelTag : SENSITIVE_MASK}
+                      autoColor={channelTag}
+                      size='sm'
+                      copyable={false}
+                      className='cursor-pointer'
+                      onClick={(event: React.MouseEvent) => {
+                        event.stopPropagation()
+                        table.getColumn('tag')?.setFilterValue([channelTag])
+                      }}
+                      title={t('Filter by this tag')}
+                    />
+                  ) : null}
                 </div>
                 {channel.remark && (
                   <TooltipProvider delay={200}>

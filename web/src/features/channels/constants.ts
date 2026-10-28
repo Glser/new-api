@@ -225,7 +225,8 @@ export const CHANNEL_STATUS_LABELS = {
 export const CHANNEL_STATUS_OPTIONS = [
   { value: 'all', label: 'All Status' },
   { value: 'enabled', label: 'Enabled' },
-  { value: 'disabled', label: 'Disabled' },
+  { value: 'auto_disabled', label: 'Auto Disabled' },
+  { value: 'manually_disabled', label: 'Disabled' },
 ] as const
 
 export const CHANNEL_STATUS_CONFIG = {

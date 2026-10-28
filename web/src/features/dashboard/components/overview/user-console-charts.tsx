@@ -23,13 +23,13 @@ import { useTranslation } from 'react-i18next'
 
 import { EmptyState } from '@/components/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useThemeCustomization } from '@/context/theme-customization-provider'
 import { useTheme } from '@/context/theme-provider'
 import type { QuotaDataItem } from '@/features/dashboard/types'
 import { formatQuota } from '@/lib/format'
-import { formatChartTime, type TimeGranularity } from '@/lib/time'
 import { useThemeRadiusPx } from '@/lib/theme-radius'
-import { cn } from '@/lib/utils'
+import { formatChartTime, type TimeGranularity } from '@/lib/time'
 import { VCHART_OPTION } from '@/lib/vchart'
 
 let themeManagerPromise: Promise<
@@ -96,7 +96,10 @@ function buildTrendSpec(args: {
   >()
 
   for (const item of args.data) {
-    const time = formatChartTime(Number(item.created_at) || 0, args.timeGranularity)
+    const time = formatChartTime(
+      Number(item.created_at) || 0,
+      args.timeGranularity
+    )
     const current = buckets.get(time) ?? { spend: 0, requests: 0, tokens: 0 }
     current.spend += Number(item.quota) || 0
     current.requests += Number(item.count) || 0
@@ -114,9 +117,7 @@ function buildTrendSpec(args: {
       Value: args.metric === 'spend' ? totals.spend : totals.requests,
     }))
   const isDark = args.resolvedTheme === 'dark'
-  const palette = isDark
-    ? ['#9CC8EE', '#78D0C3']
-    : ['#5A86B8', '#3E9B91']
+  const palette = isDark ? ['#9CC8EE', '#78D0C3'] : ['#5A86B8', '#3E9B91']
   const color = palette[args.metric === 'spend' ? 0 : 1]
   const tooltipContent = [
     {
@@ -273,9 +274,7 @@ function buildModelSpendRankSpec(args: {
 
   const modelNames = values.map((v) => v.Model)
   const isDark = resolvedTheme === 'dark'
-  const palette = isDark
-    ? AURORA_RANK_COLORS_DARK
-    : AURORA_RANK_COLORS_LIGHT
+  const palette = isDark ? AURORA_RANK_COLORS_DARK : AURORA_RANK_COLORS_LIGHT
   const colorRange = values.map((item, index) =>
     item.Model === otherLabel
       ? (palette.at(-1) ?? palette.at(0) ?? '')
@@ -411,7 +410,9 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
     const updateTheme = async () => {
       setThemeReady(false)
       if (!themeManagerPromise) {
-        themeManagerPromise = import('@visactor/vchart').then((m) => m.ThemeManager)
+        themeManagerPromise = import('@visactor/vchart').then(
+          (m) => m.ThemeManager
+        )
       }
       const ThemeManager = await themeManagerPromise
       themeManagerRef.current = ThemeManager
@@ -451,26 +452,27 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
       <section className='bg-card min-w-0 overflow-hidden rounded-2xl border'>
         <div className='flex flex-wrap items-start justify-between gap-2 px-3 py-3 @min-[48rem]/console:gap-3 @min-[48rem]/console:px-5'>
           <div>
-            <h3 className='text-xs font-semibold @min-[48rem]/console:text-sm'>{t('Usage trend')}</h3>
-            <p className='text-muted-foreground mt-0.5 text-[11px] @min-[48rem]/console:text-xs'>{props.rangeLabel}</p>
+            <h3 className='text-xs font-semibold @min-[48rem]/console:text-sm'>
+              {t('Usage trend')}
+            </h3>
+            <p className='text-muted-foreground mt-0.5 text-[11px] @min-[48rem]/console:text-xs'>
+              {props.rangeLabel}
+            </p>
           </div>
-          <div className='bg-muted/70 inline-flex rounded-lg p-0.5'>
-            {(['spend', 'requests'] as const).map((item) => (
-              <button
-                key={item}
-                type='button'
-                onClick={() => setMetric(item)}
-                className={cn(
-                  'h-8 rounded-md px-2 text-[11px] font-medium transition-colors @min-[48rem]/console:px-2.5 @min-[48rem]/console:text-xs',
-                  metric === item
-                    ? 'bg-foreground text-background shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {item === 'spend' ? t('Spend') : t('Requests')}
-              </button>
-            ))}
-          </div>
+          <Tabs
+            value={metric}
+            onValueChange={(value) => setMetric(value as TrendMetric)}
+            className='shrink-0'
+          >
+            <TabsList>
+              <TabsTrigger value='spend' className='px-2.5 text-xs'>
+                {t('Spend')}
+              </TabsTrigger>
+              <TabsTrigger value='requests' className='px-2.5 text-xs'>
+                {t('Requests')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         <div className='h-56 px-2 pb-3 pl-3 @min-[32rem]/console:h-64 @min-[48rem]/console:h-72 @min-[48rem]/console:pr-3 @min-[48rem]/console:pl-5'>
           <ChartBody
@@ -487,7 +489,9 @@ export function UserConsoleCharts(props: UserConsoleChartsProps) {
       <section className='bg-card min-w-0 overflow-hidden rounded-2xl border'>
         <div className='flex flex-wrap items-start justify-between gap-2 px-3 py-3 @min-[48rem]/console:gap-3 @min-[48rem]/console:px-5'>
           <div>
-            <h3 className='text-xs font-semibold @min-[48rem]/console:text-sm'>{t('Model spend distribution')}</h3>
+            <h3 className='text-xs font-semibold @min-[48rem]/console:text-sm'>
+              {t('Model spend distribution')}
+            </h3>
             <p className='text-muted-foreground mt-0.5 text-[11px] @min-[48rem]/console:text-xs'>
               {t('Ranked by spend')}
             </p>

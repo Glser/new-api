@@ -28,7 +28,7 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
-import { Button } from '@/components/ui/button'
+import { ShineButton } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -273,14 +273,14 @@ function HitPriceConfig(props: {
     }))
 
   return (
-    <span className='inline-flex items-center justify-center gap-x-2 whitespace-nowrap'>
+    <span className='inline-flex max-w-[15.5rem] flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-[12px]! leading-tight'>
       {prices.map((part) => (
-        <span key={part.key} className='tabular-nums'>
+        <span key={part.key} className='whitespace-nowrap tabular-nums'>
           {t(part.labelKey)} {formatUsdAmount(part.price * ratio)}
         </span>
       ))}
       {props.perCall || prices.length === 0 ? null : (
-        <span className='text-muted-foreground'>/M</span>
+        <span className='text-muted-foreground whitespace-nowrap'>/M</span>
       )}
     </span>
   )
@@ -398,7 +398,7 @@ function ActivityRows(props: {
             {formatTimestampToDate(log.created_at)}
           </span>
         </TableCell>
-        <TableCell className='max-w-0 overflow-hidden px-3 text-center'>
+        <TableCell className='px-3 text-center'>
           <LogTokenCell
             tokenName={log.token_name}
             group={log.group}
@@ -406,8 +406,8 @@ function ActivityRows(props: {
             groups={props.groups}
           />
         </TableCell>
-        <TableCell className='max-w-0 overflow-hidden px-3 text-center'>
-          <div className='flex min-w-0 items-center justify-center gap-1.5 overflow-hidden'>
+        <TableCell className='px-3 text-center'>
+          <div className='flex min-w-0 items-center justify-center gap-1.5'>
             <ModelBadge
               size='md'
               className='max-w-[min(100%,13rem)] text-[12px]! @min-[48rem]/activity:text-[14px]! @min-[80rem]/activity:text-[15px]! [&_span]:text-[12px]! @min-[48rem]/activity:[&_span]:text-[14px]! @min-[80rem]/activity:[&_span]:text-[15px]!'
@@ -531,7 +531,7 @@ function ActivityRows(props: {
             formatLogQuota(log.quota)
           )}
         </TableCell>
-        <TableCell className='px-3 text-center text-xs'>
+        <TableCell className='px-3 text-center align-middle'>
           {officialPrices ? (
             <HitPriceConfig
               parts={officialPrices.parts}
@@ -568,16 +568,16 @@ export function UserConsoleActivity(props: UserConsoleActivityProps) {
             {t('Inspect models, status, and cost line by line')}
           </p>
         </div>
-        <Button
+        <ShineButton
           variant='outline'
-          size='sm'
-          className='h-8 text-xs @min-[48rem]/console:text-sm'
+          size='default'
+          className='h-9 px-2.5 text-xs @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm'
           render={
             <Link to='/usage-logs/$section' params={{ section: 'common' }} />
           }
         >
           {t('Full logs')} →
-        </Button>
+        </ShineButton>
       </div>
 
       <Table className='min-w-[56rem] table-auto @min-[48rem]/activity:min-w-[68rem] [&_td]:px-2 [&_td]:text-xs @min-[48rem]/activity:[&_td]:text-sm @min-[80rem]/activity:[&_td]:px-3 [&_th]:px-2 [&_th]:text-xs @min-[48rem]/activity:[&_th]:text-sm @min-[80rem]/activity:[&_th]:px-3'>
@@ -587,7 +587,7 @@ export function UserConsoleActivity(props: UserConsoleActivityProps) {
           <col className='w-48 @min-[48rem]/activity:w-60 @min-[80rem]/activity:w-[18%]' />
           <col className='w-32 @min-[48rem]/activity:w-40 @min-[80rem]/activity:w-[14%]' />
           <col className='w-24 @min-[48rem]/activity:w-32 @min-[80rem]/activity:w-[10%]' />
-          <col className='@min-[80rem]/activity:w-[32%]' />
+          <col className='w-[12rem] @min-[80rem]/activity:w-[22%]' />
         </colgroup>
         <TableHeader>
           <TableRow>

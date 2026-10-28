@@ -95,7 +95,7 @@ export function PlazaFilterChip(props: {
         'transition duration-200 hover:-translate-y-px',
         active
           ? 'border-foreground/25 bg-muted text-foreground shadow-none hover:border-foreground/25 hover:bg-muted hover:text-foreground dark:border-foreground/30 dark:bg-foreground/[0.18] dark:text-foreground dark:hover:border-foreground/30 dark:hover:bg-foreground/[0.18] dark:hover:text-foreground'
-          : 'border-border bg-muted/50 text-foreground shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:border-foreground/20 hover:bg-muted hover:text-foreground dark:border-foreground/20 dark:bg-foreground/[0.10] dark:text-foreground/90 dark:shadow-none dark:hover:border-foreground/35 dark:hover:bg-foreground/[0.16] dark:hover:text-foreground',
+          : 'border-border bg-muted/50 text-foreground/80 shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:border-foreground/20 hover:bg-muted hover:text-foreground dark:border-foreground/20 dark:bg-foreground/[0.10] dark:text-foreground/80 dark:shadow-none dark:hover:border-foreground/35 dark:hover:bg-foreground/[0.16] dark:hover:text-foreground',
         props.iconOnly && 'size-11 rounded-xl p-0 shadow-none'
       )}
     >
@@ -144,7 +144,8 @@ export function PlazaFilterChip(props: {
           {option.countLabel && (
             <span
               className={cn(
-                'text-[10px] leading-none tabular-nums',
+                // 10px 数字比 12px 名称视觉偏上，下移 1px 与名称齐平。
+                'translate-y-px text-[10px] leading-none tabular-nums',
                 active ? 'text-foreground/60' : 'text-muted-foreground/70'
               )}
             >

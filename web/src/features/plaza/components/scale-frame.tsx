@@ -27,8 +27,10 @@ export function PlazaScaleFrame(props: {
   className?: string
 }) {
   const scale = usePlazaScale()
-  const style: CSSProperties | undefined =
-    scale === 1 ? undefined : { zoom: scale }
+  const style = {
+    '--plaza-scale': String(scale),
+    ...(scale === 1 ? {} : { zoom: scale }),
+  } as CSSProperties
 
   return (
     <div

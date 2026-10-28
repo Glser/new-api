@@ -168,11 +168,12 @@ function ModelBadgeContent(props: ModelBadgeProps) {
           </TooltipHint>
         )}
         <span
-          className={
+          className={cn(
+            'leading-none',
             props.wrapText
               ? 'line-clamp-2 [overflow-wrap:anywhere]'
-              : 'whitespace-nowrap'
-          }
+              : '-translate-y-px whitespace-nowrap'
+          )}
         >
           {props.modelName}
         </span>

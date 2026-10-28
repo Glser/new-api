@@ -99,42 +99,39 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
               />
               {t('Total Usage')}
             </span>
-            <Button
-              variant='ghost'
-              size='lg'
-              className='h-10'
-              render={
-                <Link
-                  to='/usage-logs/$section'
-                  params={{ section: 'common' }}
-                />
-              }
-            >
-              <HugeiconsIcon
-                icon={Invoice01Icon}
-                data-icon='inline-start'
-                aria-hidden='true'
-              />
-              {t('Billing History')}
-              <HugeiconsIcon
-                icon={ArrowRight01Icon}
-                data-icon='inline-end'
-                aria-hidden='true'
-              />
-            </Button>
           </div>
           <p className='text-muted-foreground mt-1.5 text-xs leading-relaxed'>
             {t('Total consumed quota')}
           </p>
         </div>
-        <div className='flex min-h-16 flex-1 flex-col justify-center'>
+        <div className='flex min-h-16 flex-1 items-center justify-between gap-4'>
           {props.loading ? (
-            <Skeleton className='h-9 w-40' />
+            <Skeleton className='h-9 w-40 min-w-0' />
           ) : (
-            <p className='text-3xl leading-tight font-semibold tracking-tight break-all tabular-nums'>
+            <p className='min-w-0 text-3xl leading-tight font-semibold tracking-tight break-all tabular-nums'>
               {formatQuota(props.user?.used_quota ?? 0)}
             </p>
           )}
+          <Button
+            variant='ghost'
+            size='lg'
+            className='relative top-1.5 h-10'
+            render={
+              <Link to='/usage-logs/$section' params={{ section: 'common' }} />
+            }
+          >
+            <HugeiconsIcon
+              icon={Invoice01Icon}
+              data-icon='inline-start'
+              aria-hidden='true'
+            />
+            {t('Billing History')}
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              data-icon='inline-end'
+              aria-hidden='true'
+            />
+          </Button>
         </div>
       </div>
       {props.children}

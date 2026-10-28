@@ -51,8 +51,8 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { IconBadge } from '@/components/ui/icon-badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Toggle } from '@/components/ui/toggle'
 import {
   Tooltip,

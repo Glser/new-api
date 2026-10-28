@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { Plus, MoreHorizontal, List, AlertCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
+import { Button, ShineButton } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,17 +56,17 @@ export function ModelsPrimaryButtons() {
 
   return (
     <div className='flex flex-wrap items-center gap-2'>
-      <Button onClick={handleSync} variant='outline' size='sm'>
+      <ShineButton onClick={handleSync} variant='outline' size='sm'>
         {t('Sync metadata')}
-      </Button>
+      </ShineButton>
       {canPrice && (
-        <Button
+        <ShineButton
           onClick={() => setOpen('price-sync')}
           variant='outline'
           size='sm'
         >
           {t('Sync pricing')}
-        </Button>
+        </ShineButton>
       )}
       {/* Create Model */}
       <Button onClick={handleCreateModel} size='sm'>
