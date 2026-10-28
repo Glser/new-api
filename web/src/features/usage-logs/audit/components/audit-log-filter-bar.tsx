@@ -1,7 +1,3 @@
-import type { Table } from '@tanstack/react-table'
-import { useTranslation } from 'react-i18next'
-
-import { DateRangePickerButton } from '@/components/date-range-picker'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -20,7 +16,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Combobox } from '@/components/ui/combobox'
+import type { Table } from '@tanstack/react-table'
+import type { KeyboardEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { DateRangePickerButton } from '@/components/date-range-picker'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 import {
   LogsFilterField,
@@ -35,17 +43,39 @@ function AuditFilterSelect(props: {
   options: { value: string; label: string; disabled?: boolean }[]
   onChange: (value: string) => void
 }) {
+  const selected = props.options.find((option) => option.value === props.value)
+
   return (
     <LogsFilterField>
-      <Combobox
-        options={props.options}
+      <Select
+        items={props.options}
         value={props.value}
         onValueChange={(value) => {
           if (value !== null) props.onChange(value)
         }}
-        aria-label={props.label}
-        className='w-full'
-      />
+      >
+        <SelectTrigger aria-label={props.label}>
+          <SelectValue className='min-w-0'>
+            <span className='truncate'>{selected?.label ?? props.label}</span>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent
+          alignItemWithTrigger={false}
+          className='max-w-[calc(100vw-2rem)] min-w-36'
+        >
+          <SelectGroup>
+            {props.options.map((option) => (
+              <SelectItem
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+              >
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
     </LogsFilterField>
   )
 }
@@ -64,30 +94,31 @@ export function AuditLogFilterBar(props: {
   onReset: () => void
 }) {
   const { t } = useTranslation()
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') props.onSearch()
+  }
   const dateFilter = (
-    <LogsFilterField wide>
-      <DateRangePickerButton
-        start={
-          props.filters.start_timestamp === undefined
-            ? undefined
-            : new Date(props.filters.start_timestamp * 1000)
-        }
-        end={
-          props.filters.end_timestamp === undefined
-            ? undefined
-            : new Date(props.filters.end_timestamp * 1000)
-        }
-        showTime
-        disableFuture
-        align='start'
-        onApply={({ start, end }) =>
-          props.onChange({
-            start_timestamp: Math.floor(start.getTime() / 1000),
-            end_timestamp: Math.floor(end.getTime() / 1000),
-          })
-        }
-      />
-    </LogsFilterField>
+    <DateRangePickerButton
+      start={
+        props.filters.start_timestamp === undefined
+          ? undefined
+          : new Date(props.filters.start_timestamp * 1000)
+      }
+      end={
+        props.filters.end_timestamp === undefined
+          ? undefined
+          : new Date(props.filters.end_timestamp * 1000)
+      }
+      showTime
+      disableFuture
+      align='start'
+      onApply={({ start, end }) =>
+        props.onChange({
+          start_timestamp: Math.floor(start.getTime() / 1000),
+          end_timestamp: Math.floor(end.getTime() / 1000),
+        })
+      }
+    />
   )
   const mainFilters = (
     <>
@@ -153,6 +184,7 @@ export function AuditLogFilterBar(props: {
                 onChange={(event) =>
                   props.onChange({ token_ref: event.target.value || undefined })
                 }
+                onKeyDown={handleKeyDown}
               />
             </LogsFilterField>
             <LogsFilterField>
@@ -165,6 +197,7 @@ export function AuditLogFilterBar(props: {
                     request_id: event.target.value || undefined,
                   })
                 }
+                onKeyDown={handleKeyDown}
               />
             </LogsFilterField>
           </>
@@ -178,6 +211,7 @@ export function AuditLogFilterBar(props: {
               onChange={(event) =>
                 props.onChange({ username: event.target.value || undefined })
               }
+              onKeyDown={handleKeyDown}
             />
           </LogsFilterField>
         )}
@@ -195,20 +229,20 @@ export function AuditLogFilterBar(props: {
       props.filters.category,
       props.tokenScope !== 'all',
     ].filter(Boolean).length
-  const hasFilters =
-    filterCount > 0 ||
-    props.filters.start_timestamp !== undefined ||
-    props.filters.end_timestamp !== undefined
+  const hasFilters = filterCount > 0
+
   return (
     <LogsFilterToolbar
       table={props.table}
+      compactMobile
+      showViewOptions={false}
+      startFilters={dateFilter}
       primaryFilters={
         <>
-          {dateFilter}
           {mainFilters}
+          {advancedFilters}
         </>
       }
-      advancedFilters={advancedFilters}
       mobilePinnedFilters={dateFilter}
       mobileFilters={
         <>

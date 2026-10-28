@@ -27,11 +27,22 @@ import { Button } from '@/components/ui/button'
 import { requireServerSuccess } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
+import { getDefaultTimeRange } from '../../lib/utils'
 import { getAuditLogs, type AuditFilters, type AuditLog } from '../api'
 import { useAuditLogColumns } from './audit-log-columns'
 import { AuditLogFilterBar } from './audit-log-filter-bar'
 
 const EMPTY_LOGS: AuditLog[] = []
+
+function buildDefaultAuditFilters(pageSize = 20): AuditFilters {
+  const { start, end } = getDefaultTimeRange()
+  return {
+    p: 1,
+    page_size: pageSize,
+    start_timestamp: Math.floor(start.getTime() / 1000),
+    end_timestamp: Math.floor(end.getTime() / 1000),
+  }
+}
 
 export function AuditLogViewer(props: {
   scope: 'all' | 'self'
@@ -41,7 +52,9 @@ export function AuditLogViewer(props: {
 }) {
   const { t } = useTranslation()
   const userId = useAuthStore((state) => state.auth.user?.id)
-  const [filters, setFilters] = useState<AuditFilters>({ p: 1, page_size: 20 })
+  const [filters, setFilters] = useState<AuditFilters>(() =>
+    buildDefaultAuditFilters()
+  )
   const [tokenScope, setTokenScope] = useState('all')
   const params = { ...filters }
   if (props.accessOnly) params.category = 'access_token'
@@ -106,7 +119,7 @@ export function AuditLogViewer(props: {
     setFilters((previous) => ({ ...previous, ...patch, p: 1 }))
 
   return (
-    <div className='flex h-full min-h-0 flex-col'>
+    <div className='@container/console flex h-full min-h-0 flex-col'>
       <DataTablePage
         table={table}
         columns={columns}
@@ -119,8 +132,12 @@ export function AuditLogViewer(props: {
         paginationInFooter={!props.accessOnly}
         className='h-auto min-h-0 flex-1'
         applyHeaderSize
-        getColumnClassName={() => 'py-2'}
-        tableClassName='[&_[data-slot=table]]:text-[13px] [&_[data-slot=table]_td]:text-[13px] [&_[data-slot=table]_td_*]:text-[13px] [&_[data-slot=table]_th]:text-[13px] [&_[data-slot=table]_th_*]:text-[13px]'
+        getColumnClassName={(_columnId, kind) =>
+          kind === 'header'
+            ? 'text-center [&>div]:mx-auto [&>div]:justify-center'
+            : 'py-2.5 text-center [&>div]:mx-auto [&>div]:items-center [&>div]:justify-center'
+        }
+        tableClassName='[&_[data-slot=table]]:min-w-[64rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-(--table-header) [&_[data-slot=table]_th]:bg-(--table-header) [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/console:[&_[data-slot=table]_td]:text-sm @min-[48rem]/console:[&_[data-slot=table]_th]:text-sm'
         toolbar={
           <div className='shrink-0 space-y-2'>
             <AuditLogFilterBar
@@ -141,7 +158,7 @@ export function AuditLogViewer(props: {
               }}
               onReset={() => {
                 setTokenScope('all')
-                setFilters({ p: 1, page_size: filters.page_size })
+                setFilters(buildDefaultAuditFilters(filters.page_size))
               }}
             />
             {invalidRange && (

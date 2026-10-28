@@ -273,7 +273,7 @@ export function TimeWheelControl(props: {
       )}
     >
       {props.label ? (
-        <span className='text-muted-foreground text-xs'>{props.label}</span>
+        <span className='text-muted-foreground text-sm'>{props.label}</span>
       ) : null}
       <div className='flex items-center gap-0.5'>
         <TimeWheelColumn
@@ -409,7 +409,7 @@ export function TimeInputPopover(props: {
               }
             }}
             className={cn(
-              'border-input h-8 w-[4.25rem] rounded-lg border bg-transparent px-1.5 text-center text-[13px] leading-8 tabular-nums outline-none',
+              'border-input h-8 w-[4.5rem] rounded-lg border bg-transparent px-1.5 text-center text-sm leading-8 tabular-nums outline-none',
               'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1',
               props.open && 'border-foreground/20 bg-muted',
               props.disabled && 'pointer-events-none opacity-50'

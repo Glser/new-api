@@ -85,6 +85,15 @@ export interface DataTableCardGridProps<TData> {
    * Responsive grid className override. Defaults to a 1/2/3-column grid.
    */
   gridClassName?: string
+  /**
+   * Optional header rendered as the first child of the grid/list. Use for
+   * column labels when the card view is laid out as a directory list.
+   */
+  header?: React.ReactNode
+  /**
+   * Extra className merged onto each card item after the default chrome.
+   */
+  itemClassName?: string
   /** Stable key prefix for skeleton cards. */
   skeletonKeyPrefix?: string
 }
@@ -95,27 +104,46 @@ const DEFAULT_GRID_CLASSNAME =
 function CardGridSkeleton(props: {
   gridClassName?: string
   keyPrefix?: string
+  header?: React.ReactNode
+  itemClassName?: string
 }) {
   const prefix = props.keyPrefix ?? 'card-skeleton'
+  const listLayout = Boolean(props.header)
   return (
     <div className={props.gridClassName ?? DEFAULT_GRID_CLASSNAME}>
-      {[1, 2, 3, 4, 5, 6].map((i) => (
+      {props.header}
+      {(listLayout ? [1, 2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5, 6]).map((i) => (
         <div
           key={`${prefix}-${i}`}
-          className='space-y-3 rounded-lg border bg-(--table-row) p-3'
+          className={
+            listLayout
+              ? cn('flex items-center gap-3 px-3 py-2.5', props.itemClassName)
+              : 'space-y-3 rounded-lg border bg-(--table-row) p-3'
+          }
         >
-          <div className='flex items-center justify-between gap-2'>
-            <Skeleton className='h-4 w-32' />
-            <Skeleton className='h-5 w-16 rounded-md' />
-          </div>
-          <div className='grid grid-cols-2 gap-x-3 gap-y-1.5'>
-            {[1, 2, 3, 4].map((j) => (
-              <div key={j}>
-                <Skeleton className='mb-1 h-2 w-8' />
-                <Skeleton className='h-4 w-full' />
+          {listLayout ? (
+            <>
+              <Skeleton className='size-7 shrink-0 rounded-md' />
+              <Skeleton className='h-4 flex-1' />
+              <Skeleton className='hidden h-4 w-24 sm:block' />
+              <Skeleton className='h-4 w-16' />
+            </>
+          ) : (
+            <>
+              <div className='flex items-center justify-between gap-2'>
+                <Skeleton className='h-4 w-32' />
+                <Skeleton className='h-5 w-16 rounded-md' />
               </div>
-            ))}
-          </div>
+              <div className='grid grid-cols-2 gap-x-3 gap-y-1.5'>
+                {[1, 2, 3, 4].map((j) => (
+                  <div key={j}>
+                    <Skeleton className='mb-1 h-2 w-8' />
+                    <Skeleton className='h-4 w-full' />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       ))}
     </div>
@@ -152,6 +180,8 @@ export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
       <CardGridSkeleton
         gridClassName={props.gridClassName}
         keyPrefix={props.skeletonKeyPrefix}
+        header={props.header}
+        itemClassName={props.itemClassName}
       />
     )
   }
@@ -176,6 +206,7 @@ export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
 
   return (
     <div className={props.gridClassName ?? DEFAULT_GRID_CLASSNAME}>
+      {props.header}
       {rows.map((row) => {
         const key = props.getRowKey ? props.getRowKey(row) : row.id
         const isSelected = row.getIsSelected()
@@ -186,6 +217,7 @@ export function DataTableCardGrid<TData>(props: DataTableCardGridProps<TData>) {
             data-state={isSelected ? 'selected' : undefined}
             className={cn(
               'rounded-lg border bg-(--data-table-card-bg,var(--table-row)) px-3 py-2.5 transition-[background-color,border-color] duration-150 data-[state=selected]:[--data-table-card-bg:color-mix(in_oklch,var(--primary)_7%,var(--table-row))] data-[state=selected]:border-primary/40',
+              props.itemClassName,
               props.getRowClassName?.(row)
             )}
           >

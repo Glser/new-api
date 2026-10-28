@@ -614,10 +614,10 @@ export function useCommonLogsColumns(
                   setUserInfoDialogOpen(true)
                 }}
               >
-                <Avatar className='ring-border/60 size-6 ring-1 max-sm:hidden'>
+                <Avatar className='ring-border/60 size-5 ring-1 max-sm:hidden'>
                   <AvatarFallback
                     className={cn(
-                      'text-[11px] font-semibold',
+                      'grid size-full place-items-center text-[10px] leading-none font-semibold',
                       !sensitiveVisible && 'bg-muted text-muted-foreground'
                     )}
                     style={
@@ -626,9 +626,11 @@ export function useCommonLogsColumns(
                         : undefined
                     }
                   >
-                    {sensitiveVisible
-                      ? getUserAvatarFallback(log.username)
-                      : '•'}
+                    <span className='leading-none'>
+                      {sensitiveVisible
+                        ? getUserAvatarFallback(log.username)
+                        : '•'}
+                    </span>
                   </AvatarFallback>
                 </Avatar>
                 <TooltipProvider delay={300}>
@@ -704,7 +706,7 @@ export function useCommonLogsColumns(
                       copyText={sensitiveVisible ? tokenName : undefined}
                       size='sm'
                       showDot={false}
-                      className='border-border/60 bg-muted/30 text-foreground h-6 max-w-full gap-1.5 overflow-hidden rounded-md border px-2 py-0.5 text-xs! [font-family:var(--font-body)]'
+                      className='border-border/60 bg-muted/30 text-foreground h-6 max-w-full gap-1.5 overflow-hidden rounded-md border px-2 py-0.5 [font-family:var(--font-body)] text-xs!'
                     />
                   )}
                 </TooltipTrigger>
@@ -1047,7 +1049,7 @@ export function useCommonLogsColumns(
                       displayParts={officialPrices.displayParts}
                       perCall={officialPrices.perCall}
                       ratio={hitPriceRatio}
-                      className='max-w-72 flex-wrap justify-center gap-y-0.5 whitespace-normal text-xs! text-black/95 dark:text-white/95 [&>span]:whitespace-nowrap'
+                      className='max-w-72 flex-wrap justify-center gap-y-0.5 text-xs! whitespace-normal text-black/95 dark:text-white/95 [&>span]:whitespace-nowrap'
                     />
                   ) : (
                     <span className='text-muted-foreground'>-</span>

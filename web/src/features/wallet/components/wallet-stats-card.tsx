@@ -62,7 +62,7 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
             </span>
           </div>
           <p className='text-muted-foreground mt-1.5 text-xs leading-relaxed'>
-            {t('Available for pay-as-you-go usage')}
+            {t('For pay-as-you-go usage and subscription purchases')}
           </p>
         </div>
         <div className='flex min-h-16 flex-1 items-center justify-between gap-4'>
@@ -101,7 +101,7 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
             </span>
           </div>
           <p className='text-muted-foreground mt-1.5 text-xs leading-relaxed'>
-            {t('Total consumed quota')}
+            {t('Historical consumed quota')}
           </p>
         </div>
         <div className='flex min-h-16 flex-1 items-center justify-between gap-4'>

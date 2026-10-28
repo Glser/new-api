@@ -30,23 +30,21 @@ export function ApiKeys() {
   const { t } = useTranslation()
   return (
     <ApiKeysProvider>
-      <SectionPageLayout fixedContent>
+      <SectionPageLayout fixedContent alignActions='end'>
         <SectionPageLayout.Title>
-          <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
-            {t('API Keys')}
+          <span className='flex min-w-0 flex-col items-start gap-1.5 overflow-visible whitespace-normal'>
+            <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+              {t('API Keys')}
+            </span>
+            <ApiBaseUrl />
           </span>
         </SectionPageLayout.Title>
+        <SectionPageLayout.Actions>
+          <ApiKeysPrimaryButtons />
+        </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
-          <div className='@container/keys flex h-full min-h-0 flex-col gap-3 sm:gap-4'>
-            <div className='flex shrink-0 items-center justify-between gap-3'>
-              <div className='min-w-0 flex-1'>
-                <ApiBaseUrl />
-              </div>
-              <ApiKeysPrimaryButtons />
-            </div>
-            <div className='min-h-0 flex-1'>
-              <ApiKeysTable />
-            </div>
+          <div className='@container/keys h-full min-h-0'>
+            <ApiKeysTable />
           </div>
         </SectionPageLayout.Content>
       </SectionPageLayout>

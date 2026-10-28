@@ -43,8 +43,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Tooltip,
   TooltipContent,
@@ -70,6 +69,8 @@ export function ChannelsPrimaryButtons() {
   const {
     setOpen,
     setCurrentRow,
+    enableTagMode,
+    setEnableTagMode,
     idSort,
     setIdSort,
     batchMode,
@@ -99,23 +100,21 @@ export function ChannelsPrimaryButtons() {
   return (
     <>
       <div className='flex items-center gap-2'>
-        {/* Desktop: Toggle switches visible */}
-        <div className='hidden items-center gap-2 rounded-md border px-3 py-1.5 sm:flex'>
-          <ListChecks className='text-muted-foreground h-4 w-4' />
-          <Label
-            htmlFor='channel-batch-mode'
-            className='cursor-pointer text-sm'
-          >
-            {t('Batch Operations')}
-          </Label>
-          <Switch
-            id='channel-batch-mode'
-            checked={batchMode}
-            onCheckedChange={handleBatchModeToggle}
-          />
-        </div>
+        <Tabs
+          value={enableTagMode ? 'tag' : 'list'}
+          onValueChange={(value) => setEnableTagMode(value === 'tag')}
+          className='shrink-0'
+        >
+          <TabsList aria-label={t('View')}>
+            <TabsTrigger value='list' className='px-2.5 text-xs'>
+              {t('List')}
+            </TabsTrigger>
+            <TabsTrigger value='tag' className='px-2.5 text-xs'>
+              {t('Tag Mode')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        {/* Create Channel */}
         <Tooltip>
           <TooltipTrigger render={<span className='inline-flex' />}>
             <Button
@@ -125,11 +124,14 @@ export function ChannelsPrimaryButtons() {
                 setOpen('create-channel')
               }}
               size='sm'
+              className='h-8 px-2.5 text-xs'
               disabled={!canEditSensitive}
             >
-              <Plus className='h-4 w-4' />
-              <span className='max-sm:hidden'>{t('Create Channel')}</span>
-              <span className='sm:hidden'>{t('Create')}</span>
+              <Plus data-icon='inline-start' className='size-4' />
+              <span className='leading-none max-sm:hidden'>
+                {t('Create Channel')}
+              </span>
+              <span className='leading-none sm:hidden'>{t('Create')}</span>
             </Button>
           </TooltipTrigger>
           {!canEditSensitive && (
@@ -139,15 +141,15 @@ export function ChannelsPrimaryButtons() {
           )}
         </Tooltip>
 
-        {/* More Actions */}
         <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant='outline' size='sm' />}>
+          <DropdownMenuTrigger
+            render={<Button variant='outline' size='sm' className='h-8' />}
+          >
             <MoreHorizontal className='h-4 w-4' />
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end' className='w-56'>
-            {/* Mobile-only: toggle switches */}
+            {/* Batch + sort toggles */}
             <DropdownMenuCheckboxItem
-              className='sm:hidden'
               checked={batchMode}
               onCheckedChange={handleBatchModeToggle}
             >

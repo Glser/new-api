@@ -114,10 +114,23 @@ func (options ChannelSortOptions) Apply(query *gorm.DB) *gorm.DB {
 			Desc:   true,
 		})
 	}
-	return query.Order(clause.OrderByColumn{
-		Column: clause.Column{Name: "priority"},
-		Desc:   true,
-	})
+	return applyDefaultChannelBrowseOrder(query)
+}
+
+// Enabled channels first, types with the most usage together, then highest
+// used_quota within the type. Disabled channels stay after the live ones.
+func applyDefaultChannelBrowseOrder(query *gorm.DB) *gorm.DB {
+	enabled := common.ChannelStatusEnabled
+	typeUsage := fmt.Sprintf(
+		"(SELECT COALESCE(SUM(type_usage.used_quota), 0) FROM channels AS type_usage WHERE type_usage.type = channels.type AND type_usage.status = %d) DESC",
+		enabled,
+	)
+	return query.
+		Order(fmt.Sprintf("CASE WHEN status = %d THEN 0 ELSE 1 END", enabled)).
+		Order(typeUsage).
+		Order("type ASC").
+		Order("used_quota DESC").
+		Order("id ASC")
 }
 
 func resolveChannelSortOptions(idSort bool, sortOptions []ChannelSortOptions) ChannelSortOptions {

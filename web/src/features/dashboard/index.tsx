@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { Eye, EyeOff, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { useState, useCallback, useMemo, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -26,18 +26,12 @@ import { FadeIn } from '@/components/page-transition'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { ROLE } from '@/lib/roles'
 import type { TimeGranularity } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 import {
-  ModelsFilter,
   ModelsGranularityTabs,
   ModelsTimeRangeControls,
   ModelsUsernameFilter,
@@ -45,12 +39,7 @@ import {
 import { OverviewDashboard } from './components/overview/overview-dashboard'
 import { UserConsoleDashboard } from './components/overview/user-console-dashboard'
 import { DEFAULT_TIME_GRANULARITY } from './constants'
-import {
-  buildDefaultDashboardFilters,
-  getDefaultDays,
-  getSavedChartPreferences,
-  getSavedGranularity,
-} from './lib'
+import { buildDefaultDashboardFilters, getSavedChartPreferences } from './lib'
 import {
   type DashboardSectionId,
   DASHBOARD_DEFAULT_SECTION,
@@ -60,7 +49,6 @@ import type {
   DashboardChartPreferences,
   DashboardFilters,
   QuotaDataItem,
-  UserChartsFilters,
 } from './types'
 
 const route = getRouteApi('/_authenticated/dashboard/$section')
@@ -177,9 +165,6 @@ function PerformanceOverviewFallback() {
           ))}
         </div>
       </div>
-      <div className='px-4 pb-2.5 sm:px-5 sm:pb-3'>
-        <Skeleton className='h-8 w-40' />
-      </div>
     </div>
   )
 }
@@ -219,6 +204,35 @@ function DashboardSectionTabs(props: {
   )
 }
 
+const TOP_USER_LIMIT_OPTIONS = [5, 10, 20, 50] as const
+
+function UserTopLimitTabs(props: {
+  value: number
+  onChange: (limit: number) => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <Tabs
+      value={String(props.value)}
+      onValueChange={(value) => props.onChange(Number(value))}
+      className='shrink-0'
+    >
+      <TabsList aria-label={t('Top Users')}>
+        {TOP_USER_LIMIT_OPTIONS.map((limit) => (
+          <TabsTrigger
+            key={limit}
+            value={String(limit)}
+            className='px-2.5 text-xs'
+          >
+            {t('Top {{count}}', { count: limit })}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  )
+}
+
 export function Dashboard() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -233,19 +247,9 @@ export function Dashboard() {
     getSavedChartPreferences()
   )
   const [modelFilters, setModelFilters] = useState<DashboardFilters>(() =>
-    buildDefaultDashboardFilters(getSavedChartPreferences())
+    buildDefaultDashboardFilters()
   )
-  const [userChartsFilters, setUserChartsFilters] = useState<UserChartsFilters>(
-    () => {
-      const granularity = getSavedGranularity()
-      return {
-        timeGranularity: granularity,
-        selectedRange: getDefaultDays(granularity),
-        topUserLimit: 10,
-      }
-    }
-  )
-  const [flowSensitiveVisible, setFlowSensitiveVisible] = useState(true)
+  const [topUserLimit, setTopUserLimit] = useState(10)
   const [dataRefreshKey, setDataRefreshKey] = useState(0)
 
   const handleFilterChange = useCallback((filters: DashboardFilters) => {
@@ -293,39 +297,34 @@ export function Dashboard() {
     activeSection !== 'overview' && visibleSections.length > 1
   const timeGranularity =
     modelFilters.time_granularity || DEFAULT_TIME_GRANULARITY
-  const flowActions =
-    activeSection === 'flow' ? (
-      <>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant='ghost'
-                size='icon'
-                onClick={() => setFlowSensitiveVisible((prev) => !prev)}
-                aria-label={
-                  flowSensitiveVisible
-                    ? t('Hide sensitive data')
-                    : t('Show sensitive data')
-                }
-                className='text-muted-foreground hover:text-foreground size-8'
-              />
-            }
-          >
-            {flowSensitiveVisible ? <Eye /> : <EyeOff />}
-          </TooltipTrigger>
-          <TooltipContent>
-            {flowSensitiveVisible
-              ? t('Hide sensitive data')
-              : t('Show sensitive data')}
-          </TooltipContent>
-        </Tooltip>
-        <ModelsFilter
+  const showGranularityTabs = activeSection === 'users'
+  const sectionToolbarEnd = (
+    <>
+      {showSectionTabs && (
+        <DashboardSectionTabs
+          value={activeSection}
+          sections={visibleSections}
+          onValueChange={handleSectionChange}
+        />
+      )}
+      {activeSection !== 'users' && (
+        <ModelsUsernameFilter
           currentFilters={modelFilters}
           onFilterChange={handleFilterChange}
         />
-      </>
-    ) : null
+      )}
+      <Button
+        type='button'
+        variant='outline'
+        size='sm'
+        className='h-8 px-2.5 text-xs'
+        onClick={handleRefresh}
+      >
+        <RefreshCw data-icon='inline-start' className='size-3.5' />
+        {t('Refresh')}
+      </Button>
+    </>
+  )
 
   if (activeSection === 'overview') {
     if (isAdmin) return <OverviewDashboard />
@@ -341,62 +340,31 @@ export function Dashboard() {
       </SectionPageLayout.Title>
       <SectionPageLayout.Content>
         <div className='space-y-3 sm:space-y-4'>
-          {activeSection === 'models' ? (
-            <div className='flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
-              <div className='flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2'>
-                <ModelsTimeRangeControls
-                  currentFilters={modelFilters}
-                  onFilterChange={handleFilterChange}
+          <div className='flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
+            <div className='flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2'>
+              <ModelsTimeRangeControls
+                currentFilters={modelFilters}
+                onFilterChange={handleFilterChange}
+              />
+              {showGranularityTabs && (
+                <ModelsGranularityTabs
+                  value={timeGranularity}
+                  onChange={handleGranularityChange}
                 />
-                {!isAdmin && (
-                  <ModelsGranularityTabs
-                    value={timeGranularity}
-                    onChange={handleGranularityChange}
-                  />
-                )}
-              </div>
+              )}
+              {activeSection === 'users' && (
+                <UserTopLimitTabs
+                  value={topUserLimit}
+                  onChange={setTopUserLimit}
+                />
+              )}
+            </div>
+            {activeSection !== 'flow' && (
               <div className='ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
-                {showSectionTabs && (
-                  <DashboardSectionTabs
-                    value={activeSection}
-                    sections={visibleSections}
-                    onValueChange={handleSectionChange}
-                  />
-                )}
-                <ModelsUsernameFilter
-                  currentFilters={modelFilters}
-                  onFilterChange={handleFilterChange}
-                />
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  className='h-8 px-2.5 text-xs'
-                  onClick={handleRefresh}
-                >
-                  <RefreshCw data-icon='inline-start' className='size-3.5' />
-                  {t('Refresh')}
-                </Button>
+                {sectionToolbarEnd}
               </div>
-            </div>
-          ) : (
-            <div className='flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
-              {showSectionTabs ? (
-                <DashboardSectionTabs
-                  value={activeSection}
-                  sections={visibleSections}
-                  onValueChange={handleSectionChange}
-                />
-              ) : (
-                <div />
-              )}
-              {flowActions != null && (
-                <div className='ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
-                  {flowActions}
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
           {activeSection === 'models' && (
             <>
               <FadeIn>
@@ -411,14 +379,16 @@ export function Dashboard() {
               {isAdmin && (
                 <FadeIn delay={0.05}>
                   <Suspense fallback={<PerformanceOverviewFallback />}>
-                    <LazyPerformanceOverview
-                      key={dataRefreshKey}
-                      granularity={timeGranularity}
-                      onGranularityChange={handleGranularityChange}
-                    />
+                    <LazyPerformanceOverview key={dataRefreshKey} />
                   </Suspense>
                 </FadeIn>
               )}
+              <div className='flex min-w-0 flex-wrap items-center justify-start gap-1.5 sm:gap-2'>
+                <ModelsGranularityTabs
+                  value={timeGranularity}
+                  onChange={handleGranularityChange}
+                />
+              </div>
               <FadeIn delay={0.1}>
                 <Suspense fallback={<ModelChartsFallback />}>
                   <LazyConsumptionDistributionChart
@@ -447,8 +417,9 @@ export function Dashboard() {
             <FadeIn>
               <Suspense fallback={<ModelChartsFallback />}>
                 <LazyUserCharts
-                  filters={userChartsFilters}
-                  onFiltersChange={setUserChartsFilters}
+                  key={dataRefreshKey}
+                  filters={modelFilters}
+                  topUserLimit={topUserLimit}
                 />
               </Suspense>
             </FadeIn>
@@ -459,7 +430,7 @@ export function Dashboard() {
                 <LazyFlowCharts
                   key={dataRefreshKey}
                   filters={modelFilters}
-                  sensitiveVisible={flowSensitiveVisible}
+                  toolbarEnd={sectionToolbarEnd}
                 />
               </Suspense>
             </FadeIn>

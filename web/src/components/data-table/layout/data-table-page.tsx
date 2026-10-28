@@ -291,6 +291,17 @@ export type DataTablePageProps<TData> = {
    * Responsive grid className override for the card view.
    */
   cardGridClassName?: string
+
+  /**
+   * Optional header rendered above card items. Intended for directory-style
+   * card lists that need a single row of column labels.
+   */
+  cardHeader?: React.ReactNode
+
+  /**
+   * Extra className merged onto each card item.
+   */
+  cardItemClassName?: string
 }
 
 /**
@@ -467,6 +478,8 @@ function renderMobile<TData>(
           emptyIcon={props.emptyIcon}
           renderCard={props.renderCard}
           gridClassName={props.cardGridClassName ?? 'grid grid-cols-1 gap-3'}
+          header={props.cardHeader}
+          itemClassName={props.cardItemClassName}
           skeletonKeyPrefix={props.skeletonKeyPrefix}
           getRowKey={props.mobileProps?.getRowKey}
           getRowClassName={mobileGetRowClassName}
@@ -520,6 +533,8 @@ function renderDesktop<TData>(
           emptyIcon={props.emptyIcon}
           renderCard={props.renderCard}
           gridClassName={props.cardGridClassName}
+          header={props.cardHeader}
+          itemClassName={props.cardItemClassName}
           skeletonKeyPrefix={props.skeletonKeyPrefix}
           getRowClassName={(row) =>
             props.getRowClassName?.(row, { isMobile: false })

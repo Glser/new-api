@@ -23,8 +23,6 @@ import { useTranslation } from 'react-i18next'
 
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ModelsGranularityTabs } from '@/features/dashboard/components/models/models-filter-dialog'
-import { DEFAULT_TIME_GRANULARITY } from '@/features/dashboard/constants'
 import { getPerfMetricsSummary } from '@/features/performance-metrics/api'
 import {
   formatLatency,
@@ -35,7 +33,6 @@ import {
 } from '@/features/performance-metrics/lib/format'
 import type { PerfModelSummary } from '@/features/performance-metrics/types'
 import { requireServerSuccess } from '@/lib/server-error-message'
-import type { TimeGranularity } from '@/lib/time'
 import { cn } from '@/lib/utils'
 
 const PERFORMANCE_WINDOW_HOURS = 24
@@ -87,10 +84,7 @@ function buildPerformanceSummary(rows: PerfModelSummary[]): PerformanceSummary {
   }
 }
 
-export function PerformanceOverview(props: {
-  granularity?: TimeGranularity
-  onGranularityChange?: (value: TimeGranularity) => void
-}) {
+export function PerformanceOverview() {
   const { t } = useTranslation()
   const metricsQuery = useQuery({
     queryKey: ['perf-metrics-summary', PERFORMANCE_WINDOW_HOURS],
@@ -110,8 +104,6 @@ export function PerformanceOverview(props: {
   const topModels = useMemo(() => models.slice(0, TOP_MODEL_LIMIT), [models])
   const loading = metricsQuery.isLoading
   const hasData = models.length > 0
-  const granularity = props.granularity ?? DEFAULT_TIME_GRANULARITY
-
   return (
     <div className='overflow-hidden rounded-lg border'>
       <div className='flex flex-wrap items-center gap-x-5 gap-y-2.5 px-4 py-2.5 sm:px-5 sm:py-3'>
@@ -177,15 +169,6 @@ export function PerformanceOverview(props: {
           </>
         )}
       </div>
-
-      {props.onGranularityChange != null && (
-        <div className='flex items-center px-4 pb-2.5 sm:px-5 sm:pb-3'>
-          <ModelsGranularityTabs
-            value={granularity}
-            onChange={props.onGranularityChange}
-          />
-        </div>
-      )}
     </div>
   )
 }

@@ -83,9 +83,13 @@ export function ChannelsProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState<DialogType>(null)
   const [currentRow, setCurrentRow] = useState<Channel | null>(null)
   const [currentTag, setCurrentTag] = useState<string | null>(null)
-  const [enableTagMode, setEnableTagMode] = useState(() => {
+  const [enableTagMode, setEnableTagModeState] = useState(() => {
     return localStorage.getItem('enable-tag-mode') === 'true'
   })
+  const setEnableTagMode = useCallback((enabled: boolean) => {
+    localStorage.setItem('enable-tag-mode', String(enabled))
+    setEnableTagModeState(enabled)
+  }, [])
   const [idSort, setIdSort] = useState(() => {
     return localStorage.getItem('channels-id-sort') === 'true'
   })
@@ -124,6 +128,7 @@ export function ChannelsProvider({ children }: { children: React.ReactNode }) {
       currentRow,
       currentTag,
       enableTagMode,
+      setEnableTagMode,
       idSort,
       batchMode,
       sensitiveVisible,

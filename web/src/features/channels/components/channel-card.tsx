@@ -17,29 +17,72 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { flexRender, type Row } from '@tanstack/react-table'
-import { memo, type MouseEvent } from 'react'
+import { ListOrdered, Shuffle, Tags } from 'lucide-react'
+import { memo, type MouseEvent, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { GroupBadge } from '@/components/group-badge'
-import { StatusBadge } from '@/components/status-badge'
+import { StatusBadge, StatusBadgeTypeContext } from '@/components/status-badge'
 import { cn } from '@/lib/utils'
 
-import { CHANNEL_STATUS } from '../constants'
-import { isTagAggregateRow, parseGroupsList } from '../lib'
+import { CHANNEL_STATUS, CHANNEL_TYPE_TASK_PLUGIN } from '../constants'
+import {
+  getChannelTypeLabel,
+  isMultiKeyChannel,
+  isTagAggregateRow,
+  parseChannelSettings,
+  parseGroupsList,
+} from '../lib'
 import type { Channel } from '../types'
 import { ChannelRowActionsLayoutContext } from './channel-row-actions-context'
+import { ChannelTypeLogo } from './channel-type-badge'
 import { useChannels } from './channels-provider'
 
 const SENSITIVE_MASK = '••••'
 
-/**
- * Bespoke channel card for the card view. Reuses every column's existing cell
- * renderer via `flexRender`, so the table's information and interactions are
- * preserved: row selection, provider/multi-key/IO.NET type badge, id,
- * name/remark + warning icons, status (with tooltips), groups, inline
- * priority/weight spinners, balance refresh, response/test times, tag
- * expand-collapse, and the per-row (or per-tag) actions menu.
- */
+function ChannelCardLogo(props: { channel: Channel }) {
+  if (isTagAggregateRow(props.channel)) {
+    return (
+      <Tags className='text-muted-foreground size-3.5' aria-hidden='true' />
+    )
+  }
+
+  const settings = parseChannelSettings(props.channel.setting)
+  const pluginKey = settings.task_plugin_key
+  let plugin: { key: string } | undefined
+  if (props.channel.type === CHANNEL_TYPE_TASK_PLUGIN && pluginKey) {
+    plugin = { key: pluginKey }
+  }
+
+  return <ChannelTypeLogo type={props.channel.type} plugin={plugin} size={16} />
+}
+
+function statusDotClass(status: number) {
+  if (status === CHANNEL_STATUS.ENABLED) return 'bg-success'
+  if (status === CHANNEL_STATUS.AUTO_DISABLED) return 'bg-warning'
+  if (status === CHANNEL_STATUS.MANUAL_DISABLED) {
+    return 'bg-muted-foreground/70'
+  }
+  return 'bg-muted-foreground/40'
+}
+
+function MiniField(props: {
+  label: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn('min-w-0', props.className)}>
+      <div className='text-muted-foreground mb-1 text-[11px] leading-none font-medium'>
+        {props.label}
+      </div>
+      <div className='flex min-h-7 min-w-0 items-center overflow-hidden text-sm [&_:is([data-slot=badge-cell],[data-slot=status-badge])]:ml-0'>
+        {props.children}
+      </div>
+    </div>
+  )
+}
+
 function ChannelCardComponent({
   row,
   isSelected,
@@ -49,7 +92,8 @@ function ChannelCardComponent({
 }) {
   const { t } = useTranslation()
   const { sensitiveVisible } = useChannels()
-  const isTagRow = isTagAggregateRow(row.original)
+  const channel = row.original
+  const isTagRow = isTagAggregateRow(channel)
   const cells = row.getAllCells()
 
   const renderCell = (id: string) => {
@@ -60,16 +104,8 @@ function ChannelCardComponent({
     return flexRender(cell.column.columnDef.cell, cell.getContext())
   }
 
-  const fieldLabels: Record<string, string> = {
-    balance: t('Used / Remaining'),
-    response_time: t('Response'),
-    test_time: t('Last Tested'),
-  }
-
-  const groups = parseGroupsList(row.original.group ?? '')
-
+  const groups = parseGroupsList(channel.group ?? '')
   const selectCell = renderCell('select')
-  const typeCell = renderCell('type')
   const nameCell = renderCell('name')
   const statusCell = renderCell('status')
   const actionsCell = renderCell('actions')
@@ -78,124 +114,118 @@ function ChannelCardComponent({
   const balanceCell = renderCell('balance')
   const responseCell = renderCell('response_time')
   const testCell = renderCell('test_time')
-
-  const labelClass = 'text-muted-foreground text-[11px] font-medium select-none'
-
-  // In card view the enable/disable state is already conveyed by the inline
-  // power toggle, so the plain "Enabled"/"Disabled" badge is redundant. Keep
-  // only the informative states (e.g. auto-disabled, unknown) and tag rows.
+  const emptyValue = <span className='text-muted-foreground'>-</span>
+  const typeName = t(getChannelTypeLabel(channel.type))
+  const isMultiKey = !isTagRow && isMultiKeyChannel(channel)
+  const multiKeyMode = channel.channel_info?.multi_key_mode ?? 'random'
+  const MultiKeyModeIcon = multiKeyMode === 'random' ? Shuffle : ListOrdered
   const showStatusBadge =
     isTagRow ||
-    (row.original.status !== CHANNEL_STATUS.ENABLED &&
-      row.original.status !== CHANNEL_STATUS.MANUAL_DISABLED)
+    (channel.status !== CHANNEL_STATUS.ENABLED &&
+      channel.status !== CHANNEL_STATUS.MANUAL_DISABLED)
+  const hasRouting = Boolean(channel.tag || groups.length > 0)
+
+  let subtitle: ReactNode = null
+  if (!isTagRow) {
+    subtitle = (
+      <div className='text-muted-foreground mt-0.5 flex min-w-0 items-center gap-1 text-[11px] leading-none'>
+        <span className='truncate tabular-nums'>
+          #{sensitiveVisible ? channel.id : SENSITIVE_MASK}
+          <span className='mx-1'>·</span>
+          {typeName}
+        </span>
+        {isMultiKey ? (
+          <MultiKeyModeIcon className='size-3 shrink-0' aria-hidden='true' />
+        ) : null}
+      </div>
+    )
+  }
 
   return (
     <ChannelRowActionsLayoutContext.Provider value='card'>
       <div
         data-state={isSelected ? 'selected' : undefined}
-        className='flex flex-col gap-3'
+        className='flex min-h-0 flex-col gap-3'
       >
-        {/* Row 1: selection + type, with status badge + actions menu */}
-        <div className='flex items-center justify-between gap-2'>
-          <div className='flex min-w-0 flex-1 items-center gap-2'>
-            {!isTagRow && selectCell && (
-              <span className='shrink-0'>{selectCell}</span>
-            )}
-            <div className='min-w-0 overflow-hidden'>{typeCell}</div>
+        <div className='flex min-w-0 items-start gap-2'>
+          {!isTagRow && selectCell ? (
+            <span className='mt-0.5 shrink-0'>{selectCell}</span>
+          ) : null}
+          <div
+            className='bg-muted/40 relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border'
+            aria-hidden='true'
+          >
+            <ChannelCardLogo channel={channel} />
+            {!isTagRow ? (
+              <span
+                className={cn(
+                  'ring-background absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2',
+                  statusDotClass(channel.status)
+                )}
+              />
+            ) : null}
           </div>
-          <div className='flex shrink-0 items-center gap-1.5'>
-            {showStatusBadge && statusCell}
+          <div className='min-w-0 flex-1 overflow-hidden'>
+            <div className='min-w-0 overflow-hidden text-sm [&_.font-medium]:font-semibold'>
+              {nameCell}
+            </div>
+            {subtitle}
+          </div>
+          <div className='-mt-1 -mr-1.5 flex shrink-0 items-center gap-0.5'>
+            {showStatusBadge ? statusCell : null}
             {actionsCell}
           </div>
         </div>
 
-        {/* Body: left column (id/name + balance) paired with a right-aligned
-          column (priority/weight + response/test time). */}
-        <div className='flex items-start justify-between gap-3'>
-          {/* Left column */}
-          <div className='flex min-w-0 flex-1 flex-col gap-3 overflow-hidden'>
-            <div className='min-w-0 text-sm'>
-              {!isTagRow && (
-                <div className={labelClass}>
-                  #{sensitiveVisible ? row.original.id : SENSITIVE_MASK}
-                </div>
-              )}
-              {nameCell}
-            </div>
-            <div className='min-w-0'>
-              <div className={cn('mb-1', labelClass)}>
-                {fieldLabels.balance}
-              </div>
-              <div className='min-w-0 overflow-hidden text-sm'>
-                {balanceCell ?? (
-                  <span className='text-muted-foreground'>-</span>
-                )}
-              </div>
-            </div>
+        <StatusBadgeTypeContext.Provider value='text'>
+          <div className='bg-muted/40 grid grid-cols-2 gap-x-4 gap-y-2.5 rounded-lg px-3 py-2.5'>
+            <MiniField label={t('Priority')}>
+              {priorityCell ?? emptyValue}
+            </MiniField>
+            <MiniField label={t('Weight')}>
+              {weightCell ?? emptyValue}
+            </MiniField>
+            <MiniField className='col-span-2' label={t('Used / Remaining')}>
+              {balanceCell ?? emptyValue}
+            </MiniField>
+            <MiniField label={t('Response')}>
+              {responseCell ?? emptyValue}
+            </MiniField>
+            <MiniField label={t('Last Tested')}>
+              {testCell ?? emptyValue}
+            </MiniField>
           </div>
+        </StatusBadgeTypeContext.Provider>
 
-          {/* Right column (sits on the right, content left-aligned). A single
-            grid with content-sized columns keeps Priority/Weight and
-            Response/Last Tested aligned without wasting horizontal space. */}
-          <div className='grid shrink-0 grid-cols-[auto_auto] items-center gap-x-3 gap-y-1'>
-            <span className={labelClass}>{t('Priority')}</span>
-            <span className={labelClass}>{t('Weight')}</span>
-            <div className='flex justify-start'>{priorityCell}</div>
-            <div className='flex justify-start'>{weightCell}</div>
-            <span className={cn('mt-2', labelClass)}>
-              {fieldLabels.response_time}
-            </span>
-            <span className={cn('mt-2', labelClass)}>
-              {fieldLabels.test_time}
-            </span>
-            <div className='overflow-hidden text-sm'>
-              {responseCell ?? <span className='text-muted-foreground'>-</span>}
-            </div>
-            <div className='overflow-hidden text-sm'>
-              {testCell ?? <span className='text-muted-foreground'>-</span>}
-            </div>
+        {hasRouting && !isTagRow ? (
+          <div className='mt-auto -ml-1.5 flex flex-wrap gap-1'>
+            {channel.tag ? (
+              <StatusBadge
+                label={sensitiveVisible ? channel.tag : SENSITIVE_MASK}
+                autoColor={channel.tag}
+                size='sm'
+                copyable={false}
+                className='cursor-pointer'
+                onClick={(event: MouseEvent) => {
+                  event.stopPropagation()
+                  const table = row.getAllCells()[0]?.getContext().table
+                  table?.getColumn('tag')?.setFilterValue([channel.tag])
+                }}
+              />
+            ) : null}
+            {groups.map((group) => (
+              <GroupBadge
+                key={group}
+                group={group}
+                label={sensitiveVisible ? undefined : SENSITIVE_MASK}
+                size='sm'
+              />
+            ))}
           </div>
-        </div>
-
-        {/* Last row: tag + groups span the full width */}
-        <div className='min-w-0'>
-          {row.original.tag || groups.length > 0 ? (
-            <div className='-ml-1.5 flex flex-wrap gap-1'>
-              {row.original.tag ? (
-                <StatusBadge
-                  label={sensitiveVisible ? row.original.tag : SENSITIVE_MASK}
-                  autoColor={row.original.tag}
-                  size='sm'
-                  copyable={false}
-                  className='cursor-pointer'
-                  onClick={(event: MouseEvent) => {
-                    event.stopPropagation()
-                    const table = row.getAllCells()[0]?.getContext().table
-                    table?.getColumn('tag')?.setFilterValue([row.original.tag])
-                  }}
-                />
-              ) : null}
-              {groups.map((g) => (
-                <GroupBadge
-                  key={g}
-                  group={g}
-                  label={sensitiveVisible ? undefined : SENSITIVE_MASK}
-                  size='sm'
-                />
-              ))}
-            </div>
-          ) : (
-            <span className='text-muted-foreground text-sm'>-</span>
-          )}
-        </div>
+        ) : null}
       </div>
     </ChannelRowActionsLayoutContext.Provider>
   )
 }
 
-/**
- * Memoized so each card only re-renders when its own react-table row reference
- * changes, instead of every card re-rendering whenever the parent table state
- * (filters, pagination, sensitive toggle, etc.) updates.
- */
 export const ChannelCard = memo(ChannelCardComponent)

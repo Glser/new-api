@@ -31,7 +31,12 @@ import type {
   DashboardFilters,
   ModelAnalyticsChartTab,
 } from '@/features/dashboard/types'
-import { getRollingDateRange, type TimeGranularity } from '@/lib/time'
+import type { TimeGranularity } from '@/lib/time'
+
+import {
+  buildDefaultUserConsoleRange,
+  getUserConsoleGranularity,
+} from './user-console-range'
 
 function isTimeGranularity(value: unknown): value is TimeGranularity {
   return value === 'hour' || value === 'day' || value === 'week'
@@ -140,15 +145,13 @@ export function getDefaultDays(granularity?: TimeGranularity): number {
   return TIME_RANGE_BY_GRANULARITY[getSavedGranularity(granularity)]
 }
 
-export function buildDefaultDashboardFilters(
-  preferences: DashboardChartPreferences = getSavedChartPreferences()
-): DashboardFilters {
-  const { start, end } = getRollingDateRange(preferences.defaultTimeRangeDays)
+export function buildDefaultDashboardFilters(): DashboardFilters {
+  const range = buildDefaultUserConsoleRange()
   return {
     ...EMPTY_DASHBOARD_FILTERS,
-    start_timestamp: start,
-    end_timestamp: end,
-    time_granularity: preferences.defaultTimeGranularity,
+    start_timestamp: range.start,
+    end_timestamp: range.end,
+    time_granularity: getUserConsoleGranularity(range),
   }
 }
 

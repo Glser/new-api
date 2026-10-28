@@ -38,10 +38,10 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { MultiSelect } from '@/components/multi-select'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Empty,
@@ -51,8 +51,8 @@ import {
   EmptyTitle,
 } from '@/components/ui/empty'
 import { IconBadge } from '@/components/ui/icon-badge'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Toggle } from '@/components/ui/toggle'
 import {
   Tooltip,
@@ -71,7 +71,6 @@ import {
   getFlowStages,
 } from '@/features/dashboard/lib'
 import {
-  compactFlowSelectionLabel,
   flowDisplayState,
   requireSuccessfulFlowRows,
 } from '@/features/dashboard/lib/flow-selection'
@@ -99,6 +98,7 @@ interface FlowChartsProps {
   filters?: DashboardFilters
   // When false, sensitive node labels are masked in the rendered Sankey.
   sensitiveVisible?: boolean
+  toolbarEnd?: ReactNode
 }
 
 const FLOW_METRIC_OPTIONS = [
@@ -376,14 +376,6 @@ export function FlowCharts(props: FlowChartsProps) {
       t,
     ]
   )
-  const userFilterOptions = useMemo(
-    () =>
-      flowData.filterOptions.users.map((user) => ({
-        label: `${user.label} · ${user.valueLabel}`,
-        value: user.value,
-      })),
-    [flowData.filterOptions.users]
-  )
   const nodeFilterStages = useMemo(
     () => visibleStages.filter((stage) => stage !== 'user'),
     [visibleStages]
@@ -534,103 +526,65 @@ export function FlowCharts(props: FlowChartsProps) {
 
   return (
     <div className='flex flex-col gap-3'>
-      <div className='flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between'>
-        <div className='flex min-w-0 flex-wrap items-end gap-2'>
-          <div className='flex min-w-0 flex-col gap-1.5'>
-            <div className='flex items-center gap-1.5'>
-              <span className='text-muted-foreground text-xs font-medium'>
-                {t('Flow width metric')}
-              </span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <button
-                        type='button'
-                        className='text-muted-foreground/60 hover:text-foreground flex size-5 shrink-0 items-center justify-center rounded-md'
-                        aria-label={t('Flow width metric')}
-                      />
-                    }
-                  >
-                    <Info className='size-3.5' />
-                  </TooltipTrigger>
-                  <TooltipContent className='max-w-[14rem]'>
-                    {t('Choose how flow widths are calculated.')}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <Tabs
-              value={metric}
-              onValueChange={(value) => setMetric(value as FlowMetric)}
-              className='shrink-0'
-            >
-              <TabsList aria-label={t('Flow width metric')}>
-                {FLOW_METRIC_OPTIONS.map((option) => {
-                  const Icon = option.icon
-                  return (
-                    <TabsTrigger
-                      key={option.value}
-                      value={option.value}
-                      className='gap-1.5 px-2.5 text-xs'
-                    >
-                      <Icon data-icon='inline-start' aria-hidden='true' />
-                      {t(option.labelKey)}
-                    </TabsTrigger>
-                  )
-                })}
-              </TabsList>
-            </Tabs>
-          </div>
-
-          <div className='flex min-w-0 flex-col gap-1.5'>
-            <span className='text-muted-foreground text-xs font-medium'>
-              {t('Display limit')}
-            </span>
-            <Tabs
-              value={String(topNodeLimit)}
-              onValueChange={(value) => setTopNodeLimit(Number(value))}
-              className='shrink-0'
-            >
-              <TabsList aria-label={t('Display limit')}>
-                {FLOW_TOP_LIMIT_OPTIONS.map((limit) => (
-                  <TabsTrigger
-                    key={limit}
-                    value={String(limit)}
-                    className='px-2.5 text-xs'
-                  >
-                    {t('Top {{count}}', { count: limit })}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </div>
-
-          <div className='flex min-w-0 flex-col gap-1.5'>
-            <span className='text-muted-foreground text-xs font-medium'>
-              {t('Overflow items')}
-            </span>
-            <Tabs
-              value={overflowMode}
-              onValueChange={(value) =>
-                setOverflowMode(value as FlowOverflowMode)
-              }
-              className='shrink-0'
-            >
-              <TabsList aria-label={t('Overflow items')}>
-                {FLOW_OVERFLOW_MODE_OPTIONS.map((option) => (
+      <div className='flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
+        <div className='flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2'>
+          <Tabs
+            value={metric}
+            onValueChange={(value) => setMetric(value as FlowMetric)}
+            className='shrink-0'
+          >
+            <TabsList aria-label={t('Flow width metric')}>
+              {FLOW_METRIC_OPTIONS.map((option) => {
+                const Icon = option.icon
+                return (
                   <TabsTrigger
                     key={option.value}
                     value={option.value}
-                    className='px-2.5 text-xs'
+                    className='gap-1.5 px-2.5 text-xs'
                   >
+                    <Icon data-icon='inline-start' aria-hidden='true' />
                     {t(option.labelKey)}
                   </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </div>
-
+                )
+              })}
+            </TabsList>
+          </Tabs>
+          <Tabs
+            value={String(topNodeLimit)}
+            onValueChange={(value) => setTopNodeLimit(Number(value))}
+            className='shrink-0'
+          >
+            <TabsList aria-label={t('Display limit')}>
+              {FLOW_TOP_LIMIT_OPTIONS.map((limit) => (
+                <TabsTrigger
+                  key={limit}
+                  value={String(limit)}
+                  className='px-2.5 text-xs'
+                >
+                  {t('Top {{count}}', { count: limit })}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          <Tabs
+            value={overflowMode}
+            onValueChange={(value) =>
+              setOverflowMode(value as FlowOverflowMode)
+            }
+            className='shrink-0'
+          >
+            <TabsList aria-label={t('Overflow items')}>
+              {FLOW_OVERFLOW_MODE_OPTIONS.map((option) => (
+                <TabsTrigger
+                  key={option.value}
+                  value={option.value}
+                  className='px-2.5 text-xs'
+                >
+                  {t(option.labelKey)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
           <FlowNodeFilterControl
             stages={nodeFilterStages}
             stageLabels={FLOW_STAGE_LABEL_KEYS}
@@ -642,28 +596,15 @@ export function FlowCharts(props: FlowChartsProps) {
             onRemoveNode={removeFlowNodeFilter}
             onClearNodes={clearFlowNodeFilters}
           />
-        </div>
-
-        <div className='flex min-w-0 items-center gap-2 xl:justify-end'>
-          {isAdmin && (
-            <div className='flex min-w-0 flex-col gap-2 sm:flex-row xl:w-[min(24rem,34vw)]'>
-              <MultiSelect
-                options={userFilterOptions}
-                selected={selectedUsers}
-                onChange={setSelectedUsers}
-                placeholder={t('All users')}
-                emptyText={t('No users')}
-                maxVisibleChips={2}
-                renderSelectedSummary={(values) =>
-                  compactFlowSelectionLabel(values.length)
-                }
-              />
-            </div>
-          )}
           {isLoading && (
             <Loader2 className='text-muted-foreground size-4 animate-spin' />
           )}
         </div>
+        {props.toolbarEnd ? (
+          <div className='ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2'>
+            {props.toolbarEnd}
+          </div>
+        ) : null}
       </div>
 
       <div className='overflow-hidden rounded-lg border'>

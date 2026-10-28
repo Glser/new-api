@@ -24,6 +24,8 @@ import {
   type ReactNode,
 } from 'react'
 
+import { cn } from '@/lib/utils'
+
 import { Main } from './main'
 import { PageFooterProvider } from './page-footer'
 
@@ -53,6 +55,7 @@ export type SectionPageLayoutProps = {
   children: ReactNode
   fixedContent?: boolean
   stackActionsOnMobile?: boolean
+  alignActions?: 'center' | 'end'
 }
 
 export function SectionPageLayout(props: SectionPageLayoutProps) {
@@ -93,12 +96,17 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
                   : 'min-w-0 flex-1'
               }
             >
-              <h2 className='truncate text-base font-bold tracking-tight sm:text-lg'>
+              <h2 className='truncate pl-1.5 text-base font-bold tracking-tight sm:pl-2 sm:text-lg'>
                 {title}
               </h2>
             </div>
             {actions != null && (
-              <div className='flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-x-4'>
+              <div
+                className={cn(
+                  'flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-x-4',
+                  props.alignActions === 'end' && 'self-end'
+                )}
+              >
                 {actions}
               </div>
             )}

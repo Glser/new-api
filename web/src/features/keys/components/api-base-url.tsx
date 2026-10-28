@@ -16,10 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Link2 } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useStatus } from '@/hooks/use-status'
 
 function readServerAddress(status: unknown): string | undefined {
@@ -51,16 +57,29 @@ export function ApiBaseUrl() {
   if (!baseUrl) return null
 
   return (
-    <div className='text-muted-foreground ml-1 flex min-w-0 items-center gap-2 text-sm font-normal tracking-normal'>
-      <span className='shrink-0'>API Base URL:</span>
-      <code className='bg-muted/60 text-foreground min-w-0 truncate rounded px-1.5 py-0.5 font-mono text-sm font-normal'>
-        {baseUrl}
-      </code>
+    <div
+      className='flex h-8 max-w-[min(100%,28rem)] min-w-0 items-stretch overflow-hidden rounded-md border font-normal tracking-normal'
+      aria-label='API Base URL'
+    >
+      <span className='text-muted-foreground flex shrink-0 items-center gap-1.5 border-r px-2.5 text-xs font-medium'>
+        <Link2 className='size-3.5' aria-hidden='true' />
+        API Base URL
+      </span>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <code className='text-foreground min-w-0 flex-1 truncate px-2.5 font-mono text-xs leading-8' />
+          }
+        >
+          {baseUrl}
+        </TooltipTrigger>
+        <TooltipContent>{baseUrl}</TooltipContent>
+      </Tooltip>
       <CopyButton
         value={baseUrl}
         size='icon'
-        className='size-6'
-        iconClassName='size-3'
+        className='size-8 rounded-none border-l'
+        iconClassName='size-3.5'
         tooltip={t('Copy to clipboard')}
         aria-label={t('Copy to clipboard')}
       />

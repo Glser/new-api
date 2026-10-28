@@ -330,6 +330,29 @@ function TagWeightCell({ channel }: { channel: TagRow }) {
 const MAX_INLINE_BALANCE_CHARS = 8
 const SENSITIVE_MASK = '••••'
 
+function ChannelNameTagBadge(props: {
+  tag: string
+  onFilter: (event: React.MouseEvent) => void
+}) {
+  const { t } = useTranslation()
+  const { sensitiveVisible } = useChannels()
+  const layout = useContext(ChannelRowActionsLayoutContext)
+  if (!props.tag || layout === 'card') {
+    return null
+  }
+  return (
+    <StatusBadge
+      label={sensitiveVisible ? props.tag : SENSITIVE_MASK}
+      autoColor={props.tag}
+      size='sm'
+      copyable={false}
+      className='cursor-pointer'
+      onClick={props.onFilter}
+      title={t('Filter by this tag')}
+    />
+  )
+}
+
 /**
  * Balance cell component with click to update
  */
@@ -736,20 +759,13 @@ export function useChannelsColumns(
                     </TooltipProvider>
                   )}
                   <UpstreamUpdateTags channel={channel} />
-                  {channelTag ? (
-                    <StatusBadge
-                      label={sensitiveVisible ? channelTag : SENSITIVE_MASK}
-                      autoColor={channelTag}
-                      size='sm'
-                      copyable={false}
-                      className='cursor-pointer'
-                      onClick={(event: React.MouseEvent) => {
-                        event.stopPropagation()
-                        table.getColumn('tag')?.setFilterValue([channelTag])
-                      }}
-                      title={t('Filter by this tag')}
-                    />
-                  ) : null}
+                  <ChannelNameTagBadge
+                    tag={channelTag}
+                    onFilter={(event: React.MouseEvent) => {
+                      event.stopPropagation()
+                      table.getColumn('tag')?.setFilterValue([channelTag])
+                    }}
+                  />
                 </div>
                 {channel.remark && (
                   <TooltipProvider delay={200}>

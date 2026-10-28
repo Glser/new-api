@@ -89,7 +89,11 @@ export function AuditLogs() {
   }, [queryClient, userId])
   return (
     <SectionPageLayout fixedContent>
-      <SectionPageLayout.Title>{t('Audit Logs')}</SectionPageLayout.Title>
+      <SectionPageLayout.Title>
+        <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+          {t('Audit Logs')}
+        </span>
+      </SectionPageLayout.Title>
       <SectionPageLayout.Actions>
         {canReadAll && !accessRevoked && (
           <Tabs
@@ -106,7 +110,7 @@ export function AuditLogs() {
         )}
       </SectionPageLayout.Actions>
       <SectionPageLayout.Content>
-        <div className='flex h-full min-h-0 flex-col gap-3'>
+        <div className='@container/console flex h-full min-h-0 flex-col gap-3 sm:gap-4'>
           {accessRevoked && (
             <p role='status' className='text-muted-foreground shrink-0 text-xs'>
               {t('Audit access changed. Showing only your records.')}

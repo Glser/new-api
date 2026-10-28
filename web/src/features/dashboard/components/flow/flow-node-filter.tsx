@@ -97,139 +97,134 @@ export function FlowNodeFilterControl(props: FlowNodeFilterControlProps) {
   const selectedCount = selectedOptions.length
 
   return (
-    <div className='flex min-w-0 flex-col gap-1.5'>
-      <span className='text-muted-foreground text-xs font-medium'>
-        {t('Node filters')}
-      </span>
-      <div className='flex min-w-0 flex-wrap items-center gap-1.5'>
-        <Popover>
-          <PopoverTrigger
-            render={
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                aria-label={t('Filter by node')}
-              />
+    <div className='flex min-w-0 flex-wrap items-center gap-1.5'>
+      <Popover>
+        <PopoverTrigger
+          render={
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              aria-label={t('Filter by node')}
+            />
+          }
+        >
+          <Filter data-icon='inline-start' aria-hidden='true' />
+          {selectedCount > 0 ? t('Selected nodes') : t('All nodes')}
+          {selectedCount > 0 && (
+            <Badge variant='secondary' className='rounded-sm px-1'>
+              {selectedCount}
+            </Badge>
+          )}
+        </PopoverTrigger>
+        <PopoverContent
+          className='w-[min(28rem,calc(100vw-2rem))] p-0'
+          align='start'
+        >
+          <PopoverHeader className='px-3 pt-3'>
+            <PopoverTitle>{t('Node filters')}</PopoverTitle>
+            <PopoverDescription>
+              {t('Value metric')}: {props.metricLabel}
+            </PopoverDescription>
+          </PopoverHeader>
+          <Command>
+            <CommandInput placeholder={t('Filter by node')} />
+            <CommandList>
+              <CommandEmpty>{t('No nodes')}</CommandEmpty>
+              {optionsByStage.map((group) => {
+                const stageLabel = t(props.stageLabels[group.stage])
+                return (
+                  <CommandGroup key={group.stage} heading={stageLabel}>
+                    {group.options.map((option) => {
+                      const key = flowNodeFilterKey({
+                        kind: option.kind,
+                        id: option.value,
+                      })
+                      const metricValueLabel = props.formatMetricValue(
+                        option.valueRaw
+                      )
+                      return (
+                        <CommandItem
+                          key={key}
+                          value={`${stageLabel} ${option.label} ${props.metricLabel} ${metricValueLabel}`}
+                          data-checked={selectedKeys.has(key)}
+                          onSelect={() =>
+                            props.onToggleNode({
+                              kind: option.kind,
+                              id: option.value,
+                            })
+                          }
+                        >
+                          <span
+                            className='size-2.5 shrink-0 rounded-full'
+                            style={{ backgroundColor: option.color }}
+                            aria-hidden='true'
+                          />
+                          <span className='min-w-0 flex-1 truncate'>
+                            {option.label}
+                          </span>
+                          <span className='text-muted-foreground flex shrink-0 items-center gap-1 text-xs'>
+                            <span>{props.metricLabel}</span>
+                            <span className='font-mono'>
+                              {metricValueLabel}
+                            </span>
+                          </span>
+                        </CommandItem>
+                      )
+                    })}
+                  </CommandGroup>
+                )
+              })}
+              {selectedCount > 0 && (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup>
+                    <CommandItem
+                      onSelect={props.onClearNodes}
+                      className='justify-center text-center'
+                    >
+                      {t('Clear node filters')}
+                    </CommandItem>
+                  </CommandGroup>
+                </>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {selectedOptions.map((option) => (
+        <Badge
+          key={flowNodeFilterKey(option)}
+          variant='secondary'
+          className='max-w-[14rem] rounded-sm pr-1'
+        >
+          <span className='truncate'>
+            {t(props.stageLabels[option.kind])}: {option.label}
+          </span>
+          <button
+            type='button'
+            className='hover:bg-muted-foreground/15 flex size-4 shrink-0 items-center justify-center rounded-sm'
+            aria-label={t('Remove node filter')}
+            onClick={() =>
+              props.onRemoveNode({ kind: option.kind, id: option.id })
             }
           >
-            <Filter data-icon='inline-start' aria-hidden='true' />
-            {selectedCount > 0 ? t('Selected nodes') : t('All nodes')}
-            {selectedCount > 0 && (
-              <Badge variant='secondary' className='rounded-sm px-1'>
-                {selectedCount}
-              </Badge>
-            )}
-          </PopoverTrigger>
-          <PopoverContent
-            className='w-[min(28rem,calc(100vw-2rem))] p-0'
-            align='start'
-          >
-            <PopoverHeader className='px-3 pt-3'>
-              <PopoverTitle>{t('Node filters')}</PopoverTitle>
-              <PopoverDescription>
-                {t('Value metric')}: {props.metricLabel}
-              </PopoverDescription>
-            </PopoverHeader>
-            <Command>
-              <CommandInput placeholder={t('Filter by node')} />
-              <CommandList>
-                <CommandEmpty>{t('No nodes')}</CommandEmpty>
-                {optionsByStage.map((group) => {
-                  const stageLabel = t(props.stageLabels[group.stage])
-                  return (
-                    <CommandGroup key={group.stage} heading={stageLabel}>
-                      {group.options.map((option) => {
-                        const key = flowNodeFilterKey({
-                          kind: option.kind,
-                          id: option.value,
-                        })
-                        const metricValueLabel = props.formatMetricValue(
-                          option.valueRaw
-                        )
-                        return (
-                          <CommandItem
-                            key={key}
-                            value={`${stageLabel} ${option.label} ${props.metricLabel} ${metricValueLabel}`}
-                            data-checked={selectedKeys.has(key)}
-                            onSelect={() =>
-                              props.onToggleNode({
-                                kind: option.kind,
-                                id: option.value,
-                              })
-                            }
-                          >
-                            <span
-                              className='size-2.5 shrink-0 rounded-full'
-                              style={{ backgroundColor: option.color }}
-                              aria-hidden='true'
-                            />
-                            <span className='min-w-0 flex-1 truncate'>
-                              {option.label}
-                            </span>
-                            <span className='text-muted-foreground flex shrink-0 items-center gap-1 text-xs'>
-                              <span>{props.metricLabel}</span>
-                              <span className='font-mono'>
-                                {metricValueLabel}
-                              </span>
-                            </span>
-                          </CommandItem>
-                        )
-                      })}
-                    </CommandGroup>
-                  )
-                })}
-                {selectedCount > 0 && (
-                  <>
-                    <CommandSeparator />
-                    <CommandGroup>
-                      <CommandItem
-                        onSelect={props.onClearNodes}
-                        className='justify-center text-center'
-                      >
-                        {t('Clear node filters')}
-                      </CommandItem>
-                    </CommandGroup>
-                  </>
-                )}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+            <X aria-hidden='true' />
+          </button>
+        </Badge>
+      ))}
 
-        {selectedOptions.map((option) => (
-          <Badge
-            key={flowNodeFilterKey(option)}
-            variant='secondary'
-            className='max-w-[14rem] rounded-sm pr-1'
-          >
-            <span className='truncate'>
-              {t(props.stageLabels[option.kind])}: {option.label}
-            </span>
-            <button
-              type='button'
-              className='hover:bg-muted-foreground/15 flex size-4 shrink-0 items-center justify-center rounded-sm'
-              aria-label={t('Remove node filter')}
-              onClick={() =>
-                props.onRemoveNode({ kind: option.kind, id: option.id })
-              }
-            >
-              <X aria-hidden='true' />
-            </button>
-          </Badge>
-        ))}
-
-        {selectedCount > 1 && (
-          <Button
-            type='button'
-            variant='ghost'
-            size='xs'
-            onClick={props.onClearNodes}
-          >
-            {t('Clear')}
-          </Button>
-        )}
-      </div>
+      {selectedCount > 1 && (
+        <Button
+          type='button'
+          variant='ghost'
+          size='xs'
+          onClick={props.onClearNodes}
+        >
+          {t('Clear')}
+        </Button>
+      )}
     </div>
   )
 }

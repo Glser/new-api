@@ -60,7 +60,7 @@ export function Channels() {
           render={
             <Badge
               variant='outline'
-              className='shrink-0 cursor-pointer'
+              className='h-6 shrink-0 cursor-pointer px-2 text-[11px] font-medium'
               aria-label={t('Retry Settings')}
               render={
                 <Link
@@ -79,7 +79,10 @@ export function Channels() {
         </TooltipContent>
       </Tooltip>
     ) : (
-      <Badge variant='outline' className='shrink-0'>
+      <Badge
+        variant='outline'
+        className='h-6 shrink-0 px-2 text-[11px] font-medium'
+      >
         {retryLabel}
       </Badge>
     )
@@ -89,8 +92,10 @@ export function Channels() {
     <ChannelsProvider>
       <SectionPageLayout fixedContent>
         <SectionPageLayout.Title>
-          <span className='flex min-w-0 items-center gap-2'>
-            <span className='truncate'>{t('Channels')}</span>
+          <span className='flex min-w-0 items-center gap-2.5 overflow-visible whitespace-normal'>
+            <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+              {t('Channels')}
+            </span>
             {retryBadge}
           </span>
         </SectionPageLayout.Title>

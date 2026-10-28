@@ -39,7 +39,7 @@ export function useAuditLogColumns(
         header: t('Time'),
         size: 180,
         cell: ({ row }) => (
-          <span className='font-mono tabular-nums'>
+          <span className='inline-block font-mono tabular-nums'>
             {dayjs.unix(row.original.created_at).format('YYYY-MM-DD HH:mm:ss')}
           </span>
         ),
@@ -51,7 +51,10 @@ export function useAuditLogColumns(
         {
           accessorKey: 'username',
           header: t('Username'),
-          size: 100,
+          size: 120,
+          cell: ({ row }) => (
+            <span className='inline-block'>{row.original.username || '—'}</span>
+          ),
           meta: { label: t('Username') },
         },
         {
@@ -68,14 +71,14 @@ export function useAuditLogColumns(
             const operation = buildAuditDetails(row.original, t).operation
             if (!operation) {
               return (
-                <TruncatedCell className='max-w-64'>
+                <TruncatedCell className='mx-auto max-w-64 text-center'>
                   {getValue<string>()}
                 </TruncatedCell>
               )
             }
             return (
-              <div className='min-w-0 space-y-1'>
-                <div className='flex min-w-0 items-baseline gap-1'>
+              <div className='mx-auto flex max-w-[22rem] min-w-0 flex-col items-center gap-1 text-center'>
+                <div className='flex max-w-full min-w-0 items-baseline justify-center gap-1'>
                   <TruncatedCell
                     className='min-w-0 font-medium'
                     tooltipContent={operation.summary}
@@ -90,8 +93,8 @@ export function useAuditLogColumns(
                 </div>
                 {operation.description && (
                   <TruncatedCell
-                    className='text-muted-foreground'
-                    contentClassName='line-clamp-2 whitespace-normal break-words'
+                    className='text-muted-foreground w-full'
+                    contentClassName='line-clamp-2 whitespace-normal break-words text-center'
                     tooltipContent={operation.description}
                   >
                     {operation.description}
@@ -110,7 +113,9 @@ export function useAuditLogColumns(
         header: 'IP',
         size: 120,
         cell: ({ row }) => (
-          <span className='font-mono'>{row.original.ip || '—'}</span>
+          <span className='inline-block font-mono'>
+            {row.original.ip || '—'}
+          </span>
         ),
         meta: { label: 'IP' },
       },
@@ -119,7 +124,7 @@ export function useAuditLogColumns(
         header: t('Client'),
         size: 180,
         cell: ({ row }) => (
-          <TruncatedCell className='max-w-48'>
+          <TruncatedCell className='mx-auto max-w-48 text-center'>
             {row.original.user_agent || '—'}
           </TruncatedCell>
         ),
@@ -128,9 +133,9 @@ export function useAuditLogColumns(
       {
         accessorKey: 'method',
         header: t('Method'),
-        size: 76,
+        size: 88,
         cell: ({ row }) => (
-          <span className='text-muted-foreground font-mono'>
+          <span className='text-muted-foreground inline-block font-mono'>
             {row.original.method || '—'}
           </span>
         ),
@@ -141,7 +146,7 @@ export function useAuditLogColumns(
         header: t('Route'),
         size: 220,
         cell: ({ row }) => (
-          <TruncatedCell className='max-w-60 font-mono'>
+          <TruncatedCell className='mx-auto max-w-60 text-center font-mono'>
             {row.original.route || '—'}
           </TruncatedCell>
         ),
@@ -150,9 +155,9 @@ export function useAuditLogColumns(
       {
         accessorKey: 'status',
         header: 'HTTP',
-        size: 60,
+        size: 72,
         cell: ({ row }) => (
-          <span className='font-mono tabular-nums'>
+          <span className='inline-block font-mono tabular-nums'>
             {row.original.status || '—'}
           </span>
         ),
@@ -161,22 +166,28 @@ export function useAuditLogColumns(
       {
         accessorKey: 'success',
         header: t('Result'),
-        size: 82,
+        size: 96,
         cell: ({ row }) => (
-          <StatusBadge
-            label={row.original.success ? t('Success') : t('Failed')}
-            variant={row.original.success ? 'success' : 'danger'}
-            copyable={false}
-          />
+          <div className='flex justify-center'>
+            <StatusBadge
+              label={row.original.success ? t('Success') : t('Failed')}
+              variant={row.original.success ? 'success' : 'danger'}
+              copyable={false}
+            />
+          </div>
         ),
         meta: { label: t('Result'), mobileBadge: true },
       },
       {
         id: 'details',
         header: t('Details'),
-        size: 70,
+        size: 88,
         enableHiding: false,
-        cell: ({ row }) => <AuditLogDetailsDialog entry={row.original} />,
+        cell: ({ row }) => (
+          <div className='flex justify-center'>
+            <AuditLogDetailsDialog entry={row.original} />
+          </div>
+        ),
         meta: { label: t('Details') },
       }
     )

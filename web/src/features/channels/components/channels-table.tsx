@@ -350,12 +350,24 @@ export function ChannelsTable() {
   }
 
   const handleTagModeChange = (enabled: boolean) => {
-    localStorage.setItem('enable-tag-mode', String(enabled))
     setEnableTagMode(enabled)
     if (enabled && selectedTag === UNTAGGED_TAG_FILTER) {
       setSingleColumnFilter('tag', undefined)
     }
   }
+
+  useEffect(() => {
+    if (!enableTagMode) return
+    if (selectedTag !== UNTAGGED_TAG_FILTER) return
+    handleColumnFiltersChange((previous) => {
+      if (!previous.some((filter) => filter.id === 'tag')) {
+        return previous
+      }
+      return previous.filter((filter) => filter.id !== 'tag')
+    })
+    // Filter identity is intentionally omitted; selectedTag is the source of truth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableTagMode, selectedTag])
 
   const handleTagFacetChange = (value: string | undefined) => {
     if (value === UNTAGGED_TAG_FILTER && enableTagMode) {
@@ -385,8 +397,6 @@ export function ChannelsTable() {
         onStatusChange={(value) => setSingleColumnFilter('status', value)}
         onTypeChange={(value) => setSingleColumnFilter('type', value)}
         onTagChange={handleTagFacetChange}
-        enableTagMode={enableTagMode}
-        onTagModeChange={handleTagModeChange}
         sensitiveVisible={sensitiveVisible}
       />
       <DataTablePage
@@ -405,7 +415,8 @@ export function ChannelsTable() {
         renderCard={(row, { isSelected }) => (
           <ChannelCard row={row} isSelected={isSelected} />
         )}
-        cardGridClassName='grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3'
+        cardGridClassName='grid justify-start gap-3 [grid-template-columns:repeat(auto-fill,minmax(23rem,26rem))]'
+        cardItemClassName='overflow-hidden p-3.5'
         applyHeaderSize
         toolbarProps={{
           searchPlaceholder: t('Filter by name, ID, or key...'),

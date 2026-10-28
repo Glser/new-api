@@ -18,11 +18,15 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
+import { Gauge, Hash, Wallet } from 'lucide-react'
+import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatLogQuota, formatNumber } from '@/lib/format'
 import { requireServerSuccess } from '@/lib/server-error-message'
+import { cn } from '@/lib/utils'
 
 import { getLogStats, getUserLogStats } from '../api'
 import { DEFAULT_LOG_STATS } from '../constants'
@@ -33,11 +37,11 @@ const route = getRouteApi('/_authenticated/usage-logs/$section')
 
 function StatValue(props: { loading?: boolean; value: string }) {
   if (props.loading) {
-    return <Skeleton className='h-4 w-16' />
+    return <Skeleton className='h-3.5 w-12' />
   }
 
   return (
-    <span className='text-muted-foreground/75 text-[11px] leading-relaxed tabular-nums @min-[48rem]/console:text-xs'>
+    <span className='text-foreground font-mono text-xs font-medium tabular-nums'>
       {props.value}
     </span>
   )
@@ -77,30 +81,51 @@ export function CommonLogsStats() {
     usageValue = formatLogQuota(stats?.quota || 0)
   }
 
-  const items = [
-    { label: t('Usage'), value: usageValue },
-    { label: t('RPM'), value: formatNumber(stats?.rpm || 0) },
-    { label: t('TPM'), value: formatNumber(stats?.tpm || 0) },
+  const items: {
+    label: string
+    value: string
+    icon: ComponentType<{ className?: string }>
+    tone: IconBadgeTone
+  }[] = [
+    { label: t('Usage'), value: usageValue, icon: Wallet, tone: 'warning' },
+    {
+      label: t('RPM'),
+      value: formatNumber(stats?.rpm || 0),
+      icon: Gauge,
+      tone: 'info',
+    },
+    {
+      label: t('TPM'),
+      value: formatNumber(stats?.tpm || 0),
+      icon: Hash,
+      tone: 'success',
+    },
   ]
 
   return (
-    <div className='flex min-w-0 flex-wrap items-baseline justify-start gap-x-3 gap-y-1 pl-0 text-left'>
-      {items.map((item, index) => (
-        <span
-          key={item.label}
-          className='inline-flex min-w-0 items-baseline gap-x-1.5 text-left'
-        >
-          {index > 0 && (
-            <span className='text-muted-foreground/45'>
-              |
-            </span>
-          )}
-          <span className='text-muted-foreground/80 text-xs'>
-            {item.label}
-          </span>
-          <StatValue loading={isLoading} value={item.value} />
-        </span>
-      ))}
+    <div className='flex min-w-0'>
+      <div className='flex h-8 max-w-full min-w-0 items-stretch overflow-hidden rounded-lg border'>
+        {items.map((item, index) => {
+          const Icon = item.icon
+          return (
+            <div
+              key={item.label}
+              className={cn(
+                'flex min-w-0 items-center gap-1.5 px-2.5',
+                index > 0 && 'border-l'
+              )}
+            >
+              <IconBadge tone={item.tone} size='xs'>
+                <Icon />
+              </IconBadge>
+              <span className='text-muted-foreground shrink-0 text-xs'>
+                {item.label}
+              </span>
+              <StatValue loading={isLoading} value={item.value} />
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

@@ -71,7 +71,7 @@ function ChipCount(props: { value: number }) {
 function ClassificationRow(props: { label: string; children: ReactNode }) {
   return (
     <div className='flex min-w-0 items-center gap-2'>
-      <span className='text-muted-foreground w-10 shrink-0 text-[11px] leading-none'>
+      <span className='text-muted-foreground w-12 shrink-0 text-[11px] leading-none'>
         {props.label}
       </span>
       <div className='flex min-w-0 flex-1 [scrollbar-width:none] items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden'>
@@ -92,8 +92,6 @@ export function ChannelsClassificationBar(props: {
   onStatusChange: (value: string | undefined) => void
   onTypeChange: (value: string | undefined) => void
   onTagChange: (value: string | undefined) => void
-  enableTagMode: boolean
-  onTagModeChange: (enabled: boolean) => void
   sensitiveVisible: boolean
 }) {
   const { t } = useTranslation()
@@ -124,73 +122,36 @@ export function ChannelsClassificationBar(props: {
   const showTagRail = tagItems.length > 0 || props.tagValue !== 'all'
 
   return (
-    <div className='flex min-w-0 flex-col gap-2'>
-      <div className='flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2'>
-        <div
-          role='tablist'
-          aria-label={t('View')}
-          className='bg-muted/50 inline-flex min-w-0 items-center rounded-md p-px'
-        >
-          <button
-            type='button'
-            role='tab'
-            aria-selected={!props.enableTagMode}
-            onClick={() => props.onTagModeChange(false)}
-            className={cn(
-              'h-6 rounded px-2 text-xs font-medium transition-colors',
-              !props.enableTagMode
-                ? 'bg-foreground text-background shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {t('List')}
-          </button>
-          <button
-            type='button'
-            role='tab'
-            aria-selected={props.enableTagMode}
-            onClick={() => props.onTagModeChange(true)}
-            className={cn(
-              'h-6 rounded px-2 text-xs font-medium transition-colors',
-              props.enableTagMode
-                ? 'bg-foreground text-background shadow-xs'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            {t('Tag Mode')}
-          </button>
-        </div>
-
-        <div className='flex min-w-0 flex-wrap items-center gap-1'>
-          {CHANNEL_STATUS_FACETS.map((facet) => {
-            const count = statusFacetCount(props.statusCounts, facet.statusKey)
-            const selected = props.statusValue === facet.value
-            const warning =
-              facet.value === 'auto_disabled' && count > 0 && !selected
-            const statusCountsReady = props.statusCounts != null
-            return (
-              <ClassificationChip
-                key={facet.value}
-                selected={selected}
-                tone={warning ? 'warning' : 'default'}
-                ariaLabel={
-                  statusCountsReady
-                    ? `${t(facet.label)} ${count}`
-                    : t(facet.label)
-                }
-                onClick={() =>
-                  props.onStatusChange(
-                    selected || facet.value === 'all' ? undefined : facet.value
-                  )
-                }
-              >
-                <span>{t(facet.label)}</span>
-                {statusCountsReady ? <ChipCount value={count} /> : null}
-              </ClassificationChip>
-            )
-          })}
-        </div>
-      </div>
+    <div className='flex min-w-0 flex-col gap-1.5'>
+      <ClassificationRow label={t('Status')}>
+        {CHANNEL_STATUS_FACETS.map((facet) => {
+          const count = statusFacetCount(props.statusCounts, facet.statusKey)
+          const selected = props.statusValue === facet.value
+          const warning =
+            facet.value === 'auto_disabled' && count > 0 && !selected
+          const statusCountsReady = props.statusCounts != null
+          return (
+            <ClassificationChip
+              key={facet.value}
+              selected={selected}
+              tone={warning ? 'warning' : 'default'}
+              ariaLabel={
+                statusCountsReady
+                  ? `${t(facet.label)} ${count}`
+                  : t(facet.label)
+              }
+              onClick={() =>
+                props.onStatusChange(
+                  selected || facet.value === 'all' ? undefined : facet.value
+                )
+              }
+            >
+              <span>{t(facet.label)}</span>
+              {statusCountsReady ? <ChipCount value={count} /> : null}
+            </ClassificationChip>
+          )
+        })}
+      </ClassificationRow>
 
       {showTypeRail ? (
         <ClassificationRow label={t('Type')}>

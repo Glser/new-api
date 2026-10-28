@@ -158,7 +158,7 @@ function DateInputField(props: {
         }
       }}
       className={cn(
-        'border-input h-8 w-[7rem] min-w-0 rounded-lg border bg-transparent px-1.5 text-center text-[13px] leading-8 tabular-nums outline-none',
+        'border-input h-8 w-[7.5rem] min-w-0 rounded-lg border bg-transparent px-1.5 text-center text-sm leading-8 tabular-nums outline-none',
         'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-1'
       )}
     />
@@ -445,7 +445,7 @@ export function DateRangePickerButton(props: DateRangePickerButtonProps) {
         ref={triggerRef}
         className={cn(
           buttonVariants({ variant: 'outline', size: 'sm' }),
-          'h-8 min-w-0 justify-start gap-1.5 px-2.5 text-xs font-normal tabular-nums',
+          'h-8 min-w-0 justify-start gap-1.5 px-2.5 text-sm font-normal tabular-nums',
           triggerClassName,
           className
         )}
@@ -550,7 +550,7 @@ export function DateRangePickerButton(props: DateRangePickerButtonProps) {
                   <TabsTrigger
                     key={range.minutes}
                     value={String(range.minutes)}
-                    className='px-2.5 text-xs'
+                    className='px-2.5 text-sm'
                   >
                     {t(range.labelKey)}
                   </TabsTrigger>
