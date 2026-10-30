@@ -26,3 +26,12 @@ export type ChannelRowActionsLayout = 'table' | 'card'
 
 export const ChannelRowActionsLayoutContext =
   createContext<ChannelRowActionsLayout>('table')
+
+/**
+ * Which part of the row actions to render. Cards split the overflow menu into
+ * the header and the frequent test/enable actions into a dedicated ops row.
+ */
+export type ChannelRowActionsSlot = 'all' | 'menu' | 'quick' | 'toggle' | 'test'
+
+export const ChannelRowActionsSlotContext =
+  createContext<ChannelRowActionsSlot>('all')

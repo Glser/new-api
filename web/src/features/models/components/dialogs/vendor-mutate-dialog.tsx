@@ -18,13 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Check, Store } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type SubmitErrorHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
+  SideDrawerSection,
+  SideDrawerSectionHeader,
   sideDrawerContentClassName,
   sideDrawerFooterClassName,
   sideDrawerFormClassName,
@@ -33,6 +36,7 @@ import {
 import { ErrorState } from '@/components/error-state'
 import { LoadingState } from '@/components/loading-state'
 import { LobeIconField } from '@/components/lobe-icon-field'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -42,6 +46,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { IconBadge } from '@/components/ui/icon-badge'
 import { Input } from '@/components/ui/input'
 import {
   Sheet,
@@ -65,6 +70,9 @@ import {
 } from '../../types'
 import { invalidateVendorData, vendorErrorMessage } from '../../vendor-api'
 import { VendorLinkedModels } from '../vendor-linked-models'
+
+const VENDOR_FORM_CLASS_NAME =
+  'gap-5 px-5 py-5 [&_[data-slot=form-description]]:text-xs [&_[data-slot=form-description]]:leading-5 [&_[data-slot=form-label]]:text-xs [&_[data-slot=input]]:h-10 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:bg-muted/20 [&_[data-slot=input]]:px-3 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:bg-muted/20'
 
 export function VendorMutateDialog(props: {
   open: boolean
@@ -140,59 +148,107 @@ export function VendorMutateDialog(props: {
     props.onOpenChange(false)
     return true
   }
+  const onInvalid: SubmitErrorHandler<VendorFormValues> = () => {
+    toast.error(t('Please fix the highlighted fields before saving'))
+  }
+  const vendorName = query.data?.name ?? props.currentVendor?.name
+  const showForm = (!id || !query.isPending) && !query.isError
+
   return (
     <>
       <Sheet open={props.open} onOpenChange={close}>
-        <SheetContent className={sideDrawerContentClassName('sm:max-w-3xl')}>
-          <SheetHeader className={sideDrawerHeaderClassName()}>
-            <SheetTitle className='pr-6 break-all'>
-              {id ? props.currentVendor?.name : t('Create Vendor')}
-            </SheetTitle>
-            <SheetDescription>
-              {t('Manage vendor details and linked model records.')}
-            </SheetDescription>
-          </SheetHeader>
-          {id && (
-            <Tabs
-              value={section}
-              onValueChange={setSection}
-              className='shrink-0 px-4 pb-3'
+        <SheetContent
+          className={sideDrawerContentClassName('max-w-none sm:!max-w-[640px]')}
+        >
+          <SheetHeader
+            className={sideDrawerHeaderClassName(
+              'flex-row items-start gap-3 bg-muted/30 px-5 py-5 backdrop-blur-none supports-[backdrop-filter]:bg-muted/30 sm:py-5'
+            )}
+          >
+            <IconBadge
+              size='lg'
+              className='rounded-full bg-[#c4f82a] text-[#28350a]'
             >
-              <TabsList>
-                <TabsTrigger value='details'>{t('Vendor details')}</TabsTrigger>
-                <TabsTrigger value='models'>
-                  {t('Linked models')} ({query.data?.model_count ?? 0})
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
+              <Store />
+            </IconBadge>
+            <div className='min-w-0 flex-1 pr-6'>
+              <SheetTitle className='text-lg font-semibold tracking-tight sm:text-xl'>
+                {id ? t('Update Vendor') : t('Create Vendor')}
+              </SheetTitle>
+              <SheetDescription className='mt-1 text-xs leading-5'>
+                {id && vendorName ? (
+                  <>
+                    <span className='text-foreground/80 font-medium'>
+                      {vendorName}
+                    </span>
+                    <span className='mt-0.5 block'>
+                      {t('Manage vendor details and linked model records.')}
+                    </span>
+                  </>
+                ) : (
+                  t('Manage vendor details and linked model records.')
+                )}
+              </SheetDescription>
+            </div>
+          </SheetHeader>
+          <Tabs
+            value={section}
+            onValueChange={setSection}
+            className='shrink-0 px-5 pt-4'
+          >
+            <TabsList className='grid h-auto w-full grid-cols-2'>
+              <TabsTrigger
+                value='details'
+                className='h-auto min-w-0 whitespace-normal'
+              >
+                {t('Vendor details')}
+              </TabsTrigger>
+              <TabsTrigger
+                value='models'
+                disabled={!id}
+                className='h-auto min-w-0 whitespace-normal'
+              >
+                {id
+                  ? `${t('Linked models')} (${query.data?.model_count ?? 0})`
+                  : t('Linked models')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           {section === 'details' && (
             <>
-              <div className='min-h-0 flex-1 overflow-y-auto'>
-                {id && query.isPending && <LoadingState />}
-                {query.isError && (
-                  <ErrorState
-                    description={vendorErrorMessage(query.error)}
-                    onRetry={() => void query.refetch()}
-                  />
-                )}
-                {(!id || !query.isPending) && !query.isError && (
-                  <Form {...form}>
-                    <form
-                      id='vendor-mutate-form'
-                      className={sideDrawerFormClassName()}
-                      onSubmit={form.handleSubmit((values) =>
-                        save.mutate(values)
-                      )}
-                    >
+              {query.isError ? (
+                <ErrorState
+                  description={vendorErrorMessage(query.error)}
+                  onRetry={() => void query.refetch()}
+                />
+              ) : null}
+              {id && query.isPending && <LoadingState />}
+              {showForm && (
+                <Form {...form}>
+                  <form
+                    id='vendor-mutate-form'
+                    className={sideDrawerFormClassName(VENDOR_FORM_CLASS_NAME)}
+                    onSubmit={form.handleSubmit(
+                      (values) => save.mutate(values),
+                      onInvalid
+                    )}
+                  >
+                    <SideDrawerSection>
+                      <SideDrawerSectionHeader title={t('Basic Information')} />
                       <FormField
                         control={form.control}
                         name='name'
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel required>{t('Vendor Name')}</FormLabel>
+                            <FormLabel required className='pl-[3px]'>
+                              {t('Vendor Name')}
+                            </FormLabel>
                             <FormControl>
-                              <Input maxLength={128} {...field} />
+                              <Input
+                                maxLength={128}
+                                placeholder={t('OpenAI, Anthropic, etc.')}
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -203,32 +259,43 @@ export function VendorMutateDialog(props: {
                         name='description'
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('Description')}</FormLabel>
+                            <FormLabel className='pl-[3px]'>
+                              {t('Description')}
+                            </FormLabel>
                             <FormControl>
-                              <Textarea rows={4} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name='icon'
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('Icon')}</FormLabel>
-                            <FormControl>
-                              <LobeIconField
-                                value={field.value ?? ''}
-                                onChange={field.onChange}
+                              <Textarea
+                                rows={3}
+                                placeholder={t('Describe this vendor...')}
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
+                      <div className='bg-muted/30 flex flex-col gap-4 rounded-2xl border p-3.5'>
+                        <FormField
+                          control={form.control}
+                          name='icon'
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className='pl-[3px]'>
+                                {t('Icon')}
+                              </FormLabel>
+                              <FormControl>
+                                <LobeIconField
+                                  key={`${id ?? 'new'}-${props.open}`}
+                                  value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                       {query.data && id && (
-                        <div className='text-muted-foreground space-y-1 border-t pt-3 text-xs'>
+                        <div className='text-muted-foreground space-y-1 text-xs leading-5'>
                           <p>
                             {t('Created At')}:{' '}
                             {formatTimestampToDate(query.data.created_time)}
@@ -239,54 +306,40 @@ export function VendorMutateDialog(props: {
                           </p>
                         </div>
                       )}
-                      {save.isError && (
-                        <ErrorState
-                          description={vendorErrorMessage(save.error)}
-                          action={
-                            id ? (
-                              <Button
-                                variant='outline'
-                                type='button'
-                                onClick={async () => {
-                                  const response = await query.refetch()
-                                  if (response.data) {
-                                    form.reset({
-                                      name: response.data.name,
-                                      description:
-                                        response.data.description ?? '',
-                                      icon: response.data.icon ?? '',
-                                      version: response.data.version,
-                                    })
-                                    save.reset()
-                                  }
-                                }}
-                              >
-                                {t('Reload vendor details')}
-                              </Button>
-                            ) : undefined
-                          }
-                        />
-                      )}
-                    </form>
-                  </Form>
+                    </SideDrawerSection>
+                  </form>
+                </Form>
+              )}
+              <SheetFooter className={sideDrawerFooterClassName('px-5')}>
+                {save.isError && (
+                  <Alert
+                    variant='destructive'
+                    className='col-span-2 basis-full'
+                  >
+                    <AlertDescription className='break-words'>
+                      {vendorErrorMessage(save.error)}
+                    </AlertDescription>
+                  </Alert>
                 )}
-              </div>
-              <SheetFooter className={sideDrawerFooterClassName()}>
                 <Button
                   variant='outline'
+                  className='h-9 w-full sm:w-auto sm:min-w-24'
                   disabled={save.isPending}
                   onClick={() => close(false)}
                 >
                   {t('Close')}
                 </Button>
                 <Button
+                  shine
                   type='submit'
                   form='vendor-mutate-form'
                   disabled={
                     save.isPending ||
                     Boolean(id && (query.isPending || query.isError))
                   }
+                  className='h-9 w-full sm:w-auto sm:min-w-28'
                 >
+                  <Check data-icon='inline-start' />
                   {save.isPending ? t('Saving...') : t('Save metadata')}
                 </Button>
               </SheetFooter>

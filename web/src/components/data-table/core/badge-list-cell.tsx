@@ -32,6 +32,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 interface BadgeListCellProps {
   items: React.ReactNode[]
@@ -39,12 +40,14 @@ interface BadgeListCellProps {
   tooltipClassName?: string
   expandable?: boolean
   expandLabel?: string
+  className?: string
 }
 
 /**
  * Table cell renderer for a list of badges with overflow tooltip.
  * Displays up to `max` badges inline; remaining items appear in a tooltip.
- * Applies -ml-1.5 to compensate for badge px-1.5 and align with column header.
+ * Defaults to -ml-1.5 so badges align with left-aligned headers; pass
+ * `className` to override that offset for centered tables.
  */
 export function BadgeListCell({
   items,
@@ -52,6 +55,7 @@ export function BadgeListCell({
   tooltipClassName,
   expandable = false,
   expandLabel,
+  className,
 }: BadgeListCellProps) {
   const { t } = useTranslation()
   if (items.length === 0) {
@@ -62,7 +66,7 @@ export function BadgeListCell({
 
   if (expandable && showTooltip) {
     return (
-      <div className='flex min-w-0 items-center gap-1'>
+      <div className={cn('flex min-w-0 items-center gap-1', className)}>
         <StatusBadgeList
           items={items.slice(0, max)}
           max={max}
@@ -92,10 +96,13 @@ export function BadgeListCell({
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger render={<div className='-ml-1.5 max-w-full' />}>
+        <TooltipTrigger
+          render={<div className={cn('max-w-full', className ?? '-ml-1.5')} />}
+        >
           <StatusBadgeList
             items={items}
             max={max}
+            className={className}
             renderItem={(item) => item}
           />
         </TooltipTrigger>

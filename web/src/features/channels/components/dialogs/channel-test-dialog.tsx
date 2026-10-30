@@ -526,6 +526,9 @@ function ChannelTestDialogContent({
       updateChannelTestCache(patch)
       void queryClient
         .invalidateQueries({ queryKey: channelsQueryKeys.lists() })
+        .then(() =>
+          queryClient.invalidateQueries({ queryKey: ['topology-graph'] })
+        )
         .then(() => updateChannelTestCache(patch))
         .catch(() => undefined)
     },

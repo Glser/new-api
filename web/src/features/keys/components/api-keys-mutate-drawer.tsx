@@ -295,7 +295,7 @@ export function ApiKeysMutateDrawer({
   useEffect(() => {
     if (groups.length === 0) return
     const currentGroup = selectedGroup
-    if (currentGroup && !groups.some((g) => g.value === currentGroup)) {
+    if (!currentGroup || !groups.some((g) => g.value === currentGroup)) {
       const fallback =
         groups.find((g) => g.value === 'default')?.value ??
         groups[0]?.value ??
@@ -454,7 +454,9 @@ export function ApiKeysMutateDrawer({
                 name='name'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='pl-[3px]'>{t('API Key Name')}</FormLabel>
+                    <FormLabel className='pl-[3px]'>
+                      {t('API Key Name')}
+                    </FormLabel>
                     <FormControl>
                       <Input {...field} placeholder={t('Enter a name')} />
                     </FormControl>
@@ -516,7 +518,9 @@ export function ApiKeysMutateDrawer({
                   name='auto_groups'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className='pl-[3px]'>{t('Auto group order')}</FormLabel>
+                      <FormLabel className='pl-[3px]'>
+                        {t('Auto group order')}
+                      </FormLabel>
                       <FormDescription>
                         {t(
                           'Choose and order the groups this API key will try.'
@@ -585,7 +589,9 @@ export function ApiKeysMutateDrawer({
                 name='expired_time'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className='pl-[3px]'>{t('Expiration Time')}</FormLabel>
+                    <FormLabel className='pl-[3px]'>
+                      {t('Expiration Time')}
+                    </FormLabel>
                     <div className='flex flex-col gap-2'>
                       <FormControl>
                         <DateTimePicker
@@ -646,7 +652,9 @@ export function ApiKeysMutateDrawer({
                   name='tokenCount'
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className='pl-[3px]'>{t('Quantity')}</FormLabel>
+                      <FormLabel className='pl-[3px]'>
+                        {t('Quantity')}
+                      </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
@@ -776,7 +784,9 @@ export function ApiKeysMutateDrawer({
                       name='model_limits'
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className='pl-[3px]'>{t('Model Limits')}</FormLabel>
+                          <FormLabel className='pl-[3px]'>
+                            {t('Model Limits')}
+                          </FormLabel>
                           <FormControl>
                             <MultiSelect
                               options={models.map((m) => ({

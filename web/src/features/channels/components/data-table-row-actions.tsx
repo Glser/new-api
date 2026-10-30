@@ -57,6 +57,7 @@ import {
   ADMIN_PERMISSION_RESOURCES,
   hasPermission,
 } from '@/lib/admin-permissions'
+import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { MODEL_FETCHABLE_TYPES } from '../constants'
@@ -70,7 +71,10 @@ import {
 } from '../lib'
 import { parseUpstreamUpdateMeta } from '../lib/upstream-update-utils'
 import type { Channel } from '../types'
-import { ChannelRowActionsLayoutContext } from './channel-row-actions-context'
+import {
+  ChannelRowActionsLayoutContext,
+  ChannelRowActionsSlotContext,
+} from './channel-row-actions-context'
 import { useChannels } from './channels-provider'
 
 interface DataTableRowActionsProps {
@@ -80,6 +84,15 @@ interface DataTableRowActionsProps {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { t } = useTranslation()
   const layout = useContext(ChannelRowActionsLayoutContext)
+  const slot = useContext(ChannelRowActionsSlotContext)
+  const isCard = layout === 'card'
+  const showEdit =
+    !isCard && slot !== 'menu' && slot !== 'toggle' && slot !== 'test'
+  const showTest =
+    slot === 'quick' || slot === 'test' || (!isCard && slot === 'all')
+  const showToggle =
+    slot === 'quick' || slot === 'toggle' || (!isCard && slot === 'all')
+  const showMenu = slot === 'menu' || slot === 'all'
   const channel = row.original
   const { setOpen, setCurrentRow, upstream } = useChannels()
   const queryClient = useQueryClient()
@@ -163,8 +176,13 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   }
 
   return (
-    <div className='-ml-1.5 flex items-center gap-1'>
-      {layout !== 'card' && (
+    <div
+      className={cn(
+        'flex items-center gap-0.5',
+        layout === 'table' && 'mx-auto justify-center'
+      )}
+    >
+      {showEdit && (
         <Tooltip>
           <TooltipTrigger
             render={
@@ -185,181 +203,207 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         </Tooltip>
       )}
 
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant='ghost'
-              size='icon-sm'
-              onClick={handleDirectTest}
-              disabled={isTesting}
-              aria-label={t('Test Connection')}
-            />
-          }
-        >
-          {isTesting ? (
-            <Loader2 className='size-4 animate-spin' />
-          ) : (
-            <Gauge className='size-4' />
-          )}
-        </TooltipTrigger>
-        <TooltipContent>{t('Test Connection')}</TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant='ghost'
-              size='icon-sm'
-              onClick={handleToggleStatus}
-              disabled={isTogglingStatus}
-              aria-label={isEnabled ? t('Disable') : t('Enable')}
-              className={
-                isEnabled
-                  ? 'text-destructive hover:text-destructive'
-                  : 'text-success hover:text-success'
-              }
-            />
-          }
-        >
-          {statusIcon}
-        </TooltipTrigger>
-        <TooltipContent>
-          {isEnabled ? t('Disable') : t('Enable')}
-        </TooltipContent>
-      </Tooltip>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant='ghost'
-              className='data-popup-open:bg-muted flex h-8 w-8 p-0'
-            />
-          }
-        >
-          <MoreHorizontal className='h-4 w-4' />
-          <span className='sr-only'>{t('Open menu')}</span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align='end' className='w-48'>
-          {layout === 'card' && (
-            <DropdownMenuItem onClick={handleEdit}>
-              {t('Edit')}
-              <DropdownMenuShortcut>
-                <Pencil size={16} />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-          )}
-
-          {/* Test Connection */}
-          <DropdownMenuItem onClick={handleTest}>
-            {t('Test Connection')}
-            <DropdownMenuShortcut>
-              <PlugZap size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-
-          {/* Query Balance */}
-          <DropdownMenuItem onClick={handleQueryBalance}>
-            {t('Query Balance')}
-            <DropdownMenuShortcut>
-              <DollarSign size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-
-          {/* Fetch Models */}
-          <DropdownMenuItem onClick={handleFetchModels}>
-            {t('Fetch Models')}
-            <DropdownMenuShortcut>
-              <Download size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-
-          {/* Detect Upstream Updates (only for fetchable channel types) */}
-          {MODEL_FETCHABLE_TYPES.has(channel.type) && (
-            <DropdownMenuItem
-              onClick={() => {
-                const meta = parseUpstreamUpdateMeta(channel.settings)
-                if (
-                  meta.pendingAddModels.length > 0 ||
-                  meta.pendingRemoveModels.length > 0
-                ) {
-                  upstream.openModal(
-                    channel,
-                    meta.pendingAddModels,
-                    meta.pendingRemoveModels,
-                    meta.pendingAddModels.length > 0 ? 'add' : 'remove'
-                  )
-                } else {
-                  upstream.detectChannelUpdates(channel)
+      {showTest ? (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant='ghost'
+                size='icon-sm'
+                onClick={
+                  isCard
+                    ? (event) => {
+                        event.stopPropagation()
+                        handleTest()
+                      }
+                    : handleDirectTest
                 }
-              }}
+                disabled={!isCard && isTesting}
+                aria-label={t('Test Connection')}
+                className={cn(
+                  (slot === 'quick' || slot === 'test') &&
+                    'size-7 hover:bg-muted'
+                )}
+              />
+            }
+          >
+            {isTesting && !isCard ? (
+              <Loader2 className='size-4 animate-spin' />
+            ) : (
+              <Gauge className='size-4' />
+            )}
+          </TooltipTrigger>
+          <TooltipContent>{t('Test Connection')}</TooltipContent>
+        </Tooltip>
+      ) : null}
+
+      {showToggle ? (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant='ghost'
+                size='icon-sm'
+                onClick={handleToggleStatus}
+                disabled={isTogglingStatus}
+                aria-label={isEnabled ? t('Disable') : t('Enable')}
+                className={cn(
+                  (slot === 'quick' || slot === 'toggle') &&
+                    'bg-muted/60 hover:bg-muted',
+                  isEnabled
+                    ? 'text-destructive hover:text-destructive'
+                    : 'text-success hover:text-success'
+                )}
+              />
+            }
+          >
+            {statusIcon}
+          </TooltipTrigger>
+          <TooltipContent>
+            {isEnabled ? t('Disable') : t('Enable')}
+          </TooltipContent>
+        </Tooltip>
+      ) : null}
+
+      {showMenu ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant='ghost'
+                size='icon-sm'
+                className='data-popup-open:bg-muted'
+              />
+            }
+          >
+            <MoreHorizontal className='h-4 w-4' />
+            <span className='sr-only'>{t('Open menu')}</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align='end'
+            className={cn(
+              'w-48',
+              isCard && 'w-40 [&_[data-slot=dropdown-menu-shortcut]]:hidden'
+            )}
+          >
+            {layout === 'card' && (
+              <DropdownMenuItem onClick={handleEdit}>
+                {t('Edit')}
+                <DropdownMenuShortcut>
+                  <Pencil size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
+
+            {/* Test Connection */}
+            <DropdownMenuItem onClick={handleTest}>
+              {t('Test Connection')}
+              <DropdownMenuShortcut>
+                <PlugZap size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+
+            {/* Query Balance */}
+            <DropdownMenuItem onClick={handleQueryBalance}>
+              {t('Query Balance')}
+              <DropdownMenuShortcut>
+                <DollarSign size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+
+            {/* Fetch Models */}
+            <DropdownMenuItem onClick={handleFetchModels}>
+              {t('Fetch Models')}
+              <DropdownMenuShortcut>
+                <Download size={16} />
+              </DropdownMenuShortcut>
+            </DropdownMenuItem>
+
+            {/* Detect Upstream Updates (only for fetchable channel types) */}
+            {MODEL_FETCHABLE_TYPES.has(channel.type) && (
+              <DropdownMenuItem
+                onClick={() => {
+                  const meta = parseUpstreamUpdateMeta(channel.settings)
+                  if (
+                    meta.pendingAddModels.length > 0 ||
+                    meta.pendingRemoveModels.length > 0
+                  ) {
+                    upstream.openModal(
+                      channel,
+                      meta.pendingAddModels,
+                      meta.pendingRemoveModels,
+                      meta.pendingAddModels.length > 0 ? 'add' : 'remove'
+                    )
+                  } else {
+                    upstream.detectChannelUpdates(channel)
+                  }
+                }}
+              >
+                {t('Upstream Updates')}
+                <DropdownMenuShortcut>
+                  <RefreshCw size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
+
+            {/* Ollama Models (only for Ollama channels) */}
+            {channel.type === 4 && (
+              <DropdownMenuItem onClick={handleManageOllamaModels}>
+                {t('Manage Ollama Models')}
+                <DropdownMenuShortcut>
+                  <Boxes size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
+
+            <DropdownMenuSeparator />
+
+            {/* Copy Channel */}
+            <DropdownMenuItem
+              disabled={!canEditSensitive}
+              onClick={canEditSensitive ? handleCopy : undefined}
             >
-              {t('Upstream Updates')}
+              {t('Copy Channel')}
               <DropdownMenuShortcut>
-                <RefreshCw size={16} />
+                <Copy size={16} />
               </DropdownMenuShortcut>
             </DropdownMenuItem>
-          )}
+            {!canEditSensitive && (
+              <DropdownMenuItem disabled className='text-xs normal-case'>
+                {t('No permission to perform this action')}
+              </DropdownMenuItem>
+            )}
 
-          {/* Ollama Models (only for Ollama channels) */}
-          {channel.type === 4 && (
-            <DropdownMenuItem onClick={handleManageOllamaModels}>
-              {t('Manage Ollama Models')}
+            {/* Manage Keys (only for multi-key channels) */}
+            {isMultiKey && (
+              <DropdownMenuItem onClick={handleManageKeys}>
+                {t('Manage Keys')}
+                <DropdownMenuShortcut>
+                  <Key size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
+
+            <DropdownMenuSeparator />
+
+            {/* Delete */}
+            <DropdownMenuItem
+              disabled={!canEditSensitive}
+              onSelect={(e) => {
+                e.preventDefault()
+                if (!canEditSensitive) return
+                setDeleteConfirmOpen(true)
+              }}
+              className='text-destructive focus:text-destructive'
+            >
+              {t('Delete')}
               <DropdownMenuShortcut>
-                <Boxes size={16} />
+                <Trash2 size={16} />
               </DropdownMenuShortcut>
             </DropdownMenuItem>
-          )}
-
-          <DropdownMenuSeparator />
-
-          {/* Copy Channel */}
-          <DropdownMenuItem
-            disabled={!canEditSensitive}
-            onClick={canEditSensitive ? handleCopy : undefined}
-          >
-            {t('Copy Channel')}
-            <DropdownMenuShortcut>
-              <Copy size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          {!canEditSensitive && (
-            <DropdownMenuItem disabled className='text-xs normal-case'>
-              {t('No permission to perform this action')}
-            </DropdownMenuItem>
-          )}
-
-          {/* Manage Keys (only for multi-key channels) */}
-          {isMultiKey && (
-            <DropdownMenuItem onClick={handleManageKeys}>
-              {t('Manage Keys')}
-              <DropdownMenuShortcut>
-                <Key size={16} />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-          )}
-
-          <DropdownMenuSeparator />
-
-          {/* Delete */}
-          <DropdownMenuItem
-            disabled={!canEditSensitive}
-            onSelect={(e) => {
-              e.preventDefault()
-              if (!canEditSensitive) return
-              setDeleteConfirmOpen(true)
-            }}
-            className='text-destructive focus:text-destructive'
-          >
-            {t('Delete')}
-            <DropdownMenuShortcut>
-              <Trash2 size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
 
       <ConfirmDialog
         open={deleteConfirmOpen}

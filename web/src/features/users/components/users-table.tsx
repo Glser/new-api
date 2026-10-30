@@ -31,6 +31,7 @@ import {
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { createServerError } from '@/lib/server-error-message'
+import { cn } from '@/lib/utils'
 
 import { getUsers, searchUsers } from '../api'
 import {
@@ -40,8 +41,8 @@ import {
   isUserDeleted,
 } from '../constants'
 import type { User, UserSortBy } from '../types'
-import { DataTableBulkActions } from './data-table-bulk-actions'
 import { useUsersColumns } from './users-columns'
+import { UsersPrimaryButtons } from './users-primary-buttons'
 import { useUsers } from './users-provider'
 
 const route = getRouteApi('/_authenticated/users/')
@@ -173,7 +174,6 @@ export function UsersTable() {
   const { table } = useDataTable({
     data: users,
     columns,
-    enableRowSelection: true,
     columnFilters,
     globalFilter,
     pagination,
@@ -214,21 +214,28 @@ export function UsersTable() {
       )}
       skeletonKeyPrefix='users-skeleton'
       applyHeaderSize
+      tableClassName={cn(
+        '@container/users [&_[data-slot=table]]:min-w-[64rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-(--table-header) [&_[data-slot=table]_th]:bg-(--table-header) [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/users:[&_[data-slot=table]_td]:text-sm @min-[48rem]/users:[&_[data-slot=table]_th]:text-sm',
+        '[&_[data-slot=table]_th>div]:justify-center [&_[data-slot=table]_th_button]:ms-0'
+      )}
+      getColumnClassName={() => 'py-2.5 text-center'}
       toolbarProps={{
         searchPlaceholder: t('Filter by username, name or email...'),
         searchDebounceMs: 500,
+        hideViewOptions: true,
+        preActions: <UsersPrimaryButtons />,
         filters: [
           {
             columnId: 'status',
             title: t('Status'),
+            variant: 'combobox',
             options: getUserStatusOptions(t),
-            singleSelect: true,
           },
           {
             columnId: 'role',
             title: t('Role'),
+            variant: 'combobox',
             options: getUserRoleOptions(t),
-            singleSelect: true,
           },
         ],
       }}
@@ -236,7 +243,6 @@ export function UsersTable() {
         if (!isDisabledUserRow(row.original)) return undefined
         return isMobile ? DISABLED_ROW_MOBILE : DISABLED_ROW_DESKTOP
       }}
-      bulkActions={<DataTableBulkActions table={table} />}
     />
   )
 }

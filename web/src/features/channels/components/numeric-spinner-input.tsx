@@ -20,8 +20,8 @@ import { Minus, Plus } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
 import { TooltipHint } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 interface NumericSpinnerInputProps {
   value: number | null | undefined
@@ -33,6 +33,7 @@ interface NumericSpinnerInputProps {
   disabled?: boolean
   className?: string
   label?: string
+  compact?: boolean
 }
 
 export function NumericSpinnerInput({
@@ -45,6 +46,7 @@ export function NumericSpinnerInput({
   disabled = false,
   className,
   label,
+  compact = false,
 }: NumericSpinnerInputProps) {
   const [localValue, setLocalValue] = useState(String(value ?? 0))
   const [editing, setEditing] = useState(false)
@@ -135,6 +137,53 @@ export function NumericSpinnerInput({
 
   const atMin = min !== undefined && Number(localValue) <= min
   const atMax = max !== undefined && Number(localValue) >= max
+
+  if (compact) {
+    return (
+      <div
+        className={cn('inline-flex items-center gap-1', className)}
+        aria-label={label}
+        onBlur={handleControlBlur}
+      >
+        {label ? (
+          <span className='text-muted-foreground shrink-0 text-[11px] leading-none'>
+            {label}
+          </span>
+        ) : null}
+        <div className='inline-flex items-center'>
+          <button
+            type='button'
+            aria-label='Decrement'
+            onClick={handleDecrement}
+            disabled={disabled || atMin}
+            className={cn(
+              'border-border/80 text-muted-foreground flex size-5 items-center justify-center rounded-full border transition-colors',
+              !disabled && !atMin && 'hover:bg-muted hover:text-foreground',
+              (disabled || atMin) && 'opacity-30'
+            )}
+          >
+            <Minus className='size-3' />
+          </button>
+          <span className='min-w-5 px-0.5 text-center font-mono text-xs tabular-nums'>
+            {localValue}
+          </span>
+          <button
+            type='button'
+            aria-label='Increment'
+            onClick={handleIncrement}
+            disabled={disabled || atMax}
+            className={cn(
+              'border-border/80 text-muted-foreground flex size-5 items-center justify-center rounded-full border transition-colors',
+              !disabled && !atMax && 'hover:bg-muted hover:text-foreground',
+              (disabled || atMax) && 'opacity-30'
+            )}
+          >
+            <Plus className='size-3' />
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={cn('inline-flex items-center', className)}>

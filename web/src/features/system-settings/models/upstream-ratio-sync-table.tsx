@@ -28,14 +28,8 @@ import {
 } from '@/components/data-table'
 import { EmptyState } from '@/components/empty-state'
 import { LoadingState } from '@/components/loading-state'
+import { Combobox } from '@/components/ui/combobox'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useMediaQuery } from '@/hooks/use-media-query'
 
@@ -146,7 +140,6 @@ export function UpstreamRatioSyncTable(props: UpstreamRatioSyncTableProps) {
     withFacetedRowModel: false,
   })
   const types = [
-    { value: '__all__', label: t('All Types') },
     { value: 'expression', label: t('Expression pricing') },
     { value: 'token', label: t('Per-token') },
     { value: 'request', label: t('Per-request') },
@@ -227,28 +220,21 @@ export function UpstreamRatioSyncTable(props: UpstreamRatioSyncTableProps) {
               disabled={props.isDisabled}
             />
           </div>
-          <Select
-            value={kind}
-            items={types}
-            onValueChange={(value) => {
-              if (value) {
-                setKind(value)
+          <div className='w-36 shrink-0'>
+            <Combobox
+              options={types}
+              fitContentWidth
+              aria-label={t('Billing Mode')}
+              placeholder={t('Billing Mode')}
+              className='h-8 w-full min-w-0 text-sm leading-5'
+              value={kind === '__all__' ? '' : kind}
+              disabled={props.isDisabled}
+              onValueChange={(value) => {
+                setKind(value || '__all__')
                 table.setPageIndex(0)
-              }
-            }}
-            disabled={props.isDisabled}
-          >
-            <SelectTrigger className='w-36' aria-label={t('Billing Mode')}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent alignItemWithTrigger={false}>
-              {types.map((type) => (
-                <SelectItem value={type.value} key={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              }}
+            />
+          </div>
           <span className='text-muted-foreground text-xs sm:ml-auto'>
             USD / {t('1M token')}
           </span>

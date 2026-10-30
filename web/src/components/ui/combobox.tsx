@@ -49,6 +49,7 @@ type LegacyComboboxProps = {
   emptyText?: string
   allowCustomValue?: boolean
   showSelectedIcon?: boolean
+  showClear?: boolean
   fitContentWidth?: boolean
   className?: string
   id?: string
@@ -122,7 +123,7 @@ function OptionCombobox(props: LegacyComboboxProps) {
         setSearch(nextOpen ? displayedValue : '')
       }}
       onValueChange={(option) => {
-        if (option) props.onValueChange?.(option.value)
+        props.onValueChange?.(option ? option.value : null)
       }}
       filter={(option, query) => {
         const term = query.trim().toLowerCase()
@@ -151,6 +152,7 @@ function OptionCombobox(props: LegacyComboboxProps) {
             props.searchPlaceholder ?? props.placeholder ?? t('Search...')
           }
           triggerAriaLabel={props['aria-label'] ?? t('Open')}
+          showClear={props.showClear !== false && Boolean(displayedValue)}
           className='h-full min-h-8 w-full'
         >
           {props.showSelectedIcon && !open && selected?.icon && (
@@ -223,9 +225,11 @@ function ComboboxTrigger({
 }
 
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
+  const { t } = useTranslation()
   return (
     <ComboboxPrimitive.Clear
       data-slot='combobox-clear'
+      aria-label={t('Clear')}
       render={<InputGroupButton variant='ghost' size='icon-xs' />}
       className={cn(className)}
       {...props}

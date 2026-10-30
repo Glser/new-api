@@ -35,6 +35,7 @@ import {
   User,
   Users,
   Wallet,
+  Workflow,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
@@ -143,6 +144,11 @@ export function useSidebarData(): SidebarData {
             title: t('Channels'),
             url: '/channels',
             icon: Radio,
+          },
+          {
+            title: t('Topology'),
+            url: '/topology',
+            icon: Workflow,
           },
           {
             title: t('Models'),

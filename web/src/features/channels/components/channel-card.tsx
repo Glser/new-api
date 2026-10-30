@@ -17,34 +17,52 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { flexRender, type Row } from '@tanstack/react-table'
-import { ListOrdered, Shuffle, Tags } from 'lucide-react'
-import { memo, type MouseEvent, type ReactNode } from 'react'
+import {
+  AlertTriangle,
+  ListOrdered,
+  Shuffle,
+  SlidersHorizontal,
+  Tags,
+} from 'lucide-react'
+import { memo, useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { GroupBadge } from '@/components/group-badge'
-import { StatusBadge, StatusBadgeTypeContext } from '@/components/status-badge'
+import { StatusBadge } from '@/components/status-badge'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { TooltipHint } from '@/components/ui/tooltip'
+import { toIntlLocale } from '@/i18n/languages'
+import { formatTimestampToDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 import { CHANNEL_STATUS, CHANNEL_TYPE_TASK_PLUGIN } from '../constants'
 import {
+  formatRelativeTime,
+  formatResponseTime,
   getChannelTypeLabel,
+  getResponseTimeConfig,
   isMultiKeyChannel,
   isTagAggregateRow,
   parseChannelSettings,
   parseGroupsList,
 } from '../lib'
 import type { Channel } from '../types'
-import { ChannelRowActionsLayoutContext } from './channel-row-actions-context'
+import {
+  ChannelRowActionsLayoutContext,
+  ChannelRowActionsSlotContext,
+} from './channel-row-actions-context'
 import { ChannelTypeLogo } from './channel-type-badge'
+import { UpstreamUpdateTags } from './channels-columns'
 import { useChannels } from './channels-provider'
 
 const SENSITIVE_MASK = '••••'
 
+const PLAZA_CARD_HOVER =
+  'transition-[translate,box-shadow] duration-500 group-hover/channel-card:-translate-y-1 group-hover/channel-card:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_16px_36px_-24px_rgba(15,23,42,0.22)] dark:group-hover/channel-card:shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6)]'
+
 function ChannelCardLogo(props: { channel: Channel }) {
   if (isTagAggregateRow(props.channel)) {
-    return (
-      <Tags className='text-muted-foreground size-3.5' aria-hidden='true' />
-    )
+    return <Tags className='text-muted-foreground size-5' aria-hidden='true' />
   }
 
   const settings = parseChannelSettings(props.channel.setting)
@@ -54,30 +72,132 @@ function ChannelCardLogo(props: { channel: Channel }) {
     plugin = { key: pluginKey }
   }
 
-  return <ChannelTypeLogo type={props.channel.type} plugin={plugin} size={16} />
+  return <ChannelTypeLogo type={props.channel.type} plugin={plugin} size={18} />
 }
 
-function statusDotClass(status: number) {
-  if (status === CHANNEL_STATUS.ENABLED) return 'bg-success'
-  if (status === CHANNEL_STATUS.AUTO_DISABLED) return 'bg-warning'
-  if (status === CHANNEL_STATUS.MANUAL_DISABLED) {
-    return 'bg-muted-foreground/70'
+function responseToneClass(variant: string) {
+  if (variant === 'success') {
+    return 'text-success'
   }
-  return 'bg-muted-foreground/40'
+  if (variant === 'warning') {
+    return 'text-warning'
+  }
+  if (variant === 'danger') {
+    return 'text-destructive'
+  }
+  return 'text-muted-foreground'
 }
 
-function MiniField(props: {
-  label: string
-  children: ReactNode
-  className?: string
-}) {
+const GROUP_CHIP_CLASS =
+  'h-5 max-w-20 shrink-0 truncate px-1.5 text-[10px] leading-none font-medium'
+
+function ChannelCardGroups(props: { groups: string[]; masked: boolean }) {
+  const { t } = useTranslation()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
+  const extraRef = useRef<HTMLSpanElement>(null)
+  const [visibleCount, setVisibleCount] = useState(() =>
+    Math.min(1, props.groups.length)
+  )
+  const groupsKey = props.groups.join('\u0000')
+  const labels = props.groups.map((group) =>
+    props.masked ? SENSITIVE_MASK : group
+  )
+
+  useLayoutEffect(() => {
+    const container = containerRef.current
+    const measure = measureRef.current
+    if (!container || !measure) {
+      return
+    }
+
+    const update = () => {
+      const available = container.clientWidth
+      if (available <= 0) {
+        return
+      }
+      const chips = [
+        ...measure.querySelectorAll<HTMLElement>('[data-group-chip]'),
+      ]
+      const extraWidth = extraRef.current?.offsetWidth ?? 0
+      const gap = 4
+      let used = 0
+      let count = 0
+      for (let index = 0; index < chips.length; index += 1) {
+        const width = chips[index].offsetWidth
+        const remaining = chips.length - index - 1
+        const reserved = remaining > 0 ? extraWidth + gap : 0
+        const nextUsed = used + (count === 0 ? 0 : gap) + width
+        if (count > 0 && nextUsed + reserved > available) {
+          break
+        }
+        used = nextUsed
+        count += 1
+      }
+      const nextCount = chips.length === 0 ? 0 : Math.max(count, 1)
+      setVisibleCount((current) =>
+        current === nextCount ? current : nextCount
+      )
+    }
+
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [groupsKey, props.groups, props.masked])
+
+  if (props.groups.length === 0) {
+    return null
+  }
+
+  const visibleGroups = props.groups.slice(0, visibleCount)
+  const hiddenGroups = props.groups.slice(visibleCount)
+
   return (
-    <div className={cn('min-w-0', props.className)}>
-      <div className='text-muted-foreground mb-1 text-[11px] leading-none font-medium'>
-        {props.label}
+    <div ref={containerRef} className='relative min-w-0 flex-1 overflow-hidden'>
+      <div
+        ref={measureRef}
+        aria-hidden='true'
+        className='pointer-events-none absolute flex w-max items-center gap-1 opacity-0'
+      >
+        {props.groups.map((group, index) => (
+          <span key={group} data-group-chip>
+            <GroupBadge
+              group={group}
+              label={labels[index]}
+              size='sm'
+              copyable={false}
+              className={GROUP_CHIP_CLASS}
+            />
+          </span>
+        ))}
+        <span
+          ref={extraRef}
+          className='bg-muted/70 text-muted-foreground h-5 shrink-0 rounded-md px-1.5 text-[10px] leading-5 font-medium tabular-nums'
+        >
+          +99
+        </span>
       </div>
-      <div className='flex min-h-7 min-w-0 items-center overflow-hidden text-sm [&_:is([data-slot=badge-cell],[data-slot=status-badge])]:ml-0'>
-        {props.children}
+      <div className='flex min-w-0 flex-nowrap items-center gap-1 overflow-hidden'>
+        {visibleGroups.map((group, index) => (
+          <GroupBadge
+            key={group}
+            group={group}
+            label={labels[index]}
+            size='sm'
+            copyable={false}
+            className={GROUP_CHIP_CLASS}
+          />
+        ))}
+        {hiddenGroups.length > 0 ? (
+          <TooltipHint
+            content={`${t('Available groups')}: ${labels.join(', ')}`}
+          >
+            <span className='bg-muted/70 text-muted-foreground h-5 shrink-0 rounded-md px-1.5 text-[10px] leading-5 font-medium tabular-nums'>
+              +{hiddenGroups.length}
+            </span>
+          </TooltipHint>
+        ) : null}
       </div>
     </div>
   )
@@ -90,12 +210,11 @@ function ChannelCardComponent({
   row: Row<Channel>
   isSelected: boolean
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { sensitiveVisible } = useChannels()
   const channel = row.original
   const isTagRow = isTagAggregateRow(channel)
   const cells = row.getAllCells()
-
   const renderCell = (id: string) => {
     const cell = cells.find((c) => c.column.id === id)
     if (!cell || !cell.column.columnDef.cell) {
@@ -112,8 +231,6 @@ function ChannelCardComponent({
   const priorityCell = renderCell('priority')
   const weightCell = renderCell('weight')
   const balanceCell = renderCell('balance')
-  const responseCell = renderCell('response_time')
-  const testCell = renderCell('test_time')
   const emptyValue = <span className='text-muted-foreground'>-</span>
   const typeName = t(getChannelTypeLabel(channel.type))
   const isMultiKey = !isTagRow && isMultiKeyChannel(channel)
@@ -124,106 +241,183 @@ function ChannelCardComponent({
     (channel.status !== CHANNEL_STATUS.ENABLED &&
       channel.status !== CHANNEL_STATUS.MANUAL_DISABLED)
   const hasRouting = Boolean(channel.tag || groups.length > 0)
-
-  let subtitle: ReactNode = null
-  if (!isTagRow) {
-    subtitle = (
-      <div className='text-muted-foreground mt-0.5 flex min-w-0 items-center gap-1 text-[11px] leading-none'>
-        <span className='truncate tabular-nums'>
-          #{sensitiveVisible ? channel.id : SENSITIVE_MASK}
-          <span className='mx-1'>·</span>
-          {typeName}
-        </span>
-        {isMultiKey ? (
-          <MultiKeyModeIcon className='size-3 shrink-0' aria-hidden='true' />
-        ) : null}
-      </div>
-    )
-  }
+  const settings = parseChannelSettings(channel.setting)
+  const isPassThrough = settings.pass_through_body_enabled === true
+  const hasParamOverride = Boolean(channel.param_override?.trim())
+  const locale = toIntlLocale(i18n.resolvedLanguage || i18n.language)
+  const responseTime = channel.response_time ?? 0
+  const responseConfig = getResponseTimeConfig(responseTime)
+  const testTime = channel.test_time ?? 0
+  const testedLabel =
+    !testTime || testTime === 0
+      ? t('Never')
+      : formatRelativeTime(testTime, locale)
+  const testedFullDate =
+    !testTime || testTime === 0 ? undefined : formatTimestampToDate(testTime)
+  const displayName = sensitiveVisible ? channel.name : SENSITIVE_MASK
+  const remark = channel.remark?.trim()
+  const menuActions = (
+    <ChannelRowActionsSlotContext.Provider value='menu'>
+      {actionsCell}
+    </ChannelRowActionsSlotContext.Provider>
+  )
+  const toggleActions = (
+    <ChannelRowActionsSlotContext.Provider value='toggle'>
+      {actionsCell}
+    </ChannelRowActionsSlotContext.Provider>
+  )
+  const testActions = (
+    <ChannelRowActionsSlotContext.Provider value='test'>
+      {actionsCell}
+    </ChannelRowActionsSlotContext.Provider>
+  )
 
   return (
     <ChannelRowActionsLayoutContext.Provider value='card'>
-      <div
+      <Card
+        data-card-hover='false'
         data-state={isSelected ? 'selected' : undefined}
-        className='flex min-h-0 flex-col gap-3'
+        size='sm'
+        className={cn(
+          'min-w-0 gap-3 bg-(--data-table-card-bg,var(--card)) py-3',
+          PLAZA_CARD_HOVER,
+          isSelected && 'ring-primary/40'
+        )}
       >
-        <div className='flex min-w-0 items-start gap-2'>
+        <CardHeader className='flex flex-row items-center gap-2.5 px-3.5'>
           {!isTagRow && selectCell ? (
-            <span className='mt-0.5 shrink-0'>{selectCell}</span>
+            <span className='shrink-0'>{selectCell}</span>
           ) : null}
-          <div
-            className='bg-muted/40 relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md border'
-            aria-hidden='true'
-          >
-            <ChannelCardLogo channel={channel} />
-            {!isTagRow ? (
-              <span
-                className={cn(
-                  'ring-background absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full ring-2',
-                  statusDotClass(channel.status)
-                )}
-              />
-            ) : null}
-          </div>
-          <div className='min-w-0 flex-1 overflow-hidden'>
-            <div className='min-w-0 overflow-hidden text-sm [&_.font-medium]:font-semibold'>
-              {nameCell}
+          {isTagRow ? (
+            <div
+              className='flex size-7 shrink-0 items-center justify-center'
+              aria-hidden='true'
+            >
+              <ChannelCardLogo channel={channel} />
             </div>
-            {subtitle}
+          ) : (
+            <TooltipHint content={typeName}>
+              <div className='flex size-7 shrink-0 items-center justify-center'>
+                <ChannelCardLogo channel={channel} />
+              </div>
+            </TooltipHint>
+          )}
+          <div className='min-w-0 flex-1 overflow-hidden'>
+            {isTagRow ? (
+              <div className='min-w-0 overflow-hidden text-sm [&_.font-medium]:font-semibold [&_.font-semibold]:text-sm'>
+                {nameCell}
+              </div>
+            ) : (
+              <div className='flex min-w-0 items-center gap-1.5'>
+                <TooltipHint content={displayName}>
+                  <span className='min-w-0 truncate text-sm leading-none font-semibold'>
+                    {displayName}
+                  </span>
+                </TooltipHint>
+                <span className='text-muted-foreground shrink-0 font-mono text-[11px] leading-none tabular-nums'>
+                  #{sensitiveVisible ? channel.id : SENSITIVE_MASK}
+                </span>
+                {isMultiKey ? (
+                  <TooltipHint
+                    content={
+                      multiKeyMode === 'random'
+                        ? t('Multi-key: Random rotation')
+                        : t('Multi-key: Polling rotation')
+                    }
+                  >
+                    <MultiKeyModeIcon
+                      className='text-muted-foreground size-3 shrink-0'
+                      aria-hidden='true'
+                    />
+                  </TooltipHint>
+                ) : null}
+                {isPassThrough ? (
+                  <TooltipHint
+                    content={t(
+                      'Request body pass-through is enabled. The request body will be sent directly to the upstream without any conversion.'
+                    )}
+                  >
+                    <AlertTriangle
+                      className='text-warning size-3.5 shrink-0'
+                      aria-hidden='true'
+                    />
+                  </TooltipHint>
+                ) : null}
+                {hasParamOverride ? (
+                  <TooltipHint content={t('Override request parameters')}>
+                    <SlidersHorizontal
+                      className='text-info size-3.5 shrink-0'
+                      aria-hidden='true'
+                    />
+                  </TooltipHint>
+                ) : null}
+                <UpstreamUpdateTags channel={channel} />
+              </div>
+            )}
           </div>
-          <div className='-mt-1 -mr-1.5 flex shrink-0 items-center gap-0.5'>
+          <div className='-mr-1 flex shrink-0 items-center gap-0.5'>
             {showStatusBadge ? statusCell : null}
-            {actionsCell}
+            {!isTagRow ? toggleActions : null}
+            {isTagRow ? actionsCell : menuActions}
           </div>
-        </div>
+        </CardHeader>
 
-        <StatusBadgeTypeContext.Provider value='text'>
-          <div className='bg-muted/40 grid grid-cols-2 gap-x-4 gap-y-2.5 rounded-lg px-3 py-2.5'>
-            <MiniField label={t('Priority')}>
+        <CardContent className='flex flex-col gap-2.5 px-3.5'>
+          {!isTagRow ? (
+            <p className='text-muted-foreground line-clamp-2 min-h-5 text-[12px] leading-5 break-words'>
+              {remark || ' '}
+            </p>
+          ) : null}
+
+          <div className='flex min-w-0 items-center justify-between gap-3'>
+            <div className='min-w-0 flex-1 overflow-hidden'>{balanceCell}</div>
+            <div className='flex shrink-0 items-center'>
               {priorityCell ?? emptyValue}
-            </MiniField>
-            <MiniField label={t('Weight')}>
-              {weightCell ?? emptyValue}
-            </MiniField>
-            <MiniField className='col-span-2' label={t('Used / Remaining')}>
-              {balanceCell ?? emptyValue}
-            </MiniField>
-            <MiniField label={t('Response')}>
-              {responseCell ?? emptyValue}
-            </MiniField>
-            <MiniField label={t('Last Tested')}>
-              {testCell ?? emptyValue}
-            </MiniField>
+            </div>
           </div>
-        </StatusBadgeTypeContext.Provider>
 
-        {hasRouting && !isTagRow ? (
-          <div className='mt-auto -ml-1.5 flex flex-wrap gap-1'>
-            {channel.tag ? (
-              <StatusBadge
-                label={sensitiveVisible ? channel.tag : SENSITIVE_MASK}
-                autoColor={channel.tag}
-                size='sm'
-                copyable={false}
-                className='cursor-pointer'
-                onClick={(event: MouseEvent) => {
-                  event.stopPropagation()
-                  const table = row.getAllCells()[0]?.getContext().table
-                  table?.getColumn('tag')?.setFilterValue([channel.tag])
-                }}
-              />
-            ) : null}
-            {groups.map((group) => (
-              <GroupBadge
-                key={group}
-                group={group}
-                label={sensitiveVisible ? undefined : SENSITIVE_MASK}
-                size='sm'
-              />
-            ))}
+          <div className='flex min-w-0 items-center justify-between gap-3'>
+            <div className='flex min-w-0 items-center gap-1.5'>
+              {!isTagRow ? testActions : null}
+              {!isTagRow ? (
+                <TooltipHint content={testedFullDate ?? testedLabel}>
+                  <span
+                    className={cn(
+                      'font-mono text-[12px] font-medium tabular-nums',
+                      responseToneClass(responseConfig.variant)
+                    )}
+                  >
+                    {formatResponseTime(responseTime, t)}
+                  </span>
+                </TooltipHint>
+              ) : null}
+            </div>
+            <div className='flex shrink-0 items-center'>
+              {weightCell ?? emptyValue}
+            </div>
           </div>
-        ) : null}
-      </div>
+
+          {hasRouting && !isTagRow ? (
+            <div className='flex min-w-0 items-center gap-1.5 overflow-hidden'>
+              {channel.tag ? (
+                <StatusBadge
+                  label={sensitiveVisible ? channel.tag : SENSITIVE_MASK}
+                  autoColor={channel.tag}
+                  size='sm'
+                  copyable={false}
+                  className='h-5 max-w-24 shrink-0 cursor-pointer px-1.5 text-[10px] leading-none'
+                  onClick={(event: MouseEvent) => {
+                    event.stopPropagation()
+                    const table = row.getAllCells()[0]?.getContext().table
+                    table?.getColumn('tag')?.setFilterValue([channel.tag])
+                  }}
+                />
+              ) : null}
+              <ChannelCardGroups groups={groups} masked={!sensitiveVisible} />
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
     </ChannelRowActionsLayoutContext.Provider>
   )
 }

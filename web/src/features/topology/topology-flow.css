@@ -1,0 +1,67 @@
+.topology-flow .react-flow {
+  --xy-background-color: transparent;
+  --xy-node-border-default: transparent;
+  --xy-node-background-color-default: transparent;
+  --xy-node-boxshadow-hover: none;
+  --xy-node-boxshadow-selected: none;
+}
+
+.topology-flow .react-flow__node {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.topology-flow .react-flow__edge-path {
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.topology-flow .react-flow__edge.selected .react-flow__edge-path,
+.topology-flow .react-flow__edge:focus .react-flow__edge-path {
+  stroke-width: 2.4;
+}
+
+.topology-flow .react-flow__connection-line {
+  stroke-width: 1.6;
+}
+
+.topology-flow .react-flow__handle {
+  border-width: 2px;
+}
+
+.topology-flow .react-flow__attribution {
+  display: none;
+}
+
+.topology-flash-card {
+  animation: topology-node-flash 1.2s ease-out;
+}
+
+.topology-flow .react-flow__edge.topology-flash-edge .react-flow__edge-path {
+  stroke-width: 2.6;
+  stroke-dasharray: 7 10;
+  animation: topology-edge-flow 0.85s linear infinite;
+}
+
+@keyframes topology-node-flash {
+  0% {
+    box-shadow: 0 0 0 0 var(--topology-flash);
+  }
+  35% {
+    box-shadow:
+      0 0 0 6px transparent,
+      0 0 22px var(--topology-flash);
+  }
+  100% {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  }
+}
+
+@keyframes topology-edge-flow {
+  to {
+    stroke-dashoffset: -34;
+  }
+}

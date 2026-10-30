@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next'
 import {
   DataTablePage,
   DataTableBulkActions,
+  DataTableViewOptions,
   useDataTable,
 } from '@/components/data-table'
 import { ErrorState } from '@/components/error-state'
@@ -37,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { formatTimestampToDate } from '@/lib/format'
 import { getLobeIcon } from '@/lib/lobe-icon'
@@ -48,7 +50,7 @@ import type { Vendor } from '../types'
 import { vendorErrorMessage, type VendorOperation } from '../vendor-api'
 import { VendorOperationDialog } from './dialogs/vendor-operation-dialog'
 import { useModels } from './models-provider'
-import { TooltipHint } from '@/components/ui/tooltip'
+import { VendorsPrimaryButtons } from './vendors-primary-buttons'
 
 const route = getRouteApi('/_authenticated/models/$section')
 
@@ -146,9 +148,7 @@ export function VendorsTable() {
       size: 350,
       cell: ({ row }) => (
         <TooltipHint content={row.original.description}>
-          <p
-            className='text-muted-foreground line-clamp-2 max-w-lg break-words whitespace-normal'
-          >
+          <p className='text-muted-foreground line-clamp-2 max-w-lg break-words whitespace-normal'>
             {row.original.description || '—'}
           </p>
         </TooltipHint>
@@ -265,11 +265,14 @@ export function VendorsTable() {
         toolbarProps={{
           searchPlaceholder: t('Search vendor names or descriptions'),
           searchDebounceMs: 300,
+          hideViewOptions: true,
+          afterFilters: <DataTableViewOptions table={table} />,
+          endActions: <VendorsPrimaryButtons />,
           filters: [
             {
               columnId: 'model_count',
               title: t('Model assignments'),
-              singleSelect: true,
+              variant: 'combobox',
               options: [
                 { label: t('With linked models'), value: 'linked' },
                 { label: t('Without linked models'), value: 'unlinked' },

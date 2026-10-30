@@ -22,7 +22,6 @@ import { SectionPageLayout } from '@/components/layout'
 
 import { UsersDeleteDialog } from './components/users-delete-dialog'
 import { UsersMutateDrawer } from './components/users-mutate-drawer'
-import { UsersPrimaryButtons } from './components/users-primary-buttons'
 import { UsersProvider, useUsers } from './components/users-provider'
 import { UsersTable } from './components/users-table'
 
@@ -33,10 +32,11 @@ function UsersContent() {
   return (
     <>
       <SectionPageLayout fixedContent>
-        <SectionPageLayout.Title>{t('Users')}</SectionPageLayout.Title>
-        <SectionPageLayout.Actions>
-          <UsersPrimaryButtons />
-        </SectionPageLayout.Actions>
+        <SectionPageLayout.Title>
+          <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+            {t('Users')}
+          </span>
+        </SectionPageLayout.Title>
         <SectionPageLayout.Content>
           <UsersTable />
         </SectionPageLayout.Content>

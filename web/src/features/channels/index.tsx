@@ -34,7 +34,6 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { getChannelOps } from './api'
 import { ChannelsDialogs } from './components/channels-dialogs'
-import { ChannelsPrimaryButtons } from './components/channels-primary-buttons'
 import { ChannelsProvider } from './components/channels-provider'
 import { ChannelsTable } from './components/channels-table'
 
@@ -99,9 +98,6 @@ export function Channels() {
             {retryBadge}
           </span>
         </SectionPageLayout.Title>
-        <SectionPageLayout.Actions>
-          <ChannelsPrimaryButtons />
-        </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
           <ChannelsTable />
         </SectionPageLayout.Content>

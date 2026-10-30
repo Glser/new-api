@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input'
 import { useDebounce } from '@/hooks'
 import { cn } from '@/lib/utils'
 
+import { DataTableComboboxFilter } from './dropdown-filter'
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableViewOptions } from './view-options'
 
@@ -41,6 +42,8 @@ type FilterDef = {
     count?: number
   }[]
   singleSelect?: boolean
+  variant?: 'faceted' | 'combobox'
+  emptyText?: string
 }
 
 type SearchDraft = {
@@ -65,7 +68,8 @@ export type DataTableToolbarProps<TData> = {
    */
   searchKey?: string
   /**
-   * Column-level filter chips (faceted multi-select / single-select).
+   * Column-level filters. Faceted chips by default; set `variant` to
+   * `select` or `combobox` for usage-log style dropdowns.
    */
   filters?: FilterDef[]
   /**
@@ -78,6 +82,13 @@ export type DataTableToolbarProps<TData> = {
    * search input and filter chips.
    */
   additionalSearch?: ReactNode
+  /**
+   * Content rendered immediately after the filter chips, still in the
+   * left-flowing filter row (not the right action cluster). Use this to
+   * keep View Options next to filters while primary buttons occupy the
+   * original right-side slot.
+   */
+  afterFilters?: ReactNode
   /**
    * Whether non-table filters (e.g. `additionalSearch` or `expandable`
    * inputs) are currently active. Controls Reset button visibility
@@ -103,6 +114,10 @@ export type DataTableToolbarProps<TData> = {
    * Reset / Search / View buttons.
    */
   preActions?: ReactNode
+  /**
+   * Custom action buttons rendered AFTER the View options dropdown.
+   */
+  endActions?: ReactNode
   /**
    * Explicit "Search" / "Apply" callback. When provided the toolbar
    * shows a primary Search button. Filters are committed only on click
@@ -259,6 +274,17 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
       filters.map((filter) => {
         const column = props.table.getColumn(filter.columnId)
         if (!column) return null
+        if (filter.variant === 'combobox') {
+          return (
+            <DataTableComboboxFilter
+              key={filter.columnId}
+              column={column}
+              title={filter.title}
+              options={filter.options}
+              emptyText={filter.emptyText}
+            />
+          )
+        }
         return (
           <DataTableFacetedFilter
             key={filter.columnId}
@@ -348,6 +374,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
           {props.customSearch !== undefined ? props.customSearch : searchInput}
           {props.additionalSearch}
           {filterChips}
+          {props.afterFilters}
           <div className='ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2'>
             {expandToggle}
           </div>
@@ -367,6 +394,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
             {searchButton}
             {viewToggleNode}
             {viewOptionsNode}
+            {props.endActions}
           </div>
         </div>
       </div>
@@ -383,6 +411,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
       {props.customSearch !== undefined ? props.customSearch : searchInput}
       {props.additionalSearch}
       {filterChips}
+      {props.afterFilters}
       {expanded && hasExpandable && props.expandable}
 
       <div className='ms-auto flex shrink-0 items-center gap-1.5 sm:gap-2'>
@@ -391,6 +420,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         {searchButton}
         {viewToggleNode}
         {viewOptionsNode}
+        {props.endActions}
         {expandToggle}
       </div>
     </div>

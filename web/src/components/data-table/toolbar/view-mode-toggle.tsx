@@ -20,6 +20,7 @@ import { Grid2X2, Table2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +37,7 @@ export type DataTableViewModeToggleProps = {
   value: DataTableViewMode
   onChange: (mode: DataTableViewMode) => void
   className?: string
+  variant?: 'segmented' | 'tabs'
 }
 
 type Segment = {
@@ -64,6 +66,39 @@ export function DataTableViewModeToggle(props: DataTableViewModeToggleProps) {
       tooltip: t('Table view'),
     },
   ]
+
+  if (props.variant === 'tabs') {
+    return (
+      <Tabs
+        value={props.value}
+        onValueChange={(value) => {
+          if (
+            value === DATA_TABLE_VIEW_MODES.CARD ||
+            value === DATA_TABLE_VIEW_MODES.TABLE
+          ) {
+            props.onChange(value)
+          }
+        }}
+        className={cn('shrink-0', props.className)}
+      >
+        <TabsList aria-label={t('View mode')} className='h-auto min-h-8'>
+          {segments.map((segment) => {
+            const Icon = segment.icon
+            return (
+              <TabsTrigger
+                key={segment.value}
+                value={segment.value}
+                aria-label={segment.tooltip}
+                className='gap-1 px-2.5 text-xs'
+              >
+                <Icon className='size-3.5' />
+              </TabsTrigger>
+            )
+          })}
+        </TabsList>
+      </Tabs>
+    )
+  }
 
   return (
     <div

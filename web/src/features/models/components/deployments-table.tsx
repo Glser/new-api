@@ -241,8 +241,8 @@ export function DeploymentsTable() {
             {
               columnId: 'status',
               title: t('Status'),
+              variant: 'combobox',
               options: statusFilterOptions,
-              singleSelect: true,
             },
           ],
         }}

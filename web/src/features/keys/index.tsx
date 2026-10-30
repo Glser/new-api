@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { getRouteApi } from '@tanstack/react-router'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
@@ -23,13 +25,33 @@ import { SectionPageLayout } from '@/components/layout'
 import { ApiBaseUrl } from './components/api-base-url'
 import { ApiKeysDialogs } from './components/api-keys-dialogs'
 import { ApiKeysPrimaryButtons } from './components/api-keys-primary-buttons'
-import { ApiKeysProvider } from './components/api-keys-provider'
+import { ApiKeysProvider, useApiKeys } from './components/api-keys-provider'
 import { ApiKeysTable } from './components/api-keys-table'
+
+const route = getRouteApi('/_authenticated/keys/')
+
+function OpenCreateFromSearch() {
+  const navigate = route.useNavigate()
+  const search = route.useSearch()
+  const { setOpen } = useApiKeys()
+
+  useEffect(() => {
+    if (!search.create) return
+    setOpen('create')
+    void navigate({
+      search: (previous) => ({ ...previous, create: undefined }),
+      replace: true,
+    })
+  }, [navigate, search.create, setOpen])
+
+  return null
+}
 
 export function ApiKeys() {
   const { t } = useTranslation()
   return (
     <ApiKeysProvider>
+      <OpenCreateFromSearch />
       <SectionPageLayout fixedContent alignActions='end'>
         <SectionPageLayout.Title>
           <span className='flex min-w-0 flex-col items-start gap-1.5 overflow-visible whitespace-normal'>

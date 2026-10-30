@@ -56,20 +56,16 @@ export function ModelsPrimaryButtons() {
 
   return (
     <div className='flex flex-wrap items-center gap-2'>
-      <ShineButton onClick={handleSync} variant='outline' size='sm'>
+      <ShineButton onClick={handleSync} variant='outline'>
         {t('Sync metadata')}
       </ShineButton>
       {canPrice && (
-        <ShineButton
-          onClick={() => setOpen('price-sync')}
-          variant='outline'
-          size='sm'
-        >
+        <ShineButton onClick={() => setOpen('price-sync')} variant='outline'>
           {t('Sync pricing')}
         </ShineButton>
       )}
       {/* Create Model */}
-      <Button onClick={handleCreateModel} size='sm'>
+      <Button onClick={handleCreateModel}>
         <Plus className='h-4 w-4' />
         {t('Add Model')}
       </Button>
@@ -77,9 +73,7 @@ export function ModelsPrimaryButtons() {
       {/* More Actions */}
       <DropdownMenu>
         <DropdownMenuTrigger
-          render={
-            <Button variant='outline' size='sm' aria-label={t('Open menu')} />
-          }
+          render={<Button variant='outline' aria-label={t('Open menu')} />}
         >
           <MoreHorizontal className='h-4 w-4' />
         </DropdownMenuTrigger>

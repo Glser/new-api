@@ -19,6 +19,11 @@ For commercial licensing, please contact support@quantumnous.com
 import { useTranslation } from 'react-i18next'
 
 import { StaticDataTable } from '@/components/data-table'
+import {
+  SideDrawerSection,
+  SideDrawerSectionHeader,
+  sideDrawerFormClassName,
+} from '@/components/drawer-layout'
 import { EmptyState } from '@/components/empty-state'
 import { GroupBadge } from '@/components/group-badge'
 import { StatusBadge } from '@/components/status-badge'
@@ -29,15 +34,15 @@ import { ModelSquareStatus } from './model-square-status'
 export function ModelConnections(props: { model: Model }) {
   const { t } = useTranslation()
   return (
-    <div className='min-h-0 flex-1 space-y-6 overflow-auto p-4'>
-      <p className='text-muted-foreground text-sm'>
+    <div className={sideDrawerFormClassName('gap-5 px-5 py-5')}>
+      <p className='text-muted-foreground text-xs leading-5'>
         {t(
           'Channel availability and group access are derived from enabled channels. Importing metadata does not create a callable channel.'
         )}
       </p>
       <ModelSquareStatus model={props.model} detail />
-      <section className='space-y-3'>
-        <h3 className='font-medium'>{t('Bound Channels')}</h3>
+      <SideDrawerSection>
+        <SideDrawerSectionHeader title={t('Bound Channels')} />
         {props.model.bound_channels?.length ? (
           <StaticDataTable
             data={props.model.bound_channels}
@@ -57,42 +62,42 @@ export function ModelConnections(props: { model: Model }) {
         ) : (
           <EmptyState title={t('No available channels')} />
         )}
-      </section>
-      <section className='space-y-3'>
-        <h3 className='font-medium'>{t('Enable Groups')}</h3>
+      </SideDrawerSection>
+      <SideDrawerSection>
+        <SideDrawerSectionHeader title={t('Enable Groups')} />
         <div className='flex flex-wrap gap-2'>
           {props.model.enable_groups?.map((group) => (
             <GroupBadge key={group} group={group} />
           ))}
           {!props.model.enable_groups?.length && (
-            <span className='text-muted-foreground text-sm'>
+            <span className='text-muted-foreground text-xs'>
               {t('No enabled groups')}
             </span>
           )}
         </div>
-      </section>
-      <section className='space-y-3'>
-        <h3 className='font-medium'>{t('Supported endpoints')}</h3>
+      </SideDrawerSection>
+      <SideDrawerSection>
+        <SideDrawerSectionHeader title={t('Supported endpoints')} />
         <div className='flex flex-wrap gap-2'>
           {props.model.supported_endpoints?.map((endpoint) => (
             <StatusBadge key={endpoint} variant='neutral' label={endpoint} />
           ))}
           {!props.model.supported_endpoints?.length && (
-            <span className='text-muted-foreground text-sm'>
+            <span className='text-muted-foreground text-xs'>
               {t('No endpoints inferred from channels')}
             </span>
           )}
         </div>
-      </section>
+      </SideDrawerSection>
       {props.model.name_rule !== 0 && (
-        <section className='space-y-3'>
-          <h3 className='font-medium'>{t('Matched models')}</h3>
+        <SideDrawerSection>
+          <SideDrawerSectionHeader title={t('Matched models')} />
           <div className='flex flex-wrap gap-2'>
             {props.model.matched_models?.map((name) => (
               <StatusBadge key={name} variant='neutral' label={name} />
             ))}
           </div>
-        </section>
+        </SideDrawerSection>
       )}
     </div>
   )

@@ -19,6 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 
 import {
@@ -32,51 +33,30 @@ import { ChannelTypeLogo } from './channel-type-badge'
 
 const SENSITIVE_MASK = '••••'
 
-type ClassificationChipProps = {
-  selected: boolean
-  onClick: () => void
-  children: ReactNode
-  ariaLabel: string
-  tone?: 'default' | 'warning'
-}
-
-function ClassificationChip(props: ClassificationChipProps) {
-  let toneClass = 'text-muted-foreground hover:bg-muted hover:text-foreground'
-  if (props.selected) {
-    toneClass = 'bg-foreground text-background shadow-xs'
-  } else if (props.tone === 'warning') {
-    toneClass = 'text-warning hover:bg-warning/10'
-  }
-
-  return (
-    <button
-      type='button'
-      aria-pressed={props.selected}
-      aria-label={props.ariaLabel}
-      onClick={props.onClick}
-      className={cn(
-        'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium whitespace-nowrap transition-colors',
-        toneClass
-      )}
-    >
-      {props.children}
-    </button>
-  )
-}
-
 function ChipCount(props: { value: number }) {
-  return <span className='tabular-nums opacity-75'>{props.value}</span>
+  return <span className='tabular-nums opacity-60'>{props.value}</span>
 }
 
-function ClassificationRow(props: { label: string; children: ReactNode }) {
+function ClassificationTabs(props: {
+  value: string
+  ariaLabel: string
+  onValueChange: (value: string) => void
+  children: ReactNode
+}) {
   return (
-    <div className='flex min-w-0 items-center gap-2'>
-      <span className='text-muted-foreground w-12 shrink-0 text-[11px] leading-none'>
-        {props.label}
-      </span>
-      <div className='flex min-w-0 flex-1 [scrollbar-width:none] items-center gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden'>
-        {props.children}
-      </div>
+    <div className='flex min-w-0 [scrollbar-width:none] items-center overflow-x-auto [&::-webkit-scrollbar]:hidden'>
+      <Tabs
+        value={props.value}
+        onValueChange={props.onValueChange}
+        className='min-w-0 shrink-0'
+      >
+        <TabsList
+          aria-label={props.ariaLabel}
+          className='h-auto min-h-8 max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'
+        >
+          {props.children}
+        </TabsList>
+      </Tabs>
     </div>
   )
 }
@@ -115,118 +95,99 @@ export function ChannelsClassificationBar(props: {
     [props.tagCounts]
   )
   const untaggedCount = Number(props.untaggedCount || 0)
-  const typeTotal = typeItems.reduce((sum, item) => sum + item.count, 0)
-  const tagTotal =
-    tagItems.reduce((sum, item) => sum + item.count, 0) + untaggedCount
   const showTypeRail = typeItems.length > 1 || props.typeValue !== 'all'
   const showTagRail = tagItems.length > 0 || props.tagValue !== 'all'
+  const statusCountsReady = props.statusCounts != null
 
   return (
     <div className='flex min-w-0 flex-col gap-1.5'>
-      <ClassificationRow label={t('Status')}>
+      <ClassificationTabs
+        value={props.statusValue}
+        ariaLabel={t('Status')}
+        onValueChange={(value) =>
+          props.onStatusChange(value === 'all' ? undefined : value)
+        }
+      >
         {CHANNEL_STATUS_FACETS.map((facet) => {
           const count = statusFacetCount(props.statusCounts, facet.statusKey)
-          const selected = props.statusValue === facet.value
           const warning =
-            facet.value === 'auto_disabled' && count > 0 && !selected
-          const statusCountsReady = props.statusCounts != null
+            facet.value === 'auto_disabled' &&
+            count > 0 &&
+            props.statusValue !== facet.value
           return (
-            <ClassificationChip
+            <TabsTrigger
               key={facet.value}
-              selected={selected}
-              tone={warning ? 'warning' : 'default'}
-              ariaLabel={
-                statusCountsReady
-                  ? `${t(facet.label)} ${count}`
-                  : t(facet.label)
-              }
-              onClick={() =>
-                props.onStatusChange(
-                  selected || facet.value === 'all' ? undefined : facet.value
-                )
-              }
+              value={facet.value}
+              className={cn('gap-1 px-2.5 text-xs', warning && 'text-warning')}
             >
-              <span>{t(facet.label)}</span>
-              {statusCountsReady ? <ChipCount value={count} /> : null}
-            </ClassificationChip>
+              {t(facet.label)}
+              {facet.value !== 'all' && statusCountsReady ? (
+                <ChipCount value={count} />
+              ) : null}
+            </TabsTrigger>
           )
         })}
-      </ClassificationRow>
+      </ClassificationTabs>
 
       {showTypeRail ? (
-        <ClassificationRow label={t('Type')}>
-          <ClassificationChip
-            selected={props.typeValue === 'all'}
-            ariaLabel={t('All Types')}
-            onClick={() => props.onTypeChange(undefined)}
-          >
-            <span>{t('All Types')}</span>
-            <ChipCount value={typeTotal} />
-          </ClassificationChip>
+        <ClassificationTabs
+          value={props.typeValue}
+          ariaLabel={t('Type')}
+          onValueChange={(value) =>
+            props.onTypeChange(value === 'all' ? undefined : value)
+          }
+        >
+          <TabsTrigger value='all' className='gap-1 px-2.5 text-xs'>
+            {t('All Types')}
+          </TabsTrigger>
           {typeItems.map((item) => {
             const value = String(item.type)
-            const selected = props.typeValue === value
-            const label = t(getChannelTypeLabel(item.type))
             return (
-              <ClassificationChip
+              <TabsTrigger
                 key={value}
-                selected={selected}
-                ariaLabel={`${label} ${item.count}`}
-                onClick={() => props.onTypeChange(selected ? undefined : value)}
+                value={value}
+                className='gap-1 px-2.5 text-xs'
               >
                 <ChannelTypeLogo type={item.type} size={14} />
-                <span>{label}</span>
+                {t(getChannelTypeLabel(item.type))}
                 <ChipCount value={item.count} />
-              </ClassificationChip>
+              </TabsTrigger>
             )
           })}
-        </ClassificationRow>
+        </ClassificationTabs>
       ) : null}
 
       {showTagRail ? (
-        <ClassificationRow label={t('Tag')}>
-          <ClassificationChip
-            selected={props.tagValue === 'all'}
-            ariaLabel={t('All Tags')}
-            onClick={() => props.onTagChange(undefined)}
-          >
-            <span>{t('All Tags')}</span>
-            <ChipCount value={tagTotal} />
-          </ClassificationChip>
-          {tagItems.map((item) => {
-            const selected = props.tagValue === item.tag
-            const label = props.sensitiveVisible ? item.tag : SENSITIVE_MASK
-            return (
-              <ClassificationChip
-                key={item.tag}
-                selected={selected}
-                ariaLabel={`${item.tag} ${item.count}`}
-                onClick={() =>
-                  props.onTagChange(selected ? undefined : item.tag)
-                }
-              >
-                <span>{label}</span>
-                <ChipCount value={item.count} />
-              </ClassificationChip>
-            )
-          })}
-          {untaggedCount > 0 || props.tagValue === UNTAGGED_TAG_FILTER ? (
-            <ClassificationChip
-              selected={props.tagValue === UNTAGGED_TAG_FILTER}
-              ariaLabel={`${t('Untagged')} ${untaggedCount}`}
-              onClick={() =>
-                props.onTagChange(
-                  props.tagValue === UNTAGGED_TAG_FILTER
-                    ? undefined
-                    : UNTAGGED_TAG_FILTER
-                )
-              }
+        <ClassificationTabs
+          value={props.tagValue}
+          ariaLabel={t('Tag')}
+          onValueChange={(value) =>
+            props.onTagChange(value === 'all' ? undefined : value)
+          }
+        >
+          <TabsTrigger value='all' className='gap-1 px-2.5 text-xs'>
+            {t('All Tags')}
+          </TabsTrigger>
+          {tagItems.map((item) => (
+            <TabsTrigger
+              key={item.tag}
+              value={item.tag}
+              className='gap-1 px-2.5 text-xs'
             >
-              <span>{t('Untagged')}</span>
+              {props.sensitiveVisible ? item.tag : SENSITIVE_MASK}
+              <ChipCount value={item.count} />
+            </TabsTrigger>
+          ))}
+          {untaggedCount > 0 || props.tagValue === UNTAGGED_TAG_FILTER ? (
+            <TabsTrigger
+              value={UNTAGGED_TAG_FILTER}
+              className='gap-1 px-2.5 text-xs'
+            >
+              {t('Untagged')}
               <ChipCount value={untaggedCount} />
-            </ClassificationChip>
+            </TabsTrigger>
           ) : null}
-        </ClassificationRow>
+        </ClassificationTabs>
       ) : null}
     </div>
   )

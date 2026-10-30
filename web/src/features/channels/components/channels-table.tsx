@@ -24,27 +24,25 @@ import type {
   SortingState,
   Row,
 } from '@tanstack/react-table'
-import { Eye, EyeOff } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import {
   DISABLED_ROW_DESKTOP,
   DISABLED_ROW_MOBILE,
+  DATA_TABLE_VIEW_MODES,
   DataTablePage,
-  useDebouncedColumnFilter,
+  DataTableViewModeToggle,
+  DataTableViewOptions,
   useDataTable,
+  useDataTableViewMode,
 } from '@/components/data-table'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Combobox } from '@/components/ui/combobox'
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
+import { getUserModels } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
+import { cn } from '@/lib/utils'
 
 import { getChannels, searchChannels, getGroups } from '../api'
 import { DEFAULT_PAGE_SIZE, CHANNEL_STATUS } from '../constants'
@@ -54,12 +52,12 @@ import {
   getChannelTableRowId,
   isTagAggregateRow,
   selectedSingleFilter,
-  UNTAGGED_TAG_FILTER,
 } from '../lib'
 import type { Channel, ChannelSortBy } from '../types'
 import { ChannelCard } from './channel-card'
 import { ChannelsClassificationBar } from './channels-classification-bar'
 import { useChannelsColumns } from './channels-columns'
+import { ChannelsPrimaryButtons } from './channels-primary-buttons'
 import { useChannels } from './channels-provider'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 
@@ -86,14 +84,11 @@ function isDisabledChannelRow(channel: Channel) {
 
 export function ChannelsTable() {
   const { t } = useTranslation()
-  const {
-    enableTagMode,
-    setEnableTagMode,
-    idSort,
-    batchMode,
-    sensitiveVisible,
-    setSensitiveVisible,
-  } = useChannels()
+  const { enableTagMode, idSort, batchMode, sensitiveVisible } = useChannels()
+  const [viewMode, setViewMode] = useDataTableViewMode({
+    storageKey: CHANNELS_VIEW_MODE_STORAGE_KEY,
+    defaultMode: DATA_TABLE_VIEW_MODES.CARD,
+  })
   const isMobile = useMediaQuery('(max-width: 640px)')
 
   // Table state
@@ -168,18 +163,9 @@ export function ChannelsTable() {
     (columnFilters.find((f) => f.id === 'group')?.value as string[]) || []
   const tagFilter =
     (columnFilters.find((f) => f.id === 'tag')?.value as string[]) || []
-  const {
-    value: modelFilter,
-    inputValue: modelFilterInput,
-    onChange: onModelFilterInputChange,
-    onCompositionStart: onModelFilterCompositionStart,
-    onCompositionEnd: onModelFilterCompositionEnd,
-    resetInput: resetModelFilterInput,
-  } = useDebouncedColumnFilter({
-    columnFilters,
-    columnId: 'model',
-    onColumnFiltersChange,
-  })
+  const modelFilter =
+    (columnFilters.find((filter) => filter.id === 'model')?.value as string) ||
+    ''
 
   // Determine whether to use search or regular list API
   const shouldSearch = Boolean(globalFilter?.trim() || modelFilter.trim())
@@ -214,14 +200,28 @@ export function ChannelsTable() {
     queryKey: ['groups'],
     queryFn: async () => requireServerSuccess(await getGroups()),
   })
+  const { data: userModels } = useQuery({
+    queryKey: ['user-models'],
+    queryFn: async () => requireServerSuccess(await getUserModels()),
+  })
 
   const groupOptions = useMemo(
     () =>
-      (groupsData?.data || []).map((g) => ({
-        label: g,
-        value: g,
-      })),
-    [groupsData]
+      (groupsData?.data || [])
+        .filter((group) => group !== 'auto')
+        .map((group) => ({
+          label: sensitiveVisible ? group : '••••',
+          value: group,
+        })),
+    [groupsData, sensitiveVisible]
+  )
+  const modelOptions = useMemo(
+    () =>
+      [...new Set(userModels?.data ?? [])]
+        .filter(Boolean)
+        .sort((left, right) => left.localeCompare(right))
+        .map((model) => ({ label: model, value: model })),
+    [userModels]
   )
 
   const selectedGroup =
@@ -349,40 +349,27 @@ export function ChannelsTable() {
     })
   }
 
-  const handleTagModeChange = (enabled: boolean) => {
-    setEnableTagMode(enabled)
-    if (enabled && selectedTag === UNTAGGED_TAG_FILTER) {
-      setSingleColumnFilter('tag', undefined)
-    }
+  const setStringColumnFilter = (
+    columnId: string,
+    value: string | undefined
+  ) => {
+    handleColumnFiltersChange((previous) => {
+      const next = previous.filter((filter) => filter.id !== columnId)
+      if (value) {
+        next.push({ id: columnId, value })
+      }
+      return next
+    })
   }
 
-  useEffect(() => {
-    if (!enableTagMode) return
-    if (selectedTag !== UNTAGGED_TAG_FILTER) return
-    handleColumnFiltersChange((previous) => {
-      if (!previous.some((filter) => filter.id === 'tag')) {
-        return previous
-      }
-      return previous.filter((filter) => filter.id !== 'tag')
-    })
-    // Filter identity is intentionally omitted; selectedTag is the source of truth.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enableTagMode, selectedTag])
-
   const handleTagFacetChange = (value: string | undefined) => {
-    if (value === UNTAGGED_TAG_FILTER && enableTagMode) {
-      handleTagModeChange(false)
-    }
     setSingleColumnFilter('tag', value)
   }
 
-  const groupFilterOptions = [
-    { label: t('All Groups'), value: 'all' },
-    ...groupOptions.map((option) => ({
-      ...option,
-      label: sensitiveVisible ? option.label : '••••',
-    })),
-  ]
+  const getColumnClassName = (_columnId: string, kind: 'header' | 'cell') =>
+    kind === 'header'
+      ? 'text-center [&>div]:mx-auto [&>div]:justify-center'
+      : 'py-2.5 text-center [&>div]:mx-auto [&>div]:items-center [&>div]:justify-center'
 
   return (
     <div className='@container/console flex h-full min-h-0 flex-col gap-3'>
@@ -411,57 +398,64 @@ export function ChannelsTable() {
         )}
         skeletonKeyPrefix='channel-skeleton'
         enableCardView
-        viewModeStorageKey={CHANNELS_VIEW_MODE_STORAGE_KEY}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
         renderCard={(row, { isSelected }) => (
           <ChannelCard row={row} isSelected={isSelected} />
         )}
-        cardGridClassName='grid justify-start gap-3 [grid-template-columns:repeat(auto-fill,minmax(23rem,26rem))]'
-        cardItemClassName='overflow-hidden p-3.5'
+        cardGridClassName='grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]'
+        cardItemClassName='group/channel-card relative z-0 min-w-0 self-start overflow-visible border-0 !bg-transparent p-0 shadow-none hover:z-10 data-[state=selected]:border-transparent'
         applyHeaderSize
+        tableClassName={cn(
+          '@container/channels [&_[data-slot=table]]:min-w-[70rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-(--table-header) [&_[data-slot=table]_th]:bg-(--table-header) [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/channels:[&_[data-slot=table]_td]:text-sm @min-[48rem]/channels:[&_[data-slot=table]_th]:text-sm @min-[80rem]/channels:[&_[data-slot=table]_td]:px-3 @min-[80rem]/channels:[&_[data-slot=table]_th]:px-3 @min-[80rem]/channels:[&_[data-slot=table]_td]:text-[15px]',
+          '[&_[data-slot=table]_th>div]:justify-center [&_[data-slot=table]_th_button]:ms-0',
+          '[&_[data-slot=table]_td_*]:text-center [&_[data-slot=table]_td_*]:justify-center [&_[data-slot=table]_td_*]:items-center'
+        )}
+        getColumnClassName={getColumnClassName}
         toolbarProps={{
           searchPlaceholder: t('Filter by name, ID, or key...'),
           searchDebounceMs: 500,
-          onReset: () => {
-            resetModelFilterInput()
-          },
+          hideViewOptions: true,
+          viewToggle: null,
           additionalSearch: (
-            <Input
-              placeholder={t('Filter by model...')}
-              value={modelFilterInput}
-              onChange={onModelFilterInputChange}
-              onCompositionStart={onModelFilterCompositionStart}
-              onCompositionEnd={onModelFilterCompositionEnd}
-              className='w-full sm:w-[150px] lg:w-[180px]'
-            />
+            <>
+              <div className='w-28 shrink-0'>
+                <Combobox
+                  options={modelOptions}
+                  fitContentWidth
+                  aria-label={t('Model Name')}
+                  emptyText={t('No model found.')}
+                  placeholder={t('Model Name')}
+                  className='h-8 w-full min-w-0 text-sm leading-5'
+                  value={modelFilter}
+                  onValueChange={(value) =>
+                    setStringColumnFilter('model', value || undefined)
+                  }
+                />
+              </div>
+              <div className='w-28 shrink-0'>
+                <Combobox
+                  options={groupOptions}
+                  fitContentWidth
+                  aria-label={t('Group')}
+                  emptyText={t('No group found.')}
+                  placeholder={t('Group')}
+                  className='h-8 w-full min-w-0 text-sm leading-5'
+                  value={selectedGroup ?? ''}
+                  onValueChange={(value) =>
+                    setSingleColumnFilter('group', value || undefined)
+                  }
+                />
+              </div>
+              <DataTableViewModeToggle
+                variant='tabs'
+                value={viewMode}
+                onChange={setViewMode}
+              />
+              <DataTableViewOptions table={table} />
+            </>
           ),
-          filters: [
-            {
-              columnId: 'group',
-              title: t('Group'),
-              options: groupFilterOptions,
-              singleSelect: true,
-            },
-          ],
-          preActions: (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    onClick={() => setSensitiveVisible(!sensitiveVisible)}
-                    aria-label={sensitiveVisible ? t('Hide') : t('Show')}
-                    className='text-muted-foreground hover:text-foreground size-8'
-                  />
-                }
-              >
-                {sensitiveVisible ? <Eye /> : <EyeOff />}
-              </TooltipTrigger>
-              <TooltipContent>
-                {sensitiveVisible ? t('Hide') : t('Show')}
-              </TooltipContent>
-            </Tooltip>
-          ),
+          endActions: <ChannelsPrimaryButtons />,
         }}
         getRowClassName={(row, { isMobile }) => {
           if (!isDisabledChannelRow(row.original)) {

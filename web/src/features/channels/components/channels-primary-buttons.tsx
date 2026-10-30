@@ -43,7 +43,6 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Tooltip,
   TooltipContent,
@@ -69,8 +68,6 @@ export function ChannelsPrimaryButtons() {
   const {
     setOpen,
     setCurrentRow,
-    enableTagMode,
-    setEnableTagMode,
     idSort,
     setIdSort,
     batchMode,
@@ -100,38 +97,21 @@ export function ChannelsPrimaryButtons() {
   return (
     <>
       <div className='flex items-center gap-2'>
-        <Tabs
-          value={enableTagMode ? 'tag' : 'list'}
-          onValueChange={(value) => setEnableTagMode(value === 'tag')}
-          className='shrink-0'
-        >
-          <TabsList aria-label={t('View')}>
-            <TabsTrigger value='list' className='px-2.5 text-xs'>
-              {t('List')}
-            </TabsTrigger>
-            <TabsTrigger value='tag' className='px-2.5 text-xs'>
-              {t('Tag Mode')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
         <Tooltip>
           <TooltipTrigger render={<span className='inline-flex' />}>
             <Button
+              shine
+              size='lg'
+              className='h-9 px-3'
               onClick={() => {
                 if (!canEditSensitive) return
                 setCurrentRow(null)
                 setOpen('create-channel')
               }}
-              size='sm'
-              className='h-8 px-2.5 text-xs'
               disabled={!canEditSensitive}
             >
               <Plus data-icon='inline-start' className='size-4' />
-              <span className='leading-none max-sm:hidden'>
-                {t('Create Channel')}
-              </span>
-              <span className='leading-none sm:hidden'>{t('Create')}</span>
+              <span className='leading-none'>{t('Create Channel')}</span>
             </Button>
           </TooltipTrigger>
           {!canEditSensitive && (

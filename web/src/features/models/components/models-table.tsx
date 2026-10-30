@@ -23,9 +23,11 @@ import { useTranslation } from 'react-i18next'
 
 import { DataTablePage, useDataTable } from '@/components/data-table'
 import { ErrorState } from '@/components/error-state'
+import { Combobox } from '@/components/ui/combobox'
 import { useModelPricing } from '@/features/model-pricing/api'
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
+import { getUserModels } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
 import { getModels, searchModels, getVendors } from '../api'
@@ -34,6 +36,7 @@ import { modelsQueryKeys, vendorsQueryKeys } from '../lib'
 import type { ModelSquareState } from '../types'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { useModelsColumns } from './models-columns'
+import { ModelsPrimaryButtons } from './models-primary-buttons'
 import { useModels } from './models-provider'
 
 const route = getRouteApi('/_authenticated/models/$section')
@@ -87,6 +90,10 @@ export function ModelsTable() {
     queryKey: vendorsQueryKeys.list(),
     queryFn: async () =>
       requireServerSuccess(await getVendors({ page_size: 1000 })),
+  })
+  const { data: userModelsData } = useQuery({
+    queryKey: ['user-models'],
+    queryFn: async () => requireServerSuccess(await getUserModels()),
   })
 
   const vendors = useMemo(
@@ -164,9 +171,21 @@ export function ModelsTable() {
     },
   })
 
-  const models = data?.data?.items || []
+  const models = useMemo(() => data?.data?.items || [], [data?.data?.items])
   const totalCount = data?.data?.total || 0
   const vendorCounts = data?.data?.vendor_counts
+  const modelNameOptions = useMemo(() => {
+    const names = new Set<string>()
+    for (const name of userModelsData?.data ?? []) {
+      if (name) names.add(name)
+    }
+    for (const model of models) {
+      if (model.model_name) names.add(model.model_name)
+    }
+    return [...names]
+      .sort((left, right) => left.localeCompare(right))
+      .map((name) => ({ label: name, value: name }))
+  }, [models, userModelsData?.data])
 
   // Columns configuration
   const pricingQuery = useModelPricing(
@@ -210,16 +229,10 @@ export function ModelsTable() {
   })
 
   // Prepare filter options
-  const vendorFilterOptions = [
-    {
-      label: `${t('All Vendors')}${vendorCounts?.all ? ` (${vendorCounts.all})` : ''}`,
-      value: 'all',
-    },
-    ...vendorOptions.map((option) => ({
-      label: `${option.label}${vendorCounts?.[option.value] ? ` (${vendorCounts[option.value]})` : ''}`,
-      value: option.value,
-    })),
-  ]
+  const vendorFilterOptions = vendorOptions.map((option) => ({
+    label: `${option.label}${vendorCounts?.[option.value] ? ` (${vendorCounts[option.value]})` : ''}`,
+    value: option.value,
+  }))
 
   if (isError || data?.success === false) {
     return (
@@ -251,43 +264,57 @@ export function ModelsTable() {
         { columnId: 'actions', side: 'right' },
       ]}
       toolbarProps={{
-        searchPlaceholder: t('Filter by model name...'),
-        searchDebounceMs: 500,
+        endActions: <ModelsPrimaryButtons />,
+        customSearch: (
+          <div className='w-36 shrink-0'>
+            <Combobox
+              options={modelNameOptions}
+              fitContentWidth
+              aria-label={t('Model Name')}
+              emptyText={t('No model found.')}
+              placeholder={t('Model Name')}
+              className='h-8 w-full min-w-0 text-sm leading-5'
+              value={globalFilter || ''}
+              onValueChange={(value) => onGlobalFilterChange?.(value ?? '')}
+            />
+          </div>
+        ),
         filters: [
           {
             columnId: 'status',
             title: t('Display policy'),
+            variant: 'combobox',
             options: [
               { label: t('Allowed'), value: 'enabled' },
               { label: t('Not listed'), value: 'disabled' },
             ],
-            singleSelect: true,
           },
           {
             columnId: 'square_state',
             title: t('Model square visibility'),
+            variant: 'combobox',
             options: [
               { label: t('Displayed'), value: 'visible' },
               { label: t('Unavailable'), value: 'unavailable' },
               { label: t('Listing hidden'), value: 'hidden' },
               { label: t('Partly shown'), value: 'partial' },
             ],
-            singleSelect: true,
           },
           {
             columnId: 'vendor_id',
             title: t('Vendor'),
+            variant: 'combobox',
+            emptyText: t('No vendors found'),
             options: vendorFilterOptions,
-            singleSelect: true,
           },
           {
             columnId: 'sync_official',
             title: t('Sync policy'),
+            variant: 'combobox',
             options: [
               { label: t('Allow updates'), value: 'yes' },
               { label: t('Keep local'), value: 'no' },
             ],
-            singleSelect: true,
           },
         ],
       }}

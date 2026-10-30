@@ -55,9 +55,10 @@ export function UserQuotaCell(props: UserQuotaCellProps) {
         { label: t('Available Balance'), value: formattedRemaining },
         { label: t('Total Used'), value: formattedUsed },
       ]}
+      triggerClassName='justify-center text-center'
     >
       {hasQuota ? (
-        <span className='grid min-w-0 grid-cols-1 gap-y-1 text-sm tabular-nums'>
+        <span className='grid w-full grid-cols-1 justify-items-center gap-y-1 text-center text-sm tabular-nums'>
           <span
             className={cn(
               props.remaining < 0 && 'text-destructive',
@@ -68,19 +69,21 @@ export function UserQuotaCell(props: UserQuotaCellProps) {
           </span>
           <span
             data-table-text='secondary'
-            className='text-muted-foreground flex items-baseline gap-1 text-xs font-normal'
+            className='text-muted-foreground flex items-baseline justify-center gap-1 text-xs font-normal'
           >
             <span>{t('Used amount')}</span>
             <span>{formattedUsed}</span>
           </span>
         </span>
       ) : (
-        <StatusBadge
-          label={t('No Quota')}
-          variant='neutral'
-          copyable={false}
-          className='-ml-1.5 font-normal'
-        />
+        <span className='flex w-full justify-center'>
+          <StatusBadge
+            label={t('No Quota')}
+            variant='neutral'
+            copyable={false}
+            className='font-normal'
+          />
+        </span>
       )}
     </QuotaDetailsPopover>
   )

@@ -176,8 +176,8 @@ export function RedemptionsTable() {
           {
             columnId: 'status',
             title: t('Status'),
+            variant: 'combobox',
             options: redemptionStatusOptions,
-            singleSelect: true,
           },
         ],
       }}

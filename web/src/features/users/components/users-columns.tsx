@@ -25,7 +25,6 @@ import { GroupBadge } from '@/components/group-badge'
 import { LongText } from '@/components/long-text'
 import { StatusBadge } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Tooltip,
   TooltipContent,
@@ -52,40 +51,17 @@ export function useUsersColumns(): ColumnDef<User>[] {
   const quotaUnit = currency.kind === 'tokens' ? t('Tokens') : currency.symbol
   return [
     {
-      id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          indeterminate={table.getIsSomePageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label={t('Select all')}
-          className='translate-y-[2px]'
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label={t('Select row')}
-          className='translate-y-[2px]'
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-      size: 40,
-    },
-    {
       accessorKey: 'id',
       header: t('ID'),
       cell: ({ row }) => {
         return (
           <TableId
             value={row.getValue('id') as number}
-            className='w-[60px] [font-family:inherit] text-sm'
+            className='[font-family:inherit] text-sm'
           />
         )
       },
-      size: 80,
+      size: 64,
       meta: { mobileOrder: 10 },
     },
     {
@@ -97,8 +73,8 @@ export function useUsersColumns(): ColumnDef<User>[] {
         const remark = row.original.remark
 
         return (
-          <div className='flex min-w-[160px] flex-col gap-1'>
-            <div className='flex items-center gap-2'>
+          <div className='mx-auto flex min-w-0 flex-col items-center gap-1 text-center'>
+            <div className='flex items-center justify-center gap-2'>
               <LongText className='max-w-[140px] text-sm font-normal'>
                 {username}
               </LongText>
@@ -124,7 +100,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
             {displayName && displayName !== username && (
               <div
                 data-table-text='secondary'
-                className='text-muted-foreground max-w-[180px] text-xs font-normal'
+                className='text-muted-foreground max-w-[180px] text-center text-xs font-normal'
               >
                 <LongText>{displayName}</LongText>
               </div>
@@ -133,7 +109,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
         )
       },
       enableHiding: false,
-      size: 220,
+      size: 140,
       meta: { mobileTitle: true },
     },
     {
@@ -153,7 +129,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
 
         return (
           <Tooltip>
-            <TooltipTrigger render={<div className='-ml-1.5 cursor-help' />}>
+            <TooltipTrigger render={<div className='mx-auto cursor-help' />}>
               <StatusBadge
                 label={t(statusConfig.labelKey)}
                 variant={isUserDeleted(user) ? 'neutral' : statusConfig.variant}
@@ -173,7 +149,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
         return value.includes(String(row.getValue(id)))
       },
       enableSorting: false,
-      size: 120,
+      size: 96,
       meta: { mobileBadge: true },
     },
     {
@@ -184,8 +160,8 @@ export function useUsersColumns(): ColumnDef<User>[] {
         const user = row.original
         return <UserQuotaCell remaining={user.quota} used={user.used_quota} />
       },
-      size: 180,
-      minSize: 160,
+      size: 130,
+      minSize: 120,
       meta: { mobileOrder: 40 },
     },
     {
@@ -194,7 +170,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
       cell: ({ row }) => {
         const group = row.getValue('group') as string
         return (
-          <BadgeCell>
+          <BadgeCell className='mx-auto justify-center'>
             <GroupBadge group={group} className='font-normal' />
           </BadgeCell>
         )
@@ -204,7 +180,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
         const searchValue = String(value).toLowerCase()
         return group.includes(searchValue)
       },
-      size: 140,
+      size: 100,
       meta: { mobileOrder: 30 },
     },
     {
@@ -224,7 +200,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
         return value.includes(String(row.getValue(id)))
       },
       enableSorting: false,
-      size: 120,
+      size: 88,
       meta: { mobileOrder: 20 },
     },
     {
@@ -243,7 +219,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
         return (
           <div
             data-table-text='secondary'
-            className='min-w-0 space-y-1 text-xs font-normal'
+            className='mx-auto min-w-0 space-y-1 text-center text-xs font-normal'
           >
             {(affCount > 0 || affHistoryQuota !== 0) && (
               <LongText>
@@ -262,7 +238,7 @@ export function useUsersColumns(): ColumnDef<User>[] {
           </div>
         )
       },
-      size: 240,
+      size: 140,
       enableSorting: false,
       meta: { mobileHidden: true },
     },
@@ -275,16 +251,19 @@ export function useUsersColumns(): ColumnDef<User>[] {
           lastAt={row.original.last_login_at ?? 0}
           lastLabel={t('Last Login')}
           format='absolute'
+          compact
+          className='mx-auto justify-center'
         />
       ),
-      size: 260,
-      minSize: 240,
+      size: 180,
+      minSize: 160,
       meta: { mobileHidden: true },
     },
     {
       id: 'actions',
       header: () => t('Actions'),
       cell: ({ row }) => <DataTableRowActions row={row} />,
+      size: 80,
       meta: { pinned: 'right' as const },
     },
   ]

@@ -392,7 +392,11 @@ function renderToolbar<TData>(
       <DataTableToolbar
         table={props.table}
         {...props.toolbarProps}
-        viewToggle={props.toolbarProps.viewToggle ?? viewToggle}
+        viewToggle={
+          props.toolbarProps.viewToggle === undefined
+            ? viewToggle
+            : props.toolbarProps.viewToggle
+        }
       />
     )
   }

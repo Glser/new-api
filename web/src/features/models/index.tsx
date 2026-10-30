@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
@@ -32,7 +32,6 @@ import { DeploymentAccessGuard } from './components/deployment-access-guard'
 import { DeploymentsTable } from './components/deployments-table'
 import { CreateDeploymentDrawer } from './components/dialogs/create-deployment-drawer'
 import { ModelsDialogs } from './components/models-dialogs'
-import { ModelsPrimaryButtons } from './components/models-primary-buttons'
 import { ModelsProvider, useModels } from './components/models-provider'
 import { ModelsTable } from './components/models-table'
 import { VendorsTable } from './components/vendors-table'
@@ -64,7 +63,7 @@ const SECTION_META: Record<
 function ModelsContent() {
   const { t } = useTranslation()
   const navigate = useNavigate({ from: '/models/$section' })
-  const { tabCategory, setTabCategory, setOpen, setCurrentVendor } = useModels()
+  const { tabCategory, setTabCategory } = useModels()
   const params = route.useParams()
   const activeSection = (params.section ??
     MODELS_DEFAULT_SECTION) as ModelsSectionId
@@ -92,21 +91,9 @@ function ModelsContent() {
 
   const meta = SECTION_META[activeSection] ?? SECTION_META.metadata
 
-  let actions = <ModelsPrimaryButtons />
+  let actions: ReactNode = null
   let content = <ModelsTable />
   if (activeSection === 'vendors') {
-    actions = (
-      <Button
-        size='sm'
-        onClick={() => {
-          setCurrentVendor(null)
-          setOpen('create-vendor')
-        }}
-      >
-        <Plus className='size-4' />
-        {t('Add Vendor')}
-      </Button>
-    )
     content = <VendorsTable />
   } else if (activeSection === 'deployments') {
     actions = (

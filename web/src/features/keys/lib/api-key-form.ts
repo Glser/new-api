@@ -151,7 +151,7 @@ export function transformFormDataToPayload(
     model_limits_enabled: data.model_limits.length > 0,
     model_limits: data.model_limits.join(','),
     allow_ips: data.allow_ips || '',
-    group: data.group || '',
+    group: data.group || DEFAULT_GROUP,
     auto_groups:
       data.group === 'auto' && data.auto_groups_mode === 'custom'
         ? data.auto_groups

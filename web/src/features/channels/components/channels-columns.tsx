@@ -24,6 +24,7 @@ import {
   ChevronDown,
   ChevronRight,
   ListOrdered,
+  RefreshCw,
   Shuffle,
   SlidersHorizontal,
 } from 'lucide-react'
@@ -43,6 +44,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import {
   Tooltip,
   TooltipContent,
+  TooltipHint,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
@@ -55,7 +57,7 @@ import {
 import { formatTimestampToDate } from '@/lib/format'
 import { handleServerError } from '@/lib/handle-server-error'
 import { createServerError } from '@/lib/server-error-message'
-import { truncateText } from '@/lib/utils'
+import { cn, truncateText } from '@/lib/utils'
 
 import { getCodexUsage, updateChannelBalance } from '../api'
 import {
@@ -116,7 +118,7 @@ function parseIonetMeta(otherInfo: string | null | undefined): null | {
 /**
  * Upstream update tags (+N / -N) shown on channel name for model-fetchable channels
  */
-function UpstreamUpdateTags({ channel }: { channel: Channel }) {
+export function UpstreamUpdateTags({ channel }: { channel: Channel }) {
   const { upstream, setCurrentRow } = useChannels()
   if (!MODEL_FETCHABLE_TYPES.has(channel.type)) {
     return null
@@ -134,14 +136,14 @@ function UpstreamUpdateTags({ channel }: { channel: Channel }) {
   }
 
   return (
-    <div className='flex items-center gap-0.5'>
+    <div className='flex items-center justify-center gap-0.5'>
       {addCount > 0 && (
         <StatusBadge
           label={`+${addCount}`}
           variant='success'
           size='sm'
           copyable={false}
-          className='cursor-pointer'
+          className={cn('cursor-pointer', TABLE_CHIP_TEXT)}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation()
             setCurrentRow(channel)
@@ -160,7 +162,7 @@ function UpstreamUpdateTags({ channel }: { channel: Channel }) {
           variant='danger'
           size='sm'
           copyable={false}
-          className='cursor-pointer'
+          className={cn('cursor-pointer', TABLE_CHIP_TEXT)}
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation()
             setCurrentRow(channel)
@@ -197,6 +199,8 @@ function PriorityCell({ channel }: { channel: Channel }) {
 
 function TagPriorityCell({ channel }: { channel: TagRow }) {
   const { t } = useTranslation()
+  const layout = useContext(ChannelRowActionsLayoutContext)
+  const compact = layout === 'card'
   const queryClient = useQueryClient()
   const priority = channel.priority
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -213,6 +217,8 @@ function TagPriorityCell({ channel }: { channel: TagRow }) {
           setConfirmOpen(true)
         }}
         min={-999}
+        compact={compact}
+        label={compact ? t('Priority') : undefined}
       />
       <ConfirmDialog
         open={confirmOpen}
@@ -245,6 +251,9 @@ function ChannelFieldCell({
   field: 'priority' | 'weight'
   min: number
 }) {
+  const { t } = useTranslation()
+  const layout = useContext(ChannelRowActionsLayoutContext)
+  const compact = layout === 'card'
   const queryClient = useQueryClient()
   const fieldUpdateScheduler = useMemo(
     () =>
@@ -255,6 +264,10 @@ function ChannelFieldCell({
   )
 
   useEffect(() => () => fieldUpdateScheduler.flush(), [fieldUpdateScheduler])
+  let compactLabel: string | undefined
+  if (compact) {
+    compactLabel = field === 'priority' ? t('Priority') : t('Weight')
+  }
 
   return (
     <NumericSpinnerInput
@@ -262,6 +275,8 @@ function ChannelFieldCell({
       onChange={fieldUpdateScheduler.schedule}
       onCommit={fieldUpdateScheduler.flush}
       min={min}
+      compact={compact}
+      label={compactLabel}
     />
   )
 }
@@ -286,6 +301,8 @@ function WeightCell({ channel }: { channel: Channel }) {
 
 function TagWeightCell({ channel }: { channel: TagRow }) {
   const { t } = useTranslation()
+  const layout = useContext(ChannelRowActionsLayoutContext)
+  const compact = layout === 'card'
   const queryClient = useQueryClient()
   const weight = channel.weight
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -302,6 +319,8 @@ function TagWeightCell({ channel }: { channel: TagRow }) {
           setConfirmOpen(true)
         }}
         min={0}
+        compact={compact}
+        label={compact ? t('Weight') : undefined}
       />
       <ConfirmDialog
         open={confirmOpen}
@@ -329,6 +348,10 @@ function TagWeightCell({ channel }: { channel: TagRow }) {
  */
 const MAX_INLINE_BALANCE_CHARS = 8
 const SENSITIVE_MASK = '••••'
+/** Compact chips matching usage-logs type pills such as 消耗 / 充值. */
+const TABLE_CHIP_TEXT = 'text-[10px]! [&_span]:text-[10px]!'
+/** Secondary/meta text matching usage-logs token groups and duration. */
+const TABLE_META_TEXT = 'text-xs! [&_span]:text-xs!'
 
 function ChannelNameTagBadge(props: {
   tag: string
@@ -346,7 +369,7 @@ function ChannelNameTagBadge(props: {
       autoColor={props.tag}
       size='sm'
       copyable={false}
-      className='cursor-pointer'
+      className={cn('cursor-pointer', TABLE_CHIP_TEXT)}
       onClick={props.onFilter}
       title={t('Filter by this tag')}
     />
@@ -422,6 +445,20 @@ export function BalanceCell({ channel }: { channel: Channel }) {
 
   // Tag row: only show cumulative used quota
   if (isTagRow) {
+    if (layout === 'card') {
+      return (
+        <div className='flex min-w-0 items-baseline gap-1.5'>
+          <span className='text-muted-foreground text-[11px] leading-none font-medium'>
+            {t('Used')}
+          </span>
+          <TooltipHint content={sensitiveVisible ? usedLabel : maskedUsedLabel}>
+            <span className='min-w-0 truncate font-mono text-[11px] leading-none font-semibold tabular-nums'>
+              {sensitiveVisible ? usedDisplay : SENSITIVE_MASK}
+            </span>
+          </TooltipHint>
+        </div>
+      )
+    }
     return (
       <TooltipProvider>
         <Tooltip>
@@ -437,7 +474,7 @@ export function BalanceCell({ channel }: { channel: Channel }) {
                 size='sm'
                 copyable={false}
                 showDot={false}
-                className='-ml-1.5 cursor-help'
+                className='cursor-help'
               />
             }
           />
@@ -520,9 +557,119 @@ export function BalanceCell({ channel }: { channel: Channel }) {
     remainingBadgeVariant = 'neutral'
   }
 
+  if (layout === 'card') {
+    const remainingTone =
+      {
+        success: 'text-success',
+        warning: 'text-warning',
+        danger: 'text-destructive',
+        info: 'text-info',
+        neutral: '',
+      }[remainingBadgeVariant] ?? ''
+
+    return (
+      <div className='min-w-0'>
+        <div className='flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1'>
+          <div className='flex min-w-0 items-center gap-1'>
+            <span className='text-muted-foreground shrink-0 text-[11px] leading-none font-medium'>
+              {t('Used')}
+            </span>
+            <TooltipHint
+              content={sensitiveVisible ? usedLabel : maskedUsedLabel}
+            >
+              <span className='min-w-0 truncate font-mono text-[11px] leading-none font-semibold tabular-nums'>
+                {sensitiveVisible ? usedDisplay : SENSITIVE_MASK}
+              </span>
+            </TooltipHint>
+          </div>
+          <TooltipHint
+            content={
+              channel.type === 57
+                ? remainingTooltipLabel
+                : t('Click to update balance')
+            }
+          >
+            <button
+              type='button'
+              onClick={() => {
+                void handleClickUpdate()
+              }}
+              aria-label={
+                channel.type === 57
+                  ? t('Account Info')
+                  : t('Click to update balance')
+              }
+              className='hover:bg-muted/60 inline-flex shrink-0 items-center gap-1 rounded-md px-0 py-0 leading-none'
+            >
+              <span className='text-muted-foreground shrink-0 text-[11px] leading-none font-medium'>
+                {t('Remaining')}
+              </span>
+              <span
+                className={cn(
+                  'min-w-0 truncate font-mono text-[11px] leading-none font-semibold tabular-nums',
+                  remainingTone,
+                  isUpdating && 'text-muted-foreground'
+                )}
+              >
+                {remainingBadgeLabel}
+              </span>
+              {channel.type === 57 ? null : (
+                <RefreshCw
+                  className={cn(
+                    'text-muted-foreground size-3 shrink-0',
+                    isUpdating && 'animate-spin'
+                  )}
+                  aria-hidden='true'
+                />
+              )}
+            </button>
+          </TooltipHint>
+        </div>
+        <CodexUsageDialog
+          open={codexUsageOpen}
+          onOpenChange={setCodexUsageOpen}
+          channelName={channel.name}
+          channelId={channel.id}
+          channelDisplayName={sensitiveVisible ? undefined : SENSITIVE_MASK}
+          channelDisplayId={sensitiveVisible ? undefined : SENSITIVE_MASK}
+          response={codexUsageResponse}
+          onRefresh={async () => {
+            if (isUpdating) {
+              return
+            }
+            setIsUpdating(true)
+            try {
+              const res = await getCodexUsage(channel.id)
+              if (!res.success) {
+                throw createServerError(res, t('Failed to fetch usage'))
+              }
+              setCodexUsageResponse(res)
+            } catch (error) {
+              handleServerError(error, t('Failed to fetch usage'))
+            } finally {
+              setIsUpdating(false)
+            }
+          }}
+          isRefreshing={isUpdating}
+        />
+        {rawBalanceResponse !== null && (
+          <BalanceQueryDialog
+            initialRawResponse={rawBalanceResponse}
+            open
+            onOpenChange={(open) => {
+              if (!open) {
+                setRawBalanceResponse(null)
+              }
+            }}
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
     <TooltipProvider>
-      <div className='-ml-1.5 flex items-center gap-1'>
+      <div className='mx-auto flex items-center justify-center gap-1'>
         <Tooltip>
           <TooltipTrigger
             render={
@@ -688,7 +835,7 @@ export function useChannelsColumns(
             const childrenCount = (row.original as TagRow).children?.length || 0
 
             return (
-              <div className='flex items-center gap-2'>
+              <div className='flex items-center justify-center gap-2'>
                 <Button
                   variant='ghost'
                   size='sm'
@@ -708,6 +855,7 @@ export function useChannelsColumns(
                     variant='blue'
                     size='sm'
                     copyable={false}
+                    className={TABLE_CHIP_TEXT}
                   />
                 </div>
               </div>
@@ -720,12 +868,12 @@ export function useChannelsColumns(
           const hasParamOverride = Boolean(channel.param_override?.trim())
 
           return (
-            <div className='flex max-w-full min-w-0 items-center gap-2'>
-              <div className='flex max-w-full min-w-0 flex-col gap-1'>
-                <div className='flex max-w-full min-w-0 items-center gap-1.5'>
+            <div className='mx-auto flex max-w-full min-w-0 items-center justify-center gap-2'>
+              <div className='flex max-w-full min-w-0 flex-col items-center gap-1 text-center'>
+                <div className='flex max-w-full min-w-0 items-center justify-center gap-1.5'>
                   <TruncatedText
                     text={sensitiveVisible ? name : SENSITIVE_MASK}
-                    className='font-medium'
+                    className='text-center font-medium'
                     maxWidth='max-w-full'
                   />
                   {isPassThrough && (
@@ -772,7 +920,7 @@ export function useChannelsColumns(
                     <Tooltip>
                       <TooltipTrigger
                         render={
-                          <span className='text-muted-foreground text-xs' />
+                          <span className='text-muted-foreground text-xs!' />
                         }
                       >
                         {truncateText(channel.remark, 40)}
@@ -805,7 +953,7 @@ export function useChannelsColumns(
                 variant='blue'
                 size='sm'
                 copyable={false}
-                className='-ml-1.5'
+                className={TABLE_CHIP_TEXT}
               />
             )
           }
@@ -832,7 +980,7 @@ export function useChannelsColumns(
               : undefined
 
           return (
-            <div className='flex max-w-full min-w-0 items-center gap-2 overflow-hidden'>
+            <div className='mx-auto flex max-w-full min-w-0 items-center justify-center gap-2 overflow-hidden'>
               {isMultiKey && (
                 <TooltipProvider delay={100}>
                   <Tooltip>
@@ -900,7 +1048,7 @@ export function useChannelsColumns(
                         variant='purple'
                         size='sm'
                         copyable={false}
-                        className='cursor-pointer'
+                        className={cn('cursor-pointer', TABLE_CHIP_TEXT)}
                       />
                     </TooltipTrigger>
                     <TooltipContent side='top'>
@@ -956,7 +1104,7 @@ export function useChannelsColumns(
                   variant='success'
                   size='sm'
                   copyable={false}
-                  className='-ml-1.5'
+                  className={TABLE_CHIP_TEXT}
                 />
               )
             } else {
@@ -966,7 +1114,7 @@ export function useChannelsColumns(
                   variant='neutral'
                   size='sm'
                   copyable={false}
-                  className='-ml-1.5'
+                  className={TABLE_CHIP_TEXT}
                 />
               )
             }
@@ -1017,6 +1165,7 @@ export function useChannelsColumns(
                         variant={config.variant}
                         size='sm'
                         copyable={false}
+                        className={TABLE_CHIP_TEXT}
                       />
                     </TooltipTrigger>
                     <TooltipContent side='top' className='max-w-xs'>
@@ -1045,6 +1194,7 @@ export function useChannelsColumns(
               variant={config.variant}
               size='sm'
               copyable={false}
+              className={TABLE_CHIP_TEXT}
             />
           )
         },
@@ -1075,13 +1225,14 @@ export function useChannelsColumns(
           const modelArray = parseModelsList(models)
           return (
             <BadgeListCell
+              className='mx-auto justify-center'
               items={modelArray.map((model) => (
                 <StatusBadge
                   key={model}
                   label={model}
                   autoColor={model}
                   size='sm'
-                  className='font-mono'
+                  className={cn('font-mono', TABLE_META_TEXT)}
                 />
               ))}
             />
@@ -1101,12 +1252,14 @@ export function useChannelsColumns(
           const groupArray = parseGroupsList(group)
           return (
             <BadgeListCell
+              className='mx-auto justify-center'
               items={groupArray.map((g) => (
                 <GroupBadge
                   key={g}
                   group={g}
                   label={sensitiveVisible ? undefined : SENSITIVE_MASK}
                   size='sm'
+                  className={TABLE_META_TEXT}
                 />
               ))}
             />
@@ -1132,7 +1285,7 @@ export function useChannelsColumns(
         cell: ({ row }) => {
           const tag = row.getValue('tag') as string | null
           if (!tag) {
-            return <span className='text-muted-foreground text-xs'>-</span>
+            return <span className='text-muted-foreground text-xs!'>-</span>
           }
 
           return (
@@ -1140,7 +1293,7 @@ export function useChannelsColumns(
               label={tag}
               autoColor={tag}
               size='sm'
-              className='-ml-1.5'
+              className={TABLE_CHIP_TEXT}
             />
           )
         },
@@ -1190,7 +1343,7 @@ export function useChannelsColumns(
               variant={config.variant}
               size='sm'
               copyable={false}
-              className='-ml-1.5'
+              className={TABLE_META_TEXT}
             />
           )
         },
@@ -1207,7 +1360,7 @@ export function useChannelsColumns(
 
           // For invalid timestamps, show "Never" badge
           if (!testTime || testTime === 0) {
-            return <span className='text-muted-foreground text-xs'>-</span>
+            return <span className='text-muted-foreground text-xs!'>-</span>
           }
 
           const timeText = formatRelativeTime(testTime, locale)
@@ -1224,7 +1377,7 @@ export function useChannelsColumns(
                       variant='neutral'
                       size='sm'
                       copyable={false}
-                      className='-ml-1.5 cursor-pointer'
+                      className={cn('cursor-pointer', TABLE_META_TEXT)}
                     />
                   }
                 />

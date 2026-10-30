@@ -33,10 +33,10 @@ export function UsersPrimaryButtons() {
   }
 
   return (
-    <div className='flex gap-2'>
-      <Button size='sm' onClick={handleCreate}>
-        <Plus className='h-4 w-4' />
-        {t('Add User')}
+    <div className='flex shrink-0 items-center'>
+      <Button shine size='lg' className='h-9 px-3' onClick={handleCreate}>
+        <Plus data-icon='inline-start' className='size-4' />
+        <span className='leading-none'>{t('Add User')}</span>
       </Button>
     </div>
   )

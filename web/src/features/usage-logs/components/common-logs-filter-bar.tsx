@@ -23,16 +23,7 @@ import { startTransition, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { DateRangePickerButton } from '@/components/date-range-picker'
-import { Badge } from '@/components/ui/badge'
 import { Combobox } from '@/components/ui/combobox'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { getGroups } from '@/features/users/api'
 import { getUserGroups, getUserModels } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
@@ -51,7 +42,9 @@ import { useLogsViewScope, useUsageLogsContext } from './usage-logs-provider'
 
 const route = getRouteApi('/_authenticated/usage-logs/$section')
 
-type LogTypeValue = (typeof LOG_TYPE_FILTERS)[number]['value']
+type LogTypeValue =
+  | typeof LOG_TYPE_ALL_VALUE
+  | (typeof LOG_TYPE_FILTERS)[number]['value']
 const logTypeValueSet = new Set<string>(
   LOG_TYPE_FILTERS.map((type) => type.value)
 )
@@ -286,18 +279,17 @@ export function CommonLogsFilterBar<TData>(
   const sensitiveInputClass = sensitiveVisible
     ? undefined
     : '[-webkit-text-security:disc]'
-  const logTypeItems = useMemo(
+  const deprecatedTypeDescription = t(
+    'Only used to find historical logs. New records are available in Audit Logs.'
+  )
+  const logTypeOptions = useMemo(
     () =>
       LOG_TYPE_FILTERS.map((type) => ({
         value: type.value,
         label: t(type.label),
-        deprecated: type.deprecated,
+        description: type.deprecated ? deprecatedTypeDescription : undefined,
       })),
-    [t]
-  )
-  const selectedLogType = logTypeItems.find((type) => type.value === logType)
-  const deprecatedTypeDescription = t(
-    'Only used to find historical logs. New records are available in Audit Logs.'
+    [deprecatedTypeDescription, t]
   )
 
   const statsBar = <CommonLogsStats />
@@ -355,12 +347,17 @@ export function CommonLogsFilterBar<TData>(
   )
   const typeFilter = (
     <LogsFilterField>
-      <Select
-        items={logTypeItems}
-        value={logType}
+      <Combobox
+        options={logTypeOptions}
+        fitContentWidth
+        aria-label={t('Type')}
+        emptyText={t('No results found.')}
+        placeholder={t('Type')}
+        className='h-8 min-w-0 text-sm leading-5'
+        value={hasTypeFilter ? logType : ''}
         onValueChange={(value) => {
           const nextLogType =
-            value !== null && isLogTypeValue(value) ? value : LOG_TYPE_ALL_VALUE
+            value && isLogTypeValue(value) ? value : LOG_TYPE_ALL_VALUE
           setDraft((current) => {
             const base =
               current.sourceKey === searchState.sourceKey
@@ -373,57 +370,8 @@ export function CommonLogsFilterBar<TData>(
             }
           })
         }}
-      >
-        <SelectTrigger
-          aria-label={t('Type')}
-          aria-description={
-            selectedLogType?.deprecated ? deprecatedTypeDescription : undefined
-          }
-        >
-          <SelectValue className='min-w-0'>
-            <span className='truncate'>
-              {selectedLogType?.label ?? t('All Types')}
-            </span>
-            {selectedLogType?.deprecated && (
-              <Badge
-                variant='secondary'
-                className='h-4 px-1.5 text-[10px] font-normal'
-                title={deprecatedTypeDescription}
-              >
-                {t('Deprecated')}
-              </Badge>
-            )}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent
-          alignItemWithTrigger={false}
-          className='max-w-[calc(100vw-2rem)] min-w-36'
-        >
-          <SelectGroup>
-            {LOG_TYPE_FILTERS.map((type) => (
-              <SelectItem
-                key={type.value}
-                value={type.value}
-                className='[&_[data-slot=select-item-text]]:items-center'
-                aria-description={
-                  type.deprecated ? deprecatedTypeDescription : undefined
-                }
-              >
-                {t(type.label)}
-                {type.deprecated && (
-                  <Badge
-                    variant='secondary'
-                    className='h-4 px-1.5 text-[10px] font-normal'
-                    title={deprecatedTypeDescription}
-                  >
-                    {t('Deprecated')}
-                  </Badge>
-                )}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+        onKeyDown={handleKeyDown}
+      />
     </LogsFilterField>
   )
   const advancedFilters = (

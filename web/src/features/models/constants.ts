@@ -72,7 +72,6 @@ export function getNameRuleConfig(
 
 export function getModelStatusOptions(t: TFunction) {
   return [
-    { label: t('All Status'), value: 'all' },
     { label: t('Shown'), value: 'enabled' },
     { label: t('Not shown'), value: 'disabled' },
   ] as const
@@ -93,7 +92,6 @@ export function getModelStatusConfig(
 
 export function getSyncStatusOptions(t: TFunction) {
   return [
-    { label: t('All Sync Status'), value: 'all' },
     { label: t('Official Sync'), value: 'yes' },
     { label: t('No Sync'), value: 'no' },
   ] as const
@@ -105,7 +103,6 @@ export function getSyncStatusOptions(t: TFunction) {
 
 export function getDeploymentStatusOptions(t: TFunction) {
   return [
-    { label: t('All Status'), value: 'all' },
     { label: t('Running'), value: 'running' },
     { label: t('Completed'), value: 'completed' },
     { label: t('Failed'), value: 'failed' },

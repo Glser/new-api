@@ -18,14 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Box, Check, ChevronDown, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type SubmitErrorHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   SideDrawerSection,
+  SideDrawerSectionHeader,
   sideDrawerContentClassName,
   sideDrawerFooterClassName,
   sideDrawerFormClassName,
@@ -39,6 +41,11 @@ import { LobeIconField } from '@/components/lobe-icon-field'
 import { TagInput } from '@/components/tag-input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { Combobox } from '@/components/ui/combobox'
 import {
   Form,
@@ -49,6 +56,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { IconBadge } from '@/components/ui/icon-badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -69,6 +77,7 @@ import {
   createServerError,
   getServerErrorMessage,
 } from '@/lib/server-error-message'
+import { cn } from '@/lib/utils'
 
 import { createModel, updateModel, getModel, getVendors } from '../../api'
 import { getNameRuleOptions, ENDPOINT_TEMPLATES } from '../../constants'
@@ -112,6 +121,7 @@ export function ModelMutateDrawer(props: {
     null
   )
   const [closeConfirm, setCloseConfirm] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
   const loadedKey = useRef('')
   const form = useForm({
     resolver: zodResolver(modelFormSchema),
@@ -154,6 +164,7 @@ export function ModelMutateDrawer(props: {
     setPricingDirty(false)
     setPendingPricingName(null)
     setCloseConfirm(false)
+    setAdvancedOpen(false)
   }, [
     props.open,
     props.initialSection,
@@ -239,6 +250,9 @@ export function ModelMutateDrawer(props: {
     }
   }
   const metadataDirty = form.formState.isDirty
+  const onInvalid: SubmitErrorHandler<ModelFormValues> = () => {
+    toast.error(t('Please fix the highlighted fields before saving'))
+  }
   const close = (open: boolean) => {
     if (!open && isSubmitting) return
     if (!open && (metadataDirty || pricingDirty)) {
@@ -252,17 +266,42 @@ export function ModelMutateDrawer(props: {
     <>
       <Sheet open={props.open} onOpenChange={close}>
         <SheetContent
-          className={sideDrawerContentClassName('sm:max-w-[1280px]')}
+          className={sideDrawerContentClassName('max-w-none sm:!max-w-[640px]')}
         >
-          <SheetHeader className={sideDrawerHeaderClassName()}>
-            <SheetTitle className='pr-6 break-all'>
-              {hasModelName ? currentRow?.model_name : t('Create Model')}
-            </SheetTitle>
-            <SheetDescription>
-              {t(
-                'Manage metadata, pricing, and channel connections. Each section saves separately.'
-              )}
-            </SheetDescription>
+          <SheetHeader
+            className={sideDrawerHeaderClassName(
+              'flex-row items-start gap-3 bg-muted/30 px-5 py-5 backdrop-blur-none supports-[backdrop-filter]:bg-muted/30 sm:py-5'
+            )}
+          >
+            <IconBadge
+              size='lg'
+              className='rounded-full bg-[#c4f82a] text-[#28350a]'
+            >
+              <Box />
+            </IconBadge>
+            <div className='min-w-0 flex-1 pr-6'>
+              <SheetTitle className='text-lg font-semibold tracking-tight sm:text-xl'>
+                {isEditing ? t('Update Model') : t('Create Model')}
+              </SheetTitle>
+              <SheetDescription className='mt-1 text-xs leading-5'>
+                {hasModelName ? (
+                  <>
+                    <span className='text-foreground/80 font-medium'>
+                      {currentRow?.model_name}
+                    </span>
+                    <span className='mt-0.5 block'>
+                      {t(
+                        'Manage metadata, pricing, and channel connections. Each section saves separately.'
+                      )}
+                    </span>
+                  </>
+                ) : (
+                  t(
+                    'Manage metadata, pricing, and channel connections. Each section saves separately.'
+                  )
+                )}
+              </SheetDescription>
+            </div>
           </SheetHeader>
           <Tabs
             value={section}
@@ -270,9 +309,9 @@ export function ModelMutateDrawer(props: {
               setSection(value)
               if (value === 'pricing') setPricingVisited(true)
             }}
-            className='shrink-0 px-4'
+            className='shrink-0 px-5 pt-4'
           >
-            <TabsList className='grid w-full grid-cols-3 group-data-horizontal/tabs:h-auto'>
+            <TabsList className='grid h-auto w-full grid-cols-3'>
               <TabsTrigger
                 value='metadata'
                 className='h-auto min-w-0 whitespace-normal'
@@ -308,23 +347,25 @@ export function ModelMutateDrawer(props: {
                 <Form {...form}>
                   <form
                     id='model-form'
-                    onSubmit={form.handleSubmit((values) =>
-                      save.mutate(values)
+                    onSubmit={form.handleSubmit(
+                      (values) => save.mutate(values),
+                      onInvalid
                     )}
-                    className={sideDrawerFormClassName()}
+                    className={sideDrawerFormClassName(
+                      'gap-5 px-5 py-5 [&_[data-slot=form-description]]:text-xs [&_[data-slot=form-description]]:leading-5 [&_[data-slot=form-label]]:text-xs [&_[data-slot=input]]:h-10 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:bg-muted/20 [&_[data-slot=input]]:px-3 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:bg-muted/20'
+                    )}
                   >
-                    {/* Basic Information */}
                     <SideDrawerSection>
-                      <h3 className='text-sm font-semibold'>
-                        {t('Basic Information')}
-                      </h3>
+                      <SideDrawerSectionHeader title={t('Basic Information')} />
 
                       <FormField
                         control={form.control}
                         name='model_name'
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel required>{t('Model Name')}</FormLabel>
+                            <FormLabel required className='pl-[3px]'>
+                              {t('Model Name')}
+                            </FormLabel>
                             <FormControl>
                               <Input
                                 placeholder={t('gpt-4, claude-3-opus, etc.')}
@@ -353,7 +394,9 @@ export function ModelMutateDrawer(props: {
                         name='description'
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('Description')}</FormLabel>
+                            <FormLabel className='pl-[3px]'>
+                              {t('Description')}
+                            </FormLabel>
                             <FormControl>
                               <Textarea
                                 placeholder={t('Describe this model...')}
@@ -366,60 +409,70 @@ export function ModelMutateDrawer(props: {
                         )}
                       />
 
-                      <FormField
-                        control={form.control}
-                        name='icon'
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('Icon')}</FormLabel>
-                            <FormControl>
-                              <LobeIconField
-                                key={`${currentRow?.id ?? 'new'}-${props.open}`}
-                                value={field.value ?? ''}
-                                onChange={field.onChange}
-                                allowInheritance
-                                inheritedIcon={selectedVendor?.icon}
-                                inheritedName={selectedVendor?.name}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className='bg-muted/30 flex flex-col gap-4 rounded-2xl border p-3.5'>
+                        <FormField
+                          control={form.control}
+                          name='vendor_id'
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className='pl-[3px]'>
+                                {t('Vendor')}
+                              </FormLabel>
+                              <FormControl>
+                                <Combobox
+                                  options={vendors.map((vendor) => ({
+                                    value: String(vendor.id),
+                                    label: vendor.name,
+                                  }))}
+                                  onValueChange={(value) =>
+                                    field.onChange(
+                                      value ? Number.parseInt(value) : undefined
+                                    )
+                                  }
+                                  value={
+                                    field.value ? String(field.value) : null
+                                  }
+                                  className='w-full'
+                                  placeholder={t('Select vendor')}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
 
-                      <FormField
-                        control={form.control}
-                        name='vendor_id'
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('Vendor')}</FormLabel>
-                            <FormControl>
-                              <Combobox
-                                options={vendors.map((vendor) => ({
-                                  value: String(vendor.id),
-                                  label: vendor.name,
-                                }))}
-                                onValueChange={(value) =>
-                                  field.onChange(
-                                    value ? Number.parseInt(value) : undefined
-                                  )
-                                }
-                                value={field.value ? String(field.value) : null}
-                                className='w-full'
-                                placeholder={t('Select vendor')}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <FormField
+                          control={form.control}
+                          name='icon'
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className='pl-[3px]'>
+                                {t('Icon')}
+                              </FormLabel>
+                              <FormControl>
+                                <LobeIconField
+                                  key={`${currentRow?.id ?? 'new'}-${props.open}`}
+                                  value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                  allowInheritance
+                                  inheritedIcon={selectedVendor?.icon}
+                                  inheritedName={selectedVendor?.name}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
 
                       <FormField
                         control={form.control}
                         name='tags'
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('Tags')}</FormLabel>
+                            <FormLabel className='pl-[3px]'>
+                              {t('Tags')}
+                            </FormLabel>
                             <FormControl>
                               <TagInput
                                 value={field.value || []}
@@ -436,43 +489,46 @@ export function ModelMutateDrawer(props: {
                       />
                     </SideDrawerSection>
 
-                    {/* Matching Configuration */}
                     <SideDrawerSection>
-                      <h3 className='text-sm font-semibold'>
-                        {t('Matching Rules')}
-                      </h3>
+                      <SideDrawerSectionHeader title={t('Matching Rules')} />
 
                       <FormField
                         control={form.control}
                         name='name_rule'
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>{t('Name Rule')}</FormLabel>
+                            <FormLabel className='pl-[3px]'>
+                              {t('Name Rule')}
+                            </FormLabel>
                             <FormControl>
                               <RadioGroup
                                 onValueChange={(value) =>
                                   field.onChange(Number.parseInt(value))
                                 }
                                 value={String(field.value)}
-                                className='grid grid-cols-2 gap-4'
+                                className='grid grid-cols-2 gap-2'
                               >
-                                {getNameRuleOptions(t).map((option) => (
-                                  <div
-                                    key={option.value}
-                                    className='flex items-center space-x-2'
-                                  >
-                                    <RadioGroupItem
-                                      value={String(option.value)}
-                                      id={`rule-${option.value}`}
-                                    />
+                                {getNameRuleOptions(t).map((option) => {
+                                  const selected =
+                                    String(field.value) === String(option.value)
+                                  return (
                                     <Label
+                                      key={option.value}
                                       htmlFor={`rule-${option.value}`}
-                                      className='cursor-pointer font-normal'
+                                      className={cn(
+                                        'flex cursor-pointer items-center gap-2 rounded-2xl border p-3 font-normal',
+                                        selected &&
+                                          'border-foreground/20 bg-muted/30'
+                                      )}
                                     >
+                                      <RadioGroupItem
+                                        value={String(option.value)}
+                                        id={`rule-${option.value}`}
+                                      />
                                       {option.label}
                                     </Label>
-                                  </div>
-                                ))}
+                                  )
+                                })}
                               </RadioGroup>
                             </FormControl>
                             <FormDescription>
@@ -486,72 +542,23 @@ export function ModelMutateDrawer(props: {
                       />
                     </SideDrawerSection>
 
-                    {/* Endpoints Configuration */}
                     <SideDrawerSection>
-                      <div className='flex items-center justify-between'>
-                        <h3 className='text-sm font-semibold'>
-                          {t('Endpoints')}
-                        </h3>
-                        <Combobox
-                          options={Object.keys(ENDPOINT_TEMPLATES).map(
-                            (key) => ({ value: key, label: key })
-                          )}
-                          onValueChange={(value: string | null) => {
-                            if (value) handleFillEndpointTemplate(value)
-                          }}
-                          className='w-[200px]'
-                          placeholder={t('Load template...')}
-                          aria-label={t('Load template...')}
-                        />
-                      </div>
-
-                      <FormField
-                        control={form.control}
-                        name='endpoints'
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t('Endpoint Configuration')}</FormLabel>
-                            <FormControl>
-                              <JsonEditor
-                                value={field.value || ''}
-                                onChange={field.onChange}
-                                keyPlaceholder='endpoint_type'
-                                valuePlaceholder='{"path": "/v1/...", "method": "POST"}'
-                                keyLabel='Endpoint Type'
-                                valueLabel='Configuration'
-                                valueType='any'
-                                emptyMessage={t(
-                                  'No endpoints configured. Switch to JSON mode or add rows to define endpoints.'
-                                )}
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              {t(
-                                'Define API endpoints for this model (JSON format)'
-                              )}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </SideDrawerSection>
-
-                    {/* Status & Sync */}
-                    <SideDrawerSection>
-                      <h3 className='text-sm font-semibold'>
-                        {t('Status & Sync')}
-                      </h3>
+                      <SideDrawerSectionHeader title={t('Status & Sync')} />
 
                       <FormField
                         control={form.control}
                         name='status'
                         render={({ field }) => (
-                          <FormItem className={sideDrawerSwitchItemClassName()}>
+                          <FormItem
+                            className={sideDrawerSwitchItemClassName(
+                              'bg-muted/30 min-h-20 rounded-2xl border p-4'
+                            )}
+                          >
                             <div className='flex flex-col gap-0.5'>
-                              <FormLabel className='text-base'>
+                              <FormLabel className='text-sm!'>
                                 {t('Model square visibility')}
                               </FormLabel>
-                              <FormDescription>
+                              <FormDescription className='text-xs'>
                                 {t(
                                   'Allow listing when a channel is available and the user has group access. This does not change API access.'
                                 )}
@@ -561,6 +568,7 @@ export function ModelMutateDrawer(props: {
                               <Switch
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
+                                className='data-checked:bg-foreground'
                               />
                             </FormControl>
                           </FormItem>
@@ -571,12 +579,16 @@ export function ModelMutateDrawer(props: {
                         control={form.control}
                         name='sync_official'
                         render={({ field }) => (
-                          <FormItem className={sideDrawerSwitchItemClassName()}>
+                          <FormItem
+                            className={sideDrawerSwitchItemClassName(
+                              'bg-muted/30 min-h-20 rounded-2xl border p-4'
+                            )}
+                          >
                             <div className='flex flex-col gap-0.5'>
-                              <FormLabel className='text-base'>
+                              <FormLabel className='text-sm!'>
                                 {t('Allow metadata sync')}
                               </FormLabel>
-                              <FormDescription>
+                              <FormDescription className='text-xs'>
                                 {t(
                                   'Allows selected fields to be overwritten after a sync preview. No automatic synchronization.'
                                 )}
@@ -586,6 +598,7 @@ export function ModelMutateDrawer(props: {
                               <Switch
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
+                                className='data-checked:bg-foreground'
                               />
                             </FormControl>
                           </FormItem>
@@ -604,13 +617,15 @@ export function ModelMutateDrawer(props: {
                           )
                           return (
                             <FormItem
-                              className={sideDrawerSwitchItemClassName()}
+                              className={sideDrawerSwitchItemClassName(
+                                'bg-muted/30 min-h-20 rounded-2xl border p-4'
+                              )}
                             >
                               <div className='flex flex-col gap-0.5'>
-                                <FormLabel className='text-base'>
+                                <FormLabel className='text-sm!'>
                                   {t('Featured on Home')}
                                 </FormLabel>
-                                <FormDescription>
+                                <FormDescription className='text-xs'>
                                   {t(
                                     'Feature this model on the homepage showcase section.'
                                   )}
@@ -633,6 +648,7 @@ export function ModelMutateDrawer(props: {
                                       )
                                     }
                                   }}
+                                  className='data-checked:bg-foreground'
                                 />
                               </FormControl>
                             </FormItem>
@@ -640,10 +656,89 @@ export function ModelMutateDrawer(props: {
                         }}
                       />
                     </SideDrawerSection>
+
+                    <Collapsible
+                      open={advancedOpen}
+                      onOpenChange={setAdvancedOpen}
+                      className='bg-muted/20 rounded-2xl border'
+                    >
+                      <SideDrawerSection className='gap-0 border-0 pb-0'>
+                        <CollapsibleTrigger
+                          render={
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              className='h-auto w-full justify-start gap-3 rounded-2xl p-4 text-left whitespace-normal'
+                            />
+                          }
+                        >
+                          <SideDrawerSectionHeader
+                            className='flex-1 items-center'
+                            icon={<ShieldCheck />}
+                            title={t('Advanced Settings')}
+                            description={t('Endpoints')}
+                          />
+                          <ChevronDown
+                            className={cn(
+                              'text-muted-foreground size-4 shrink-0 transition-transform',
+                              advancedOpen && 'rotate-180'
+                            )}
+                          />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className='flex flex-col gap-5 border-t p-4'>
+                            <div className='flex items-center justify-between gap-3'>
+                              <p className='pl-[3px] text-xs leading-none font-medium'>
+                                {t('Endpoint Configuration')}
+                              </p>
+                              <Combobox
+                                options={Object.keys(ENDPOINT_TEMPLATES).map(
+                                  (key) => ({ value: key, label: key })
+                                )}
+                                onValueChange={(value: string | null) => {
+                                  if (value) handleFillEndpointTemplate(value)
+                                }}
+                                className='w-[180px]'
+                                placeholder={t('Load template...')}
+                                aria-label={t('Load template...')}
+                              />
+                            </div>
+                            <FormField
+                              control={form.control}
+                              name='endpoints'
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <JsonEditor
+                                      value={field.value || ''}
+                                      onChange={field.onChange}
+                                      keyPlaceholder='endpoint_type'
+                                      valuePlaceholder='{"path": "/v1/...", "method": "POST"}'
+                                      keyLabel='Endpoint Type'
+                                      valueLabel='Configuration'
+                                      valueType='any'
+                                      emptyMessage={t(
+                                        'No endpoints configured. Switch to JSON mode or add rows to define endpoints.'
+                                      )}
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    {t(
+                                      'Define API endpoints for this model (JSON format)'
+                                    )}
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </CollapsibleContent>
+                      </SideDrawerSection>
+                    </Collapsible>
                   </form>
                 </Form>
               )}
-              <SheetFooter className={sideDrawerFooterClassName('flex-wrap')}>
+              <SheetFooter className={sideDrawerFooterClassName('px-5')}>
                 {form.formState.errors.root?.server?.message && (
                   <Alert
                     variant='destructive'
@@ -656,12 +751,14 @@ export function ModelMutateDrawer(props: {
                 )}
                 <Button
                   variant='outline'
+                  className='h-9 w-full sm:w-auto sm:min-w-24'
                   onClick={() => close(false)}
                   disabled={isSubmitting}
                 >
                   {t('Close')}
                 </Button>
                 <Button
+                  shine
                   form='model-form'
                   type='submit'
                   disabled={
@@ -669,7 +766,9 @@ export function ModelMutateDrawer(props: {
                     modelQuery.isError ||
                     (isEditing && modelQuery.isPending)
                   }
+                  className='h-9 w-full sm:w-auto sm:min-w-28'
                 >
+                  <Check data-icon='inline-start' />
                   {isSubmitting ? t('Saving...') : t('Save metadata')}
                 </Button>
               </SheetFooter>
@@ -684,8 +783,8 @@ export function ModelMutateDrawer(props: {
               }
             >
               {savedModel.name_rule !== 0 && (
-                <div className='space-y-2 p-4'>
-                  <p className='text-muted-foreground text-sm'>
+                <div className='space-y-2 px-5 py-4'>
+                  <p className='text-muted-foreground text-xs leading-5'>
                     {t(
                       'Select a concrete model to configure pricing. Metadata matching does not propagate prices.'
                     )}

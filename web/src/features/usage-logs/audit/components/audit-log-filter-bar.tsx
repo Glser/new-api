@@ -21,14 +21,7 @@ import type { KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { DateRangePickerButton } from '@/components/date-range-picker'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { Combobox } from '@/components/ui/combobox'
 
 import {
   LogsFilterField,
@@ -37,45 +30,25 @@ import {
 } from '../../components/logs-filter-toolbar'
 import type { AuditFilters, AuditLog } from '../api'
 
-function AuditFilterSelect(props: {
+function AuditFilterCombobox(props: {
   label: string
   value: string
   options: { value: string; label: string; disabled?: boolean }[]
   onChange: (value: string) => void
 }) {
-  const selected = props.options.find((option) => option.value === props.value)
-
   return (
     <LogsFilterField>
-      <Select
-        items={props.options}
-        value={props.value}
-        onValueChange={(value) => {
-          if (value !== null) props.onChange(value)
-        }}
-      >
-        <SelectTrigger aria-label={props.label}>
-          <SelectValue className='min-w-0'>
-            <span className='truncate'>{selected?.label ?? props.label}</span>
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent
-          alignItemWithTrigger={false}
-          className='max-w-[calc(100vw-2rem)] min-w-36'
-        >
-          <SelectGroup>
-            {props.options.map((option) => (
-              <SelectItem
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      <Combobox
+        options={props.options.filter(
+          (option) => option.value !== 'all' && option.value !== ''
+        )}
+        fitContentWidth
+        aria-label={props.label}
+        placeholder={props.label}
+        className='h-8 min-w-0 text-sm leading-5'
+        value={props.value === 'all' ? '' : props.value}
+        onValueChange={(value) => props.onChange(value || 'all')}
+      />
     </LogsFilterField>
   )
 }
@@ -122,11 +95,10 @@ export function AuditLogFilterBar(props: {
   )
   const mainFilters = (
     <>
-      <AuditFilterSelect
+      <AuditFilterCombobox
         label={t('Result')}
         value={props.filters.success ?? 'all'}
         options={[
-          { value: 'all', label: t('All results') },
           { value: 'true', label: t('Success') },
           { value: 'false', label: t('Failed') },
         ]}
@@ -135,11 +107,10 @@ export function AuditLogFilterBar(props: {
         }
       />
       {props.accessOnly ? (
-        <AuditFilterSelect
+        <AuditFilterCombobox
           label={t('Token scope')}
           value={props.tokenScope}
           options={[
-            { value: 'all', label: t('All tokens') },
             {
               value: 'current',
               label: t('Current token'),
@@ -154,11 +125,10 @@ export function AuditLogFilterBar(props: {
           onChange={props.onTokenScopeChange}
         />
       ) : (
-        <AuditFilterSelect
+        <AuditFilterCombobox
           label={t('Category')}
           value={props.filters.category ?? 'all'}
           options={[
-            { value: 'all', label: t('All categories') },
             { value: 'login', label: t('Login') },
             { value: 'security', label: t('Account security') },
             { value: 'operation', label: t('Operation audit') },

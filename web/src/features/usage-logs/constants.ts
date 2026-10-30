@@ -101,23 +101,19 @@ export const LOG_TYPES = [
 ] as const
 
 /**
- * Log types for DataTableToolbar filters (single select mode)
- * Backend treats type=0 as "all logs" in list/stat endpoints, so the filter
- * must not expose the display-only "Unknown" label for that value.
+ * Log types for the usage-log type combobox.
+ * Backend treats type=0 as "all logs"; that empty state is not listed here.
  */
-export const LOG_TYPE_FILTERS = [
-  { label: 'All Types', value: LOG_TYPE_ALL_VALUE, deprecated: false },
-  ...LOG_TYPES.filter(
-    (type) =>
-      type.value !== LOG_TYPE_ENUM.UNKNOWN &&
-      type.value !== LOG_TYPE_ENUM.MANAGE &&
-      type.value !== LOG_TYPE_ENUM.LOGIN
-  ).map((type) => ({
-    label: type.label,
-    value: String(type.value),
-    deprecated: false,
-  })),
-] as const
+export const LOG_TYPE_FILTERS = LOG_TYPES.filter(
+  (type) =>
+    type.value !== LOG_TYPE_ENUM.UNKNOWN &&
+    type.value !== LOG_TYPE_ENUM.MANAGE &&
+    type.value !== LOG_TYPE_ENUM.LOGIN
+).map((type) => ({
+  label: type.label,
+  value: String(type.value),
+  deprecated: false,
+}))
 
 // ============================================================================
 // Drawing Logs (MjProxy) Constants

@@ -20,14 +20,13 @@ import { Check, Copy, Loader2 } from 'lucide-react'
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { BadgeCell } from '@/components/data-table'
+import { BadgeListCell } from '@/components/data-table'
 import { MaskedValueTrigger } from '@/components/masked-value-display'
-import { StatusBadge } from '@/components/status-badge'
+import { StatusBadge, StatusBadgeList } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
-  PopoverTitle,
   PopoverTrigger,
 } from '@/components/ui/popover'
 import {
@@ -153,7 +152,7 @@ export function ApiKeyQuotaOverviewCell({ apiKey }: { apiKey: ApiKey }) {
   const unit = currency.kind === 'tokens' ? t('Tokens') : currency.symbol
 
   return (
-    <div className='space-y-1 text-center text-sm leading-5'>
+    <div className='space-y-1 text-center text-xs leading-4'>
       <div className='text-muted-foreground'>
         {t('Used amount')}:{' '}
         <span className='text-foreground tabular-nums'>{used}</span>
@@ -222,7 +221,6 @@ export function ModelLimitsCell(props: ApiKeyRestrictionProps) {
   return (
     <ApiKeyRestrictionCell
       items={models}
-      label={t('{{count}} models', { count: models.length })}
       title={t('Models')}
       emptyLabel={t('Unlimited')}
       detailsTrigger={props.detailsTrigger}
@@ -240,7 +238,6 @@ export function IpRestrictionsCell(props: ApiKeyRestrictionProps) {
   return (
     <ApiKeyRestrictionCell
       items={ips}
-      label={t('{{count}} IP(s)', { count: ips.length })}
       title={t('IP Restriction')}
       emptyLabel={t('No restriction')}
       detailsTrigger={props.detailsTrigger}
@@ -250,7 +247,6 @@ export function IpRestrictionsCell(props: ApiKeyRestrictionProps) {
 
 function ApiKeyRestrictionCell(props: {
   items: string[]
-  label: string
   title: string
   emptyLabel: string
   detailsTrigger?: 'hover' | 'click'
@@ -269,52 +265,55 @@ function ApiKeyRestrictionCell(props: {
         label={props.emptyLabel}
         variant='neutral'
         copyable={false}
-        className='-ml-1.5'
       />
     )
   }
 
-  const details = (
-    <div className='max-h-[200px] space-y-1 overflow-y-auto text-xs'>
-      {props.items.map((item) => (
-        <div key={item} className='font-mono break-all'>
-          {item}
-        </div>
-      ))}
-    </div>
-  )
+  const badges = props.items.map((item) => (
+    <StatusBadge
+      key={item}
+      label={item}
+      variant='neutral'
+      copyable={false}
+      className='font-mono'
+    />
+  ))
 
   if (props.detailsTrigger === 'click') {
     return (
-      <Popover>
-        <PopoverTrigger
-          render={
-            <Button
-              variant='ghost'
-              size='sm'
-              aria-label={`${props.title}: ${props.label}`}
-              className='h-7 max-w-full justify-start px-0 text-xs font-normal underline decoration-dotted underline-offset-4'
-            />
-          }
-        >
-          {props.label}
-        </PopoverTrigger>
-        <PopoverContent align='start' className='max-w-[calc(100vw-2rem)]'>
-          <PopoverTitle>{props.title}</PopoverTitle>
-          {details}
-        </PopoverContent>
-      </Popover>
+      <span className='inline-flex max-w-full min-w-0 items-center gap-1.5 text-xs'>
+        <span className='text-muted-foreground'>{props.title}</span>
+        <BadgeListCell
+          items={badges}
+          max={1}
+          expandable
+          expandLabel={props.title}
+        />
+      </span>
     )
   }
 
   return (
     <Tooltip>
-      <TooltipTrigger render={<BadgeCell />}>
-        <StatusBadge label={props.label} variant='neutral' copyable={false} />
+      <TooltipTrigger
+        render={
+          <div className='mx-auto inline-flex max-w-full min-w-0 justify-center' />
+        }
+      >
+        <StatusBadgeList
+          items={badges}
+          max={1}
+          className='justify-center'
+          renderItem={(item) => item}
+        />
       </TooltipTrigger>
-      <TooltipContent side='top' className='max-w-xs'>
-        {details}
-      </TooltipContent>
+      {props.items.length > 1 && (
+        <TooltipContent side='top' className='max-w-xs'>
+          <div className='flex max-h-[200px] flex-wrap justify-center gap-1 overflow-y-auto'>
+            {badges}
+          </div>
+        </TooltipContent>
+      )}
     </Tooltip>
   )
 }

@@ -16,20 +16,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { Table } from '@tanstack/react-table'
 
-import { DataTableBulkActions as BulkActionsToolbar } from '@/components/data-table'
+import type { ReactNode } from 'react'
 
-import type { User } from '../types'
+import {
+  TopologyTrafficContext,
+  useTopologyTraffic,
+} from '../hooks/use-topology-traffic'
 
-interface DataTableBulkActionsProps {
-  table: Table<User>
-}
-
-export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
+export function TopologyTrafficProvider(props: {
+  enabled: boolean
+  children: ReactNode
+}) {
+  const flashingIds = useTopologyTraffic(props.enabled)
   return (
-    <BulkActionsToolbar table={table} entityName='user'>
-      <></>
-    </BulkActionsToolbar>
+    <TopologyTrafficContext.Provider value={flashingIds}>
+      {props.children}
+    </TopologyTrafficContext.Provider>
   )
 }

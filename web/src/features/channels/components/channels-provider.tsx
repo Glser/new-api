@@ -83,9 +83,7 @@ export function ChannelsProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState<DialogType>(null)
   const [currentRow, setCurrentRow] = useState<Channel | null>(null)
   const [currentTag, setCurrentTag] = useState<string | null>(null)
-  const [enableTagMode, setEnableTagModeState] = useState(() => {
-    return localStorage.getItem('enable-tag-mode') === 'true'
-  })
+  const [enableTagMode, setEnableTagModeState] = useState(false)
   const setEnableTagMode = useCallback((enabled: boolean) => {
     localStorage.setItem('enable-tag-mode', String(enabled))
     setEnableTagModeState(enabled)

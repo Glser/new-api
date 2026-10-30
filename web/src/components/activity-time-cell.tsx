@@ -97,6 +97,7 @@ export function ActivityTimeCell(props: {
   format?: 'relative' | 'absolute'
   layout?: 'rows' | 'columns'
   compact?: boolean
+  className?: string
 }) {
   const { t, i18n } = useTranslation()
   const locale = toIntlLocale(i18n.resolvedLanguage || i18n.language)
@@ -109,7 +110,8 @@ export function ActivityTimeCell(props: {
         props.layout === 'columns'
           ? 'grid-flow-col grid-cols-2 grid-rows-[auto_1fr] items-start gap-x-3'
           : 'grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2',
-        props.compact && 'mx-auto w-fit grid-cols-[auto_auto] gap-x-0'
+        props.compact && 'mx-auto w-fit grid-cols-[auto_auto] gap-x-0',
+        props.className
       )}
     >
       <span className='text-muted-foreground'>
