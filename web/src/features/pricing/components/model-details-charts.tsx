@@ -27,7 +27,10 @@ import { useChartTheme } from '@/lib/use-chart-theme'
 import { cn } from '@/lib/utils'
 import { VCHART_OPTION } from '@/lib/vchart'
 
-import type { LatencyTimePoint, UptimeDayPoint } from '../lib/mock-stats'
+import type {
+  LatencyTimePoint,
+  UptimeDayPoint,
+} from '../lib/model-details-types'
 
 function formatHourLabel(iso: string): string {
   const date = new Date(iso)

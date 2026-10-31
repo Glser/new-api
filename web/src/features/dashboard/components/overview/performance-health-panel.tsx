@@ -35,11 +35,6 @@ import type { PerfModelSummary } from '@/features/performance-metrics/types'
 import { requireServerSuccess } from '@/lib/server-error-message'
 import { cn } from '@/lib/utils'
 
-import {
-  MOCK_PERF_MODELS,
-  OVERVIEW_MOCK_ENABLED,
-} from '../../lib/overview-mock'
-
 const PERFORMANCE_WINDOW_HOURS = 24
 const TOP_MODEL_LIMIT = 6
 
@@ -73,11 +68,10 @@ export function PerformanceHealthPanel() {
     retry: false,
   })
 
-  const models = useMemo(() => {
-    const rows = metricsQuery.data?.data.models ?? []
-    if (rows.length > 0) return rows
-    return OVERVIEW_MOCK_ENABLED ? MOCK_PERF_MODELS : []
-  }, [metricsQuery.data])
+  const models = useMemo(
+    () => metricsQuery.data?.data.models ?? [],
+    [metricsQuery.data]
+  )
 
   const summary = useMemo(() => {
     return {
