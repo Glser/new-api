@@ -20,8 +20,8 @@ For commercial licensing, please contact support@quantumnous.com
 
 import * as React from 'react'
 
-import { cn } from '@/lib/utils'
 import { TooltipHint } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 function Table({
   className,

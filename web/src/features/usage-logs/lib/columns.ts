@@ -19,12 +19,12 @@ For commercial licensing, please contact support@quantumnous.com
 /**
  * Column definitions factory
  */
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from '@tanstack/react-table'
 
-import { useCommonLogsColumns } from "../components/columns/common-logs-columns";
-import { useDrawingLogsColumns } from "../components/columns/drawing-logs-columns";
-import { useTaskLogsColumns } from "../components/columns/task-logs-columns";
-import type { LogCategory } from "../types";
+import { useCommonLogsColumns } from '../components/columns/common-logs-columns'
+import { useDrawingLogsColumns } from '../components/columns/drawing-logs-columns'
+import { useTaskLogsColumns } from '../components/columns/task-logs-columns'
+import type { LogCategory } from '../types'
 
 /**
  * Get column definitions based on log category
@@ -34,21 +34,21 @@ export function useColumnsByCategory(
   logCategory: LogCategory,
   isAdmin: boolean,
   isRoot: boolean,
-  activityStyle = false,
+  activityStyle = false
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): ColumnDef<any>[] {
-  const commonColumns = useCommonLogsColumns(isAdmin, isRoot, activityStyle);
-  const drawingColumns = useDrawingLogsColumns(isAdmin);
-  const taskColumns = useTaskLogsColumns(isAdmin, isRoot);
+  const commonColumns = useCommonLogsColumns(isAdmin, isRoot, activityStyle)
+  const drawingColumns = useDrawingLogsColumns(isAdmin)
+  const taskColumns = useTaskLogsColumns(isAdmin, isRoot)
 
   switch (logCategory) {
-    case "common":
-      return commonColumns;
-    case "drawing":
-      return drawingColumns;
-    case "task":
-      return taskColumns;
+    case 'common':
+      return commonColumns
+    case 'drawing':
+      return drawingColumns
+    case 'task':
+      return taskColumns
     default:
-      return commonColumns;
+      return commonColumns
   }
 }

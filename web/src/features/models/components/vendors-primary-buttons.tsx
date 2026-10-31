@@ -40,11 +40,11 @@ export function VendorsPrimaryButtons() {
 
   return (
     <div className='flex shrink-0 flex-wrap items-center gap-2'>
-      <Button onClick={handleAddVendor}>
+      <Button onClick={handleAddVendor} size='sm'>
         <Plus className='h-4 w-4' />
         {t('Add Vendor')}
       </Button>
-      <ShineButton variant='outline' onClick={handleCreateApiKey}>
+      <ShineButton variant='outline' size='sm' onClick={handleCreateApiKey}>
         <KeyRound className='h-4 w-4' />
         {t('Create API Key')}
       </ShineButton>

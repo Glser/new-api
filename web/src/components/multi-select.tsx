@@ -35,9 +35,9 @@ import {
   ComboboxValue,
   useComboboxAnchor,
 } from '@/components/ui/combobox'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { cn } from '@/lib/utils'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 export type Option = {
   label: string

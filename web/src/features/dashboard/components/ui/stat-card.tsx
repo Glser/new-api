@@ -21,8 +21,8 @@ import { useId, type ReactNode } from 'react'
 
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
 import { TooltipHint } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 type StatCardTone = 'accent-1' | 'accent-2' | 'accent-3'
 type StatCardSparklineVariant = 'bars' | 'line'

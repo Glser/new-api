@@ -35,8 +35,11 @@ export function AuthIconField(props: {
 }) {
   const Icon = props.icon
   return (
-    <div data-slot='auth-field' className={cn(AUTH_FIELD_SHELL, props.className)}>
-      <span className='pointer-events-none flex size-11 shrink-0 items-center justify-center text-muted-foreground transition-colors group-focus-within:text-foreground'>
+    <div
+      data-slot='auth-field'
+      className={cn(AUTH_FIELD_SHELL, props.className)}
+    >
+      <span className='text-muted-foreground group-focus-within:text-foreground pointer-events-none flex size-11 shrink-0 items-center justify-center transition-colors'>
         <Icon className='size-4.5' aria-hidden />
       </span>
       {props.children}

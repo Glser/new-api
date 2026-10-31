@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Outlet, useRouterState } from '@tanstack/react-router'
+import { Outlet } from '@tanstack/react-router'
 import { motion, useReducedMotion, type Variants } from 'motion/react'
 import type { ReactNode } from 'react'
 
@@ -56,33 +56,13 @@ export function PageTransition(props: PageTransitionProps) {
 }
 
 export function AnimatedOutlet() {
-  const shouldReduce = useReducedMotion()
-  // Key the page transition by the matched route id, not the resolved pathname.
-  // Navigating between params of the same route (e.g. dashboard tabs served by
-  // /dashboard/$section) then re-renders in place instead of remounting the
-  // route component and discarding its state (such as the selected time range).
-  const routeKey = useRouterState({
-    select: (s) => s.matches.at(-1)?.routeId ?? s.location.pathname,
-  })
-
-  if (shouldReduce) {
-    return (
-      <div className='flex min-h-0 flex-1 flex-col'>
-        <Outlet />
-      </div>
-    )
-  }
-
+  // Console pages are table-heavy. Remounting the outlet with a blur/slide
+  // animation forces a full tree rebuild plus a CSS filter on the new page,
+  // which is the main hitch when switching between models, channels, etc.
   return (
-    <motion.div
-      key={routeKey}
-      initial={MOTION_VARIANTS.pageEnter.initial}
-      animate={MOTION_VARIANTS.pageEnter.animate}
-      transition={MOTION_TRANSITION.fast}
-      className='flex min-h-0 flex-1 flex-col'
-    >
+    <div className='flex min-h-0 flex-1 flex-col'>
       <Outlet />
-    </motion.div>
+    </div>
   )
 }
 
@@ -132,7 +112,7 @@ export function TableStaggerContainer(props: StaggerContainerProps) {
   const shouldReduce = useReducedMotion()
 
   if (shouldReduce) {
-    return <>{props.children}</>
+    return props.children
   }
 
   return (

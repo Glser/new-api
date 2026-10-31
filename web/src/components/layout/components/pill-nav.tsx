@@ -20,12 +20,12 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { motion, useReducedMotion } from 'motion/react'
 
-import { cn } from '@/lib/utils'
-import { MOTION_TRANSITION } from '@/lib/motion'
-
-import type { TopNavLink } from '../types'
-import { useSlidingIndicator } from '../lib/use-sliding-indicator'
 import { TooltipHint } from '@/components/ui/tooltip'
+import { MOTION_TRANSITION } from '@/lib/motion'
+import { cn } from '@/lib/utils'
+
+import { useSlidingIndicator } from '../lib/use-sliding-indicator'
+import type { TopNavLink } from '../types'
 
 /**
  * Which header a pill rail lives in.
@@ -121,7 +121,10 @@ export function PillNav(props: PillNavProps) {
 
   const items = links.map((link) => ({ key: `${link.title}:${link.href}` }))
   const activeIndex = links.findIndex((link) => isActive(link))
-  const { state, railRef, registerItem } = useSlidingIndicator(items, activeIndex)
+  const { state, railRef, registerItem } = useSlidingIndicator(
+    items,
+    activeIndex
+  )
 
   const showIndicator = state.activeIndex >= 0 && !state.unmeasured
 
@@ -159,9 +162,7 @@ export function PillNav(props: PillNavProps) {
                   opacity: 1,
                 }
           }
-          transition={
-            shouldReduce ? { duration: 0 } : MOTION_TRANSITION.spring
-          }
+          transition={shouldReduce ? { duration: 0 } : MOTION_TRANSITION.spring}
         />
       )}
 

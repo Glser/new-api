@@ -63,7 +63,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
     : t('Show in model square')
 
   return (
-    <div className='-ml-1.5 flex min-w-0 items-center gap-1 [&>button]:min-w-0 [&>button]:shrink'>
+    <div className='flex min-w-0 items-center justify-center gap-1 [&>button]:min-w-0 [&>button]:shrink'>
       <Button
         variant='ghost'
         size='sm'

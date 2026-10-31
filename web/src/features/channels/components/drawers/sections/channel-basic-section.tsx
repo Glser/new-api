@@ -16,7 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Server } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -37,8 +36,6 @@ export function ChannelBasicSection(props: ChannelBasicSectionProps) {
       <SideDrawerSectionHeader
         title={t('Basic Information')}
         description={t('Name, provider type, and availability.')}
-        icon={<Server className='h-4 w-4' aria-hidden='true' />}
-        iconTone='info'
       />
       {props.children}
     </SideDrawerSection>

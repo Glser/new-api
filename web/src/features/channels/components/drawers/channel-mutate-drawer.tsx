@@ -22,8 +22,7 @@ import {
   ArrowRight,
   ArrowLeft,
   AlertCircle,
-  ChevronDown,
-  ClipboardPaste,
+  Check,
   Loader2,
   Server,
   Sparkles,
@@ -36,12 +35,13 @@ import {
   Code,
   Route,
   Settings,
-  SlidersHorizontal,
   Wand2,
 } from 'lucide-react'
 import {
   type ComponentProps,
   type ReactNode,
+  lazy,
+  Suspense,
   useEffect,
   useState,
   useMemo,
@@ -78,7 +78,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
+import { IconBadge } from '@/components/ui/icon-badge'
 import { Input } from '@/components/ui/input'
 import { PopoverDescription, PopoverTitle } from '@/components/ui/popover'
 import {
@@ -89,10 +89,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
@@ -193,13 +191,11 @@ import type { Channel } from '../../types'
 import { ChannelPluginExtensions } from '../channel-plugin-extensions'
 import { ChannelTypeLogo } from '../channel-type-badge'
 import { useChannels } from '../channels-provider'
-import { AdvancedCustomEditorDialog } from '../dialogs/advanced-custom-editor-dialog'
 import { ConfigureModelsDialog } from '../dialogs/configure-models-dialog'
 import {
   MissingModelsConfirmationDialog,
   type MissingModelsAction,
 } from '../dialogs/missing-models-confirmation-dialog'
-import { ParamOverrideEditorDialog } from '../dialogs/param-override-editor-dialog'
 import { StatusCodeRiskDialog } from '../dialogs/status-code-risk-dialog'
 import { ModelMappingEditor } from '../model-mapping-editor'
 import { UpstreamModelSelection } from '../upstream-model-selection'
@@ -215,7 +211,17 @@ import {
   ChannelEditorLoadingState,
   ChannelModelsSection,
 } from './sections'
-import { TooltipHint } from '@/components/ui/tooltip'
+
+const ParamOverrideEditorDialog = lazy(() =>
+  import('../dialogs/param-override-editor-dialog').then((module) => ({
+    default: module.ParamOverrideEditorDialog,
+  }))
+)
+const AdvancedCustomEditorDialog = lazy(() =>
+  import('../dialogs/advanced-custom-editor-dialog').then((module) => ({
+    default: module.AdvancedCustomEditorDialog,
+  }))
+)
 
 type ChannelMutateDrawerProps = {
   open: boolean
@@ -306,13 +312,26 @@ function formatUnixTime(timestamp: unknown): string {
   return new Date(seconds * 1000).toLocaleString()
 }
 
+const CHANNEL_DRAWER_HEADER_CLASS_NAME =
+  'flex-row items-start gap-3 bg-muted/30 px-5 py-5 backdrop-blur-none supports-[backdrop-filter]:bg-muted/30 sm:py-5'
+
+const CHANNEL_DRAWER_FORM_CONTROL_CLASS_NAME =
+  '[&_[data-slot=form-description]]:text-xs [&_[data-slot=form-description]]:leading-5 [&_[data-slot=form-label]]:pl-[3px] [&_[data-slot=form-label]]:text-xs [&_[data-slot=input]]:h-10 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:bg-muted/20 [&_[data-slot=input]]:px-3 [&_[data-slot=select-trigger]]:h-10 [&_[data-slot=select-trigger]]:rounded-xl [&_[data-slot=select-trigger]]:bg-muted/20 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:bg-muted/20 [&_[data-slot=switch]]:data-checked:bg-foreground'
+
+const CHANNEL_NESTED_CARD_CLASS_NAME =
+  'bg-muted/30 flex flex-col gap-4 rounded-2xl border p-3.5'
+
+const CHANNEL_SWITCH_ITEM_CLASS_NAME = sideDrawerSwitchItemClassName(
+  'bg-muted/30 min-h-20 rounded-2xl border p-4'
+)
+
 function channelConfigurationBlockClassName(
   status: ChannelConfigurationStatus,
   className?: string
 ) {
   return cn(
-    'border-border/60 rounded-lg border p-4 transition-colors',
-    status === 'configured' && 'border-primary/35 ring-primary/20 ring-1',
+    CHANNEL_NESTED_CARD_CLASS_NAME,
+    'transition-colors',
     status === 'error' && 'border-destructive/50 ring-destructive/20 ring-1',
     className
   )
@@ -320,18 +339,11 @@ function channelConfigurationBlockClassName(
 
 function CardHeading(props: {
   title: string
-  icon?: ReactNode
-  iconTone?: IconBadgeTone
   status?: ChannelConfigurationStatus
 }) {
   return (
     <div className='flex items-center gap-3'>
-      {props.icon && (
-        <IconBadge tone={props.iconTone} size='md'>
-          {props.icon}
-        </IconBadge>
-      )}
-      <h3 className='min-w-0 flex-1 text-sm font-semibold tracking-tight'>
+      <h3 className='min-w-0 flex-1 text-sm leading-none font-semibold tracking-tight'>
         {props.title}
       </h3>
       {props.status && (
@@ -343,18 +355,11 @@ function CardHeading(props: {
 
 function SubHeading(props: {
   title: string
-  icon?: ReactNode
-  iconTone?: IconBadgeTone
   status?: ChannelConfigurationStatus
 }) {
   return (
     <div className='flex items-center gap-2'>
-      {props.icon && (
-        <IconBadge tone={props.iconTone} size='xs'>
-          {props.icon}
-        </IconBadge>
-      )}
-      <h4 className='text-muted-foreground text-xs font-medium tracking-wide uppercase'>
+      <h4 className='text-sm leading-none font-semibold tracking-tight'>
         {props.title}
       </h4>
       {props.status && (
@@ -553,25 +558,6 @@ export function ChannelMutateDrawer({
     },
     [form, t]
   )
-
-  const pasteConnectionInfoFromClipboard = useCallback(async () => {
-    if (typeof navigator === 'undefined' || !navigator.clipboard?.readText) {
-      toast.error(t('Unable to read clipboard'))
-      return
-    }
-
-    try {
-      const text = await navigator.clipboard.readText()
-      const parsed = parseChannelConnectionInfo(text)
-      if (parsed) {
-        applyConnectionInfo(parsed)
-        return
-      }
-      toast.info(t('No connection info found in clipboard'))
-    } catch {
-      toast.error(t('Unable to read clipboard'))
-    }
-  }, [applyConnectionInfo, t])
 
   useEffect(() => {
     if (!open || isEditing || showProviderPicker) {
@@ -1527,7 +1513,7 @@ export function ChannelMutateDrawer({
       control={form.control}
       name='system_prompt_override'
       render={({ field }) => (
-        <FormItem className='flex items-center justify-between'>
+        <FormItem className='flex items-center justify-between gap-3'>
           <div className='space-y-0.5'>
             <FormLabel>{t('System Prompt Concatenation')}</FormLabel>
             <FormDescription>
@@ -1551,7 +1537,7 @@ export function ChannelMutateDrawer({
       control={form.control}
       name='pass_through_body_enabled'
       render={({ field }) => (
-        <FormItem className='flex items-center justify-between px-4 py-3'>
+        <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
           <div className='space-y-0.5'>
             <FormLabel>{t('Pass Through Body')}</FormLabel>
             <FormDescription>
@@ -1575,7 +1561,7 @@ export function ChannelMutateDrawer({
       control={form.control}
       name='thinking_to_content'
       render={({ field }) => (
-        <FormItem className='flex items-center justify-between px-4 py-3'>
+        <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
           <div className='space-y-0.5'>
             <FormLabel>{t('Thinking to Content')}</FormLabel>
             <FormDescription>
@@ -1599,7 +1585,7 @@ export function ChannelMutateDrawer({
       control={form.control}
       name='disable_task_polling_sleep'
       render={({ field }) => (
-        <FormItem className='flex items-center justify-between px-4 py-3'>
+        <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
           <div className='space-y-0.5'>
             <FormLabel>{t('Skip async task polling delay')}</FormLabel>
             <FormDescription>
@@ -1625,7 +1611,7 @@ export function ChannelMutateDrawer({
       control={form.control}
       name='force_format'
       render={({ field }) => (
-        <FormItem className='flex items-center justify-between px-4 py-3'>
+        <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
           <div className='space-y-0.5'>
             <FormLabel>{t('Force Format')}</FormLabel>
             <FormDescription>
@@ -1658,8 +1644,6 @@ export function ChannelMutateDrawer({
       <SubHeading
         title={t('Internal Notes')}
         status={configuration.blocks.internalNotes}
-        icon={<FileText className='h-3.5 w-3.5' />}
-        iconTone='chart-3'
       />
       <div className='grid gap-4 sm:grid-cols-2'>
         <FormField
@@ -1671,7 +1655,6 @@ export function ChannelMutateDrawer({
               <FormControl>
                 <Input placeholder={t(FIELD_PLACEHOLDERS.TAG)} {...field} />
               </FormControl>
-              <FormDescription>{t(FIELD_DESCRIPTIONS.TAG)}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -1690,7 +1673,6 @@ export function ChannelMutateDrawer({
                   {...field}
                 />
               </FormControl>
-              <FormDescription>{t(FIELD_DESCRIPTIONS.REMARK)}</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -1817,8 +1799,6 @@ export function ChannelMutateDrawer({
       <SubHeading
         title={t('Routing Strategy')}
         status={configuration.blocks.routingStrategy}
-        icon={<Route className='h-3.5 w-3.5' />}
-        iconTone='info'
       />
       <div className='grid gap-4 sm:grid-cols-2'>
         <FormField
@@ -1888,7 +1868,7 @@ export function ChannelMutateDrawer({
         control={form.control}
         name='auto_ban'
         render={({ field }) => (
-          <FormItem className='flex items-center justify-between'>
+          <FormItem className='flex items-center justify-between gap-3'>
             <div className='space-y-0.5'>
               <FormLabel>{t('Auto Ban')}</FormLabel>
               <FormDescription>
@@ -1913,27 +1893,22 @@ export function ChannelMutateDrawer({
     <div
       role='group'
       aria-label={t('Upstream Model Detection Settings')}
-      className={channelConfigurationBlockClassName(
-        configuration.blocks.upstreamModelDetection,
-        'flex flex-col gap-4'
-      )}
+      className='flex flex-col gap-4'
     >
       <CardHeading
         title={t('Upstream Model Detection Settings')}
         status={configuration.blocks.upstreamModelDetection}
-        icon={<RefreshCw className='h-4 w-4' />}
-        iconTone='info'
       />
       <fieldset
         disabled={sensitiveLocked}
         className='space-y-4 disabled:opacity-60'
       >
-        <div className='divide-border space-y-0 divide-y border-y'>
+        <div className='flex flex-col gap-3'>
           <FormField
             control={form.control}
             name='upstream_model_update_check_enabled'
             render={({ field }) => (
-              <FormItem className='flex items-center justify-between px-4 py-3'>
+              <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                 <div className='space-y-0.5'>
                   <FormLabel>{t('Upstream Model Update Check')}</FormLabel>
                   <FormDescription>
@@ -1955,7 +1930,7 @@ export function ChannelMutateDrawer({
             control={form.control}
             name='upstream_model_update_auto_sync_enabled'
             render={({ field }) => (
-              <FormItem className='flex items-center justify-between px-4 py-3'>
+              <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                 <div className='space-y-0.5'>
                   <FormLabel>{t('Auto Sync Upstream Models')}</FormLabel>
                   <FormDescription>
@@ -2162,6 +2137,37 @@ export function ChannelMutateDrawer({
   const basicSection = (
     <div className='scroll-mt-4'>
       <ChannelBasicSection>
+        <div className='bg-muted/30 flex items-center gap-3 rounded-2xl border p-3.5'>
+          <span className='bg-background flex size-10 shrink-0 items-center justify-center rounded-full border'>
+            <ChannelTypeLogo
+              type={currentType}
+              plugin={boundTaskPlugin}
+              size={20}
+            />
+          </span>
+          <div className='min-w-0 flex-1'>
+            <p className='truncate text-sm font-medium'>{providerLabel}</p>
+            <p className='text-muted-foreground text-xs leading-5'>
+              {t('Provider')}
+            </p>
+          </div>
+          <Button
+            ref={providerControlRef}
+            type='button'
+            variant='outline'
+            size='sm'
+            className='h-9 shrink-0 rounded-xl'
+            aria-label={t('Change provider')}
+            disabled={
+              isSubmitting ||
+              !canEditSensitive ||
+              (isEditing && !channelData?.data)
+            }
+            onClick={() => setChoosingProvider(true)}
+          >
+            {t('Change provider')}
+          </Button>
+        </div>
         <div className='grid gap-4'>
           <FormField
             control={form.control}
@@ -2183,7 +2189,7 @@ export function ChannelMutateDrawer({
             control={form.control}
             name='status'
             render={({ field }) => (
-              <FormItem className={sideDrawerSwitchItemClassName()}>
+              <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                 <div className='flex flex-col gap-0.5'>
                   <FormLabel>{t('Enabled')}</FormLabel>
                   <FormDescription className='text-xs'>
@@ -2214,11 +2220,11 @@ export function ChannelMutateDrawer({
                   <FormControl>
                     <Input placeholder={t('org-...')} {...field} />
                   </FormControl>
-                  <FormDescription>
-                    {sensitiveLocked
-                      ? t('No permission to perform this action')
-                      : t(FIELD_DESCRIPTIONS.OPENAI_ORG)}
-                  </FormDescription>
+                  {sensitiveLocked && (
+                    <FormDescription>
+                      {t('No permission to perform this action')}
+                    </FormDescription>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -2241,8 +2247,6 @@ export function ChannelMutateDrawer({
       <SubHeading
         title={t('Override Rules')}
         status={configuration.blocks.overrideRules}
-        icon={<Code className='h-3.5 w-3.5' />}
-        iconTone='chart-4'
       />
 
       <FormField
@@ -2458,24 +2462,19 @@ export function ChannelMutateDrawer({
     <div
       role='group'
       aria-label={t('Field passthrough controls')}
-      className={channelConfigurationBlockClassName(
-        configuration.blocks.fieldPassthrough,
-        'flex flex-col gap-4'
-      )}
+      className='flex flex-col gap-4'
     >
       <CardHeading
         title={t('Field passthrough controls')}
         status={configuration.blocks.fieldPassthrough}
-        icon={<SlidersHorizontal className='h-4 w-4' />}
-        iconTone='chart-4'
       />
       <fieldset disabled={sensitiveLocked} className='disabled:opacity-60'>
-        <div className='divide-border space-y-0 divide-y border-y'>
+        <div className='flex flex-col gap-3'>
           <FormField
             control={form.control}
             name='allow_service_tier'
             render={({ field }) => (
-              <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+              <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                 <div className='space-y-0.5'>
                   <FormLabel className='text-sm'>
                     {t('Allow service_tier passthrough')}
@@ -2501,7 +2500,7 @@ export function ChannelMutateDrawer({
                 control={form.control}
                 name='disable_store'
                 render={({ field }) => (
-                  <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+                  <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                     <div className='space-y-0.5'>
                       <FormLabel className='text-sm'>
                         {t('Disable store passthrough')}
@@ -2525,7 +2524,7 @@ export function ChannelMutateDrawer({
                 control={form.control}
                 name='allow_safety_identifier'
                 render={({ field }) => (
-                  <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+                  <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                     <div className='space-y-0.5'>
                       <FormLabel className='text-sm'>
                         {t('Allow safety_identifier passthrough')}
@@ -2549,7 +2548,7 @@ export function ChannelMutateDrawer({
                 control={form.control}
                 name='allow_include_obfuscation'
                 render={({ field }) => (
-                  <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+                  <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                     <div className='space-y-0.5'>
                       <FormLabel className='text-sm'>
                         {t('Allow include usage obfuscation passthrough')}
@@ -2575,7 +2574,7 @@ export function ChannelMutateDrawer({
                 control={form.control}
                 name='allow_inference_geo'
                 render={({ field }) => (
-                  <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+                  <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                     <div className='space-y-0.5'>
                       <FormLabel className='text-sm'>
                         {t('Allow inference geography passthrough')}
@@ -2606,7 +2605,7 @@ export function ChannelMutateDrawer({
                   control={form.control}
                   name='allow_inference_geo'
                   render={({ field }) => (
-                    <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+                    <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                       <div className='space-y-0.5'>
                         <FormLabel className='text-sm'>
                           {t('Allow inference_geo passthrough')}
@@ -2633,7 +2632,7 @@ export function ChannelMutateDrawer({
                 control={form.control}
                 name='allow_speed'
                 render={({ field }) => (
-                  <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+                  <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                     <div className='space-y-0.5'>
                       <FormLabel className='text-sm'>
                         {t('Allow speed passthrough')}
@@ -2660,7 +2659,7 @@ export function ChannelMutateDrawer({
                   control={form.control}
                   name='claude_beta_query'
                   render={({ field }) => (
-                    <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+                    <FormItem className={CHANNEL_SWITCH_ITEM_CLASS_NAME}>
                       <div className='space-y-0.5'>
                         <FormLabel className='text-sm'>
                           {t('Allow Claude beta query passthrough')}
@@ -2692,322 +2691,300 @@ export function ChannelMutateDrawer({
   const modelsSection = (
     <div className='scroll-mt-4'>
       <ChannelModelsSection>
-        <div className='space-y-5'>
-          <div className='border-border/60 bg-muted/10 rounded-lg border p-4'>
-            <FormField
-              control={form.control}
-              name='models'
-              render={() => (
-                <FormItem
-                  role='group'
-                  aria-label={t('Models')}
-                  className='space-y-3'
+        <div className={CHANNEL_NESTED_CARD_CLASS_NAME}>
+          <FormField
+            control={form.control}
+            name='models'
+            render={() => (
+              <FormItem
+                role='group'
+                aria-label={t('Models')}
+                className='space-y-3'
+              >
+                <div className='flex items-center justify-between gap-3'>
+                  <FormLabel required>{t('Models')}</FormLabel>
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    className='h-8 shrink-0 rounded-xl'
+                    onClick={() => setModelConfiguration({})}
+                    disabled={
+                      currentModelsArray.length === 0 &&
+                      !pluginExtensions.some(
+                        (plugin) => plugin.models.length > 0
+                      )
+                    }
+                  >
+                    <Settings className='size-3.5' aria-hidden='true' />
+                    {t('Configure Models')}
+                  </Button>
+                </div>
+                <FormControl>
+                  <MultiSelect
+                    options={modelOptions}
+                    selected={currentModelsArray}
+                    onChange={handleModelsChange}
+                    placeholder={t('Select models or add custom ones')}
+                    allowCreate
+                    createLabel='Add custom model "{{value}}"'
+                    maxVisibleChips={8}
+                    copyChipOnClick
+                  />
+                </FormControl>
+                {canBindTaskPlugin &&
+                  canHavePluginExtensions &&
+                  !showProviderPicker && (
+                    <>
+                      {taskPluginOptionsQuery.isLoading && (
+                        <LoadingState
+                          inline
+                          message={t('Loading plugins...')}
+                        />
+                      )}
+                      {taskPluginOptionsQuery.isError && (
+                        <ErrorState
+                          className='min-h-0 p-3'
+                          title={t('Failed to load plugins')}
+                          onRetry={() => {
+                            void taskPluginOptionsQuery.refetch()
+                          }}
+                        />
+                      )}
+                      <ChannelPluginExtensions
+                        plugins={pluginExtensions}
+                        selected={currentModelsArray}
+                        onConfigure={(pluginKey) =>
+                          setModelConfiguration({ pluginKey })
+                        }
+                      />
+                    </>
+                  )}
+                {modelMappingGuardrail.exposedTargetModels.length > 0 && (
+                  <Alert className='border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50'>
+                    <AlertDescription className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+                      <span>
+                        {t('The mapped upstream model(s)')}{' '}
+                        {formatModelNames(
+                          modelMappingGuardrail.exposedTargetModels
+                        )}{' '}
+                        {t(
+                          'are also listed here. Remove them from Models to keep the `/v1/models` response user-friendly and hide vendor-specific names.'
+                        )}
+                      </span>
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={() => {
+                          const hiddenTargets = new Set(
+                            modelMappingGuardrail.exposedTargetModels
+                          )
+                          updateModels(
+                            currentModelsArray.filter(
+                              (model) => !hiddenTargets.has(model)
+                            )
+                          )
+                        }}
+                      >
+                        {t('Remove mapped targets')}
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className='flex flex-col gap-2'>
+            <div className='flex flex-wrap gap-2'>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className='h-8 rounded-xl'
+                onClick={handleFillRelatedModels}
+                disabled={!basicModels.length}
+              >
+                <FileText className='size-3.5' aria-hidden='true' />
+                {t('Fill Related Models')}
+              </Button>
+              {MODEL_FETCHABLE_TYPES.has(currentType) && (
+                <Button
+                  type='button'
+                  variant='outline'
+                  size='sm'
+                  className='h-8 rounded-xl'
+                  onClick={handleFetchModels}
+                  disabled={
+                    !canDiscoverModels || discovery.status === 'loading'
+                  }
                 >
-                  <div className='flex items-start justify-between gap-3'>
-                    <div className='min-w-0 space-y-1'>
-                      <FormLabel required>{t('Models')}</FormLabel>
-                      <FormDescription>
-                        {t(FIELD_DESCRIPTIONS.MODELS)}
-                      </FormDescription>
-                    </div>
+                  <Sparkles className='size-3.5' aria-hidden='true' />
+                  {t('Fetch from Upstream')}
+                </Button>
+              )}
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                className='h-8 rounded-xl'
+                onClick={handleCopyModels}
+                disabled={currentModelsArray.length === 0}
+              >
+                <Copy className='size-3.5' aria-hidden='true' />
+                {t('Copy All')}
+              </Button>
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                className='h-8 rounded-xl'
+                onClick={handleClearModels}
+                disabled={currentModelsArray.length === 0}
+              >
+                <Eraser className='size-3.5' aria-hidden='true' />
+                {t('Clear All')}
+              </Button>
+            </div>
+            {MODEL_FETCHABLE_TYPES.has(currentType) && !canDiscoverModels && (
+              <p className='text-muted-foreground text-xs'>
+                {t('No permission to perform this action')}
+              </p>
+            )}
+            {prefillGroups.length > 0 && (
+              <div className='flex flex-wrap items-center gap-2'>
+                <span className='text-muted-foreground text-xs'>
+                  {t('Preset groups')}:
+                </span>
+                {prefillGroups.map((group) => (
+                  <Button
+                    key={group.id}
+                    type='button'
+                    variant='secondary'
+                    size='sm'
+                    className='h-8 rounded-xl'
+                    onClick={() => handleAddPrefillGroup(group)}
+                  >
+                    {group.name}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {MODEL_FETCHABLE_TYPES.has(currentType) && (
+            <div aria-live='polite' className='space-y-3'>
+              {discovery.status === 'loading' && (
+                <LoadingState
+                  className='min-h-0 py-4'
+                  message={t('Fetching models...')}
+                />
+              )}
+              {discovery.status === 'error' && (
+                <ErrorState
+                  className='min-h-0 p-3'
+                  title={t('Failed to fetch models')}
+                  description={getServerErrorMessage(
+                    discovery.error,
+                    t('Failed to fetch models')
+                  )}
+                  onRetry={() => {
+                    void handleFetchModels()
+                  }}
+                />
+              )}
+              {discovery.status === 'stale' && (
+                <Alert>
+                  <AlertDescription>
+                    {t(
+                      'Connection settings changed. Fetch models again to refresh the list.'
+                    )}
                     <Button
                       type='button'
                       variant='outline'
                       size='sm'
-                      onClick={() => setModelConfiguration({})}
-                      disabled={
-                        currentModelsArray.length === 0 &&
-                        !pluginExtensions.some(
-                          (plugin) => plugin.models.length > 0
-                        )
-                      }
+                      onClick={handleFetchModels}
                     >
-                      <Settings className='mr-2 h-4 w-4' aria-hidden='true' />
-                      {t('Configure Models')}
+                      {t('Fetch Models')}
                     </Button>
-                  </div>
-                  <FormControl>
-                    <MultiSelect
-                      options={modelOptions}
-                      selected={currentModelsArray}
-                      onChange={handleModelsChange}
-                      placeholder={t('Select models or add custom ones')}
-                      allowCreate
-                      createLabel='Add custom model "{{value}}"'
-                      maxVisibleChips={8}
-                      copyChipOnClick
-                    />
-                  </FormControl>
-                  {canBindTaskPlugin &&
-                    canHavePluginExtensions &&
-                    !showProviderPicker && (
-                      <>
-                        {taskPluginOptionsQuery.isLoading && (
-                          <LoadingState
-                            inline
-                            message={t('Loading plugins...')}
-                          />
-                        )}
-                        {taskPluginOptionsQuery.isError && (
-                          <ErrorState
-                            className='min-h-0 p-3'
-                            title={t('Failed to load plugins')}
-                            onRetry={() => {
-                              void taskPluginOptionsQuery.refetch()
-                            }}
-                          />
-                        )}
-                        <ChannelPluginExtensions
-                          plugins={pluginExtensions}
-                          selected={currentModelsArray}
-                          onConfigure={(pluginKey) =>
-                            setModelConfiguration({ pluginKey })
-                          }
-                        />
-                      </>
-                    )}
-                  {modelMappingGuardrail.exposedTargetModels.length > 0 && (
-                    <Alert className='border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50'>
-                      <AlertDescription className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
-                        <span>
-                          {t('The mapped upstream model(s)')}{' '}
-                          {formatModelNames(
-                            modelMappingGuardrail.exposedTargetModels
-                          )}{' '}
-                          {t(
-                            'are also listed here. Remove them from Models to keep the `/v1/models` response user-friendly and hide vendor-specific names.'
-                          )}
-                        </span>
-                        <Button
-                          type='button'
-                          variant='outline'
-                          size='sm'
-                          onClick={() => {
-                            const hiddenTargets = new Set(
-                              modelMappingGuardrail.exposedTargetModels
-                            )
-                            updateModels(
-                              currentModelsArray.filter(
-                                (model) => !hiddenTargets.has(model)
-                              )
-                            )
-                          }}
-                        >
-                          {t('Remove mapped targets')}
-                        </Button>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  <FormMessage />
-                </FormItem>
+                  </AlertDescription>
+                </Alert>
               )}
-            />
-
-            {MODEL_FETCHABLE_TYPES.has(currentType) && (
-              <div aria-live='polite' className='mt-4 space-y-3'>
-                {discovery.status === 'loading' && (
-                  <LoadingState
-                    className='min-h-0 py-4'
-                    message={t('Fetching models...')}
-                  />
-                )}
-                {discovery.status === 'error' && (
-                  <ErrorState
+              {discovery.status === 'success' &&
+                discovery.models.length === 0 && (
+                  <EmptyState
                     className='min-h-0 p-3'
-                    title={t('Failed to fetch models')}
-                    description={getServerErrorMessage(
-                      discovery.error,
-                      t('Failed to fetch models')
+                    title={t('No models returned by the upstream')}
+                    description={t(
+                      'You can add models manually or try fetching again.'
                     )}
-                    onRetry={() => {
-                      void handleFetchModels()
-                    }}
-                  />
-                )}
-                {discovery.status === 'stale' && (
-                  <Alert>
-                    <AlertDescription>
-                      {t(
-                        'Connection settings changed. Fetch models again to refresh the list.'
-                      )}
+                    action={
                       <Button
                         type='button'
                         variant='outline'
                         size='sm'
                         onClick={handleFetchModels}
                       >
-                        {t('Fetch Models')}
+                        {t('Retry')}
                       </Button>
-                    </AlertDescription>
-                  </Alert>
+                    }
+                  />
                 )}
-                {discovery.status === 'success' &&
-                  discovery.models.length === 0 && (
-                    <EmptyState
-                      className='min-h-0 p-3'
-                      title={t('No models returned by the upstream')}
-                      description={t(
-                        'You can add models manually or try fetching again.'
-                      )}
-                      action={
-                        <Button
-                          type='button'
-                          variant='outline'
-                          size='sm'
-                          onClick={handleFetchModels}
-                        >
-                          {t('Retry')}
-                        </Button>
-                      }
-                    />
-                  )}
-                {discovery.status === 'success' &&
-                  discovery.models.length > 0 && (
-                    <UpstreamModelSelection
-                      models={discovery.models}
-                      selected={currentModelsArray}
-                      existingModels={
-                        isEditing
-                          ? initialModelsRef.current
-                          : currentModelsArray
-                      }
-                      onChange={handleModelsChange}
-                      showChanges={isEditing}
-                      redirectModels={redirectModelList}
-                      redirectSourceModels={redirectModelKeyList}
-                    />
-                  )}
-                {isEditing && !previewModels && (
-                  <p className='text-muted-foreground text-xs'>
-                    {t(
-                      'Model discovery uses the saved channel connection settings.'
-                    )}
-                  </p>
+              {discovery.status === 'success' &&
+                discovery.models.length > 0 && (
+                  <UpstreamModelSelection
+                    models={discovery.models}
+                    selected={currentModelsArray}
+                    existingModels={
+                      isEditing ? initialModelsRef.current : currentModelsArray
+                    }
+                    onChange={handleModelsChange}
+                    showChanges={isEditing}
+                    redirectModels={redirectModelList}
+                    redirectSourceModels={redirectModelKeyList}
+                  />
                 )}
-                {!isEditing && isBatchMode && (
-                  <p className='text-muted-foreground text-xs'>
-                    {t(
-                      'Model discovery uses the first key; other keys are not tested.'
-                    )}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <Separator className='my-4' />
-
-            <div className='space-y-3'>
-              <div>
-                <p className='text-sm font-medium'>{t('Quick actions')}</p>
+              {isEditing && !previewModels && (
                 <p className='text-muted-foreground text-xs'>
                   {t(
-                    'Use presets or upstream discovery to populate the model list faster.'
+                    'Model discovery uses the saved channel connection settings.'
                   )}
                 </p>
-              </div>
-              <div className='flex flex-wrap gap-2'>
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  onClick={handleFillRelatedModels}
-                  disabled={!basicModels.length}
-                >
-                  <FileText className='mr-2 h-4 w-4' aria-hidden='true' />
-                  {t('Fill Related Models')}
-                </Button>
-                {MODEL_FETCHABLE_TYPES.has(currentType) && (
-                  <>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='sm'
-                      onClick={handleFetchModels}
-                      disabled={
-                        !canDiscoverModels || discovery.status === 'loading'
-                      }
-                    >
-                      <Sparkles className='mr-2 h-4 w-4' aria-hidden='true' />
-                      {t('Fetch from Upstream')}
-                    </Button>
-                    {!canDiscoverModels && (
-                      <span className='text-muted-foreground basis-full text-xs'>
-                        {t('No permission to perform this action')}
-                      </span>
-                    )}
-                  </>
-                )}
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  onClick={handleCopyModels}
-                  disabled={currentModelsArray.length === 0}
-                >
-                  <Copy className='mr-2 h-4 w-4' aria-hidden='true' />
-                  {t('Copy All')}
-                </Button>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='sm'
-                  onClick={handleClearModels}
-                  disabled={currentModelsArray.length === 0}
-                >
-                  <Eraser className='mr-2 h-4 w-4' aria-hidden='true' />
-                  {t('Clear All')}
-                </Button>
-              </div>
-              {prefillGroups.length > 0 && (
-                <div className='flex flex-wrap items-center gap-2'>
-                  <span className='text-muted-foreground text-xs'>
-                    {t('Preset groups')}:
-                  </span>
-                  {prefillGroups.map((group) => (
-                    <Button
-                      key={group.id}
-                      type='button'
-                      variant='secondary'
-                      size='sm'
-                      onClick={() => handleAddPrefillGroup(group)}
-                    >
-                      {group.name}
-                    </Button>
-                  ))}
-                </div>
+              )}
+              {!isEditing && isBatchMode && (
+                <p className='text-muted-foreground text-xs'>
+                  {t(
+                    'Model discovery uses the first key; other keys are not tested.'
+                  )}
+                </p>
               )}
             </div>
-          </div>
+          )}
 
-          <div className='border-border/60 rounded-lg border p-4'>
-            <FormField
-              control={form.control}
-              name='group'
-              render={({ field }) => (
-                <FormItem className='space-y-3'>
-                  <div className='space-y-1'>
-                    <FormLabel required>{t('Groups')}</FormLabel>
-                    <FormDescription>
-                      {t(FIELD_DESCRIPTIONS.GROUP)}
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    {isLoadingGroups ? (
-                      <Skeleton className='h-10 w-full' />
-                    ) : (
-                      <MultiSelect
-                        options={groupOptions}
-                        selected={field.value}
-                        onChange={field.onChange}
-                        placeholder={t(FIELD_PLACEHOLDERS.GROUP)}
-                      />
-                    )}
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name='group'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel required>{t('Groups')}</FormLabel>
+                <FormControl>
+                  {isLoadingGroups ? (
+                    <Skeleton className='h-10 w-full rounded-xl' />
+                  ) : (
+                    <MultiSelect
+                      options={groupOptions}
+                      selected={field.value}
+                      onChange={field.onChange}
+                      placeholder={t(FIELD_PLACEHOLDERS.GROUP)}
+                    />
+                  )}
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
       </ChannelModelsSection>
     </div>
@@ -3032,7 +3009,7 @@ export function ChannelMutateDrawer({
           </Alert>
         )}
 
-        <div className='border-border/60 bg-muted/10 rounded-lg border p-4'>
+        <div className={CHANNEL_NESTED_CARD_CLASS_NAME}>
           <fieldset
             disabled={sensitiveLocked}
             className='space-y-4 disabled:opacity-60'
@@ -3162,7 +3139,7 @@ export function ChannelMutateDrawer({
                 control={form.control}
                 name='is_enterprise_account'
                 render={({ field }) => (
-                  <FormItem className='flex items-center justify-between'>
+                  <FormItem className='flex items-center justify-between gap-3'>
                     <div className='space-y-0.5'>
                       <FormLabel>{t('Enterprise Account')}</FormLabel>
                       <FormDescription>
@@ -3734,350 +3711,346 @@ export function ChannelMutateDrawer({
                 )}
               />
             )}
+          </fieldset>
+        </div>
 
-            <ChannelAuthSection>
-              {!isEditing && (
-                <FormField
-                  control={form.control}
-                  name='multi_key_mode'
-                  render={({ field }) => (
-                    <FormItem className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                      <FormLabel className='text-muted-foreground text-xs font-medium'>
-                        {t('Add Mode')}
-                      </FormLabel>
-                      <Select
-                        disabled={sensitiveLocked}
-                        items={addModeOptions.map((option) => ({
-                          value: option.value,
-                          label: t(option.label),
-                        }))}
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger size='sm' className='w-full sm:w-56'>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent alignItemWithTrigger={false}>
-                          <SelectGroup>
-                            {addModeOptions.map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={option.value}
-                              >
-                                {t(option.label)}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
+        <fieldset disabled={sensitiveLocked} className='disabled:opacity-60'>
+          <ChannelAuthSection>
+            {!isEditing && (
               <FormField
                 control={form.control}
-                name='key'
-                render={({ field }) => {
-                  let keyPlaceholder = t(getKeyPromptForType(currentType))
-                  if (isEditing) {
-                    keyPlaceholder = t('Leave empty to keep existing key')
-                  } else if (
-                    currentType === 33 &&
-                    awsKeyType === 'api_key' &&
-                    isBatchMode
-                  ) {
-                    keyPlaceholder = t(
-                      'Enter API Key, one per line, format: APIKey|Region'
-                    )
-                  } else if (currentType === 33 && awsKeyType === 'api_key') {
-                    keyPlaceholder = t('Enter API Key, format: APIKey|Region')
-                  } else if (currentType === 33 && isBatchMode) {
-                    keyPlaceholder = t(
-                      'Enter key, one per line, format: AccessKey|SecretAccessKey|Region'
-                    )
-                  } else if (currentType === 33) {
-                    keyPlaceholder = t(
-                      'Enter key, format: AccessKey|SecretAccessKey|Region'
-                    )
-                  } else if (isBatchMode) {
-                    keyPlaceholder = t(
-                      'Enter one key per line for batch creation'
-                    )
-                  }
-
-                  let keyDescription: ReactNode = t(FIELD_DESCRIPTIONS.KEY)
-                  if (isEditing) {
-                    let keyModeDescription = t(
-                      'Append mode: New keys will be added to the end of the existing key list'
-                    )
-                    if (keyMode === 'replace') {
-                      keyModeDescription = t(
-                        'Replace mode: Will completely replace all existing keys'
-                      )
-                    }
-                    keyDescription = (
-                      <>
-                        {t(
-                          'Enter new key to update, or leave empty to keep current key'
-                        )}
-                        {isMultiKeyChannel && (
-                          <span className='text-warning mt-1 block'>
-                            {keyModeDescription}
-                          </span>
-                        )}
-                      </>
-                    )
-                  } else if (isBatchMode) {
-                    keyDescription = t(
-                      'Enter one API key per line for batch creation'
-                    )
-                  }
-                  return (
-                    <FormItem>
-                      <FormLabel required>{t('API Key')}</FormLabel>
+                name='multi_key_mode'
+                render={({ field }) => (
+                  <FormItem className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                    <FormLabel className='text-muted-foreground text-xs font-medium'>
+                      {t('Add Mode')}
+                    </FormLabel>
+                    <Select
+                      disabled={sensitiveLocked}
+                      items={addModeOptions.map((option) => ({
+                        value: option.value,
+                        label: t(option.label),
+                      }))}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
                       <FormControl>
-                        <Textarea
-                          placeholder={keyPlaceholder}
-                          rows={isBatchMode ? 8 : 4}
-                          {...field}
-                        />
+                        <SelectTrigger size='sm' className='w-full sm:w-56'>
+                          <SelectValue />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormDescription>
-                        <span className='flex flex-col gap-2'>
-                          <span>{keyDescription}</span>
-                          {!isEditing && isBatchMode && (
+                      <SelectContent alignItemWithTrigger={false}>
+                        <SelectGroup>
+                          {addModeOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {t(option.label)}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name='key'
+              render={({ field }) => {
+                let keyPlaceholder = t(getKeyPromptForType(currentType))
+                if (isEditing) {
+                  keyPlaceholder = t('Leave empty to keep existing key')
+                } else if (
+                  currentType === 33 &&
+                  awsKeyType === 'api_key' &&
+                  isBatchMode
+                ) {
+                  keyPlaceholder = t(
+                    'Enter API Key, one per line, format: APIKey|Region'
+                  )
+                } else if (currentType === 33 && awsKeyType === 'api_key') {
+                  keyPlaceholder = t('Enter API Key, format: APIKey|Region')
+                } else if (currentType === 33 && isBatchMode) {
+                  keyPlaceholder = t(
+                    'Enter key, one per line, format: AccessKey|SecretAccessKey|Region'
+                  )
+                } else if (currentType === 33) {
+                  keyPlaceholder = t(
+                    'Enter key, format: AccessKey|SecretAccessKey|Region'
+                  )
+                } else if (isBatchMode) {
+                  keyPlaceholder = t(
+                    'Enter one key per line for batch creation'
+                  )
+                }
+
+                let keyDescription: ReactNode = t(FIELD_DESCRIPTIONS.KEY)
+                if (isEditing) {
+                  let keyModeDescription = t(
+                    'Append mode: New keys will be added to the end of the existing key list'
+                  )
+                  if (keyMode === 'replace') {
+                    keyModeDescription = t(
+                      'Replace mode: Will completely replace all existing keys'
+                    )
+                  }
+                  keyDescription = (
+                    <>
+                      {t(
+                        'Enter new key to update, or leave empty to keep current key'
+                      )}
+                      {isMultiKeyChannel && (
+                        <span className='text-warning mt-1 block'>
+                          {keyModeDescription}
+                        </span>
+                      )}
+                    </>
+                  )
+                } else if (isBatchMode) {
+                  keyDescription = t(
+                    'Enter one API key per line for batch creation'
+                  )
+                }
+                return (
+                  <FormItem>
+                    <FormLabel required>{t('API Key')}</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={keyPlaceholder}
+                        rows={isBatchMode ? 8 : 4}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      <span className='flex flex-col gap-2'>
+                        <span>{keyDescription}</span>
+                        {!isEditing && isBatchMode && (
+                          <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={handleDeduplicateKeys}
+                            className='w-fit'
+                          >
+                            <Trash2 className='mr-2 h-4 w-4' />
+                            {t('Remove Duplicates')}
+                          </Button>
+                        )}
+                      </span>
+                    </FormDescription>
+                    {isEditing && canRevealChannelKey && (
+                      <div className='border-border/60 mt-4 flex flex-col gap-3 border-y border-dashed py-4'>
+                        <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                          <div>
+                            <p className='text-sm font-medium'>
+                              {t('Current key')}
+                            </p>
+                            <p className='text-muted-foreground text-xs'>
+                              {t(
+                                'Verification required to reveal the saved key.'
+                              )}
+                            </p>
+                          </div>
+                          <div className='flex items-center gap-2'>
                             <Button
                               type='button'
                               variant='outline'
                               size='sm'
-                              onClick={handleDeduplicateKeys}
-                              className='w-fit'
+                              onClick={handleRevealKey}
+                              disabled={
+                                isChannelKeyLoading || verification.isActive
+                              }
                             >
-                              <Trash2 className='mr-2 h-4 w-4' />
-                              {t('Remove Duplicates')}
+                              {isChannelKeyLoading || verification.isActive ? (
+                                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                              ) : (
+                                <Eye className='mr-2 h-4 w-4' />
+                              )}
+                              {t('Reveal key')}
                             </Button>
+                            <Button
+                              type='button'
+                              variant='ghost'
+                              size='sm'
+                              onClick={async () => {
+                                if (channelKey) {
+                                  await copyToClipboard(channelKey)
+                                }
+                              }}
+                              disabled={!channelKey}
+                            >
+                              <Copy className='mr-2 h-4 w-4' />
+                              {t('Copy')}
+                            </Button>
+                          </div>
+                        </div>
+                        <Input
+                          readOnly
+                          value={channelKey ?? ''}
+                          placeholder={t('Hidden — verify to reveal')}
+                          className='font-mono'
+                        />
+                      </div>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
+            />
+
+            {currentType === 57 && (
+              <div className='border-border/60 flex flex-col gap-3 border-y py-4'>
+                <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+                  <div className='text-muted-foreground text-xs'>
+                    {t(
+                      'Codex channels use an OAuth JSON credential as the key.'
+                    )}
+                  </div>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    {isEditing && channelId && (
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={handleRefreshCodexCredential}
+                        disabled={
+                          sensitiveLocked || isCodexCredentialRefreshing
+                        }
+                      >
+                        {isCodexCredentialRefreshing ? (
+                          <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                        ) : (
+                          <RefreshCw className='mr-2 h-4 w-4' />
+                        )}
+                        {isCodexCredentialRefreshing
+                          ? t('Refreshing...')
+                          : t('Refresh credential')}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <Alert className='border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50'>
+                  <AlertDescription>
+                    {t(
+                      "Disclaimer: Personal use only. Do not distribute or share any credentials. This channel has prerequisites and requires prior setup; use it only if you understand the flow and risks, and comply with OpenAI's terms and policies. Credentials and configuration are for Codex CLI integration only, and are not intended for any other client, platform, or channel."
+                    )}
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+
+            {isEditing && isMultiKeyChannel && (
+              <FormField
+                control={form.control}
+                name='key_mode'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Key Update Mode')}</FormLabel>
+                    <Select
+                      disabled={sensitiveLocked}
+                      items={[
+                        {
+                          value: 'append',
+                          label: t('Append to existing keys'),
+                        },
+                        {
+                          value: 'replace',
+                          label: t('Replace all existing keys'),
+                        },
+                      ]}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent alignItemWithTrigger={false}>
+                        <SelectGroup>
+                          <SelectItem value='append'>
+                            {t('Append to existing keys')}
+                          </SelectItem>
+                          <SelectItem value='replace'>
+                            {t('Replace all existing keys')}
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {field.value === 'replace'
+                        ? t(
+                            'Replace mode: Will completely replace all existing keys'
+                          )
+                        : t(
+                            'Append mode: New keys will be added to the end of the existing key list'
+                          )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {(isMultiKeyChannel ||
+              (!isEditing && multiKeyMode === 'multi_to_single')) && (
+              <FormField
+                control={form.control}
+                name='multi_key_type'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('Multi-Key Strategy')}</FormLabel>
+                    <Select
+                      disabled={sensitiveLocked}
+                      items={[
+                        {
+                          value: 'random',
+                          label: t('Random'),
+                        },
+                        {
+                          value: 'polling',
+                          label: t('Polling'),
+                        },
+                      ]}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent alignItemWithTrigger={false}>
+                        <SelectGroup>
+                          <SelectItem value='random'>{t('Random')}</SelectItem>
+                          <SelectItem value='polling'>
+                            {t('Polling')}
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {multiKeyType === 'polling' ? (
+                        <span className='text-warning'>
+                          {t(
+                            'Polling mode requires Redis and memory cache, otherwise performance will be significantly degraded'
                           )}
                         </span>
-                      </FormDescription>
-                      {isEditing && canRevealChannelKey && (
-                        <div className='border-border/60 mt-4 flex flex-col gap-3 border-y border-dashed py-4'>
-                          <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                            <div>
-                              <p className='text-sm font-medium'>
-                                {t('Current key')}
-                              </p>
-                              <p className='text-muted-foreground text-xs'>
-                                {t(
-                                  'Verification required to reveal the saved key.'
-                                )}
-                              </p>
-                            </div>
-                            <div className='flex items-center gap-2'>
-                              <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={handleRevealKey}
-                                disabled={
-                                  isChannelKeyLoading || verification.isActive
-                                }
-                              >
-                                {isChannelKeyLoading ||
-                                verification.isActive ? (
-                                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                                ) : (
-                                  <Eye className='mr-2 h-4 w-4' />
-                                )}
-                                {t('Reveal key')}
-                              </Button>
-                              <Button
-                                type='button'
-                                variant='ghost'
-                                size='sm'
-                                onClick={async () => {
-                                  if (channelKey) {
-                                    await copyToClipboard(channelKey)
-                                  }
-                                }}
-                                disabled={!channelKey}
-                              >
-                                <Copy className='mr-2 h-4 w-4' />
-                                {t('Copy')}
-                              </Button>
-                            </div>
-                          </div>
-                          <Input
-                            readOnly
-                            value={channelKey ?? ''}
-                            placeholder={t('Hidden — verify to reveal')}
-                            className='font-mono'
-                          />
-                        </div>
+                      ) : (
+                        t(
+                          'Randomly select a key from the pool for each request'
+                        )
                       )}
-                      <FormMessage />
-                    </FormItem>
-                  )
-                }}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-
-              {currentType === 57 && (
-                <div className='border-border/60 flex flex-col gap-3 border-y py-4'>
-                  <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
-                    <div className='text-muted-foreground text-xs'>
-                      {t(
-                        'Codex channels use an OAuth JSON credential as the key.'
-                      )}
-                    </div>
-                    <div className='flex flex-wrap items-center gap-2'>
-                      {isEditing && channelId && (
-                        <Button
-                          type='button'
-                          variant='outline'
-                          size='sm'
-                          onClick={handleRefreshCodexCredential}
-                          disabled={
-                            sensitiveLocked || isCodexCredentialRefreshing
-                          }
-                        >
-                          {isCodexCredentialRefreshing ? (
-                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                          ) : (
-                            <RefreshCw className='mr-2 h-4 w-4' />
-                          )}
-                          {isCodexCredentialRefreshing
-                            ? t('Refreshing...')
-                            : t('Refresh credential')}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  <Alert className='border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50'>
-                    <AlertDescription>
-                      {t(
-                        "Disclaimer: Personal use only. Do not distribute or share any credentials. This channel has prerequisites and requires prior setup; use it only if you understand the flow and risks, and comply with OpenAI's terms and policies. Credentials and configuration are for Codex CLI integration only, and are not intended for any other client, platform, or channel."
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              )}
-
-              {isEditing && isMultiKeyChannel && (
-                <FormField
-                  control={form.control}
-                  name='key_mode'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('Key Update Mode')}</FormLabel>
-                      <Select
-                        disabled={sensitiveLocked}
-                        items={[
-                          {
-                            value: 'append',
-                            label: t('Append to existing keys'),
-                          },
-                          {
-                            value: 'replace',
-                            label: t('Replace all existing keys'),
-                          },
-                        ]}
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent alignItemWithTrigger={false}>
-                          <SelectGroup>
-                            <SelectItem value='append'>
-                              {t('Append to existing keys')}
-                            </SelectItem>
-                            <SelectItem value='replace'>
-                              {t('Replace all existing keys')}
-                            </SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {field.value === 'replace'
-                          ? t(
-                              'Replace mode: Will completely replace all existing keys'
-                            )
-                          : t(
-                              'Append mode: New keys will be added to the end of the existing key list'
-                            )}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {(isMultiKeyChannel ||
-                (!isEditing && multiKeyMode === 'multi_to_single')) && (
-                <FormField
-                  control={form.control}
-                  name='multi_key_type'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('Multi-Key Strategy')}</FormLabel>
-                      <Select
-                        disabled={sensitiveLocked}
-                        items={[
-                          {
-                            value: 'random',
-                            label: t('Random'),
-                          },
-                          {
-                            value: 'polling',
-                            label: t('Polling'),
-                          },
-                        ]}
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent alignItemWithTrigger={false}>
-                          <SelectGroup>
-                            <SelectItem value='random'>
-                              {t('Random')}
-                            </SelectItem>
-                            <SelectItem value='polling'>
-                              {t('Polling')}
-                            </SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {multiKeyType === 'polling' ? (
-                          <span className='text-warning'>
-                            {t(
-                              'Polling mode requires Redis and memory cache, otherwise performance will be significantly degraded'
-                            )}
-                          </span>
-                        ) : (
-                          t(
-                            'Randomly select a key from the pool for each request'
-                          )
-                        )}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </ChannelAuthSection>
-          </fieldset>
-        </div>
+            )}
+          </ChannelAuthSection>
+        </fieldset>
       </ChannelApiAccessSection>
     </div>
   )
@@ -4087,19 +4060,25 @@ export function ChannelMutateDrawer({
     formContent = null
   } else if (isEditing && isChannelError && !channelData?.data) {
     formContent = (
-      <ErrorState
-        title={t('Failed to load channel')}
-        description={getServerErrorMessage(
-          channelError,
-          t('Failed to load channel')
-        )}
-        onRetry={() => {
-          void refetchChannel()
-        }}
-      />
+      <div className='px-5 py-5'>
+        <ErrorState
+          title={t('Failed to load channel')}
+          description={getServerErrorMessage(
+            channelError,
+            t('Failed to load channel')
+          )}
+          onRetry={() => {
+            void refetchChannel()
+          }}
+        />
+      </div>
     )
   } else if (isChannelDetailLoading) {
-    formContent = <ChannelEditorLoadingState />
+    formContent = (
+      <div className='px-5 py-5'>
+        <ChannelEditorLoadingState />
+      </div>
+    )
   } else {
     formContent = (
       <ChannelConfiguration
@@ -4125,25 +4104,23 @@ export function ChannelMutateDrawer({
             <div
               role='group'
               aria-label={t('Request processing')}
-              className={channelConfigurationBlockClassName(
-                configuration.blocks.requestProcessing,
-                'space-y-4'
-              )}
+              className='flex flex-col gap-4'
             >
               <CardHeading
                 status={configuration.blocks.requestProcessing}
                 title={t('Request processing')}
-                icon={<Settings className='size-4' />}
               />
               <fieldset
                 disabled={sensitiveLocked}
-                className='space-y-4 disabled:opacity-60'
+                className='flex flex-col gap-4 disabled:opacity-60'
               >
                 {formatFields}
                 {thinkingFields}
                 {passthroughFields}
-                {systemPromptFields}
-                {systemPromptOverrideFields}
+                <div className={CHANNEL_NESTED_CARD_CLASS_NAME}>
+                  {systemPromptFields}
+                  {systemPromptOverrideFields}
+                </div>
               </fieldset>
             </div>
             {fieldPassthroughFields}
@@ -4154,24 +4131,22 @@ export function ChannelMutateDrawer({
             <div
               role='group'
               aria-label={t('Channel Extra Settings')}
-              className={channelConfigurationBlockClassName(
-                configuration.blocks.extraSettings,
-                'space-y-4'
-              )}
+              className='flex flex-col gap-4'
             >
               <CardHeading
                 status={configuration.blocks.extraSettings}
                 title={t('Channel Extra Settings')}
-                icon={<Settings className='size-4' />}
               />
               <fieldset
                 disabled={sensitiveLocked}
-                className='space-y-4 disabled:opacity-60'
+                className='flex flex-col gap-4 disabled:opacity-60'
               >
                 {taskPollingFields}
-                {proxyFields}
-                {httpProtocolFields}
-                {httpShardsFields}
+                <div className={CHANNEL_NESTED_CARD_CLASS_NAME}>
+                  {proxyFields}
+                  {httpProtocolFields}
+                  {httpShardsFields}
+                </div>
               </fieldset>
             </div>
             {upstreamModelDetectionFields}
@@ -4181,17 +4156,27 @@ export function ChannelMutateDrawer({
       />
     )
   }
+  let headerSubtitle = providerLabel
+  if (showProviderPicker && !providerTarget) {
+    headerSubtitle = ''
+  } else if (!showProviderPicker && isEditing) {
+    headerSubtitle = formValues.name || channelData?.data?.name || providerLabel
+  }
   let description = t(
     'Configure the connection and models, then create the channel.'
   )
-  if (showProviderPicker && providerTarget) {
-    description = `${t('Current:')} ${providerLabel}`
+  if (showProviderPicker) {
+    description = t('Choose a provider or plugin to configure your channel.')
   } else if (isEditing) {
     description = t(
       "Update channel configuration and click save when you're done."
     )
-  } else if (showProviderPicker) {
-    description = t('Choose a provider or plugin to configure your channel.')
+  }
+  let submitLabel = t('Create Channel')
+  if (isSubmitting) {
+    submitLabel = t('Saving...')
+  } else if (isEditing) {
+    submitLabel = t('Update Channel')
   }
 
   return (
@@ -4199,104 +4184,59 @@ export function ChannelMutateDrawer({
       <Sheet open={open} onOpenChange={handleOpenChange}>
         <SheetContent
           side={drawerSide}
-          className={sideDrawerContentClassName('sm:max-w-7xl')}
+          className={sideDrawerContentClassName(
+            showProviderPicker
+              ? 'max-w-none sm:!max-w-5xl'
+              : 'max-w-none sm:!max-w-[640px]'
+          )}
         >
-          <SheetHeader className={sideDrawerHeaderClassName('pr-12 sm:pr-14')}>
-            <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
-              <div className='min-w-0 flex-1'>
-                <div className='flex min-w-0 items-center gap-2 sm:gap-3'>
-                  <SheetTitle className='flex shrink-0 items-center gap-2 sm:gap-3'>
-                    <IconBadge tone='info' size='title'>
-                      <Server className='size-5' />
-                    </IconBadge>
-                    <span>
-                      {isEditing ? t('Edit Channel') : t('Create Channel')}
+          <SheetHeader
+            className={sideDrawerHeaderClassName(
+              CHANNEL_DRAWER_HEADER_CLASS_NAME
+            )}
+          >
+            <IconBadge
+              size='lg'
+              className='rounded-full bg-[#c4f82a] text-[#28350a]'
+            >
+              <Server />
+            </IconBadge>
+            <div className='min-w-0 flex-1 pr-6'>
+              <SheetTitle className='text-lg font-semibold tracking-tight sm:text-xl'>
+                {isEditing ? t('Edit Channel') : t('Create Channel')}
+              </SheetTitle>
+              <SheetDescription className='mt-1 text-xs leading-5'>
+                {headerSubtitle ? (
+                  <>
+                    <span className='text-foreground/80 inline-flex max-w-full items-center gap-2 font-medium'>
+                      <span className='truncate'>{headerSubtitle}</span>
+                      {isEditing && channelData?.data && (
+                        <Badge variant='secondary' className='font-normal'>
+                          {t(
+                            CHANNEL_STATUS_LABELS[
+                              currentStatus as keyof typeof CHANNEL_STATUS_LABELS
+                            ] || 'Unknown'
+                          )}
+                        </Badge>
+                      )}
                     </span>
-                  </SheetTitle>
-                  {(!showProviderPicker || providerTarget) && (
-                    <Button
-                      ref={providerControlRef}
-                      type='button'
-                      variant='outline'
-                      aria-label={
-                        showProviderPicker
-                          ? t('Back to configuration')
-                          : t('Change provider')
-                      }
-                      aria-description={providerLabel}
-                      title={providerLabel}
-                      className='min-w-0 shrink gap-2 sm:max-w-md'
-                      disabled={
-                        isSubmitting ||
-                        (!showProviderPicker &&
-                          (!canEditSensitive ||
-                            (isEditing && !channelData?.data)))
-                      }
-                      onClick={() => setChoosingProvider(!showProviderPicker)}
-                    >
-                      {showProviderPicker ? (
-                        <>
-                          <ArrowLeft className='size-4' aria-hidden='true' />
-                          <span className='shrink-0 sm:hidden'>
-                            {t('Back')}
-                          </span>
-                          <span className='hidden shrink-0 sm:inline'>
-                            {t('Back to configuration')}
-                          </span>
-                        </>
-                      ) : (
-                        <ChannelTypeLogo
-                          type={currentType}
-                          plugin={boundTaskPlugin}
-                          size={18}
-                        />
-                      )}
-                      <span className='min-w-0 truncate'>{providerLabel}</span>
-                      {!showProviderPicker && (
-                        <>
-                          <span className='hidden shrink-0 sm:inline'>
-                            {t('Change provider')}
-                          </span>
-                          <ChevronDown className='size-4' aria-hidden='true' />
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-                {isEditing && channelData?.data && (
-                  <Badge variant='secondary' className='mt-2'>
-                    {t(
-                      CHANNEL_STATUS_LABELS[
-                        currentStatus as keyof typeof CHANNEL_STATUS_LABELS
-                      ] || 'Unknown'
-                    )}
-                  </Badge>
+                    <span className='mt-0.5 block'>{description}</span>
+                  </>
+                ) : (
+                  description
                 )}
-                <TooltipHint content={
-                    showProviderPicker && providerTarget
-                      ? description
-                      : undefined
-                  }>
-                  <SheetDescription
-                    className={cn(
-                      'mt-1',
-                      showProviderPicker && providerTarget && 'truncate'
-                    )}
-                  >
-                    {description}
-                  </SheetDescription>
-                </TooltipHint>
-              </div>
-              {!isEditing && !showProviderPicker && (
+              </SheetDescription>
+              {showProviderPicker && providerTarget && (
                 <Button
                   type='button'
                   variant='outline'
                   size='sm'
-                  className='shrink-0'
-                  onClick={pasteConnectionInfoFromClipboard}
+                  className='mt-3 h-9 rounded-xl'
+                  disabled={isSubmitting}
+                  onClick={() => setChoosingProvider(false)}
                 >
-                  <ClipboardPaste className='size-4' />
-                  <span>{t('Paste Connection Info')}</span>
+                  <ArrowLeft className='size-4' aria-hidden='true' />
+                  {t('Back to configuration')}
                 </Button>
               )}
             </div>
@@ -4319,7 +4259,7 @@ export function ChannelMutateDrawer({
           )}
 
           {sensitiveLocked && (
-            <Alert className='border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50'>
+            <Alert className='mx-5 mt-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50'>
               <AlertDescription>
                 {t(
                   'Sensitive channel settings are read-only for your account.'
@@ -4332,7 +4272,7 @@ export function ChannelMutateDrawer({
           )}
 
           {!isEditing && !showProviderPicker && clipboardConnectionInfo && (
-            <Alert>
+            <Alert className='mx-5 mt-4'>
               <AlertDescription className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
                 <span>{t('Connection info detected in clipboard')}</span>
                 <span className='flex shrink-0 gap-2'>
@@ -4363,7 +4303,8 @@ export function ChannelMutateDrawer({
               onSubmit={form.handleSubmit(onSubmit, onInvalid)}
               className={sideDrawerFormClassName(
                 cn(
-                  'gap-5',
+                  CHANNEL_DRAWER_FORM_CONTROL_CLASS_NAME,
+                  'gap-0 px-0 py-0',
                   (!isEditing ||
                     (!isChannelDetailLoading && channelData?.data)) &&
                     'overflow-hidden',
@@ -4376,25 +4317,36 @@ export function ChannelMutateDrawer({
             </form>
           </Form>
 
-          <SheetFooter className={sideDrawerFooterClassName()}>
+          <SheetFooter className={sideDrawerFooterClassName('px-5')}>
             {showProviderPicker && providerTarget ? (
               <Button
                 type='button'
                 variant='outline'
+                className='h-9 w-full sm:w-auto sm:min-w-24'
                 disabled={isSubmitting}
                 onClick={() => setChoosingProvider(false)}
               >
-                {t('Cancel')}
+                {t('Back to configuration')}
               </Button>
             ) : (
-              <SheetClose
-                render={<Button variant='outline' disabled={isSubmitting} />}
+              <Button
+                type='button'
+                variant='outline'
+                className='h-9 w-full sm:w-auto sm:min-w-24'
+                disabled={isSubmitting}
+                onClick={() => {
+                  if (isSubmitting) return
+                  onOpenChange(false)
+                  form.reset(CHANNEL_FORM_DEFAULT_VALUES)
+                  setClipboardConnectionInfo(null)
+                }}
               >
-                {t('Cancel')}
-              </SheetClose>
+                {t('Close')}
+              </Button>
             )}
             {!showProviderPicker && (
               <Button
+                shine
                 form='channel-form'
                 type='submit'
                 disabled={
@@ -4402,11 +4354,10 @@ export function ChannelMutateDrawer({
                   (!isEditing && !canEditSensitive) ||
                   (isEditing && !channelData?.data)
                 }
+                className='h-9 w-full sm:w-auto sm:min-w-28'
               >
-                {isSubmitting && (
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                )}
-                {isEditing ? t('Update Channel') : t('Create Channel')}
+                <Check data-icon='inline-start' />
+                {submitLabel}
               </Button>
             )}
           </SheetFooter>
@@ -4427,31 +4378,35 @@ export function ChannelMutateDrawer({
       )}
 
       {paramOverrideEditorOpen && !sensitiveLocked && (
-        <ParamOverrideEditorDialog
-          open={paramOverrideEditorOpen}
-          value={formValues.param_override || ''}
-          onOpenChange={setParamOverrideEditorOpen}
-          onSave={(nextValue) => {
-            form.setValue('param_override', nextValue, {
-              shouldDirty: true,
-              shouldValidate: true,
-            })
-          }}
-        />
+        <Suspense fallback={null}>
+          <ParamOverrideEditorDialog
+            open={paramOverrideEditorOpen}
+            value={formValues.param_override || ''}
+            onOpenChange={setParamOverrideEditorOpen}
+            onSave={(nextValue) => {
+              form.setValue('param_override', nextValue, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }}
+          />
+        </Suspense>
       )}
 
       {advancedCustomEditorOpen && !sensitiveLocked && (
-        <AdvancedCustomEditorDialog
-          open={advancedCustomEditorOpen}
-          value={formValues.advanced_custom || ''}
-          onOpenChange={setAdvancedCustomEditorOpen}
-          onSave={(nextValue) => {
-            form.setValue('advanced_custom', nextValue, {
-              shouldDirty: true,
-              shouldValidate: true,
-            })
-          }}
-        />
+        <Suspense fallback={null}>
+          <AdvancedCustomEditorDialog
+            open={advancedCustomEditorOpen}
+            value={formValues.advanced_custom || ''}
+            onOpenChange={setAdvancedCustomEditorOpen}
+            onSave={(nextValue) => {
+              form.setValue('advanced_custom', nextValue, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }}
+          />
+        </Suspense>
       )}
 
       <SecureVerificationDialog {...verification.dialogProps} />

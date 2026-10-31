@@ -40,6 +40,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from '@/components/ui/empty'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 import {
@@ -47,7 +48,6 @@ import {
   type ApiKeyGroupOption,
 } from './api-key-group-combobox'
 import { GroupRatioBadge } from './auto-group-visuals'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 type AutoGroupOrderEditorProps = Omit<ComponentProps<'div'>, 'onChange'> & {
   value: string[]

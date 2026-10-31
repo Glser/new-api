@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useMemo, useState } from 'react'
 
 import type {
   Model,
@@ -94,27 +94,36 @@ export function ModelsProvider({ children }: { children: React.ReactNode }) {
   })
   const [tabCategory, setTabCategory] = useState<ModelTabCategory>('metadata')
 
+  const value = useMemo(
+    () => ({
+      open,
+      setOpen,
+      currentRow,
+      setCurrentRow,
+      currentVendor,
+      setCurrentVendor,
+      selectedVendor,
+      setSelectedVendor,
+      descriptionData,
+      setDescriptionData,
+      syncWizardOptions,
+      setSyncWizardOptions,
+      tabCategory,
+      setTabCategory,
+    }),
+    [
+      open,
+      currentRow,
+      currentVendor,
+      selectedVendor,
+      descriptionData,
+      syncWizardOptions,
+      tabCategory,
+    ]
+  )
+
   return (
-    <ModelsContext.Provider
-      value={{
-        open,
-        setOpen,
-        currentRow,
-        setCurrentRow,
-        currentVendor,
-        setCurrentVendor,
-        selectedVendor,
-        setSelectedVendor,
-        descriptionData,
-        setDescriptionData,
-        syncWizardOptions,
-        setSyncWizardOptions,
-        tabCategory,
-        setTabCategory,
-      }}
-    >
-      {children}
-    </ModelsContext.Provider>
+    <ModelsContext.Provider value={value}>{children}</ModelsContext.Provider>
   )
 }
 

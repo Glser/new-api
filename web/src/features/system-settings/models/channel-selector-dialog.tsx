@@ -39,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { useDebounce } from '@/hooks/use-debounce'
 
 import type { UpstreamChannel } from '../types'
@@ -50,7 +51,6 @@ import {
   OFFICIAL_CHANNEL_ID,
 } from './constants'
 import { getUpstreamDisplayName } from './upstream-ratio-sync-helpers'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 type ChannelSelectorDialogProps = {
   open: boolean
@@ -181,9 +181,7 @@ export function ChannelSelectorDialog({
           const url = row.getValue('base_url') as string
           return (
             <TooltipHint content={url}>
-              <span
-                className='text-muted-foreground block max-w-xs truncate font-mono text-xs'
-              >
+              <span className='text-muted-foreground block max-w-xs truncate font-mono text-xs'>
                 {url}
               </span>
             </TooltipHint>

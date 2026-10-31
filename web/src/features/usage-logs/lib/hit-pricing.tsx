@@ -44,10 +44,28 @@ export type HitPriceDisplayPart = {
   key: string
   labelKey: string
   price: number
+  minPrice?: number
+  maxPrice?: number
+  /** When true, `labelKey` is shown as-is instead of being passed through `t()`. */
+  rawLabel?: boolean
 }
 
 export function formatUsdAmount(price: number): string {
   return formatBillingCurrencyFromUSD(price, PRICE_FORMAT_OPTS)
+}
+
+export function formatHitPriceAmount(
+  part: HitPriceDisplayPart,
+  ratio: number
+): string {
+  if (
+    part.minPrice != null &&
+    part.maxPrice != null &&
+    part.minPrice !== part.maxPrice
+  ) {
+    return `${formatUsdAmount(part.minPrice * ratio)} – ${formatUsdAmount(part.maxPrice * ratio)}`
+  }
+  return formatUsdAmount(part.price * ratio)
 }
 
 export function getHitPriceRatio(other: LogOtherData | null): number {
@@ -236,11 +254,13 @@ export function HitPriceConfig(props: {
 
   const prices =
     props.displayParts ??
-    props.parts.map((part) => ({
-      key: part.kind,
-      labelKey: HIT_PRICE_LABELS[part.kind],
-      price: part.price,
-    }))
+    props.parts.map(
+      (part): HitPriceDisplayPart => ({
+        key: part.kind,
+        labelKey: HIT_PRICE_LABELS[part.kind],
+        price: part.price,
+      })
+    )
 
   return (
     <span
@@ -251,7 +271,8 @@ export function HitPriceConfig(props: {
     >
       {prices.map((part) => (
         <span key={part.key} className='tabular-nums'>
-          {t(part.labelKey)} {formatUsdAmount(part.price * ratio)}
+          {part.rawLabel ? part.labelKey : t(part.labelKey)}{' '}
+          {formatHitPriceAmount(part, ratio)}
         </span>
       ))}
       {props.perCall || prices.length === 0 ? null : (

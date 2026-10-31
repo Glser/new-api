@@ -1277,7 +1277,8 @@ function ProviderGroupPricingSection(
                   id: 'ratio',
                   header: t('Group discount'),
                   className: cn(thClass, 'text-center'),
-                  cellClassName: 'text-muted-foreground py-2.5 text-center font-mono',
+                  cellClassName:
+                    'text-muted-foreground py-2.5 text-center font-mono',
                   cell: (group: string) => (
                     <PriceRatioBadge
                       groupRatio={getConfiguredGroupRatio(

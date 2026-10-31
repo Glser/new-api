@@ -20,24 +20,28 @@ import { useRouterState } from '@tanstack/react-router'
 import { useEffect, useRef } from 'react'
 import LoadingBar, { type LoadingBarRef } from 'react-top-loading-bar'
 
+const PENDING_BAR_DELAY_MS = 200
+
 export function NavigationProgress() {
   const ref = useRef<LoadingBarRef>(null)
-  const state = useRouterState()
+  const started = useRef(false)
+  const status = useRouterState({ select: (s) => s.status })
 
   useEffect(() => {
-    if (state.status === 'pending') {
-      ref.current?.continuousStart()
-    } else {
+    if (status === 'pending') {
+      const timer = window.setTimeout(() => {
+        started.current = true
+        ref.current?.continuousStart()
+      }, PENDING_BAR_DELAY_MS)
+      return () => window.clearTimeout(timer)
+    }
+    if (started.current) {
+      started.current = false
       ref.current?.complete()
     }
-  }, [state.status])
+  }, [status])
 
   return (
-    <LoadingBar
-      color='var(--muted-foreground)'
-      ref={ref}
-      shadow
-      height={2}
-    />
+    <LoadingBar color='var(--muted-foreground)' ref={ref} shadow height={2} />
   )
 }

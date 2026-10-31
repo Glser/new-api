@@ -40,7 +40,9 @@ function KpiValue(props: {
   className?: string
 }) {
   if (props.loading) {
-    return <Skeleton className='mt-2 h-8 w-24 @min-[48rem]/console:mt-3 @min-[48rem]/console:h-10 @min-[48rem]/console:w-28' />
+    return (
+      <Skeleton className='mt-2 h-8 w-24 @min-[48rem]/console:mt-3 @min-[48rem]/console:h-10 @min-[48rem]/console:w-28' />
+    )
   }
   return (
     <div
@@ -73,7 +75,10 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
           <div className='text-muted-foreground text-[11px] font-medium @min-[48rem]/console:text-xs'>
             {t('Current Balance')}
           </div>
-          <KpiValue loading={props.loading} value={formatQuota(props.balance)} />
+          <KpiValue
+            loading={props.loading}
+            value={formatQuota(props.balance)}
+          />
           <KpiMeta
             detail={
               <Link
@@ -95,7 +100,13 @@ export function UserConsoleKpi(props: UserConsoleKpiProps) {
             {props.spendTitle}
           </div>
           <KpiValue loading={props.loading} value={formatQuota(props.spend)} />
-          <KpiMeta detail={<p className='text-muted-foreground truncate text-[11px] @min-[48rem]/console:text-xs'>{t('API usage for the selected range')}</p>} />
+          <KpiMeta
+            detail={
+              <p className='text-muted-foreground truncate text-[11px] @min-[48rem]/console:text-xs'>
+                {t('API usage for the selected range')}
+              </p>
+            }
+          />
         </div>
 
         <div className='min-w-0 border-b px-3 py-4 @min-[32rem]/console:border-r @min-[32rem]/console:border-b-0 @min-[48rem]/console:px-5 @min-[48rem]/console:py-6'>

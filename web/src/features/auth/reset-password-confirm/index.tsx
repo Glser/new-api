@@ -118,7 +118,7 @@ export function ResetPasswordConfirm({
       <AuthCardHeading title={t('Reset password')} />
 
       <div className='grid gap-4'>
-        <p className='pl-2 text-xs leading-relaxed text-muted-foreground sm:text-sm'>
+        <p className='text-muted-foreground pl-2 text-xs leading-relaxed sm:text-sm'>
           {newPassword
             ? t('auth.resetPasswordConfirm.success')
             : t('auth.resetPasswordConfirm.description')}
@@ -154,7 +154,7 @@ export function ResetPasswordConfirm({
               />
               <button
                 type='button'
-                className='absolute right-2.5 flex size-7 items-center justify-center rounded-lg text-muted-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground'
+                className='text-muted-foreground/80 hover:bg-muted/80 hover:text-foreground absolute right-2.5 flex size-7 items-center justify-center rounded-lg transition-colors'
                 onClick={handleCopy}
                 aria-label={t('Copy')}
               >
@@ -165,17 +165,17 @@ export function ResetPasswordConfirm({
                 )}
               </button>
             </AuthIconField>
-            <p className='text-xs text-muted-foreground'>
+            <p className='text-muted-foreground text-xs'>
               {t('Password has been copied to clipboard')}
             </p>
           </div>
         )}
 
         {!newPassword && (
-          <p className='pr-3 text-right text-xs text-muted-foreground'>
+          <p className='text-muted-foreground pr-3 text-right text-xs'>
             <Link
               to='/sign-in'
-              className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
+              className='text-foreground hover:text-foreground/70 font-semibold underline underline-offset-4'
             >
               {t('Back to login')}
             </Link>
@@ -200,9 +200,7 @@ export function ResetPasswordConfirm({
             t('auth.resetPasswordConfirm.retry', {
               seconds: secondsLeft,
             })}
-          {!newPassword &&
-            !isActive &&
-            t('auth.resetPasswordConfirm.confirm')}
+          {!newPassword && !isActive && t('auth.resetPasswordConfirm.confirm')}
         </AuthSubmitButton>
       </div>
     </>

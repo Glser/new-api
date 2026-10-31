@@ -39,12 +39,18 @@ import '@xyflow/react/dist/style.css'
 import '../topology-flow.css'
 
 import { useFlashingIds } from '../hooks/use-topology-traffic'
-import { applyAutoLayout, collectPositions } from '../lib/layout'
-import type {
-  TopologyEdge,
-  TopologyLayout,
-  TopologyNode,
-  TopologyViewport,
+import {
+  INITIAL_CANVAS_ZOOM,
+  applyAutoLayout,
+  collectPositions,
+  getInitialViewNodes,
+} from '../lib/layout'
+import {
+  TOPOLOGY_LAYOUT_VERSION,
+  type TopologyEdge,
+  type TopologyLayout,
+  type TopologyNode,
+  type TopologyViewport,
 } from '../types'
 import {
   TopologyChannelNode,
@@ -103,6 +109,10 @@ function mergeGraphNodes(
       ...node,
       position: previous.position,
       selected: previous.selected,
+      dragging: previous.dragging,
+      width: previous.width,
+      height: previous.height,
+      measured: previous.measured,
     }
   })
 }
@@ -113,6 +123,10 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
     TopologyEdge
   > | null>(null)
   const fittedRef = useRef(false)
+  const viewportReadyRef = useRef(false)
+  const migratedRef = useRef(
+    (props.layout.version ?? 1) >= TOPOLOGY_LAYOUT_VERSION
+  )
   const relayoutSeenRef = useRef(0)
   const onLayoutChangeRef = useRef(props.onLayoutChange)
   const onConnectRef = useRef(props.onConnect)
@@ -126,32 +140,91 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   canWriteRef.current = props.canWrite
 
   const flashingIds = useFlashingIds()
+  const draggingRef = useRef(false)
   const [nodes, setNodes] = useState<TopologyNode[]>(props.graphNodes)
   const [edges, setEdges] = useState<TopologyEdge[]>(props.graphEdges)
 
   useEffect(() => {
+    if (draggingRef.current) return
     setNodes((current) => mergeGraphNodes(current, props.graphNodes))
-    setEdges(applyEdgeFlash(props.graphEdges, flashingIds))
-  }, [flashingIds, props.graphEdges, props.graphNodes])
+  }, [props.graphNodes])
 
   useEffect(() => {
-    if (fittedRef.current) return
+    setEdges(applyEdgeFlash(props.graphEdges, flashingIds))
+  }, [flashingIds, props.graphEdges])
+
+  useEffect(() => {
     if (props.graphNodes.length === 0) return
+    const staleLayout =
+      !migratedRef.current &&
+      (props.layout.version ?? 1) < TOPOLOGY_LAYOUT_VERSION
+    if (staleLayout) {
+      migratedRef.current = true
+      setNodes((current) => {
+        const next = applyAutoLayout(
+          current.length > 0 ? current : props.graphNodes
+        )
+        onLayoutChangeRef.current({
+          version: TOPOLOGY_LAYOUT_VERSION,
+          positions: collectPositions(next),
+        })
+        return next
+      })
+    }
+
+    if (fittedRef.current && !staleLayout) return
+    fittedRef.current = true
     const viewport = props.layout.viewport
-    const hasSaved = Object.keys(props.layout.positions).length > 0
-    window.setTimeout(() => {
-      if (hasSaved && viewport) {
-        instanceRef.current?.setViewport({
+    const hasSavedViewport =
+      !staleLayout &&
+      Object.keys(props.layout.positions).length > 0 &&
+      viewport != null &&
+      Number.isFinite(viewport.zoom)
+    let cancelled = false
+    let retryTimer: number | undefined
+    const applyViewport = (attempt = 0) => {
+      if (cancelled) return
+      const instance = instanceRef.current
+      const pane = document.querySelector('.topology-flow .react-flow')
+      const height = pane?.getBoundingClientRect().height ?? 0
+      if (!instance || height < 80) {
+        if (attempt < 40) {
+          retryTimer = window.setTimeout(() => applyViewport(attempt + 1), 50)
+        }
+        return
+      }
+      if (hasSavedViewport) {
+        instance.setViewport({
           x: viewport.x ?? 0,
           y: viewport.y ?? 0,
-          zoom: viewport.zoom ?? 1,
+          zoom: viewport.zoom ?? INITIAL_CANVAS_ZOOM,
         })
-      } else {
-        instanceRef.current?.fitView({ padding: 0.18, duration: 200 })
+        viewportReadyRef.current = true
+        return
       }
-    }, 50)
-    fittedRef.current = true
-  }, [props.graphNodes.length, props.layout.positions, props.layout.viewport])
+      const currentNodes = instance.getNodes() as TopologyNode[]
+      const fitNodes = currentNodes.length > 0 ? currentNodes : props.graphNodes
+      void instance
+        .fitView({
+          nodes: getInitialViewNodes(fitNodes),
+          padding: 0.1,
+          minZoom: 0.7,
+          maxZoom: 0.8,
+          duration: 220,
+        })
+        .then(() => {
+          if (cancelled) return
+          viewportReadyRef.current = true
+          onLayoutChangeRef.current({ viewport: instance.getViewport() })
+        })
+    }
+    const timer = window.setTimeout(() => applyViewport(), 80)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+      if (retryTimer != null) window.clearTimeout(retryTimer)
+    }
+  }, [props.graphNodes, props.layout])
 
   useEffect(() => {
     if (props.relayoutVersion === 0) return
@@ -185,7 +258,12 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
       return onDeleteEdgesRef.current(deletedEdges)
     }, [])
 
+  const handleNodeDragStart = useCallback(() => {
+    draggingRef.current = true
+  }, [])
+
   const handleNodeDragStop = useCallback(() => {
+    draggingRef.current = false
     const current = instanceRef.current?.getNodes() ?? []
     onLayoutChangeRef.current({
       positions: collectPositions(current as TopologyNode[]),
@@ -194,6 +272,8 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
 
   const handleMoveEnd = useCallback(
     (_event: unknown, viewport: TopologyViewport) => {
+      if (!viewportReadyRef.current) return
+      if (!Number.isFinite(viewport.zoom) || viewport.zoom <= 0) return
       onLayoutChangeRef.current({ viewport })
     },
     []
@@ -212,13 +292,18 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         onEdgesChange={onEdgesChange}
         onConnect={handleConnect}
         onBeforeDelete={handleBeforeDelete}
+        onNodeDragStart={handleNodeDragStart}
         onNodeDragStop={handleNodeDragStop}
+        autoPanOnNodeDrag={false}
+        nodeDragThreshold={2}
         onMoveEnd={handleMoveEnd}
         onNodeClick={(event, node) => {
           const target = event.target
           if (
             target instanceof HTMLElement &&
-            target.closest('[data-topology-action]')
+            target.closest(
+              'button,input,textarea,a,[role="combobox"],[role="menuitem"],[data-slot="dropdown-menu-trigger"],[data-topology-action]'
+            )
           ) {
             return
           }
@@ -234,6 +319,7 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         proOptions={{ hideAttribution: true }}
         minZoom={0.2}
         maxZoom={1.6}
+        defaultViewport={{ x: 48, y: 36, zoom: INITIAL_CANVAS_ZOOM }}
         connectionLineStyle={{ stroke: '#8b5cf6', strokeWidth: 1.6 }}
         defaultEdgeOptions={{
           type: 'default',
@@ -243,7 +329,7 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
       >
         <Background
           variant={BackgroundVariant.Dots}
-          gap={28}
+          gap={32}
           size={1}
           className='opacity-30'
         />

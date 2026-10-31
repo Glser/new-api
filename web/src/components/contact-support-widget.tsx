@@ -17,15 +17,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useRouterState } from '@tanstack/react-router'
-import { useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+  type PointerEvent,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useTheme } from '@/context/theme-provider'
 import { useStatus } from '@/hooks/use-status'
-import {
-  loadEmotionBall,
-  type EmotionBallInstance,
-} from '@/lib/emotion-ball'
+import { loadEmotionBall, type EmotionBallInstance } from '@/lib/emotion-ball'
 
 const CONTACT_SUPPORT_IMAGE_SRC =
   'https://api.oioi.lat/uploads/wx.jpg?v=20260903'
@@ -303,8 +307,18 @@ export function ContactSupportWidget() {
       }
       if (!rect.width || !rect.height) return
 
-      const nx = clamp((event.clientX - (rect.left + rect.width / 2)) / rect.width, -0.6, 0.6) / 0.6
-      const ny = clamp((event.clientY - (rect.top + rect.height / 2)) / rect.height, -0.6, 0.6) / 0.6
+      const nx =
+        clamp(
+          (event.clientX - (rect.left + rect.width / 2)) / rect.width,
+          -0.6,
+          0.6
+        ) / 0.6
+      const ny =
+        clamp(
+          (event.clientY - (rect.top + rect.height / 2)) / rect.height,
+          -0.6,
+          0.6
+        ) / 0.6
       ball.setGaze(nx, ny)
     }
 
@@ -395,7 +409,12 @@ export function ContactSupportWidget() {
   return (
     <div
       className='fixed z-40'
-      style={{ left: position.x, top: position.y, width: BUTTON_SIZE, height: BUTTON_SIZE }}
+      style={{
+        left: position.x,
+        top: position.y,
+        width: BUTTON_SIZE,
+        height: BUTTON_SIZE,
+      }}
     >
       {!open && (
         <div
@@ -411,7 +430,7 @@ export function ContactSupportWidget() {
       )}
       <button
         type='button'
-        className={`pointer-events-auto overflow-visible touch-none rounded-full border-0 bg-transparent p-0 shadow-none transition-transform select-none hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`pointer-events-auto touch-none overflow-visible rounded-full border-0 bg-transparent p-0 shadow-none transition-transform select-none hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
         aria-label={t('Contact Support')}
         aria-expanded={open}

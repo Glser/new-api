@@ -109,9 +109,7 @@ export function UserAuthForm({
   const requiresLegalConsent = hasUserAgreement || hasPrivacyPolicy
   const agreedToLegal = !requiresLegalConsent || legalConsentChecked
   const passkeyButtonDisabled =
-    isPasskeyLoading ||
-    !passkeySupported ||
-    !agreedToLegal
+    isPasskeyLoading || !passkeySupported || !agreedToLegal
   const hasWeChatLogin = Boolean(status?.wechat_login)
   const hasOAuthLogin = Boolean(
     status?.github_oauth ||
@@ -355,8 +353,11 @@ export function UserAuthForm({
                   <FormLabel className='sr-only'>
                     {t('Username or Email')}
                   </FormLabel>
-                  <div data-slot='auth-field' className='group relative flex items-center overflow-hidden rounded-xl border border-border/70 bg-transparent shadow-2xs transition-all duration-200 focus-within:border-foreground/40 focus-within:ring-3 focus-within:ring-foreground/8 hover:border-foreground/25'>
-                    <span className='pointer-events-none flex size-11 shrink-0 items-center justify-center text-muted-foreground transition-colors group-focus-within:text-foreground'>
+                  <div
+                    data-slot='auth-field'
+                    className='group border-border/70 focus-within:border-foreground/40 focus-within:ring-foreground/8 hover:border-foreground/25 relative flex items-center overflow-hidden rounded-xl border bg-transparent shadow-2xs transition-all duration-200 focus-within:ring-3'
+                  >
+                    <span className='text-muted-foreground group-focus-within:text-foreground pointer-events-none flex size-11 shrink-0 items-center justify-center transition-colors'>
                       <User className='size-4.5' aria-hidden />
                     </span>
                     <FormControl className='min-w-0 flex-1'>
@@ -381,8 +382,11 @@ export function UserAuthForm({
               render={({ field }) => (
                 <FormItem className='space-y-1.5'>
                   <FormLabel className='sr-only'>{t('Password')}</FormLabel>
-                  <div data-slot='auth-field' className='group relative flex items-center overflow-hidden rounded-xl border border-border/70 bg-transparent shadow-2xs transition-all duration-200 focus-within:border-foreground/40 focus-within:ring-3 focus-within:ring-foreground/8 hover:border-foreground/25'>
-                    <span className='pointer-events-none flex size-11 shrink-0 items-center justify-center text-muted-foreground transition-colors group-focus-within:text-foreground'>
+                  <div
+                    data-slot='auth-field'
+                    className='group border-border/70 focus-within:border-foreground/40 focus-within:ring-foreground/8 hover:border-foreground/25 relative flex items-center overflow-hidden rounded-xl border bg-transparent shadow-2xs transition-all duration-200 focus-within:ring-3'
+                  >
+                    <span className='text-muted-foreground group-focus-within:text-foreground pointer-events-none flex size-11 shrink-0 items-center justify-center transition-colors'>
                       <Lock className='size-4.5' aria-hidden />
                     </span>
                     <FormControl className='min-w-0 flex-1'>
@@ -397,12 +401,10 @@ export function UserAuthForm({
                     <button
                       type='button'
                       tabIndex={-1}
-                      className='absolute right-2.5 flex size-7 items-center justify-center rounded-lg text-muted-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground active:scale-95'
+                      className='text-muted-foreground/80 hover:bg-muted/80 hover:text-foreground absolute right-2.5 flex size-7 items-center justify-center rounded-lg transition-colors active:scale-95'
                       onClick={() => setShowPassword((prev) => !prev)}
                       aria-label={
-                        showPassword
-                          ? t('Hide password')
-                          : t('Show password')
+                        showPassword ? t('Hide password') : t('Show password')
                       }
                     >
                       {showPassword ? (
@@ -416,11 +418,11 @@ export function UserAuthForm({
                     <div className='min-w-0 space-y-1'>
                       {!status?.self_use_mode_enabled &&
                         status?.register_enabled !== false && (
-                          <p className='text-xs text-muted-foreground'>
+                          <p className='text-muted-foreground text-xs'>
                             {t("Don't have an account?")}{' '}
                             <Link
                               to='/sign-up'
-                              className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
+                              className='text-foreground hover:text-foreground/70 font-semibold underline underline-offset-4'
                             >
                               {t('Sign up')}
                             </Link>
@@ -430,7 +432,7 @@ export function UserAuthForm({
                     </div>
                     <Link
                       to='/forgot-password'
-                      className='shrink-0 text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
+                      className='text-muted-foreground hover:text-foreground shrink-0 text-xs font-medium underline-offset-4 hover:underline'
                     >
                       {t('Forgot password?')}
                     </Link>
@@ -442,7 +444,7 @@ export function UserAuthForm({
             {/* Submit Button */}
             <Button
               type='submit'
-              className='group relative mt-1.5 h-11 w-full justify-center gap-2 overflow-hidden rounded-xl bg-foreground text-sm font-semibold text-background shadow-[0_1px_2px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] active:translate-y-px dark:shadow-[0_1px_2px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.15)] dark:hover:shadow-[0_6px_20px_rgba(255,255,255,0.12)]'
+              className='group bg-foreground text-background relative mt-1.5 h-11 w-full justify-center gap-2 overflow-hidden rounded-xl text-sm font-semibold shadow-[0_1px_2px_rgba(0,0,0,0.1),0_0_0_1px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(0,0,0,0.18)] active:translate-y-px dark:shadow-[0_1px_2px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.15)] dark:hover:shadow-[0_6px_20px_rgba(255,255,255,0.12)]'
               disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
             >
               <span

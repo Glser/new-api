@@ -16,9 +16,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { lazy } from 'react'
+
+import { LazyWhenOpen, RenderWhenOpen } from '@/components/render-when-open'
+
 import { useChannels } from './channels-provider'
 import { BalanceQueryDialog } from './dialogs/balance-query-dialog'
-import { ChannelTestDialog } from './dialogs/channel-test-dialog'
 import { CopyChannelDialog } from './dialogs/copy-channel-dialog'
 import { EditTagDialog } from './dialogs/edit-tag-dialog'
 import { FetchModelsDialog } from './dialogs/fetch-models-dialog'
@@ -26,78 +29,100 @@ import { MultiKeyManageDialog } from './dialogs/multi-key-manage-dialog'
 import { OllamaModelsDialog } from './dialogs/ollama-models-dialog'
 import { TagBatchEditDialog } from './dialogs/tag-batch-edit-dialog'
 import { UpstreamUpdateDialog } from './dialogs/upstream-update-dialog'
-import { ChannelMutateDrawer } from './drawers/channel-mutate-drawer'
+
+const ChannelMutateDrawer = lazy(() =>
+  import('./drawers/channel-mutate-drawer').then((module) => ({
+    default: module.ChannelMutateDrawer,
+  }))
+)
+const ChannelTestDialog = lazy(() =>
+  import('./dialogs/channel-test-dialog').then((module) => ({
+    default: module.ChannelTestDialog,
+  }))
+)
 
 export function ChannelsDialogs() {
   const { open, setOpen, currentRow, upstream } = useChannels()
+  const isChannelMutateOpen =
+    open === 'create-channel' || open === 'update-channel'
+  const closeDialog = (nextOpen: boolean) => {
+    if (!nextOpen) setOpen(null)
+  }
 
   return (
     <>
-      {/* Channel Create/Update Drawer */}
-      <ChannelMutateDrawer
-        open={open === 'create-channel' || open === 'update-channel'}
-        onOpenChange={(v) => !v && setOpen(null)}
-        currentRow={open === 'update-channel' ? currentRow : null}
-      />
+      <LazyWhenOpen open={isChannelMutateOpen}>
+        <ChannelMutateDrawer
+          open={isChannelMutateOpen}
+          onOpenChange={closeDialog}
+          currentRow={open === 'update-channel' ? currentRow : null}
+        />
+      </LazyWhenOpen>
 
-      {/* Test Channel Dialog */}
-      <ChannelTestDialog
-        open={open === 'test-channel'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <LazyWhenOpen open={open === 'test-channel'}>
+        <ChannelTestDialog
+          open={open === 'test-channel'}
+          onOpenChange={closeDialog}
+        />
+      </LazyWhenOpen>
 
-      {/* Balance Query Dialog */}
-      <BalanceQueryDialog
-        open={open === 'balance-query'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={open === 'balance-query'}>
+        <BalanceQueryDialog
+          open={open === 'balance-query'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
 
-      {/* Fetch Models Dialog */}
-      <FetchModelsDialog
-        open={open === 'fetch-models'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={open === 'fetch-models'}>
+        <FetchModelsDialog
+          open={open === 'fetch-models'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
 
-      {/* Ollama Models Dialog */}
-      <OllamaModelsDialog
-        open={open === 'ollama-models'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={open === 'ollama-models'}>
+        <OllamaModelsDialog
+          open={open === 'ollama-models'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
 
-      {/* Copy Channel Dialog */}
-      <CopyChannelDialog
-        open={open === 'copy-channel'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={open === 'copy-channel'}>
+        <CopyChannelDialog
+          open={open === 'copy-channel'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
 
-      {/* Multi-Key Management Dialog */}
-      <MultiKeyManageDialog
-        open={open === 'multi-key-manage'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={open === 'multi-key-manage'}>
+        <MultiKeyManageDialog
+          open={open === 'multi-key-manage'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
 
-      {/* Tag Batch Edit Dialog */}
-      <TagBatchEditDialog
-        open={open === 'tag-batch-edit'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={open === 'tag-batch-edit'}>
+        <TagBatchEditDialog
+          open={open === 'tag-batch-edit'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
 
-      {/* Edit Tag Dialog */}
-      <EditTagDialog
-        open={open === 'edit-tag'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={open === 'edit-tag'}>
+        <EditTagDialog open={open === 'edit-tag'} onOpenChange={closeDialog} />
+      </RenderWhenOpen>
 
-      {/* Upstream Model Update Dialog */}
-      <UpstreamUpdateDialog
-        open={upstream.showModal}
-        addModels={upstream.addModels}
-        removeModels={upstream.removeModels}
-        preferredTab={upstream.preferredTab}
-        confirmLoading={upstream.applyLoading}
-        onConfirm={upstream.applyUpdates}
-        onCancel={upstream.closeModal}
-      />
+      <RenderWhenOpen open={upstream.showModal}>
+        <UpstreamUpdateDialog
+          open={upstream.showModal}
+          addModels={upstream.addModels}
+          removeModels={upstream.removeModels}
+          preferredTab={upstream.preferredTab}
+          confirmLoading={upstream.applyLoading}
+          onConfirm={upstream.applyUpdates}
+          onCancel={upstream.closeModal}
+        />
+      </RenderWhenOpen>
     </>
   )
 }

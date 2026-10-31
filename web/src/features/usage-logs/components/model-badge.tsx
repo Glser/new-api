@@ -26,9 +26,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 interface ModelBadgeProps {
   modelName: string

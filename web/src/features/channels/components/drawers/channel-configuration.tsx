@@ -108,21 +108,20 @@ export function ChannelConfiguration(props: ChannelConfigurationProps) {
       onValueChange={(value) =>
         props.onSectionChange(value as ChannelConfigurationSection)
       }
-      className='min-h-0 flex-1 gap-5'
+      className='flex min-h-0 flex-1 flex-col gap-0'
     >
-      <div className='-mt-1 shrink-0 overflow-x-auto py-1'>
+      <div className='shrink-0 px-5 pt-4'>
         <TabsList
           aria-label={t('Channel configuration')}
-          variant='line'
-          className='min-w-full justify-start'
+          className='grid h-10 w-full grid-cols-4 group-data-horizontal/tabs:h-10'
         >
           {sections.map((section) => (
             <TabsTrigger
               key={section.id}
               value={section.id}
-              className='gap-2 px-3'
+              className='h-full min-w-0 gap-1 px-1 text-xs'
             >
-              {section.label}
+              <span className='truncate'>{section.label}</span>
               <ChannelConfigurationStatusIndicator
                 status={props.statuses[section.id]}
                 required={section.id === 'connection'}
@@ -134,17 +133,17 @@ export function ChannelConfiguration(props: ChannelConfigurationProps) {
       <TabsContent
         value='connection'
         keepMounted
-        className='-m-1 min-h-0 overflow-y-auto overscroll-contain p-1'
+        className='min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5'
       >
-        <div className='grid min-w-0 items-start gap-6 lg:grid-cols-2'>
-          <div className='flex min-w-0 flex-col gap-5'>{props.connection}</div>
-          <div className='min-w-0'>{props.models}</div>
+        <div className='flex min-w-0 flex-col gap-5'>
+          {props.connection}
+          {props.models}
         </div>
       </TabsContent>
       <TabsContent
         value='routing'
         keepMounted
-        className='-m-1 min-h-0 space-y-5 overflow-y-auto overscroll-contain p-1'
+        className='min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5'
       >
         {(props.section === 'routing' || visited.has('routing')) &&
           props.routing}
@@ -152,7 +151,7 @@ export function ChannelConfiguration(props: ChannelConfigurationProps) {
       <TabsContent
         value='request'
         keepMounted
-        className='-m-1 min-h-0 space-y-5 overflow-y-auto overscroll-contain p-1'
+        className='min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5'
       >
         {(props.section === 'request' || visited.has('request')) &&
           props.request}
@@ -160,7 +159,7 @@ export function ChannelConfiguration(props: ChannelConfigurationProps) {
       <TabsContent
         value='other'
         keepMounted
-        className='-m-1 min-h-0 space-y-5 overflow-y-auto overscroll-contain p-1'
+        className='min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5'
       >
         {(props.section === 'other' || visited.has('other')) && props.other}
       </TabsContent>

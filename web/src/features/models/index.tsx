@@ -19,21 +19,31 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import {
+  memo,
+  startTransition,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { SectionPageLayout } from '@/components/layout'
+import { RenderWhenOpen } from '@/components/render-when-open'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { requireServerSuccess } from '@/lib/server-error-message'
+import { cn } from '@/lib/utils'
 
 import { listDeployments } from './api'
 import { DeploymentAccessGuard } from './components/deployment-access-guard'
 import { DeploymentsTable } from './components/deployments-table'
 import { CreateDeploymentDrawer } from './components/dialogs/create-deployment-drawer'
 import { ModelsDialogs } from './components/models-dialogs'
-import { ModelsProvider, useModels } from './components/models-provider'
+import { ModelsProvider } from './components/models-provider'
 import { ModelsTable } from './components/models-table'
+import { VendorsPrimaryButtons } from './components/vendors-primary-buttons'
 import { VendorsTable } from './components/vendors-table'
 import { useModelDeploymentSettings } from './hooks/use-model-deployment-settings'
 import { deploymentsQueryKeys } from './lib'
@@ -60,63 +70,91 @@ const SECTION_META: Record<
   },
 }
 
+const MemoModelsTable = memo(ModelsTable)
+const MemoVendorsTable = memo(VendorsTable)
+
+function SectionPanel(props: { active: boolean; children: ReactNode }) {
+  return (
+    <div
+      className={cn(
+        'h-full min-h-0',
+        props.active ? 'flex flex-col' : 'hidden'
+      )}
+    >
+      {props.children}
+    </div>
+  )
+}
+
 function ModelsContent() {
   const { t } = useTranslation()
   const navigate = useNavigate({ from: '/models/$section' })
-  const { tabCategory, setTabCategory } = useModels()
   const params = route.useParams()
-  const activeSection = (params.section ??
+  const routeSection = (params.section ??
     MODELS_DEFAULT_SECTION) as ModelsSectionId
+  const [selectedSection, setSelectedSection] =
+    useState<ModelsSectionId>(routeSection)
+  const [visitedSections, setVisitedSections] = useState(
+    () => new Set<ModelsSectionId>([routeSection])
+  )
 
   // Deployment create dialog state
   const [createDeploymentOpen, setCreateDeploymentOpen] = useState(false)
 
-  // keep context state in sync (for components that rely on it)
   useEffect(() => {
-    if (tabCategory !== activeSection) {
-      setTabCategory(activeSection)
-    }
-  }, [activeSection, setTabCategory, tabCategory])
+    setSelectedSection(routeSection)
+    setVisitedSections((previous) => {
+      if (previous.has(routeSection)) return previous
+      const next = new Set(previous)
+      next.add(routeSection)
+      return next
+    })
+  }, [routeSection])
 
   const handleSectionChange = useCallback(
     (section: string) => {
-      void navigate({
-        to: '/models/$section',
-        params: { section: section as ModelsSectionId },
-        search: (previous) => previous,
+      const next = section as ModelsSectionId
+      setSelectedSection(next)
+      setVisitedSections((previous) => {
+        if (previous.has(next)) return previous
+        const nextVisited = new Set(previous)
+        nextVisited.add(next)
+        return nextVisited
+      })
+      startTransition(() => {
+        void navigate({
+          to: '/models/$section',
+          params: { section: next },
+          search: (previous) => previous,
+        })
       })
     },
     [navigate]
   )
 
-  const meta = SECTION_META[activeSection] ?? SECTION_META.metadata
+  const meta = SECTION_META[selectedSection] ?? SECTION_META.metadata
 
   let actions: ReactNode = null
-  let content = <ModelsTable />
-  if (activeSection === 'vendors') {
-    content = <VendorsTable />
-  } else if (activeSection === 'deployments') {
+  if (selectedSection === 'vendors') {
+    actions = <VendorsPrimaryButtons />
+  } else if (selectedSection === 'deployments') {
     actions = (
       <Button onClick={() => setCreateDeploymentOpen(true)} size='sm'>
         <Plus className='size-4' />
         {t('Create deployment')}
       </Button>
     )
-    content = <DeploymentsSection />
   }
 
   return (
     <>
-      <SectionPageLayout
-        fixedContent
-        stackActionsOnMobile={activeSection === 'metadata'}
-      >
+      <SectionPageLayout fixedContent stackActionsOnMobile>
         <SectionPageLayout.Title>{t(meta.titleKey)}</SectionPageLayout.Title>
         <SectionPageLayout.Actions>{actions}</SectionPageLayout.Actions>
         <SectionPageLayout.Content>
-          <div className='flex h-full min-h-0 flex-col gap-4'>
-            <Tabs value={activeSection} onValueChange={handleSectionChange}>
-              <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
+          <div className='flex h-full min-h-0 flex-col gap-3'>
+            <Tabs value={selectedSection} onValueChange={handleSectionChange}>
+              <TabsList>
                 {MODELS_SECTION_IDS.map((section) => (
                   <TabsTrigger key={section} value={section}>
                     {t(SECTION_META[section].tabKey)}
@@ -124,16 +162,34 @@ function ModelsContent() {
                 ))}
               </TabsList>
             </Tabs>
-            <div className='min-h-0 flex-1'>{content}</div>
+            <div className='relative min-h-0 flex-1'>
+              {visitedSections.has('metadata') ? (
+                <SectionPanel active={selectedSection === 'metadata'}>
+                  <MemoModelsTable />
+                </SectionPanel>
+              ) : null}
+              {visitedSections.has('vendors') ? (
+                <SectionPanel active={selectedSection === 'vendors'}>
+                  <MemoVendorsTable />
+                </SectionPanel>
+              ) : null}
+              {visitedSections.has('deployments') ? (
+                <SectionPanel active={selectedSection === 'deployments'}>
+                  <DeploymentsSection />
+                </SectionPanel>
+              ) : null}
+            </div>
           </div>
         </SectionPageLayout.Content>
       </SectionPageLayout>
 
       <ModelsDialogs />
-      <CreateDeploymentDrawer
-        open={createDeploymentOpen}
-        onOpenChange={setCreateDeploymentOpen}
-      />
+      <RenderWhenOpen open={createDeploymentOpen}>
+        <CreateDeploymentDrawer
+          open={createDeploymentOpen}
+          onOpenChange={setCreateDeploymentOpen}
+        />
+      </RenderWhenOpen>
     </>
   )
 }

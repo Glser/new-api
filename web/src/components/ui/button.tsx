@@ -61,7 +61,7 @@ const buttonVariants = cva(
 )
 
 export const buttonShineClassName =
-  'relative isolate overflow-hidden shadow-none duration-300 motion-safe:hover:-translate-y-px motion-safe:active:translate-y-px'
+  'relative isolate shadow-none duration-300 motion-safe:hover:-translate-y-px motion-safe:active:translate-y-px'
 
 function isIconButtonSize(
   size: VariantProps<typeof buttonVariants>['size']
@@ -90,13 +90,17 @@ function ButtonShineHighlight(props: {
   return (
     <span
       aria-hidden
-      className={cn(
-        'pointer-events-none absolute inset-0 -z-10 -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-[translate] duration-700 ease-out motion-safe:group-hover/button:translate-x-full motion-reduce:transition-none',
-        (props.variant ?? 'default') === 'default'
-          ? 'via-white/18'
-          : 'via-foreground/5'
-      )}
-    />
+      className='pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[inherit]'
+    >
+      <span
+        className={cn(
+          'absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent to-transparent transition-[translate] duration-700 ease-out motion-safe:group-hover/button:translate-x-full motion-reduce:transition-none',
+          (props.variant ?? 'default') === 'default'
+            ? 'via-white/18'
+            : 'via-foreground/5'
+        )}
+      />
+    </span>
   )
 }
 

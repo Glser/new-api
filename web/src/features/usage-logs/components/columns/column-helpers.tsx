@@ -23,7 +23,8 @@ import { useState } from 'react'
 
 import { DataTableColumnHeader } from '@/components/data-table'
 import { StatusBadge } from '@/components/status-badge'
-import { TooltipHint,
+import {
+  TooltipHint,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -152,7 +153,10 @@ export function createDurationColumn<T>(config: {
           variant={variant}
           size='sm'
           copyable={false}
-          className={cn('rounded-md font-mono text-xs!', durationBgMap[variant])}
+          className={cn(
+            'rounded-md font-mono text-xs!',
+            durationBgMap[variant]
+          )}
         />
       )
     },

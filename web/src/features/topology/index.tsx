@@ -38,7 +38,6 @@ import {
   channelsQueryKeys,
   formatGroupsString,
   formatModelsString,
-  handleToggleChannelStatus,
   parseGroupsList,
   parseModelsList,
 } from '@/features/channels/lib'
@@ -58,12 +57,12 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { getTopologyGraph, getTopologyLayout, saveTopologyLayout } from './api'
 import { TopologyCanvas } from './components/topology-canvas'
-import { TopologyNodeActionsProvider } from './components/topology-nodes'
 import { TopologyOverlays } from './components/topology-overlays'
 import { TopologyTrafficProvider } from './components/topology-traffic-provider'
 import { addUniqueItem, buildTopologyGraph, removeItem } from './lib/graph'
 import { layoutGraphNodes } from './lib/layout'
 import {
+  TOPOLOGY_LAYOUT_VERSION,
   emptyTopologyLayout,
   parseChannelNodeId,
   parseGroupNodeId,
@@ -142,12 +141,6 @@ function TopologyWorkspace() {
     ADMIN_PERMISSION_RESOURCES.CHANNEL,
     ADMIN_PERMISSION_ACTIONS.WRITE
   )
-  const canOperate = hasPermission(
-    user,
-    ADMIN_PERMISSION_RESOURCES.CHANNEL,
-    ADMIN_PERMISSION_ACTIONS.OPERATE
-  )
-
   const [filters, setFilters] = useState<TopologyFilters>({
     search: '',
     group: '',
@@ -156,11 +149,12 @@ function TopologyWorkspace() {
   const [searchInput, setSearchInput] = useState('')
   const [showMiniMap, setShowMiniMap] = useState(false)
   const [liveTraffic, setLiveTraffic] = useState(true)
-  const [togglingId, setTogglingId] = useState<number>()
   const [selectedNodeId, setSelectedNodeId] = useState<string>()
   const [relayoutVersion, setRelayoutVersion] = useState(0)
   const layoutRef = useRef<TopologyLayout>(emptyTopologyLayout())
   const saveTimer = useRef<number | undefined>(undefined)
+  const canWriteRef = useRef(canWrite)
+  canWriteRef.current = canWrite
 
   const graphQuery = useQuery({
     queryKey: topologyQueryKeys.graph,
@@ -172,6 +166,15 @@ function TopologyWorkspace() {
     queryFn: getTopologyLayout,
     staleTime: 60 * 1000,
   })
+
+  useEffect(() => {
+    return queryClient.getQueryCache().subscribe((event) => {
+      if (event.type !== 'updated') return
+      const key = event.query.queryKey
+      if (!Array.isArray(key) || key[0] !== channelsQueryKeys.all[0]) return
+      void queryClient.invalidateQueries({ queryKey: topologyQueryKeys.graph })
+    })
+  }, [queryClient])
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -216,18 +219,38 @@ function TopologyWorkspace() {
   )
 
   const persistLayout = useCallback(
-    (next: TopologyLayout) => {
+    (next: TopologyLayout, immediate = false) => {
+      queryClient.setQueryData(topologyQueryKeys.layout, next)
+      if (!canWrite) return
       window.clearTimeout(saveTimer.current)
-      saveTimer.current = window.setTimeout(async () => {
+      const flush = async () => {
+        saveTimer.current = undefined
         try {
           await saveTopologyLayout(next)
         } catch (error) {
           handleServerError(error, t('Failed to save layout'))
         }
+      }
+      if (immediate) {
+        void flush()
+        return
+      }
+      saveTimer.current = window.setTimeout(() => {
+        void flush()
       }, 800)
     },
-    [t]
+    [canWrite, queryClient, t]
   )
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(saveTimer.current)
+      if (!canWriteRef.current) return
+      const pending = layoutRef.current
+      if (Object.keys(pending.positions).length === 0) return
+      void saveTopologyLayout(pending).catch(() => undefined)
+    }
+  }, [])
 
   const handleLayoutChange = useCallback(
     (patch: Partial<TopologyLayout>) => {
@@ -235,7 +258,7 @@ function TopologyWorkspace() {
       const next: TopologyLayout = {
         ...current,
         ...patch,
-        version: 1,
+        version: TOPOLOGY_LAYOUT_VERSION,
         positions: patch.positions ?? current.positions,
         viewport: patch.viewport ?? current.viewport,
       }
@@ -350,44 +373,11 @@ function TopologyWorkspace() {
     [bindMutation, findChannel, t]
   )
 
-  const handleToggleChannel = useCallback(
-    async (channelId: number) => {
-      const channel = findChannel(channelId)
-      if (!channel) return
-      setTogglingId(channelId)
-      try {
-        await handleToggleChannelStatus(
-          channel.id,
-          channel.status,
-          queryClient,
-          () => {
-            void queryClient.invalidateQueries({
-              queryKey: topologyQueryKeys.graph,
-            })
-          }
-        )
-      } finally {
-        setTogglingId(undefined)
-      }
-    },
-    [findChannel, queryClient]
-  )
-
-  const handleTestChannel = useCallback(
-    (channelId: number) => {
-      const channel = findChannel(channelId)
-      if (!channel) return
-      setCurrentChannel(channel)
-      setChannelOpen('test-channel')
-    },
-    [findChannel, setChannelOpen, setCurrentChannel]
-  )
-
   const handleNodeClick = useCallback(
     (node: TopologyNode) => {
       setSelectedNodeId(node.id)
       if (node.type === 'channel') {
-        const channel = findChannel(node.data.channelId)
+        const channel = node.data.channel ?? findChannel(node.data.channelId)
         if (!channel) return
         setCurrentChannel(channel)
         setChannelOpen('update-channel')
@@ -421,16 +411,6 @@ function TopologyWorkspace() {
     setRelayoutVersion((value) => value + 1)
   }, [])
 
-  const nodeActions = useMemo(
-    () => ({
-      canOperate,
-      togglingId,
-      onToggleChannel: handleToggleChannel,
-      onTestChannel: handleTestChannel,
-    }),
-    [canOperate, handleTestChannel, handleToggleChannel, togglingId]
-  )
-
   const groupOptions = graphQuery.data?.groups ?? []
   const loading = graphQuery.isLoading || layoutQuery.isLoading
   const stats = graph.stats
@@ -438,59 +418,57 @@ function TopologyWorkspace() {
   return (
     <Main>
       <TopologyTrafficProvider enabled={liveTraffic}>
-        <TopologyNodeActionsProvider value={nodeActions}>
-          <div className='relative min-h-0 flex-1 overflow-hidden'>
-            <TopologyCanvasBody
-              loading={loading}
-              hasChannels={Boolean(graphQuery.data?.channels.length)}
-              graphNodes={graphNodes}
-              graphEdges={graph.edges}
-              layout={layoutQuery.data ?? emptyTopologyLayout()}
-              canWrite={canWrite}
-              relayoutVersion={relayoutVersion}
-              showMiniMap={showMiniMap}
-              onLayoutChange={handleLayoutChange}
-              onConnect={handleConnect}
-              onDeleteEdges={handleDeleteEdges}
-              onNodeClick={handleNodeClick}
-              onCreateChannel={() => {
-                setCurrentChannel(null)
-                setChannelOpen('create-channel')
-              }}
-            />
-            <TopologyOverlays
-              search={searchInput}
-              onSearchChange={setSearchInput}
-              filters={filters}
-              onFiltersChange={setFilters}
-              groups={groupOptions}
-              stats={stats}
-              truncated={graph.truncated}
-              shownModels={graph.shownModels}
-              totalModels={graph.totalModels}
-              loading={loading}
-              refreshing={graphQuery.isFetching}
-              canWrite={canWrite}
-              showMiniMap={showMiniMap}
-              onToggleMiniMap={() => setShowMiniMap((value) => !value)}
-              liveTraffic={liveTraffic}
-              onToggleLiveTraffic={() => setLiveTraffic((value) => !value)}
-              onRefresh={() => {
-                void graphQuery.refetch()
-                void layoutQuery.refetch()
-              }}
-              onRelayout={handleRelayout}
-              onCreateChannel={() => {
-                setCurrentChannel(null)
-                setChannelOpen('create-channel')
-              }}
-              onCreateModel={() => {
-                setCurrentModel(null)
-                setModelOpen('create-model')
-              }}
-            />
-          </div>
-        </TopologyNodeActionsProvider>
+        <div className='relative min-h-0 flex-1 overflow-hidden'>
+          <TopologyCanvasBody
+            loading={loading}
+            hasChannels={Boolean(graphQuery.data?.channels.length)}
+            graphNodes={graphNodes}
+            graphEdges={graph.edges}
+            layout={layoutQuery.data ?? emptyTopologyLayout()}
+            canWrite={canWrite}
+            relayoutVersion={relayoutVersion}
+            showMiniMap={showMiniMap}
+            onLayoutChange={handleLayoutChange}
+            onConnect={handleConnect}
+            onDeleteEdges={handleDeleteEdges}
+            onNodeClick={handleNodeClick}
+            onCreateChannel={() => {
+              setCurrentChannel(null)
+              setChannelOpen('create-channel')
+            }}
+          />
+          <TopologyOverlays
+            search={searchInput}
+            onSearchChange={setSearchInput}
+            filters={filters}
+            onFiltersChange={setFilters}
+            groups={groupOptions}
+            stats={stats}
+            truncated={graph.truncated}
+            shownModels={graph.shownModels}
+            totalModels={graph.totalModels}
+            loading={loading}
+            refreshing={graphQuery.isFetching}
+            canWrite={canWrite}
+            showMiniMap={showMiniMap}
+            onToggleMiniMap={() => setShowMiniMap((value) => !value)}
+            liveTraffic={liveTraffic}
+            onToggleLiveTraffic={() => setLiveTraffic((value) => !value)}
+            onRefresh={() => {
+              void graphQuery.refetch()
+              void layoutQuery.refetch()
+            }}
+            onRelayout={handleRelayout}
+            onCreateChannel={() => {
+              setCurrentChannel(null)
+              setChannelOpen('create-channel')
+            }}
+            onCreateModel={() => {
+              setCurrentModel(null)
+              setModelOpen('create-model')
+            }}
+          />
+        </div>
       </TopologyTrafficProvider>
       <ChannelsDialogs />
       <ModelsDialogs />

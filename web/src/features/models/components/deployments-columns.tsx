@@ -74,7 +74,7 @@ export function useDeploymentsColumns(opts: {
             variant='neutral'
             copyText={name}
             size='sm'
-            className='-ml-1.5 font-mono'
+            className='font-mono text-xs!'
           />
         )
       },
@@ -98,7 +98,7 @@ export function useDeploymentsColumns(opts: {
             variant={config.variant}
             size='sm'
             copyable={false}
-            className='-ml-1.5'
+            className='text-xs!'
           />
         )
       },
@@ -130,7 +130,7 @@ export function useDeploymentsColumns(opts: {
             autoColor={String(provider)}
             size='sm'
             copyable={false}
-            className='-ml-1.5'
+            className='text-xs!'
           />
         )
       },
@@ -164,7 +164,7 @@ export function useDeploymentsColumns(opts: {
             : Math.max(0, Math.min(100, 100 - percentUsed))
 
         return (
-          <div className='flex flex-col gap-1 text-sm'>
+          <div className='flex flex-col items-center gap-1 text-xs!'>
             <div className='flex flex-wrap items-center gap-2'>
               <span className='font-medium'>{remainingText}</span>
               {status === 'running' && percentRemain !== null ? (
@@ -235,7 +235,7 @@ export function useDeploymentsColumns(opts: {
           ts = Number(row.original.created_at)
         }
         return (
-          <div className='min-w-[140px] font-mono text-sm'>
+          <div className='min-w-[140px] font-mono text-[12px]! tabular-nums'>
             {formatTimestampToDate(ts)}
           </div>
         )
@@ -256,7 +256,7 @@ export function useDeploymentsColumns(opts: {
           ''
 
         return (
-          <div className='-ml-2.5 flex items-center gap-1'>
+          <div className='flex items-center justify-center gap-1'>
             <Button
               variant='ghost'
               size='icon-sm'

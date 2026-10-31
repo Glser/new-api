@@ -111,7 +111,7 @@ export function ChannelsPrimaryButtons() {
               disabled={!canEditSensitive}
             >
               <Plus data-icon='inline-start' className='size-4' />
-              <span className='leading-none'>{t('Create Channel')}</span>
+              {t('Create Channel')}
             </Button>
           </TooltipTrigger>
           {!canEditSensitive && (

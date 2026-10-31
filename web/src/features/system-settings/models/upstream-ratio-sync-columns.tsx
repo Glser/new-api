@@ -21,6 +21,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { DataTableColumnHeader } from '@/components/data-table'
+import { TooltipHint } from '@/components/ui/tooltip'
 
 import {
   SyncPriceCell,
@@ -29,7 +30,6 @@ import {
 } from './upstream-price-cells'
 import { getUpstreamDisplayName } from './upstream-ratio-sync-helpers'
 import type { PricingSyncRow } from './upstream-ratio-sync-table'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 export function useUpstreamRatioSyncColumns(
   upstreamNames: string[],
@@ -50,9 +50,7 @@ export function useUpstreamRatioSyncColumns(
         meta: { mobileTitle: true },
         cell: ({ row }) => (
           <TooltipHint content={row.original.model}>
-            <span
-              className='block max-w-72 truncate font-medium'
-            >
+            <span className='block max-w-72 truncate font-medium'>
               {row.original.model}
             </span>
           </TooltipHint>

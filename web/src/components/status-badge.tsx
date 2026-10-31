@@ -17,7 +17,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { LucideIcon } from 'lucide-react'
-import { TooltipHint } from '@/components/ui/tooltip'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -39,6 +38,7 @@ For commercial licensing, please contact support@quantumnous.com
 /* eslint-disable react-refresh/only-export-components */
 import * as React from 'react'
 
+import { TooltipHint } from '@/components/ui/tooltip'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { stringToColor } from '@/lib/colors'
 import { cn } from '@/lib/utils'
@@ -106,15 +106,15 @@ export const StatusBadgeTypeContext =
   React.createContext<StatusBadgeType>('badge')
 
 const sizeMap = {
-  sm: 'h-5 gap-1 px-1.5 text-sm leading-none',
-  md: 'h-5 gap-1 px-1.5 text-sm leading-none',
-  lg: 'h-6 gap-1.5 px-2 text-sm leading-none',
+  sm: 'h-5 gap-1 px-1.5 text-sm leading-tight',
+  md: 'h-5 gap-1 px-1.5 text-sm leading-tight',
+  lg: 'h-6 gap-1.5 px-2 text-sm leading-tight',
 } as const
 
 const textSizeMap = {
-  sm: 'gap-1 text-sm leading-none',
-  md: 'gap-1 text-sm leading-none',
-  lg: 'gap-1.5 text-sm leading-none',
+  sm: 'gap-1 text-sm leading-tight',
+  md: 'gap-1 text-sm leading-tight',
+  lg: 'gap-1.5 text-sm leading-tight',
 } as const
 
 export interface StatusBadgeProps extends Omit<
@@ -171,7 +171,7 @@ export function StatusBadge({
   const content =
     children ??
     (label ? (
-      <span className='min-w-0 truncate leading-normal'>{label}</span>
+      <span className='min-w-0 truncate leading-tight'>{label}</span>
     ) : null)
 
   const isBadge = type === 'badge'
@@ -182,36 +182,36 @@ export function StatusBadge({
   return (
     <TooltipHint content={'title' in props ? props.title : title}>
       <span
-      data-slot='status-badge'
-      className={cn(
-        'inline-flex w-fit max-w-full min-w-0 shrink items-center font-medium tracking-normal whitespace-nowrap transition-colors',
-        isBadge
-          ? cn('rounded-4xl', sizeMap[size ?? 'sm'])
-          : cn(
-              textSizeMap[size ?? 'sm'],
-              type === 'underline' && 'border-b border-current pb-px'
-            ),
-        textColorMap[computedVariant],
-        pulse && 'animate-pulse',
-        copyable &&
-          'cursor-copy hover:brightness-95 active:scale-95 dark:hover:brightness-110',
-        className
-      )}
-      onClick={handleClick}
-      {...props}
-      title={undefined}
-    >
-      {showDot && (
-        <span
-          className={cn(
-            'inline-block size-1.5 shrink-0 rounded-full',
-            dotColorMap[computedVariant]
-          )}
-          aria-hidden='true'
-        />
-      )}
-      {Icon && <Icon className='size-3.5 shrink-0' />}
-      {content}
+        data-slot='status-badge'
+        className={cn(
+          'inline-flex w-fit max-w-full min-w-0 shrink items-center font-medium tracking-normal whitespace-nowrap transition-colors',
+          isBadge
+            ? cn('rounded-4xl', sizeMap[size ?? 'sm'])
+            : cn(
+                textSizeMap[size ?? 'sm'],
+                type === 'underline' && 'border-b border-current pb-px'
+              ),
+          textColorMap[computedVariant],
+          pulse && 'animate-pulse',
+          copyable &&
+            'cursor-copy hover:brightness-95 active:scale-95 dark:hover:brightness-110',
+          className
+        )}
+        onClick={handleClick}
+        {...props}
+        title={undefined}
+      >
+        {showDot && (
+          <span
+            className={cn(
+              'inline-block size-1.5 shrink-0 rounded-full',
+              dotColorMap[computedVariant]
+            )}
+            aria-hidden='true'
+          />
+        )}
+        {Icon && <Icon className='size-3.5 shrink-0' />}
+        {content}
       </span>
     </TooltipHint>
   )

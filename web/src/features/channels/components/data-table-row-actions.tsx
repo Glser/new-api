@@ -78,10 +78,14 @@ import {
 import { useChannels } from './channels-provider'
 
 interface DataTableRowActionsProps {
-  row: Row<Channel>
+  row?: Row<Channel>
+  channel?: Channel
 }
 
-export function DataTableRowActions({ row }: DataTableRowActionsProps) {
+export function DataTableRowActions({
+  row,
+  channel: channelProp,
+}: DataTableRowActionsProps) {
   const { t } = useTranslation()
   const layout = useContext(ChannelRowActionsLayoutContext)
   const slot = useContext(ChannelRowActionsSlotContext)
@@ -93,13 +97,14 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const showToggle =
     slot === 'quick' || slot === 'toggle' || (!isCard && slot === 'all')
   const showMenu = slot === 'menu' || slot === 'all'
-  const channel = row.original
+  const channel = channelProp ?? row?.original
   const { setOpen, setCurrentRow, upstream } = useChannels()
   const queryClient = useQueryClient()
   const currentUser = useAuthStore((s) => s.auth.user)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [isTogglingStatus, setIsTogglingStatus] = useState(false)
+  if (!channel) return null
 
   const isEnabled = isChannelEnabled(channel)
   const isMultiKey = isMultiKeyChannel(channel)
@@ -222,7 +227,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
                 aria-label={t('Test Connection')}
                 className={cn(
                   (slot === 'quick' || slot === 'test') &&
-                    'size-7 hover:bg-muted'
+                    (isCard ? 'size-8 hover:bg-muted' : 'size-7 hover:bg-muted')
                 )}
               />
             }

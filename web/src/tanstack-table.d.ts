@@ -23,6 +23,8 @@ declare module '@tanstack/react-table' {
     label?: string
     description?: string
     className?: string
+    /** Size the column to its content instead of a table-width percentage. */
+    contentSized?: boolean
     pinned?: 'left' | 'right'
     headerClassName?: string
     cellClassName?: string

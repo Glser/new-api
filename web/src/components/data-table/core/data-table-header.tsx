@@ -245,7 +245,7 @@ function shouldRenderColumnResizer<TData>(
     table.options.enableColumnResizing === true &&
     !header.isPlaceholder &&
     header.column.getCanResize() &&
-    !isContentSizedColumn(header.column.id)
+    !isContentSizedColumn(header.column.id, header.column.columnDef.meta)
   )
 }
 
@@ -253,7 +253,10 @@ function getHeaderSizeStyle<TData>(
   header: Header<TData, unknown>,
   applyHeaderSize: boolean | undefined
 ) {
-  if (!applyHeaderSize || isContentSizedColumn(header.column.id)) {
+  if (
+    !applyHeaderSize ||
+    isContentSizedColumn(header.column.id, header.column.columnDef.meta)
+  ) {
     return undefined
   }
 

@@ -20,12 +20,12 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { Link } from '@tanstack/react-router'
 import { motion, useReducedMotion } from 'motion/react'
 
-import { cn } from '@/lib/utils'
-import { MOTION_TRANSITION } from '@/lib/motion'
-
-import type { TopNavLink } from '../types'
-import { useSlidingIndicator } from '../lib/use-sliding-indicator'
 import { TooltipHint } from '@/components/ui/tooltip'
+import { MOTION_TRANSITION } from '@/lib/motion'
+import { cn } from '@/lib/utils'
+
+import { useSlidingIndicator } from '../lib/use-sliding-indicator'
+import type { TopNavLink } from '../types'
 
 /**
  * Vertical and horizontal breathing room between the sliding indicator and the
@@ -64,7 +64,10 @@ export function PillNavSheet(props: PillNavSheetProps) {
 
   const items = links.map((link) => ({ key: `${link.title}:${link.href}` }))
   const activeIndex = links.findIndex((link) => isActive(link))
-  const { state, railRef, registerItem } = useSlidingIndicator(items, activeIndex)
+  const { state, railRef, registerItem } = useSlidingIndicator(
+    items,
+    activeIndex
+  )
 
   const showIndicator = state.activeIndex >= 0 && !state.unmeasured
 
@@ -83,7 +86,7 @@ export function PillNavSheet(props: PillNavSheetProps) {
         <motion.span
           aria-hidden='true'
           data-slot='pill-nav-sheet-indicator'
-          className='bg-foreground/[0.05] pointer-events-none absolute top-0 left-0 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] dark:bg-foreground/[0.10] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3)]'
+          className='bg-foreground/[0.05] dark:bg-foreground/[0.10] pointer-events-none absolute top-0 left-0 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_3px_rgba(0,0,0,0.3)]'
           initial={false}
           animate={
             shouldReduce
@@ -106,7 +109,9 @@ export function PillNavSheet(props: PillNavSheetProps) {
 
         const slotClassName = cn(
           'relative flex min-w-0 items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors duration-200',
-          active ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
+          active
+            ? 'text-foreground'
+            : 'text-muted-foreground hover:text-foreground',
           link.disabled && 'pointer-events-none opacity-50'
         )
 

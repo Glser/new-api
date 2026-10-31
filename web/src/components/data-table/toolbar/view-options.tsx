@@ -21,7 +21,6 @@ import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -30,6 +29,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
 type DataTableViewOptionsProps<TData> = {
   table: Table<TData>
@@ -88,4 +88,3 @@ export function DataTableViewOptions<TData>({
     </DropdownMenu>
   )
 }
-

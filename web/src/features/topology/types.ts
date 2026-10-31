@@ -34,15 +34,7 @@ export type TopologyGroupData = {
 
 export type TopologyChannelData = {
   channelId: number
-  name: string
-  type: number
-  status: number
-  groupCount: number
-  modelCount: number
-  pluginKey?: string
-  usedQuota: number
-  balance: number
-  responseTime: number
+  channel: Channel
   color: string
 }
 
@@ -102,7 +94,7 @@ export type TopologyFilters = {
   status: string
 }
 
-export const TOPOLOGY_LAYOUT_VERSION = 1
+export const TOPOLOGY_LAYOUT_VERSION = 5
 export const MAX_VISIBLE_MODELS = 100
 
 export function groupNodeId(name: string) {

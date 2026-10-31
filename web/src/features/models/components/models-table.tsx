@@ -21,7 +21,11 @@ import { getRouteApi } from '@tanstack/react-router'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { DataTablePage, useDataTable } from '@/components/data-table'
+import {
+  DataTablePage,
+  DataTableViewOptions,
+  useDataTable,
+} from '@/components/data-table'
 import { ErrorState } from '@/components/error-state'
 import { Combobox } from '@/components/ui/combobox'
 import { useModelPricing } from '@/features/model-pricing/api'
@@ -32,7 +36,12 @@ import { requireServerSuccess } from '@/lib/server-error-message'
 
 import { getModels, searchModels, getVendors } from '../api'
 import { DEFAULT_PAGE_SIZE } from '../constants'
-import { modelsQueryKeys, vendorsQueryKeys } from '../lib'
+import {
+  MODELS_TABLE_CLASS_NAME,
+  modelsQueryKeys,
+  modelsTableColumnClassName,
+  vendorsQueryKeys,
+} from '../lib'
 import type { ModelSquareState } from '../types'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { useModelsColumns } from './models-columns'
@@ -229,10 +238,14 @@ export function ModelsTable() {
   })
 
   // Prepare filter options
-  const vendorFilterOptions = vendorOptions.map((option) => ({
-    label: `${option.label}${vendorCounts?.[option.value] ? ` (${vendorCounts[option.value]})` : ''}`,
-    value: option.value,
-  }))
+  const vendorFilterOptions = useMemo(
+    () =>
+      vendorOptions.map((option) => ({
+        label: `${option.label}${vendorCounts?.[option.value] ? ` (${vendorCounts[option.value]})` : ''}`,
+        value: option.value,
+      })),
+    [vendorCounts, vendorOptions]
+  )
 
   if (isError || data?.success === false) {
     return (
@@ -259,14 +272,23 @@ export function ModelsTable() {
       }
       skeletonKeyPrefix='model-skeleton'
       applyHeaderSize
+      tableClassName={MODELS_TABLE_CLASS_NAME}
+      getColumnClassName={modelsTableColumnClassName}
       pinnedColumns={[
-        { columnId: 'model_name', side: 'left' },
+        {
+          columnId: 'model_name',
+          side: 'left',
+          headerClassName: 'whitespace-normal',
+          cellClassName: 'whitespace-normal',
+        },
         { columnId: 'actions', side: 'right' },
       ]}
       toolbarProps={{
+        hideViewOptions: true,
+        afterFilters: <DataTableViewOptions table={table} />,
         endActions: <ModelsPrimaryButtons />,
         customSearch: (
-          <div className='w-36 shrink-0'>
+          <div className='w-[200px] shrink-0 sm:w-[240px]'>
             <Combobox
               options={modelNameOptions}
               fitContentWidth

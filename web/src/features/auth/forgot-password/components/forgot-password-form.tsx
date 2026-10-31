@@ -16,8 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
 import { ArrowRight, Loader2, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -26,11 +26,6 @@ import { toast } from 'sonner'
 import type { z } from 'zod'
 
 import { Turnstile } from '@/components/turnstile'
-import {
-  AUTH_FIELD_INPUT,
-  AuthIconField,
-  AuthSubmitButton,
-} from '@/features/auth/components/auth-field'
 import {
   Form,
   FormControl,
@@ -41,6 +36,11 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { sendPasswordResetEmail } from '@/features/auth/api'
+import {
+  AUTH_FIELD_INPUT,
+  AuthIconField,
+  AuthSubmitButton,
+} from '@/features/auth/components/auth-field'
 import {
   forgotPasswordFormSchema,
   PASSWORD_RESET_COUNTDOWN,
@@ -115,7 +115,7 @@ export function ForgotPasswordForm({
           render={({ field }) => (
             <FormItem className='space-y-2'>
               <FormLabel className='sr-only'>Email</FormLabel>
-              <p className='pl-2 text-left text-xs leading-relaxed text-muted-foreground sm:text-sm'>
+              <p className='text-muted-foreground pl-2 text-left text-xs leading-relaxed sm:text-sm'>
                 {t(
                   'Enter the email used at registration to receive a password reset link.'
                 )}
@@ -135,11 +135,11 @@ export function ForgotPasswordForm({
             </FormItem>
           )}
         />
-        <p className='pr-3 text-right text-xs text-muted-foreground'>
+        <p className='text-muted-foreground pr-3 text-right text-xs'>
           {t('Already have an account?')}{' '}
           <Link
             to='/sign-in'
-            className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
+            className='text-foreground hover:text-foreground/70 font-semibold underline underline-offset-4'
           >
             {t('Sign in')}
           </Link>

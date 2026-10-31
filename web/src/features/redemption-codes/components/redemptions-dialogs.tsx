@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { RenderWhenOpen } from '@/components/render-when-open'
+
 import { RedemptionsDeleteDialog } from './redemptions-delete-dialog'
 import { RedemptionsMutateDrawer } from './redemptions-mutate-drawer'
 import { useRedemptions } from './redemptions-provider'
@@ -23,15 +25,22 @@ import { useRedemptions } from './redemptions-provider'
 export function RedemptionsDialogs() {
   const { open, setOpen, currentRow } = useRedemptions()
   const isUpdate = open === 'update'
+  const isMutateOpen = open === 'create' || isUpdate
 
   return (
     <>
-      <RedemptionsMutateDrawer
-        open={open === 'create' || isUpdate}
-        onOpenChange={(isOpen) => !isOpen && setOpen(null)}
-        currentRow={isUpdate ? currentRow || undefined : undefined}
-      />
-      <RedemptionsDeleteDialog />
+      <RenderWhenOpen open={isMutateOpen}>
+        <RedemptionsMutateDrawer
+          open={isMutateOpen}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setOpen(null)
+          }}
+          currentRow={isUpdate ? currentRow || undefined : undefined}
+        />
+      </RenderWhenOpen>
+      <RenderWhenOpen open={open === 'delete'}>
+        <RedemptionsDeleteDialog />
+      </RenderWhenOpen>
     </>
   )
 }

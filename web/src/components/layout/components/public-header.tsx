@@ -27,6 +27,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { useSystemConfig } from '@/hooks/use-system-config'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
 import { cn } from '@/lib/utils'
@@ -39,7 +40,6 @@ import type { TopNavLink } from '../types'
 import { HeaderLogo } from './header-logo'
 import { PillNav } from './pill-nav'
 import { PillNavSheet } from './pill-nav-sheet'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -92,8 +92,7 @@ export function PublicHeader(props: PublicHeaderProps) {
     logoLoaded,
   } = useSystemConfig()
   const dynamicLinks = useTopNavLinks()
-  const routerState = useRouterState()
-  const pathname = routerState.location.pathname
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   const user = auth.user
   const isAuthenticated = !!user
@@ -246,10 +245,12 @@ export function PublicHeader(props: PublicHeaderProps) {
                 {logoContent}
               </div>
               <TooltipHint content={displaySiteName}>
-                <span
-                  className='max-w-48 truncate text-[0.9375rem] leading-none font-semibold tracking-tight'
-                >
-                  {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
+                <span className='max-w-48 truncate text-[0.9375rem] leading-none font-semibold tracking-tight'>
+                  {loading ? (
+                    <Skeleton className='h-4 w-16' />
+                  ) : (
+                    displaySiteName
+                  )}
                 </span>
               </TooltipHint>
             </Link>

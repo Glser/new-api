@@ -38,8 +38,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
-import { cn } from '@/lib/utils'
 import { TooltipHint } from '@/components/ui/tooltip'
+import { cn } from '@/lib/utils'
 
 type DataTableFacetedFilterProps<TData, TValue> = {
   column?: Column<TData, TValue>
@@ -152,9 +152,7 @@ function DataTableFacetedFilterInner<TData, TValue>({
                       <option.icon className='text-muted-foreground size-4' />
                     ) : null}
                     <TooltipHint content={t(option.label)}>
-                      <span
-                        className='min-w-0 flex-1 truncate'
-                      >
+                      <span className='min-w-0 flex-1 truncate'>
                         {t(option.label)}
                       </span>
                     </TooltipHint>

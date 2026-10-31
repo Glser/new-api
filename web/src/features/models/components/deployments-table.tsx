@@ -40,7 +40,11 @@ import { requireServerSuccess } from '@/lib/server-error-message'
 
 import { deleteDeployment, listDeployments, searchDeployments } from '../api'
 import { getDeploymentStatusOptions } from '../constants'
-import { deploymentsQueryKeys } from '../lib'
+import {
+  deploymentsQueryKeys,
+  MODELS_TABLE_CLASS_NAME,
+  modelsTableColumnClassName,
+} from '../lib'
 import type { Deployment } from '../types'
 import { useDeploymentsColumns } from './deployments-columns'
 import { ExtendDeploymentDialog } from './dialogs/extend-deployment-dialog'
@@ -234,6 +238,8 @@ export function DeploymentsTable() {
         )}
         skeletonKeyPrefix='deployment-skeleton'
         applyHeaderSize
+        tableClassName={MODELS_TABLE_CLASS_NAME}
+        getColumnClassName={modelsTableColumnClassName}
         toolbarProps={{
           searchPlaceholder: t('Search deployments...'),
           searchDebounceMs: 500,

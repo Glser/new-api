@@ -34,6 +34,7 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { AutoGroupFlowBorder } from '@/features/keys/components/auto-group-visuals'
 import { PluginIcon } from '@/features/task-plugins/components/plugin-icon'
 import { useMediaQuery } from '@/hooks/use-media-query'
@@ -54,7 +55,6 @@ import {
   LEGACY_TASK_PLUGIN_KEYS,
 } from '../../lib/channel-plugin-extensions'
 import { ChannelTypeLogo } from '../channel-type-badge'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 type ChannelProviderPickerProps = {
   isCreating?: boolean
@@ -212,7 +212,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
     <Tabs
       value={filter}
       onValueChange={(value) => setSelectedFilter(String(value))}
-      className='min-h-0 flex-1 gap-4 p-4 sm:p-6'
+      className='min-h-0 flex-1 gap-4 px-5 pt-4 pb-5'
     >
       <TabsList
         aria-label={t('Provider source')}
@@ -285,7 +285,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                   }
                   disabled={props.disabled}
                   onSelect={() => props.onSelect(option.target)}
-                  className='data-selected:border-primary/50 data-selected:bg-primary/5 min-h-24 flex-col items-stretch justify-between gap-2.5 rounded-lg border p-3 md:min-h-32 [&>svg]:hidden'
+                  className='data-selected:border-primary/50 data-selected:bg-primary/5 min-h-24 flex-col items-stretch justify-between gap-2.5 rounded-2xl border p-3 md:min-h-32 [&>svg]:hidden'
                 >
                   {option.target.kind === 'builtin' &&
                     option.target.type === CHANNEL_TYPE_ADVANCED_CUSTOM && (
@@ -313,9 +313,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                     <span className='min-w-0 flex-1'>
                       <span className='flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1'>
                         <TooltipHint content={option.label}>
-                          <span
-                            className='max-w-full truncate font-medium'
-                          >
+                          <span className='max-w-full truncate font-medium'>
                             {option.label}
                           </span>
                         </TooltipHint>
@@ -338,10 +336,10 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                         )}
                       </span>
                       {option.description && (
-                        <TooltipHint content={option.detail || option.description}>
-                          <span
-                            className='text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed break-words'
-                          >
+                        <TooltipHint
+                          content={option.detail || option.description}
+                        >
+                          <span className='text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed break-words'>
                             {option.description}
                           </span>
                         </TooltipHint>
@@ -376,9 +374,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                     )}
                     {option.plugin && (
                       <TooltipHint content={option.plugin.key}>
-                        <span
-                          className='text-muted-foreground min-w-0 truncate text-xs'
-                        >
+                        <span className='text-muted-foreground min-w-0 truncate text-xs'>
                           {option.plugin.key}
                         </span>
                       </TooltipHint>
@@ -414,7 +410,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
                   onSelect={() =>
                     props.onSelect({ kind: 'builtin', type: customType })
                   }
-                  className='data-selected:border-primary/50 data-selected:bg-primary/5 min-h-24 gap-2.5 rounded-lg border p-3 md:min-h-32 [&>svg]:hidden'
+                  className='data-selected:border-primary/50 data-selected:bg-primary/5 min-h-24 gap-2.5 rounded-2xl border p-3 md:min-h-32 [&>svg]:hidden'
                 >
                   <span className='shrink-0'>
                     <ChannelTypeLogo type={customType} size={20} />

@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { RenderWhenOpen } from '@/components/render-when-open'
+
 import { ResetSubscriptionsDialog } from './dialogs/reset-subscriptions-dialog'
 import { ToggleStatusDialog } from './dialogs/toggle-status-dialog'
 import { SubscriptionsMutateDrawer } from './subscriptions-mutate-drawer'
@@ -24,16 +26,25 @@ import { useSubscriptions } from './subscriptions-provider'
 export function SubscriptionsDialogs() {
   const { open, setOpen, currentRow } = useSubscriptions()
   const isUpdate = open === 'update'
+  const isMutateOpen = open === 'create' || isUpdate
 
   return (
     <>
-      <SubscriptionsMutateDrawer
-        open={open === 'create' || isUpdate}
-        onOpenChange={(isOpen) => !isOpen && setOpen(null)}
-        currentRow={isUpdate ? currentRow || undefined : undefined}
-      />
-      <ToggleStatusDialog />
-      <ResetSubscriptionsDialog />
+      <RenderWhenOpen open={isMutateOpen}>
+        <SubscriptionsMutateDrawer
+          open={isMutateOpen}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setOpen(null)
+          }}
+          currentRow={isUpdate ? currentRow || undefined : undefined}
+        />
+      </RenderWhenOpen>
+      <RenderWhenOpen open={open === 'toggle-status'}>
+        <ToggleStatusDialog />
+      </RenderWhenOpen>
+      <RenderWhenOpen open={open === 'reset-subscriptions'}>
+        <ResetSubscriptionsDialog />
+      </RenderWhenOpen>
     </>
   )
 }

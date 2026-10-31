@@ -29,11 +29,6 @@ import type {
   UserConsoleDateRange,
 } from '@/features/dashboard/types'
 import {
-  LOG_TYPE_ENUM,
-  MJ_TASK_STATUS,
-  TASK_STATUS,
-} from '@/features/usage-logs/constants'
-import {
   getAllLogs,
   getAllMidjourneyLogs,
   getAllTaskLogs,
@@ -41,12 +36,17 @@ import {
   getUserMidjourneyLogs,
   getUserTaskLogs,
 } from '@/features/usage-logs/api'
+import {
+  LOG_TYPE_ENUM,
+  MJ_TASK_STATUS,
+  TASK_STATUS,
+} from '@/features/usage-logs/constants'
 import type { UsageLog } from '@/features/usage-logs/data/schema'
 import type { MidjourneyLog, TaskLog } from '@/features/usage-logs/types'
 import { getSelf } from '@/lib/api'
-import { dateToUnixTimestamp } from '@/lib/time'
 import { requireServerSuccess } from '@/lib/server-error-message'
 import { STATUS_QUERY_KEY } from '@/lib/status-query'
+import { dateToUnixTimestamp } from '@/lib/time'
 import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 
 const IN_PROGRESS_TASK_STATUSES = new Set<string>([
@@ -84,7 +84,8 @@ function toUnixRange(range: UserConsoleDateRange) {
 }
 
 function countInProgressTasks(items: TaskLog[]): number {
-  return items.filter((item) => IN_PROGRESS_TASK_STATUSES.has(item.status)).length
+  return items.filter((item) => IN_PROGRESS_TASK_STATUSES.has(item.status))
+    .length
 }
 
 function countInProgressDrawings(items: MidjourneyLog[]): number {
@@ -100,10 +101,7 @@ export function useUserConsoleData(
   const authUser = useAuthStore((state) => state.auth.user)
   const siteWide = options?.siteWide === true
   const unixRange = useMemo(() => toUnixRange(range), [range])
-  const granularity = useMemo(
-    () => getUserConsoleGranularity(range),
-    [range]
-  )
+  const granularity = useMemo(() => getUserConsoleGranularity(range), [range])
 
   const selfQuery = useQuery({
     queryKey: ['dashboard', 'user-console', 'self'],
@@ -227,10 +225,7 @@ export function useUserConsoleData(
     if (aggregated.length > 0) return aggregated
     return quotaItemsFromLogs((logsQuery.data ?? []) as UsageLog[])
   }, [logsQuery.data, quotaQuery.data])
-  const stats = useMemo(
-    () => calculateDashboardStats(quotaData),
-    [quotaData]
-  )
+  const stats = useMemo(() => calculateDashboardStats(quotaData), [quotaData])
   const recentLogs = consumeLogs.slice(0, ACTIVITY_LOG_LIMIT)
   const inProgressCount =
     countInProgressTasks((taskQuery.data ?? []) as TaskLog[]) +

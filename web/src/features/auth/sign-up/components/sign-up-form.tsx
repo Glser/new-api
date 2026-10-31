@@ -16,8 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Link } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -300,9 +300,11 @@ export function SignUpForm({
                 <button
                   type='button'
                   tabIndex={-1}
-                  className='absolute right-2.5 flex size-7 items-center justify-center rounded-lg text-muted-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground'
+                  className='text-muted-foreground/80 hover:bg-muted/80 hover:text-foreground absolute right-2.5 flex size-7 items-center justify-center rounded-lg transition-colors'
                   onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={showPassword ? t('Hide password') : t('Show password')}
+                  aria-label={
+                    showPassword ? t('Hide password') : t('Show password')
+                  }
                 >
                   {showPassword ? (
                     <Eye className='size-4' aria-hidden />
@@ -336,10 +338,12 @@ export function SignUpForm({
                 <button
                   type='button'
                   tabIndex={-1}
-                  className='absolute right-2.5 flex size-7 items-center justify-center rounded-lg text-muted-foreground/80 transition-colors hover:bg-muted/80 hover:text-foreground'
+                  className='text-muted-foreground/80 hover:bg-muted/80 hover:text-foreground absolute right-2.5 flex size-7 items-center justify-center rounded-lg transition-colors'
                   onClick={() => setShowConfirmPassword((prev) => !prev)}
                   aria-label={
-                    showConfirmPassword ? t('Hide password') : t('Show password')
+                    showConfirmPassword
+                      ? t('Hide password')
+                      : t('Show password')
                   }
                 >
                   {showConfirmPassword ? (
@@ -429,11 +433,11 @@ export function SignUpForm({
           className='mt-1'
         />
 
-        <p className='pl-3 text-xs text-muted-foreground'>
+        <p className='text-muted-foreground pl-3 text-xs'>
           {t('Already have an account?')}{' '}
           <Link
             to='/sign-in'
-            className='font-semibold text-foreground underline underline-offset-4 hover:text-foreground/70'
+            className='text-foreground hover:text-foreground/70 font-semibold underline underline-offset-4'
           >
             {t('Sign in')}
           </Link>

@@ -43,7 +43,7 @@ export function HeaderLogo({
   if (isDefaultLogo) {
     return (
       <>
-        {/* Light mode: default oi logo */ }
+        {/* Light mode: default oi logo */}
         <img
           src='/logo.png'
           alt={alt}
@@ -53,7 +53,7 @@ export function HeaderLogo({
             className
           )}
         />
-        {/* Dark mode: oi dark logo */ }
+        {/* Dark mode: oi dark logo */}
         <img
           src='/logo-dark.png'
           alt={alt}

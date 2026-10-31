@@ -20,7 +20,7 @@
 | UI 与样式  | Base UI、Hugeicons、Tailwind CSS、clsx / class-variance-authority |
 | 表单       | React Hook Form、Zod                                              |
 | 图表       | @visactor/vchart、@visactor/react-vchart                          |
-| 工具       | qrcode.react、oxfmt、oxlint                                        |
+| 工具       | qrcode.react、oxfmt、oxlint                                       |
 
 优先复用项目已有组件与能力（见 [3.3 组件](#33-组件)）；项目内无合适实现时，再评估已安装依赖及成熟、维护良好的开源库。仅在复用、组合或合理扩展仍无法满足需求时自行实现，并说明具体能力缺口。
 

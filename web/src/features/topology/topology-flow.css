@@ -11,6 +11,12 @@
   background: transparent;
   box-shadow: none;
   padding: 0;
+  will-change: transform;
+}
+
+.topology-flow .react-flow__node.dragging {
+  cursor: grabbing;
+  z-index: 20;
 }
 
 .topology-flow .react-flow__edge-path {
@@ -30,6 +36,15 @@
 
 .topology-flow .react-flow__handle {
   border-width: 2px;
+  z-index: 30;
+}
+
+.topology-flow .react-flow__handle-top {
+  top: 0;
+}
+
+.topology-flow .react-flow__handle-bottom {
+  bottom: 0;
 }
 
 .topology-flow .react-flow__attribution {

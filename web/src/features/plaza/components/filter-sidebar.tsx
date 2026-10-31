@@ -28,6 +28,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { FILTER_ALL } from '@/features/pricing/constants'
 import type {
   PricingModel,
@@ -38,7 +39,6 @@ import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
 import { formatGroupRatio } from '../lib/group-ratio'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 function countByVendor(models: PricingModel[], vendorName: string): number {
   return models.reduce(

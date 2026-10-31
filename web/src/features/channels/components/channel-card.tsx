@@ -35,7 +35,11 @@ import { toIntlLocale } from '@/i18n/languages'
 import { formatTimestampToDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-import { CHANNEL_STATUS, CHANNEL_TYPE_TASK_PLUGIN } from '../constants'
+import {
+  CHANNEL_STATUS,
+  CHANNEL_STATUS_CONFIG,
+  CHANNEL_TYPE_TASK_PLUGIN,
+} from '../constants'
 import {
   formatRelativeTime,
   formatResponseTime,
@@ -52,8 +56,14 @@ import {
   ChannelRowActionsSlotContext,
 } from './channel-row-actions-context'
 import { ChannelTypeLogo } from './channel-type-badge'
-import { UpstreamUpdateTags } from './channels-columns'
+import {
+  BalanceCell,
+  PriorityCell,
+  UpstreamUpdateTags,
+  WeightCell,
+} from './channels-columns'
 import { useChannels } from './channels-provider'
+import { DataTableRowActions } from './data-table-row-actions'
 
 const SENSITIVE_MASK = '••••'
 
@@ -62,7 +72,7 @@ const PLAZA_CARD_HOVER =
 
 function ChannelCardLogo(props: { channel: Channel }) {
   if (isTagAggregateRow(props.channel)) {
-    return <Tags className='text-muted-foreground size-5' aria-hidden='true' />
+    return <Tags className='text-muted-foreground size-6' aria-hidden='true' />
   }
 
   const settings = parseChannelSettings(props.channel.setting)
@@ -72,7 +82,7 @@ function ChannelCardLogo(props: { channel: Channel }) {
     plugin = { key: pluginKey }
   }
 
-  return <ChannelTypeLogo type={props.channel.type} plugin={plugin} size={18} />
+  return <ChannelTypeLogo type={props.channel.type} plugin={plugin} size={20} />
 }
 
 function responseToneClass(variant: string) {
@@ -89,7 +99,7 @@ function responseToneClass(variant: string) {
 }
 
 const GROUP_CHIP_CLASS =
-  'h-5 max-w-20 shrink-0 truncate px-1.5 text-[10px] leading-none font-medium'
+  'h-6 max-w-24 shrink-0 truncate px-2 text-xs leading-tight font-medium'
 
 function ChannelCardGroups(props: { groups: string[]; masked: boolean }) {
   const { t } = useTranslation()
@@ -173,7 +183,7 @@ function ChannelCardGroups(props: { groups: string[]; masked: boolean }) {
         ))}
         <span
           ref={extraRef}
-          className='bg-muted/70 text-muted-foreground h-5 shrink-0 rounded-md px-1.5 text-[10px] leading-5 font-medium tabular-nums'
+          className='bg-muted/70 text-muted-foreground h-6 shrink-0 rounded-md px-2 text-xs leading-6 font-medium tabular-nums'
         >
           +99
         </span>
@@ -193,7 +203,7 @@ function ChannelCardGroups(props: { groups: string[]; masked: boolean }) {
           <TooltipHint
             content={`${t('Available groups')}: ${labels.join(', ')}`}
           >
-            <span className='bg-muted/70 text-muted-foreground h-5 shrink-0 rounded-md px-1.5 text-[10px] leading-5 font-medium tabular-nums'>
+            <span className='bg-muted/70 text-muted-foreground h-6 shrink-0 rounded-md px-2 text-xs leading-6 font-medium tabular-nums'>
               +{hiddenGroups.length}
             </span>
           </TooltipHint>
@@ -203,18 +213,37 @@ function ChannelCardGroups(props: { groups: string[]; masked: boolean }) {
   )
 }
 
+function ChannelCardStatus(props: { channel: Channel }) {
+  const { t } = useTranslation()
+  const status = props.channel.status
+  const config =
+    CHANNEL_STATUS_CONFIG[status as keyof typeof CHANNEL_STATUS_CONFIG] ||
+    CHANNEL_STATUS_CONFIG[0]
+  return (
+    <StatusBadge
+      label={t(config.label)}
+      variant={config.variant}
+      size='sm'
+      copyable={false}
+    />
+  )
+}
+
 function ChannelCardComponent({
   row,
-  isSelected,
+  channel: channelProp,
+  isSelected = false,
 }: {
-  row: Row<Channel>
-  isSelected: boolean
+  row?: Row<Channel>
+  channel?: Channel
+  isSelected?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const { sensitiveVisible } = useChannels()
-  const channel = row.original
+  const channel = row?.original ?? channelProp
+  if (!channel) return null
   const isTagRow = isTagAggregateRow(channel)
-  const cells = row.getAllCells()
+  const cells = row?.getAllCells() ?? []
   const renderCell = (id: string) => {
     const cell = cells.find((c) => c.column.id === id)
     if (!cell || !cell.column.columnDef.cell) {
@@ -226,11 +255,18 @@ function ChannelCardComponent({
   const groups = parseGroupsList(channel.group ?? '')
   const selectCell = renderCell('select')
   const nameCell = renderCell('name')
-  const statusCell = renderCell('status')
-  const actionsCell = renderCell('actions')
-  const priorityCell = renderCell('priority')
-  const weightCell = renderCell('weight')
-  const balanceCell = renderCell('balance')
+  const actionsFromRow = renderCell('actions')
+  const actionsCell = actionsFromRow ?? (
+    <DataTableRowActions channel={channel} />
+  )
+  const statusCell = renderCell('status') ?? (
+    <ChannelCardStatus channel={channel} />
+  )
+  const priorityCell = renderCell('priority') ?? (
+    <PriorityCell channel={channel} />
+  )
+  const weightCell = renderCell('weight') ?? <WeightCell channel={channel} />
+  const balanceCell = renderCell('balance') ?? <BalanceCell channel={channel} />
   const emptyValue = <span className='text-muted-foreground'>-</span>
   const typeName = t(getChannelTypeLabel(channel.type))
   const isMultiKey = !isTagRow && isMultiKeyChannel(channel)
@@ -279,42 +315,42 @@ function ChannelCardComponent({
         data-state={isSelected ? 'selected' : undefined}
         size='sm'
         className={cn(
-          'min-w-0 gap-3 bg-(--data-table-card-bg,var(--card)) py-3',
+          'min-w-0 gap-3.5 bg-(--data-table-card-bg,var(--card)) py-3.5 ring-inset',
           PLAZA_CARD_HOVER,
           isSelected && 'ring-primary/40'
         )}
       >
-        <CardHeader className='flex flex-row items-center gap-2.5 px-3.5'>
+        <CardHeader className='flex flex-row items-center gap-3 px-4'>
           {!isTagRow && selectCell ? (
             <span className='shrink-0'>{selectCell}</span>
           ) : null}
           {isTagRow ? (
             <div
-              className='flex size-7 shrink-0 items-center justify-center'
+              className='flex size-8 shrink-0 items-center justify-center'
               aria-hidden='true'
             >
               <ChannelCardLogo channel={channel} />
             </div>
           ) : (
             <TooltipHint content={typeName}>
-              <div className='flex size-7 shrink-0 items-center justify-center'>
+              <div className='flex size-8 shrink-0 items-center justify-center'>
                 <ChannelCardLogo channel={channel} />
               </div>
             </TooltipHint>
           )}
           <div className='min-w-0 flex-1 overflow-hidden'>
             {isTagRow ? (
-              <div className='min-w-0 overflow-hidden text-sm [&_.font-medium]:font-semibold [&_.font-semibold]:text-sm'>
+              <div className='min-w-0 overflow-hidden text-base leading-snug [&_.font-medium]:font-semibold [&_.font-semibold]:text-base'>
                 {nameCell}
               </div>
             ) : (
               <div className='flex min-w-0 items-center gap-1.5'>
                 <TooltipHint content={displayName}>
-                  <span className='min-w-0 truncate text-sm leading-none font-semibold'>
+                  <span className='min-w-0 truncate py-px text-base leading-snug font-semibold'>
                     {displayName}
                   </span>
                 </TooltipHint>
-                <span className='text-muted-foreground shrink-0 font-mono text-[11px] leading-none tabular-nums'>
+                <span className='text-muted-foreground shrink-0 font-mono text-xs leading-none tabular-nums'>
                   #{sensitiveVisible ? channel.id : SENSITIVE_MASK}
                 </span>
                 {isMultiKey ? (
@@ -326,7 +362,7 @@ function ChannelCardComponent({
                     }
                   >
                     <MultiKeyModeIcon
-                      className='text-muted-foreground size-3 shrink-0'
+                      className='text-muted-foreground size-3.5 shrink-0'
                       aria-hidden='true'
                     />
                   </TooltipHint>
@@ -338,7 +374,7 @@ function ChannelCardComponent({
                     )}
                   >
                     <AlertTriangle
-                      className='text-warning size-3.5 shrink-0'
+                      className='text-warning size-4 shrink-0'
                       aria-hidden='true'
                     />
                   </TooltipHint>
@@ -346,7 +382,7 @@ function ChannelCardComponent({
                 {hasParamOverride ? (
                   <TooltipHint content={t('Override request parameters')}>
                     <SlidersHorizontal
-                      className='text-info size-3.5 shrink-0'
+                      className='text-info size-4 shrink-0'
                       aria-hidden='true'
                     />
                   </TooltipHint>
@@ -362,35 +398,43 @@ function ChannelCardComponent({
           </div>
         </CardHeader>
 
-        <CardContent className='flex flex-col gap-2.5 px-3.5'>
+        <CardContent className='flex flex-col gap-3 px-4'>
           {!isTagRow ? (
-            <p className='text-muted-foreground line-clamp-2 min-h-5 text-[12px] leading-5 break-words'>
+            <p className='text-muted-foreground line-clamp-2 min-h-5 text-sm leading-5 break-words'>
               {remark || ' '}
             </p>
           ) : null}
 
           <div className='flex min-w-0 items-center justify-between gap-3'>
-            <div className='min-w-0 flex-1 overflow-hidden'>{balanceCell}</div>
+            <div className='flex min-w-0 items-center gap-1.5'>
+              {isTagRow ? (
+                <div className='min-w-0 flex-1 overflow-hidden'>
+                  {balanceCell}
+                </div>
+              ) : (
+                <>
+                  {testActions}
+                  <TooltipHint content={testedFullDate ?? testedLabel}>
+                    <span
+                      className={cn(
+                        'font-mono text-sm font-medium tabular-nums',
+                        responseToneClass(responseConfig.variant)
+                      )}
+                    >
+                      {formatResponseTime(responseTime, t)}
+                    </span>
+                  </TooltipHint>
+                </>
+              )}
+            </div>
             <div className='flex shrink-0 items-center'>
               {priorityCell ?? emptyValue}
             </div>
           </div>
 
           <div className='flex min-w-0 items-center justify-between gap-3'>
-            <div className='flex min-w-0 items-center gap-1.5'>
-              {!isTagRow ? testActions : null}
-              {!isTagRow ? (
-                <TooltipHint content={testedFullDate ?? testedLabel}>
-                  <span
-                    className={cn(
-                      'font-mono text-[12px] font-medium tabular-nums',
-                      responseToneClass(responseConfig.variant)
-                    )}
-                  >
-                    {formatResponseTime(responseTime, t)}
-                  </span>
-                </TooltipHint>
-              ) : null}
+            <div className='min-w-0 flex-1 overflow-hidden'>
+              {isTagRow ? null : balanceCell}
             </div>
             <div className='flex shrink-0 items-center'>
               {weightCell ?? emptyValue}
@@ -405,10 +449,10 @@ function ChannelCardComponent({
                   autoColor={channel.tag}
                   size='sm'
                   copyable={false}
-                  className='h-5 max-w-24 shrink-0 cursor-pointer px-1.5 text-[10px] leading-none'
+                  className='h-6 max-w-28 shrink-0 cursor-pointer px-2 text-xs leading-tight'
                   onClick={(event: MouseEvent) => {
                     event.stopPropagation()
-                    const table = row.getAllCells()[0]?.getContext().table
+                    const table = row?.getAllCells()[0]?.getContext().table
                     table?.getColumn('tag')?.setFilterValue([channel.tag])
                   }}
                 />

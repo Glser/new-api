@@ -37,14 +37,16 @@ export function UserConsoleBanner(props: UserConsoleBannerProps) {
 
   return (
     <>
-      <div className='bg-card flex min-w-0 items-center gap-2 rounded-xl border border-foreground/15 px-3 py-2.5 shadow-sm @min-[48rem]/console:gap-3 @min-[48rem]/console:px-4'>
+      <div className='bg-card border-foreground/15 flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 shadow-sm @min-[48rem]/console:gap-3 @min-[48rem]/console:px-4'>
         <span
-          className='bg-lime-400 text-black inline-flex size-8 shrink-0 items-center justify-center rounded-full @min-[48rem]/console:size-9'
+          className='inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-lime-400 text-black @min-[48rem]/console:size-9'
           aria-hidden='true'
         >
           <Megaphone className='size-4 @min-[48rem]/console:size-[18px]' />
         </span>
-        <p className='min-w-0 flex-1 truncate text-xs font-medium @min-[48rem]/console:text-sm'>{preview}</p>
+        <p className='min-w-0 flex-1 truncate text-xs font-medium @min-[48rem]/console:text-sm'>
+          {preview}
+        </p>
         <Button
           variant='outline'
           size='default'

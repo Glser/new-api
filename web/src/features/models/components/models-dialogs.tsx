@@ -16,14 +16,27 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { lazy } from 'react'
+
+import { LazyWhenOpen, RenderWhenOpen } from '@/components/render-when-open'
+
 import { DescriptionDialog } from './dialogs/description-dialog'
 import { MissingModelsDialog } from './dialogs/missing-models-dialog'
 import { PrefillGroupManagement } from './dialogs/prefill-group-management'
 import { PriceSyncDialog } from './dialogs/price-sync-dialog'
-import { SyncWizardDialog } from './dialogs/sync-wizard-dialog'
 import { VendorMutateDialog } from './dialogs/vendor-mutate-dialog'
-import { ModelMutateDrawer } from './drawers/model-mutate-drawer'
 import { useModels } from './models-provider'
+
+const ModelMutateDrawer = lazy(() =>
+  import('./drawers/model-mutate-drawer').then((module) => ({
+    default: module.ModelMutateDrawer,
+  }))
+)
+const SyncWizardDialog = lazy(() =>
+  import('./dialogs/sync-wizard-dialog').then((module) => ({
+    default: module.SyncWizardDialog,
+  }))
+)
 
 export function ModelsDialogs() {
   const {
@@ -34,63 +47,75 @@ export function ModelsDialogs() {
     descriptionData,
     setDescriptionData,
   } = useModels()
+  const isModelMutateOpen =
+    open === 'create-model' || open === 'update-model' || open === 'price-model'
+  const isVendorMutateOpen =
+    open === 'create-vendor' || open === 'update-vendor'
+  const closeDialog = (nextOpen: boolean) => {
+    if (!nextOpen) setOpen(null)
+  }
 
   return (
     <>
-      <PriceSyncDialog
-        open={open === 'price-sync'}
-        onOpenChange={(value) => !value && setOpen(null)}
-      />
-      {/* Model Create/Update Drawer */}
-      <ModelMutateDrawer
-        open={
-          open === 'create-model' ||
-          open === 'update-model' ||
-          open === 'price-model'
-        }
-        initialSection={open === 'price-model' ? 'pricing' : 'metadata'}
-        onOpenChange={(v) => !v && setOpen(null)}
-        currentRow={currentRow}
-      />
+      <RenderWhenOpen open={open === 'price-sync'}>
+        <PriceSyncDialog
+          open={open === 'price-sync'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
 
-      {/* Vendor Create/Update Dialog */}
-      <VendorMutateDialog
-        key={`${open}-${currentVendor?.id ?? 'new'}`}
-        open={open === 'create-vendor' || open === 'update-vendor'}
-        onOpenChange={(v) => !v && setOpen(null)}
-        currentVendor={open === 'update-vendor' ? currentVendor : null}
-      />
+      <LazyWhenOpen open={isModelMutateOpen}>
+        <ModelMutateDrawer
+          open={isModelMutateOpen}
+          initialSection={open === 'price-model' ? 'pricing' : 'metadata'}
+          onOpenChange={closeDialog}
+          currentRow={currentRow}
+        />
+      </LazyWhenOpen>
 
-      {/* Missing Models Dialog */}
-      <MissingModelsDialog
-        open={open === 'missing-models'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={isVendorMutateOpen}>
+        <VendorMutateDialog
+          key={currentVendor?.id ?? 'new'}
+          open={isVendorMutateOpen}
+          onOpenChange={closeDialog}
+          currentVendor={open === 'update-vendor' ? currentVendor : null}
+        />
+      </RenderWhenOpen>
 
-      {/* Sync Wizard Dialog */}
-      <SyncWizardDialog
-        open={open === 'sync-wizard'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <RenderWhenOpen open={open === 'missing-models'}>
+        <MissingModelsDialog
+          open={open === 'missing-models'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
 
-      {/* Prefill Groups Management */}
-      <PrefillGroupManagement
-        open={open === 'prefill-groups'}
-        onOpenChange={(v) => !v && setOpen(null)}
-      />
+      <LazyWhenOpen open={open === 'sync-wizard'}>
+        <SyncWizardDialog
+          open={open === 'sync-wizard'}
+          onOpenChange={closeDialog}
+        />
+      </LazyWhenOpen>
 
-      {/* Description Dialog */}
-      <DescriptionDialog
-        open={open === 'description'}
-        onOpenChange={(v) => {
-          if (!v) {
-            setOpen(null)
-            setDescriptionData(null)
-          }
-        }}
-        modelName={descriptionData?.modelName || ''}
-        description={descriptionData?.description || ''}
-      />
+      <RenderWhenOpen open={open === 'prefill-groups'}>
+        <PrefillGroupManagement
+          open={open === 'prefill-groups'}
+          onOpenChange={closeDialog}
+        />
+      </RenderWhenOpen>
+
+      <RenderWhenOpen open={open === 'description'}>
+        <DescriptionDialog
+          open={open === 'description'}
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) {
+              setOpen(null)
+              setDescriptionData(null)
+            }
+          }}
+          modelName={descriptionData?.modelName || ''}
+          description={descriptionData?.description || ''}
+        />
+      </RenderWhenOpen>
     </>
   )
 }

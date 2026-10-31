@@ -17,11 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQueryClient } from '@tanstack/react-query'
-import type {
-  ColumnDef,
-  RowSelectionState,
-  Table as TanStackTable,
-} from '@tanstack/react-table'
+import type { ColumnDef, RowSelectionState } from '@tanstack/react-table'
 import {
   Check,
   CheckCircle2,
@@ -30,7 +26,6 @@ import {
   Info,
   Loader2,
   Settings,
-  Trash2,
 } from 'lucide-react'
 import {
   type ChangeEvent,
@@ -43,14 +38,11 @@ import {
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
-  DataTableBulkActions as BulkActionsToolbar,
   DataTablePagination,
   DataTableView,
   useDataTable,
 } from '@/components/data-table'
-import { Dialog } from '@/components/dialog'
 import {
   sideDrawerContentClassName,
   sideDrawerFooterClassName,
@@ -61,6 +53,14 @@ import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Combobox } from '@/components/ui/combobox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { IconBadge } from '@/components/ui/icon-badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -72,16 +72,16 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
-import { TooltipHint,
+import {
+  TooltipHint,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { handleServerError } from '@/lib/handle-server-error'
+import { cn } from '@/lib/utils'
 
-import { updateChannel } from '../../api'
 import {
   channelsQueryKeys,
   formatResponseTime,
@@ -273,20 +273,27 @@ function getFailureStatusDisplay({
   }
 }
 
-function getTestTableColumnClass(columnId: string) {
+function getTestTableColumnClass(
+  columnId: string,
+  kind: 'header' | 'cell' = 'cell'
+) {
+  const align =
+    kind === 'header'
+      ? 'px-2.5 text-center [&>div]:mx-auto [&>div]:text-center'
+      : 'px-2.5 py-2.5 text-center'
   switch (columnId) {
     case 'select':
-      return 'w-10 min-w-10'
+      return cn(align, 'w-10 [&:has([role=checkbox])]:px-2.5')
     case 'model':
-      return 'w-auto min-w-48 whitespace-nowrap'
+      return cn(align, 'w-40 max-w-40')
     case 'status':
-      return 'w-28 min-w-28 whitespace-nowrap'
+      return cn(align, 'w-24 whitespace-nowrap')
     case 'result':
-      return 'w-80 min-w-80 max-w-80 whitespace-normal'
+      return cn(align, 'min-w-0 whitespace-normal')
     case 'actions':
-      return 'bg-popover w-px whitespace-nowrap'
+      return cn(align, 'w-12')
     default:
-      return undefined
+      return align
   }
 }
 
@@ -333,12 +340,6 @@ function ChannelTestDialogContent({
   const [isBatchTesting, setIsBatchTesting] = useState(false)
   const [isBatchStopRequested, setIsBatchStopRequested] = useState(false)
   const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null)
-  const [removedModels, setRemovedModels] = useState<Set<string>>(
-    () => new Set()
-  )
-  const [isDeleteFailedDialogOpen, setIsDeleteFailedDialogOpen] =
-    useState(false)
-  const [isDeletingFailed, setIsDeletingFailed] = useState(false)
   const [failureDetails, setFailureDetails] =
     useState<FailureDetailsState | null>(null)
   const [pagination, setPagination] = useState({
@@ -398,9 +399,6 @@ function ChannelTestDialogContent({
     setIsBatchTesting(false)
     setIsBatchStopRequested(false)
     setBatchProgress(null)
-    setRemovedModels(() => new Set())
-    setIsDeleteFailedDialogOpen(false)
-    setIsDeletingFailed(false)
     setFailureDetails(null)
     setPagination({ pageIndex: 0, pageSize: 30 })
   }, [])
@@ -438,18 +436,10 @@ function ChannelTestDialogContent({
       .filter(Boolean)
   }, [modelsValue])
 
-  const models = useMemo(
-    () => baseModels.filter((model) => !removedModels.has(model)),
-    [baseModels, removedModels]
-  )
+  const models = baseModels
 
   const successModels = useMemo(
     () => models.filter((model) => testResults[model]?.status === 'success'),
-    [models, testResults]
-  )
-
-  const failedModels = useMemo(
-    () => models.filter((model) => testResults[model]?.status === 'error'),
     [models, testResults]
   )
 
@@ -463,6 +453,13 @@ function ChannelTestDialogContent({
     () => filteredModels.map((model) => ({ model })),
     [filteredModels]
   )
+
+  const selectedModels = useMemo(
+    () => Object.keys(rowSelection).filter((model) => rowSelection[model]),
+    [rowSelection]
+  )
+  const modelsToTest =
+    selectedModels.length > 0 ? selectedModels : filteredModels
 
   const markModelTesting = useCallback((key: string, isTesting: boolean) => {
     setTestingModels((prev) => {
@@ -757,54 +754,6 @@ function ChannelTestDialogContent({
     })
   }, [successModels])
 
-  const handleDeleteFailedModels = useCallback(async () => {
-    const failed = models.filter(
-      (model) => testResults[model]?.status === 'error'
-    )
-    if (!failed.length) {
-      setIsDeleteFailedDialogOpen(false)
-      return
-    }
-
-    const failedSet = new Set(failed)
-    const remaining = models.filter((model) => !failedSet.has(model))
-
-    setIsDeletingFailed(true)
-    try {
-      const response = await updateChannel(currentRow.id, {
-        models: remaining.join(','),
-      })
-      if (response.success) {
-        setRemovedModels((prev) => {
-          const next = new Set(prev)
-          for (const model of failed) next.add(model)
-          return next
-        })
-        setTestResults((prev) => {
-          const next = { ...prev }
-          for (const model of failed) delete next[model]
-          return next
-        })
-        setRowSelection((prev) => {
-          const next = { ...prev }
-          for (const model of failed) delete next[model]
-          return next
-        })
-        toast.success(
-          t('Deleted {{count}} failed models', { count: failed.length })
-        )
-        refreshChannelLists()
-        setIsDeleteFailedDialogOpen(false)
-      } else {
-        handleServerError(response, t('Failed to delete failed models'))
-      }
-    } catch (error: unknown) {
-      handleServerError(error, t('Failed to delete failed models'))
-    } finally {
-      setIsDeletingFailed(false)
-    }
-  }, [currentRow.id, models, refreshChannelLists, t, testResults])
-
   const handleClose = useCallback(() => {
     resetState()
     onOpenChange(false)
@@ -820,10 +769,9 @@ function ChannelTestDialogContent({
   )
 
   const isAnyTesting = testingModels.size > 0 || isBatchTesting
-  const isFilteringModels = searchTerm.trim().length > 0
-  const testAllButtonLabel = isFilteringModels
-    ? t('Test {{count}} matching models', { count: filteredModels.length })
-    : t('Test all {{count}} models', { count: filteredModels.length })
+  const testAllButtonLabel = t('Test {{count}} models', {
+    count: modelsToTest.length,
+  })
 
   const columns = useMemo<ColumnDef<ModelRow>[]>(
     () => [
@@ -855,16 +803,15 @@ function ChannelTestDialogContent({
       {
         accessorKey: 'model',
         header: t('Model'),
+        enableSorting: false,
         cell: ({ row }) => {
           const model = row.original.model
           const isDefault = defaultTestModel === model
 
           return (
-            <div className='flex w-max items-center gap-2 whitespace-nowrap'>
+            <div className='mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5'>
               <TooltipHint content={model}>
-                <span className='font-medium whitespace-nowrap'>
-                  {model}
-                </span>
+                <span className='truncate font-medium'>{model}</span>
               </TooltipHint>
               {isDefault && (
                 <StatusBadge
@@ -965,156 +912,132 @@ function ChannelTestDialogContent({
 
   return (
     <>
-      <Dialog
-        open={open}
-        onOpenChange={handleDialogOpenChange}
-        title={
-          <span className='inline-flex max-w-full min-w-0 items-center gap-1.5'>
-            <span className='shrink-0'>{t('Test Channel Connection')}:</span>
-            <span className='min-w-0 truncate'>{currentRow.name}</span>
-          </span>
-        }
-        contentClassName='max-h-[90vh] overflow-hidden sm:max-w-4xl'
-        contentHeight='auto'
-        bodyClassName='space-y-4'
-        footer={
-          <Button variant='outline' onClick={handleClose}>
-            {t('Close')}
-          </Button>
-        }
-      >
-        <div className='max-h-[78vh] space-y-4 overflow-y-auto py-4 pr-1'>
-          <div className='grid gap-4 md:grid-cols-2'>
-            <div className='grid gap-2'>
-              <Label htmlFor='endpoint-type'>{t('Endpoint Type')}</Label>
-              <Combobox
-                options={endpointSelectItems}
-                value={endpointType}
-                onValueChange={handleEndpointTypeChange}
-                id='endpoint-type'
-                className='w-full min-w-0'
-                placeholder={t('Auto detect (default)')}
-              />
-              <p className='text-muted-foreground text-xs'>
-                {t(
+      <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+        <DialogContent
+          initialFocus={false}
+          className='flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden p-0 sm:w-[48rem] sm:max-w-[calc(100%-2rem)]'
+        >
+          <DialogHeader className='flex-row items-center gap-2.5 border-b px-4 py-3'>
+            <IconBadge
+              size='md'
+              className='rounded-full bg-[#c4f82a] text-[#28350a]'
+            >
+              <Gauge />
+            </IconBadge>
+            <div className='min-w-0 flex-1 pr-8'>
+              <DialogTitle className='truncate text-base font-semibold tracking-tight'>
+                {t('Test Channel Connection')}
+                <span className='text-muted-foreground font-normal'>
+                  {' · '}
+                  {currentRow.name}
+                </span>
+              </DialogTitle>
+              <DialogDescription className='sr-only'>
+                {t("Run connection tests against this channel's models.")}
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+
+          <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3'>
+            <div className='flex flex-nowrap items-center gap-2'>
+              <TooltipHint
+                content={t(
                   'Override the endpoint used for testing. Leave empty to auto detect.'
                 )}
-              </p>
-            </div>
-            <div className='grid gap-2'>
-              <Label htmlFor='stream-toggle'>{t('Stream Mode')}</Label>
-              <div className='flex items-center gap-2'>
-                <Switch
-                  id='stream-toggle'
-                  checked={effectiveStreamTest}
-                  onCheckedChange={setIsStreamTest}
-                  disabled={streamDisabled}
-                />
-                <span className='text-sm'>
-                  {effectiveStreamTest ? t('Enabled') : t('Disabled')}
-                </span>
-              </div>
-              <p className='text-muted-foreground text-xs'>
-                {t('Enable streaming mode for the test request.')}
-              </p>
-            </div>
-          </div>
-
-          <div className='space-y-3 max-sm:has-[div[role="toolbar"]]:pb-16'>
-            <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
-              <div className='min-w-0 space-y-2'>
-                <p className='text-sm font-medium'>{t('Channel models')}</p>
-                <p className='text-muted-foreground text-xs'>
-                  {t('Select models to run batch tests.')}
-                </p>
-                <div className='flex flex-wrap items-center gap-2'>
-                  {isBatchTesting ? (
+              >
+                <div className='w-52 shrink-0'>
+                  <Combobox
+                    options={endpointSelectItems}
+                    value={endpointType}
+                    onValueChange={handleEndpointTypeChange}
+                    id='endpoint-type'
+                    aria-label={t('Endpoint Type')}
+                    className='h-8 w-full min-w-0 rounded-lg'
+                    placeholder={t('Auto detect (default)')}
+                    openOnFocus={false}
+                    showClear={false}
+                  />
+                </div>
+              </TooltipHint>
+              <TooltipHint
+                content={t('Enable streaming mode for the test request.')}
+              >
+                <div className='flex h-8 shrink-0 items-center gap-2 rounded-lg border px-2.5'>
+                  <Label htmlFor='stream-toggle' className='text-xs'>
+                    {t('Stream Mode')}
+                  </Label>
+                  <Switch
+                    id='stream-toggle'
+                    checked={effectiveStreamTest}
+                    onCheckedChange={setIsStreamTest}
+                    disabled={streamDisabled}
+                  />
+                </div>
+              </TooltipHint>
+              <Input
+                placeholder={t('Filter models...')}
+                value={searchTerm}
+                onChange={handleSearchTermChange}
+                className='h-8 w-48 shrink-0'
+              />
+              <div className='ml-auto flex shrink-0 items-center gap-2'>
+              {isBatchTesting ? (
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={handleStopBatchTest}
+                  disabled={isBatchStopRequested}
+                >
+                  {isBatchStopRequested ? t('Stopping...') : t('Stop testing')}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    shine
+                    size='sm'
+                    onClick={() => handleBatchTest(modelsToTest)}
+                    disabled={isAnyTesting || modelsToTest.length === 0}
+                  >
+                    <Gauge data-icon='inline-start' />
+                    {testAllButtonLabel}
+                  </Button>
+                  {successModels.length > 0 && (
                     <Button
                       variant='outline'
                       size='sm'
-                      onClick={handleStopBatchTest}
-                      disabled={isBatchStopRequested}
+                      onClick={handleSelectSuccessfulModels}
                     >
-                      {isBatchStopRequested
-                        ? t('Stopping...')
-                        : t('Stop testing')}
+                      <CheckCircle2 data-icon='inline-start' />
+                      {t('Select successful models ({{count}})', {
+                        count: successModels.length,
+                      })}
                     </Button>
-                  ) : (
-                    <>
-                      <Button
-                        size='sm'
-                        onClick={() => handleBatchTest(filteredModels)}
-                        disabled={isAnyTesting || filteredModels.length === 0}
-                      >
-                        {testAllButtonLabel}
-                      </Button>
-                      {successModels.length > 0 && (
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={handleSelectSuccessfulModels}
-                        >
-                          <CheckCircle2 data-icon='inline-start' />
-                          {t('Select successful models ({{count}})', {
-                            count: successModels.length,
-                          })}
-                        </Button>
-                      )}
-                      {failedModels.length > 0 && (
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => setIsDeleteFailedDialogOpen(true)}
-                        >
-                          <Trash2 data-icon='inline-start' />
-                          {t('Delete failed models ({{count}})', {
-                            count: failedModels.length,
-                          })}
-                        </Button>
-                      )}
-                    </>
                   )}
-                </div>
-              </div>
-              <div className='flex flex-col gap-2 sm:flex-row sm:items-center'>
-                <Input
-                  placeholder={t('Filter models...')}
-                  value={searchTerm}
-                  onChange={handleSearchTermChange}
-                  className='sm:w-64'
-                />
+                </>
+              )}
               </div>
             </div>
 
-            <div className='space-y-3'>
+            <div className='min-h-0 flex-1 space-y-2 max-sm:has-[div[role="toolbar"]]:pb-16'>
               <DataTableView
                 table={table}
-                containerClassName='rounded-md'
+                containerClassName='w-full overflow-hidden rounded-xl border'
                 containerProps={{
                   role: 'region',
                   'aria-label': t('Channel models'),
                 }}
-                tableContainerClassName='max-h-90 overflow-auto **:data-[slot=table-container]:overflow-visible'
-                tableClassName='w-max min-w-full table-auto'
-                pinnedColumns={[
-                  {
-                    columnId: 'actions',
-                    side: 'right',
-                    cellClassName: 'bg-popover',
-                  },
-                ]}
+                tableContainerClassName='max-h-[min(36rem,58dvh)] overflow-auto'
+                tableClassName='w-full table-fixed'
                 colgroup={
                   <colgroup>
-                    <col className='w-10 min-w-10' />
-                    <col className='w-auto' />
-                    <col className='w-28' />
-                    <col className='w-80' />
-                    <col className='w-px' />
+                    <col className='w-10' />
+                    <col className='w-40' />
+                    <col className='w-24' />
+                    <col />
+                    <col className='w-12' />
                   </colgroup>
                 }
-                getColumnClassName={(columnId) =>
-                  getTestTableColumnClass(columnId)
-                }
+                getColumnClassName={getTestTableColumnClass}
                 emptyContent={
                   models.length
                     ? t('No models matched your search.')
@@ -1122,27 +1045,11 @@ function ChannelTestDialogContent({
                 }
                 emptyCellClassName='text-muted-foreground h-16 text-center text-sm'
               />
-
               <DataTablePagination table={table} />
             </div>
-
-            <TestModelsBulkActions table={table} />
           </div>
-        </div>
+        </DialogContent>
       </Dialog>
-      <ConfirmDialog
-        open={isDeleteFailedDialogOpen}
-        onOpenChange={setIsDeleteFailedDialogOpen}
-        title={t('Delete failed models')}
-        desc={t(
-          'This removes {{count}} failed models from this channel. This action cannot be undone.',
-          { count: failedModels.length }
-        )}
-        destructive
-        isLoading={isDeletingFailed}
-        confirmText={t('Delete')}
-        handleConfirm={handleDeleteFailedModels}
-      />
       <FailureDetailsSheet
         details={failureDetails}
         onOpenChange={(sheetOpen) => {
@@ -1201,9 +1108,9 @@ function TestResultCell({
 
   if (result.status === 'testing') {
     return (
-      <div className='text-muted-foreground flex min-w-0 items-center gap-2 text-sm'>
+      <div className='text-muted-foreground inline-flex items-center justify-center gap-1.5 text-sm'>
         <Loader2 className='size-4 shrink-0 animate-spin' />
-        <span className='truncate'>{t('Testing...')}</span>
+        <span>{t('Testing...')}</span>
       </div>
     )
   }
@@ -1250,11 +1157,11 @@ function FailureResultContent({
   })
 
   return (
-    <div className='flex min-w-0 items-center gap-2 text-xs whitespace-normal'>
-      <p className='text-muted-foreground line-clamp-2 min-w-0 flex-1 leading-snug wrap-break-word'>
+    <div className='mx-auto flex max-w-md flex-col items-center gap-1.5 text-center text-xs'>
+      <p className='text-muted-foreground line-clamp-2 leading-snug wrap-break-word'>
         {summary}
       </p>
-      <div className='flex shrink-0 flex-wrap items-center justify-end gap-1.5'>
+      <div className='flex flex-wrap items-center justify-center gap-1.5'>
         {isModelPriceError && (
           <Button
             variant='outline'
@@ -1356,39 +1263,5 @@ function FailureDetailsSheet({
         )}
       </SheetContent>
     </Sheet>
-  )
-}
-
-function TestModelsBulkActions({ table }: { table: TanStackTable<ModelRow> }) {
-  const { t } = useTranslation()
-  const { copyToClipboard } = useCopyToClipboard()
-  const selectedRows = table.getFilteredSelectedRowModel().rows
-  const selectedModels = selectedRows.map((row) => row.original.model)
-
-  const handleCopySelected = useCallback(() => {
-    if (selectedModels.length === 0) return
-    void copyToClipboard(selectedModels.join(','))
-  }, [copyToClipboard, selectedModels])
-
-  return (
-    <BulkActionsToolbar table={table} entityName='model'>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              size='sm'
-              onClick={handleCopySelected}
-              disabled={selectedModels.length === 0}
-            />
-          }
-        >
-          <Copy data-icon='inline-start' />
-          {t('Copy selected models')}
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{t('Copy selected models separated by commas (e.g. a,b)')}</p>
-        </TooltipContent>
-      </Tooltip>
-    </BulkActionsToolbar>
   )
 }

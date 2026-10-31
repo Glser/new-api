@@ -33,38 +33,43 @@ export function AuthCardHeading(props: {
   const { logo, loading, systemName } = useSystemConfig()
 
   return (
-    <div className={cn('grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 text-left', props.className)}>
+    <div
+      className={cn(
+        'grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 text-left',
+        props.className
+      )}
+    >
       <Link
-          to='/'
-          aria-label={systemName || t('Logo')}
-          className='relative size-9 shrink-0 self-center transition-opacity hover:opacity-85 sm:size-10'
-        >
-          {loading && <Skeleton className='absolute inset-0 rounded-full' />}
-          {!loading && logo === '/logo.png' && (
-            <>
-              <img
-                src='/logo.png'
-                alt=''
-                className='block size-full rounded-full object-contain dark:hidden'
-              />
-              <img
-                src='/logo-dark.png'
-                alt=''
-                className='hidden size-full rounded-full object-contain dark:block'
-              />
-            </>
-          )}
-          {!loading && logo && logo !== '/logo.png' && (
+        to='/'
+        aria-label={systemName || t('Logo')}
+        className='relative size-9 shrink-0 self-center transition-opacity hover:opacity-85 sm:size-10'
+      >
+        {loading && <Skeleton className='absolute inset-0 rounded-full' />}
+        {!loading && logo === '/logo.png' && (
+          <>
             <img
-              src={logo}
+              src='/logo.png'
               alt=''
-              className='size-full rounded-full object-cover'
+              className='block size-full rounded-full object-contain dark:hidden'
             />
-          )}
-        </Link>
-        <h2 className='text-2xl font-bold tracking-tight text-foreground sm:text-3xl'>
-          {props.title}
-        </h2>
+            <img
+              src='/logo-dark.png'
+              alt=''
+              className='hidden size-full rounded-full object-contain dark:block'
+            />
+          </>
+        )}
+        {!loading && logo && logo !== '/logo.png' && (
+          <img
+            src={logo}
+            alt=''
+            className='size-full rounded-full object-cover'
+          />
+        )}
+      </Link>
+      <h2 className='text-foreground text-2xl font-bold tracking-tight sm:text-3xl'>
+        {props.title}
+      </h2>
       {props.children ? (
         <div className='col-span-2 space-y-2'>{props.children}</div>
       ) : null}

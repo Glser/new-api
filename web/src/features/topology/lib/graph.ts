@@ -22,7 +22,6 @@ import {
   parseGroupsList,
   parseModelsList,
 } from '@/features/channels/lib/channel-utils'
-import type { Channel } from '@/features/channels/types'
 import type { Model } from '@/features/models/types'
 
 import {
@@ -57,17 +56,6 @@ function uniqueSorted(values: Iterable<string>) {
 function matchesSearch(text: string, search: string) {
   if (!search) return true
   return text.toLowerCase().includes(search)
-}
-
-function pluginKeyOf(channel: Channel) {
-  try {
-    const parsed = JSON.parse(channel.setting || '{}') as {
-      task_plugin_key?: string
-    }
-    return parsed.task_plugin_key
-  } catch {
-    return undefined
-  }
 }
 
 export function buildTopologyGraph(
@@ -224,15 +212,7 @@ export function buildTopologyGraph(
       position: { x: 0, y: 0 },
       data: {
         channelId: channel.id,
-        name: channel.name,
-        type: channel.type,
-        status: channel.status,
-        groupCount: channelGroups.get(channel.id)?.length ?? 0,
-        modelCount: channelModels.get(channel.id)?.length ?? 0,
-        pluginKey: pluginKeyOf(channel),
-        usedQuota: channel.used_quota ?? 0,
-        balance: channel.balance ?? 0,
-        responseTime: channel.response_time ?? 0,
+        channel,
         color: topologyColor(`channel:${channel.id}`),
       } satisfies TopologyChannelData,
     })),

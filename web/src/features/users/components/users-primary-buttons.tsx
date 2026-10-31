@@ -36,7 +36,7 @@ export function UsersPrimaryButtons() {
     <div className='flex shrink-0 items-center'>
       <Button shine size='lg' className='h-9 px-3' onClick={handleCreate}>
         <Plus data-icon='inline-start' className='size-4' />
-        <span className='leading-none'>{t('Add User')}</span>
+        {t('Add User')}
       </Button>
     </div>
   )

@@ -62,6 +62,11 @@ import { DataTableViewModeToggle } from '../toolbar/view-mode-toggle'
 import { DataTableCardGrid } from './card-grid'
 import { MobileCardList } from './mobile-card-list'
 
+// overflow-y:auto also computes overflow-x to auto, which clips 1px card rings
+// on the first row and leftmost/rightmost columns. Negative margin keeps toolbar
+// alignment; padding is the clip gutter for rings and hover lift.
+const CARD_SCROLLPORT_GUTTER = '-m-1.5 p-1.5'
+
 /**
  * Pass-through configuration for the default {@link DataTableToolbar}.
  * Pass `toolbar` (ReactNode) instead to fully replace the default toolbar.
@@ -504,7 +509,19 @@ function renderMobile<TData>(
     }
   }
 
-  return <div className='min-h-0 flex-1 overflow-y-auto'>{mobileContent}</div>
+  const cardGridOnMobile =
+    cardViewActive && viewMode !== DATA_TABLE_VIEW_MODES.TABLE
+
+  return (
+    <div
+      className={cn(
+        'min-h-0 flex-1 overflow-y-auto',
+        cardGridOnMobile && CARD_SCROLLPORT_GUTTER
+      )}
+    >
+      {mobileContent}
+    </div>
+  )
 }
 
 function renderDesktop<TData>(
@@ -525,6 +542,7 @@ function renderDesktop<TData>(
       <div
         className={cn(
           fixedHeight && 'min-h-0 flex-1 overflow-y-auto',
+          CARD_SCROLLPORT_GUTTER,
           'transition-opacity duration-150',
           isFetchingOnly && 'pointer-events-none opacity-60'
         )}

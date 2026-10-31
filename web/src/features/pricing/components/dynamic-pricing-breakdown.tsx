@@ -59,7 +59,11 @@ import {
   taskUsageUnitLabel,
   taskPricingConditions,
 } from '../lib/task-price-display'
-import { formatOfficialPrice, formatPriceNumber, matchesPrefix } from '../lib/usd-price'
+import {
+  formatOfficialPrice,
+  formatPriceNumber,
+  matchesPrefix,
+} from '../lib/usd-price'
 import type { BillingUsageSchema, BillingUsageUnit } from '../types'
 import { PriceRatioBadge } from './price-discount'
 

@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ProviderBadge } from '@/components/provider-badge'
 import { StatusBadge } from '@/components/status-badge'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { PluginIcon } from '@/features/task-plugins/components/plugin-icon'
 import type { PluginIconInput } from '@/features/task-plugins/lib/plugin-icon'
 import {
@@ -37,7 +38,6 @@ import { useAuthStore } from '@/stores/auth-store'
 import { getTaskPluginOptions } from '../api'
 import { CHANNEL_TYPE_OPTIONS, CHANNEL_TYPE_TASK_PLUGIN } from '../constants'
 import { getChannelTypeIcon } from '../lib/channel-utils'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 export function ChannelTypeLogo(props: {
   type: number
@@ -89,14 +89,14 @@ export function TaskPluginChannelBadge(props: { pluginKey?: string }) {
     plugin ?? (props.pluginKey ? { key: props.pluginKey } : undefined)
 
   return (
-    <TooltipHint content={
+    <TooltipHint
+      content={
         props.pluginKey
           ? `${t('Task Plugin')} · ${label} (${props.pluginKey})`
           : label
-      }>
-      <div
-        className='flex max-w-full min-w-0 items-center gap-1.5'
-      >
+      }
+    >
+      <div className='flex max-w-full min-w-0 items-center gap-1.5'>
         <ProviderBadge
           iconNode={
             <ChannelTypeLogo

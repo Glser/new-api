@@ -253,7 +253,7 @@ export function Footer(props: FooterProps) {
 
   return (
     <footer
-      id="site-footer"
+      id='site-footer'
       className={cn('border-border/40 relative z-10 border-t', props.className)}
     >
       {/* 页尾顶部沿用首页的淡出渐变，与上一节柔和衔接 */}
@@ -288,12 +288,12 @@ export function Footer(props: FooterProps) {
                   <img
                     src='/logo.png'
                     alt={displayName}
-                    className='size-7 rounded-lg object-contain block dark:hidden'
+                    className='block size-7 rounded-lg object-contain dark:hidden'
                   />
                   <img
                     src='/logo-dark.png'
                     alt={displayName}
-                    className='size-7 rounded-lg object-contain hidden dark:block'
+                    className='hidden size-7 rounded-lg object-contain dark:block'
                   />
                 </>
               ) : (

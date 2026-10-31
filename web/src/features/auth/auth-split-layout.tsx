@@ -18,10 +18,17 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import { useRouterState } from '@tanstack/react-router'
+import {
+  Sparkles,
+  ArrowUpRight,
+  Bot,
+  Coins,
+  Tag,
+  TrendingDown,
+} from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useMemo, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Sparkles, ArrowUpRight, Bot, Coins, Tag, TrendingDown } from 'lucide-react'
 
 import { parseModelTags } from '@/features/models/lib/model-utils'
 import { getPricing } from '@/features/pricing/api'
@@ -35,9 +42,21 @@ import {
 } from '@/features/pricing/lib/dynamic-price'
 import { isTokenBasedModel } from '@/features/pricing/lib/model-helpers'
 import { formatPrice, formatRequestPrice } from '@/features/pricing/lib/price'
-import { taskPriceLabel, taskUsageUnitLabel } from '@/features/pricing/lib/task-price-display'
-import { formatUsdPrice, getOfficialVsSitePrice, matchesPrefix } from '@/features/pricing/lib/usd-price'
-import type { PriceType, PricingModel, PricingVendor, TokenUnit } from '@/features/pricing/types'
+import {
+  taskPriceLabel,
+  taskUsageUnitLabel,
+} from '@/features/pricing/lib/task-price-display'
+import {
+  formatUsdPrice,
+  getOfficialVsSitePrice,
+  matchesPrefix,
+} from '@/features/pricing/lib/usd-price'
+import type {
+  PriceType,
+  PricingModel,
+  PricingVendor,
+  TokenUnit,
+} from '@/features/pricing/types'
 import { useStatus } from '@/hooks/use-status'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
@@ -213,24 +232,24 @@ function AgentCardItem({ item }: { item: AgentItem }) {
   const { t } = useTranslation()
 
   return (
-    <div className='relative mb-4 flex min-h-[185px] flex-col justify-between overflow-hidden rounded-2xl border border-border/60 bg-card/65 p-4.5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-foreground/25 hover:bg-card/90 hover:shadow-md'>
+    <div className='border-border/60 bg-card/65 hover:border-foreground/25 hover:bg-card/90 relative mb-4 flex min-h-[185px] flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-md'>
       <div>
-        <div className='flex items-center gap-3 min-w-0'>
-          <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-background/90 p-2 shadow-xs'>
+        <div className='flex min-w-0 items-center gap-3'>
+          <div className='border-border/80 bg-background/90 flex size-10 shrink-0 items-center justify-center rounded-xl border p-2 shadow-xs'>
             {getLobeIcon(item.icon_key, 24)}
           </div>
-          <h4 className='truncate text-sm font-semibold tracking-tight text-foreground'>
+          <h4 className='text-foreground truncate text-sm font-semibold tracking-tight'>
             {item.name}
           </h4>
         </div>
 
-        <p className='mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground'>
+        <p className='text-muted-foreground mt-3 line-clamp-2 text-xs leading-relaxed'>
           {item.description}
         </p>
       </div>
 
-      <div className='flex items-center justify-between gap-3 border-t border-border/40 pt-2.5 mt-2'>
-        <span className='inline-flex min-w-0 items-center gap-1.5 font-mono text-[10px] text-muted-foreground'>
+      <div className='border-border/40 mt-2 flex items-center justify-between gap-3 border-t pt-2.5'>
+        <span className='text-muted-foreground inline-flex min-w-0 items-center gap-1.5 font-mono text-[10px]'>
           <span
             className='size-2 shrink-0 rounded-full'
             style={{
@@ -245,10 +264,10 @@ function AgentCardItem({ item }: { item: AgentItem }) {
             href={item.guide_url}
             target='_blank'
             rel='noopener noreferrer'
-            className='inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-foreground/80 hover:text-foreground'
+            className='text-foreground/80 hover:text-foreground inline-flex shrink-0 items-center gap-1 text-[11px] font-medium'
           >
             <span>{t('查看教程')}</span>
-            <ArrowUpRight className='size-3 text-muted-foreground' />
+            <ArrowUpRight className='text-muted-foreground size-3' />
           </a>
         )}
       </div>
@@ -262,7 +281,9 @@ function ModelCardItem(props: { item: ModelCardData }) {
   const tokenUnit: TokenUnit = DEFAULT_TOKEN_UNIT
   const currency = useSystemConfigStore((state) => state.config.currency)
   const isTokenBased = isTokenBasedModel(props.item.rawModel)
-  const isUnconfiguredTaskUsage = isUnconfiguredTaskUsageModel(props.item.rawModel)
+  const isUnconfiguredTaskUsage = isUnconfiguredTaskUsageModel(
+    props.item.rawModel
+  )
 
   const officialVsSite = useMemo(
     () =>
@@ -343,39 +364,49 @@ function ModelCardItem(props: { item: ModelCardData }) {
         }}
       >
         <div className='flex min-w-0 items-center gap-1.5'>
-          <span className={cn('flex size-4.5 shrink-0 items-center justify-center rounded-md text-white shadow-2xs', props.item.theme.iconBg)}>
+          <span
+            className={cn(
+              'flex size-4.5 shrink-0 items-center justify-center rounded-md text-white shadow-2xs',
+              props.item.theme.iconBg
+            )}
+          >
             <Coins className='size-2.5' aria-hidden />
           </span>
 
-          <div className='flex min-w-0 items-baseline whitespace-nowrap leading-none'>
+          <div className='flex min-w-0 items-baseline leading-none whitespace-nowrap'>
             {sitePriceParts.map((p, idx) => (
-              <span
-                key={p.label}
-                className='inline-flex items-baseline'
-              >
+              <span key={p.label} className='inline-flex items-baseline'>
                 {idx > 0 && (
-                  <span aria-hidden className='mx-1 text-[10px] text-muted-foreground/40'>
+                  <span
+                    aria-hidden
+                    className='text-muted-foreground/40 mx-1 text-[10px]'
+                  >
                     /
                   </span>
                 )}
-                <span className='text-[10px] font-medium text-muted-foreground'>
+                <span className='text-muted-foreground text-[10px] font-medium'>
                   {p.label}
                 </span>
-                <span className='ml-1 font-mono text-[11px] font-bold tabular-nums text-foreground'>
+                <span className='text-foreground ml-1 font-mono text-[11px] font-bold tabular-nums'>
                   {p.text}
                 </span>
               </span>
             ))}
-            <span className='ml-1 text-[10px] text-muted-foreground'>
+            <span className='text-muted-foreground ml-1 text-[10px]'>
               / M Token
             </span>
           </div>
         </div>
 
         {siteDiscountPercent > 0 && (
-          <span className={cn('shrink-0 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold text-white shadow-xs leading-none', props.item.theme.iconBg)}>
-            <TrendingDown className='size-2' aria-hidden />
-            -{siteDiscountPercent}%
+          <span
+            className={cn(
+              'shrink-0 inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-mono text-[9px] font-bold text-white shadow-xs leading-none',
+              props.item.theme.iconBg
+            )}
+          >
+            <TrendingDown className='size-2' aria-hidden />-
+            {siteDiscountPercent}%
           </span>
         )}
       </div>
@@ -383,7 +414,7 @@ function ModelCardItem(props: { item: ModelCardData }) {
   } else if (dynamicSummary) {
     if (dynamicSummary.primaryEntries.length > 0) {
       priceContent = (
-        <div className='flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 px-3 py-2'>
+        <div className='border-border/40 bg-background/50 flex items-center justify-between gap-2 rounded-xl border px-3 py-2'>
           <div className='flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5'>
             {dynamicSummary.primaryEntries
               .slice(0, dynamicSummary.providerCount ? 2 : undefined)
@@ -397,7 +428,11 @@ function ModelCardItem(props: { item: ModelCardData }) {
                 const label =
                   entry.labelKind !== 'schema'
                     ? t(entry.shortLabel)
-                    : taskPriceLabel(entry.description, entry.shortLabel, i18n.language)
+                    : taskPriceLabel(
+                        entry.description,
+                        entry.shortLabel,
+                        i18n.language
+                      )
 
                 return (
                   <span
@@ -405,12 +440,14 @@ function ModelCardItem(props: { item: ModelCardData }) {
                     className='flex items-baseline gap-1 font-mono text-xs font-semibold tabular-nums'
                   >
                     {label && (
-                      <span className='text-[10px] font-normal text-muted-foreground'>
+                      <span className='text-muted-foreground text-[10px] font-normal'>
                         {label}
                       </span>
                     )}
-                    <span className='text-foreground'>{entry.formattedRange ?? entry.formatted}</span>
-                    <span className='text-[10px] font-normal text-muted-foreground'>
+                    <span className='text-foreground'>
+                      {entry.formattedRange ?? entry.formatted}
+                    </span>
+                    <span className='text-muted-foreground text-[10px] font-normal'>
                       /{unitLabel}
                     </span>
                   </span>
@@ -428,9 +465,9 @@ function ModelCardItem(props: { item: ModelCardData }) {
             borderColor: props.item.theme.border,
           }}
         >
-          <span className='font-mono text-sm font-bold text-foreground tabular-nums'>
+          <span className='text-foreground font-mono text-sm font-bold tabular-nums'>
             {formatRequestPrice(props.item.rawModel)}
-            <span className='ms-1 text-[10px] font-normal text-muted-foreground'>
+            <span className='text-muted-foreground ms-1 text-[10px] font-normal'>
               /{t('request')}
             </span>
           </span>
@@ -439,7 +476,7 @@ function ModelCardItem(props: { item: ModelCardData }) {
     } else {
       priceContent = (
         <div
-          className='rounded-xl border p-2.5 px-3 text-xs text-muted-foreground'
+          className='text-muted-foreground rounded-xl border p-2.5 px-3 text-xs'
           style={{
             background: props.item.theme.bg,
             borderColor: props.item.theme.border,
@@ -452,7 +489,7 @@ function ModelCardItem(props: { item: ModelCardData }) {
   } else if (isUnconfiguredTaskUsage) {
     priceContent = (
       <div
-        className='rounded-xl border p-2.5 px-3 text-xs text-muted-foreground'
+        className='text-muted-foreground rounded-xl border p-2.5 px-3 text-xs'
         style={{
           background: props.item.theme.bg,
           borderColor: props.item.theme.border,
@@ -480,13 +517,15 @@ function ModelCardItem(props: { item: ModelCardData }) {
               key={price.type}
               className='flex items-baseline gap-1 font-mono text-xs font-semibold tabular-nums'
             >
-              <span className='text-[10px] font-normal text-muted-foreground'>
+              <span className='text-muted-foreground text-[10px] font-normal'>
                 {price.label}
               </span>
-              <span className='text-foreground'>{formatPrice(props.item.rawModel, price.type, tokenUnit)}</span>
+              <span className='text-foreground'>
+                {formatPrice(props.item.rawModel, price.type, tokenUnit)}
+              </span>
             </span>
           ))}
-          <span className='text-[10px] font-normal text-muted-foreground'>
+          <span className='text-muted-foreground text-[10px] font-normal'>
             /Token
           </span>
         </div>
@@ -501,9 +540,9 @@ function ModelCardItem(props: { item: ModelCardData }) {
           borderColor: props.item.theme.border,
         }}
       >
-        <span className='font-mono text-sm font-bold text-foreground tabular-nums'>
+        <span className='text-foreground font-mono text-sm font-bold tabular-nums'>
           {formatRequestPrice(props.item.rawModel)}
-          <span className='ms-1 text-[10px] font-normal text-muted-foreground'>
+          <span className='text-muted-foreground ms-1 text-[10px] font-normal'>
             /{t('request')}
           </span>
         </span>
@@ -512,18 +551,18 @@ function ModelCardItem(props: { item: ModelCardData }) {
   }
 
   return (
-    <div className='relative mb-4 flex min-h-[185px] flex-col justify-between overflow-hidden rounded-2xl border border-border/60 bg-card/65 p-4.5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-foreground/25 hover:bg-card/90 hover:shadow-md'>
+    <div className='border-border/60 bg-card/65 hover:border-foreground/25 hover:bg-card/90 relative mb-4 flex min-h-[185px] flex-col justify-between overflow-hidden rounded-2xl border p-4.5 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-md'>
       <div>
         <div className='flex items-start justify-between gap-3'>
           <div className='flex min-w-0 items-center gap-3'>
-            <div className='flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/80 bg-background/90 p-2 shadow-xs'>
+            <div className='border-border/80 bg-background/90 flex size-10 shrink-0 items-center justify-center rounded-xl border p-2 shadow-xs'>
               {getLobeIcon(props.item.iconKey, 24)}
             </div>
             <div className='min-w-0'>
-              <h4 className='truncate text-sm font-semibold tracking-tight text-foreground'>
+              <h4 className='text-foreground truncate text-sm font-semibold tracking-tight'>
                 {props.item.name}
               </h4>
-              <p className='truncate text-xs text-muted-foreground'>
+              <p className='text-muted-foreground truncate text-xs'>
                 {props.item.provider}
               </p>
             </div>
@@ -541,7 +580,7 @@ function ModelCardItem(props: { item: ModelCardData }) {
         </div>
 
         {props.item.description && (
-          <p className='mt-2.5 line-clamp-1 text-xs leading-relaxed text-muted-foreground'>
+          <p className='text-muted-foreground mt-2.5 line-clamp-1 text-xs leading-relaxed'>
             {props.item.description}
           </p>
         )}
@@ -549,18 +588,16 @@ function ModelCardItem(props: { item: ModelCardData }) {
 
       <div>
         {/* 价格与折扣行 */}
-        <div className='mb-2'>
-          {priceContent}
-        </div>
+        <div className='mb-2'>{priceContent}</div>
 
         {props.item.specs.length > 0 && (
           <div className='flex flex-wrap items-center gap-1.5'>
             {props.item.specs.slice(0, 3).map((spec) => (
               <span
                 key={spec}
-                className='inline-flex items-center gap-1 rounded-md border border-border/50 bg-background/60 px-1.5 py-0.5 text-[0.6875rem] text-muted-foreground'
+                className='border-border/50 bg-background/60 text-muted-foreground inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[0.6875rem]'
               >
-                <Tag className='size-2.5 text-muted-foreground/70' />
+                <Tag className='text-muted-foreground/70 size-2.5' />
                 {spec}
               </span>
             ))}
@@ -573,7 +610,9 @@ function ModelCardItem(props: { item: ModelCardData }) {
 
 export function AuthSplitLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation()
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
   const { status } = useStatus()
   // 1. 动态读取后台配置的 agents (来自 /api/status 中的 agents 字段)
   const agents: AgentItem[] = useMemo(() => {
@@ -637,30 +676,30 @@ export function AuthSplitLayout({ children }: { children: ReactNode }) {
 
   return (
     <SignInScaleFrame>
-      <div className='relative min-h-[calc(100svh/var(--sign-in-scale,1))] w-full overflow-hidden bg-background'>
+      <div className='bg-background relative min-h-[calc(100svh/var(--sign-in-scale,1))] w-full overflow-hidden'>
         {/* Background ambient lighting */}
         <div
           aria-hidden='true'
-          className='pointer-events-none absolute -top-40 right-1/4 -z-10 h-[500px] w-[800px] translate-x-1/2 rounded-full bg-gradient-to-b from-foreground/5 via-foreground/[0.02] to-transparent blur-3xl'
+          className='from-foreground/5 via-foreground/[0.02] pointer-events-none absolute -top-40 right-1/4 -z-10 h-[500px] w-[800px] translate-x-1/2 rounded-full bg-gradient-to-b to-transparent blur-3xl'
         />
         <div
           aria-hidden='true'
-          className='pointer-events-none absolute bottom-0 left-0 -z-10 size-[480px] rounded-full bg-foreground/[0.03] blur-3xl'
+          className='bg-foreground/[0.03] pointer-events-none absolute bottom-0 left-0 -z-10 size-[480px] rounded-full blur-3xl'
         />
 
         {/* Main Split Layout: Left is Agent & Models Marquee, Right is Auth Form */}
-        <div className='min-h-[calc(100svh/var(--sign-in-scale,1))] flex flex-col lg:flex-row items-center justify-center lg:justify-between px-6 sm:px-10 lg:px-16 xl:px-20 py-10 lg:py-0 gap-8 lg:gap-10 max-w-[1440px] mx-auto w-full'>
+        <div className='mx-auto flex min-h-[calc(100svh/var(--sign-in-scale,1))] w-full max-w-[1440px] flex-col items-center justify-center gap-8 px-6 py-10 sm:px-10 lg:flex-row lg:justify-between lg:gap-10 lg:px-16 lg:py-0 xl:px-20'>
           {/* Left Column: Left sub-col is Agent Tools, Right sub-col is Models */}
-          <div className='relative hidden h-[690px] w-full max-w-[640px] overflow-hidden lg:block shrink-0'>
+          <div className='relative hidden h-[690px] w-full max-w-[640px] shrink-0 overflow-hidden lg:block'>
             {/* Top & Bottom gradient mask for smooth fading */}
-            <div className='pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-background via-background/85 to-transparent' />
-            <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t from-background via-background/85 to-transparent' />
+            <div className='from-background via-background/85 pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b to-transparent' />
+            <div className='from-background via-background/85 pointer-events-none absolute inset-x-0 bottom-0 z-10 h-24 bg-gradient-to-t to-transparent' />
 
             <div className='grid grid-cols-2 gap-4.5'>
               {/* Column 1: Agent Tools (从后台 agents 配置动态生成) */}
               <div className='relative h-[670px] w-full overflow-hidden'>
-                <div className='mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase'>
-                  <Bot className='size-3.5 text-muted-foreground' />
+                <div className='text-muted-foreground mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider uppercase'>
+                  <Bot className='text-muted-foreground size-3.5' />
                   <span>{t('Agent 智能体工具')}</span>
                 </div>
                 <motion.div
@@ -673,7 +712,8 @@ export function AuthSplitLayout({ children }: { children: ReactNode }) {
                   }}
                 >
                   {[...agents, ...agents].map((agent, idx) => {
-                    const key = idx < agents.length ? agent.id : `${agent.id}-dup-${idx}`
+                    const key =
+                      idx < agents.length ? agent.id : `${agent.id}-dup-${idx}`
                     return <AgentCardItem key={key} item={agent} />
                   })}
                 </motion.div>
@@ -681,7 +721,7 @@ export function AuthSplitLayout({ children }: { children: ReactNode }) {
 
               {/* Column 2: Models (从后台模型配置 featured/精选模型动态生成) */}
               <div className='relative h-[670px] w-full overflow-hidden'>
-                <div className='mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase'>
+                <div className='text-muted-foreground mb-3 flex items-center gap-1.5 px-1 text-xs font-semibold tracking-wider uppercase'>
                   <Sparkles className='size-3.5 text-amber-500' />
                   <span>{t('精选推荐模型')}</span>
                 </div>
@@ -695,7 +735,10 @@ export function AuthSplitLayout({ children }: { children: ReactNode }) {
                   }}
                 >
                   {[...modelCards, ...modelCards].map((model, idx) => {
-                    const key = idx < modelCards.length ? model.id : `${model.id}-dup-${idx}`
+                    const key =
+                      idx < modelCards.length
+                        ? model.id
+                        : `${model.id}-dup-${idx}`
                     return <ModelCardItem key={key} item={model} />
                   })}
                 </motion.div>
@@ -704,8 +747,8 @@ export function AuthSplitLayout({ children }: { children: ReactNode }) {
           </div>
 
           {/* Right Column: Form Box - 靠拢左侧走马灯，原尺寸不变 */}
-          <div className='flex w-full flex-1 justify-center lg:justify-start items-center lg:pl-4 xl:pl-8'>
-            <div className='w-full max-w-[25rem] rounded-3xl border border-border/60 bg-card/75 p-7 shadow-xl shadow-black/[0.03] backdrop-blur-2xl sm:p-9 dark:bg-card/45 dark:shadow-black/30 [--autofill-bg:color-mix(in_oklch,var(--card)_75%,var(--background))] dark:[--autofill-bg:color-mix(in_oklch,var(--card)_45%,var(--background))]'>
+          <div className='flex w-full flex-1 items-center justify-center lg:justify-start lg:pl-4 xl:pl-8'>
+            <div className='border-border/60 bg-card/75 dark:bg-card/45 w-full max-w-[25rem] rounded-3xl border p-7 shadow-xl shadow-black/[0.03] backdrop-blur-2xl [--autofill-bg:color-mix(in_oklch,var(--card)_75%,var(--background))] sm:p-9 dark:shadow-black/30 dark:[--autofill-bg:color-mix(in_oklch,var(--card)_45%,var(--background))]'>
               <AnimatePresence mode='wait' initial={false}>
                 <motion.div
                   key={pathname}

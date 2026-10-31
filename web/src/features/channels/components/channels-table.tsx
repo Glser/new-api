@@ -403,7 +403,7 @@ export function ChannelsTable() {
         renderCard={(row, { isSelected }) => (
           <ChannelCard row={row} isSelected={isSelected} />
         )}
-        cardGridClassName='grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]'
+        cardGridClassName='grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]'
         cardItemClassName='group/channel-card relative z-0 min-w-0 self-start overflow-visible border-0 !bg-transparent p-0 shadow-none hover:z-10 data-[state=selected]:border-transparent'
         applyHeaderSize
         tableClassName={cn(

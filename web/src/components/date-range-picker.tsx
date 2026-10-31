@@ -407,7 +407,7 @@ export function DateRangePickerButton(props: DateRangePickerButtonProps) {
     if (disableFuture && dayjs(day).isAfter(dayjs(), 'day')) return
     setQuickRangeMinutes(null)
     setDraft((current) => {
-      const prev = current ?? selectedRange ?? {}
+      const prev: DateRange = current ?? selectedRange ?? { from: undefined }
       if (which === 'start') {
         return { from: day, to: prev.to }
       }

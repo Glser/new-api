@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TooltipHint } from '@/components/ui/tooltip'
 import type { ModelPricingPluginVariant } from '@/features/model-pricing/api'
 import type { PricingCurrency } from '@/features/model-pricing/currency'
 import {
@@ -43,7 +44,6 @@ import { PluginIcon } from '@/features/task-plugins/components/plugin-icon'
 
 import { SettingsSwitchField } from '../components/settings-form-layout'
 import { TaskUsagePricingEditor } from './task-usage-pricing-editor'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 type TaskPluginPricingEditorProps = {
   variants: ModelPricingPluginVariant[]
@@ -103,9 +103,7 @@ export function TaskPluginPricingEditor(props: TaskPluginPricingEditorProps) {
               size={16}
             />
             <TooltipHint content={variant.plugin_name}>
-              <span className='truncate'>
-                {variant.plugin_name}
-              </span>
+              <span className='truncate'>{variant.plugin_name}</span>
             </TooltipHint>
           </TabsTrigger>
         ))}

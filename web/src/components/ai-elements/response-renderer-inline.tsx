@@ -24,17 +24,15 @@ import {
   type TextNode,
 } from 'stream-markdown-parser'
 
+import { TooltipHint } from '@/components/ui/tooltip'
+
 import { classifyValue, type FadeRun } from './response-fade'
 import { ResponseImage } from './response-renderer-image'
 import type { RenderChildren } from './response-types'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 const STREAM_FADE_DELAY_VAR = '--stream-fade-delay'
 
-export function renderTextNode(
-  node: TextNode,
-  fadeRun?: FadeRun
-): ReactNode {
+export function renderTextNode(node: TextNode, fadeRun?: FadeRun): ReactNode {
   if (!fadeRun) {
     return node.content
   }

@@ -27,7 +27,7 @@ export function DataTableColgroup<TData>({
 }) {
   const columns = table.getVisibleLeafColumns()
   const sizedColumns = columns.filter(
-    (column) => !isContentSizedColumn(column.id)
+    (column) => !isContentSizedColumn(column.id, column.columnDef.meta)
   )
   const totalSize = sizedColumns.reduce((sum, col) => sum + col.getSize(), 0)
 
@@ -53,7 +53,9 @@ function getColumnWidth<TData>(
   columnSize: number,
   totalSize: number
 ) {
-  if (isContentSizedColumn(columnId)) {
+  if (
+    isContentSizedColumn(columnId, table.getColumn(columnId)?.columnDef.meta)
+  ) {
     return '1%'
   }
 

@@ -141,7 +141,11 @@ For commercial licensing, please contact support@quantumnous.com
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: var(--foreground);
   --sidebar-primary-foreground: var(--background);
-  --sidebar-accent: color-mix(in oklch, var(--foreground) 14%, var(--background));
+  --sidebar-accent: color-mix(
+    in oklch,
+    var(--foreground) 14%,
+    var(--background)
+  );
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: oklch(0.93 0 0);
   --sidebar-ring: var(--border);
@@ -217,7 +221,11 @@ For commercial licensing, please contact support@quantumnous.com
   --sidebar-foreground: oklch(0.95 0 0);
   --sidebar-primary: var(--foreground);
   --sidebar-primary-foreground: var(--background);
-  --sidebar-accent: color-mix(in oklch, var(--foreground) 14%, var(--background));
+  --sidebar-accent: color-mix(
+    in oklch,
+    var(--foreground) 14%,
+    var(--background)
+  );
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: oklch(1 0 0 / 11%);
   --sidebar-ring: var(--border);

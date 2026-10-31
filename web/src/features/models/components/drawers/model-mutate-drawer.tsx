@@ -356,8 +356,6 @@ export function ModelMutateDrawer(props: {
                     )}
                   >
                     <SideDrawerSection>
-                      <SideDrawerSectionHeader title={t('Basic Information')} />
-
                       <FormField
                         control={form.control}
                         name='model_name'
@@ -372,18 +370,17 @@ export function ModelMutateDrawer(props: {
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription>
-                              {t('The unique identifier for this model')}
-                              {isEditing &&
-                                form.watch('model_name') !==
-                                  currentRow?.model_name && (
-                                  <span className='text-warning mt-1 block'>
+                            {isEditing &&
+                              form.watch('model_name') !==
+                                currentRow?.model_name && (
+                                <FormDescription>
+                                  <span className='text-warning'>
                                     {t(
                                       'Renaming metadata does not rename channel models or move pricing. Existing prices stay with the original model name.'
                                     )}
                                   </span>
-                                )}
-                            </FormDescription>
+                                </FormDescription>
+                              )}
                             <FormMessage />
                           </FormItem>
                         )}

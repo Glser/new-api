@@ -45,12 +45,15 @@ import { getLobeIcon } from '@/lib/lobe-icon'
 import { createServerError } from '@/lib/server-error-message'
 
 import { searchVendors } from '../api'
-import { vendorsQueryKeys } from '../lib'
+import {
+  MODELS_TABLE_CLASS_NAME,
+  modelsTableColumnClassName,
+  vendorsQueryKeys,
+} from '../lib'
 import type { Vendor } from '../types'
 import { vendorErrorMessage, type VendorOperation } from '../vendor-api'
 import { VendorOperationDialog } from './dialogs/vendor-operation-dialog'
 import { useModels } from './models-provider'
-import { VendorsPrimaryButtons } from './vendors-primary-buttons'
 
 const route = getRouteApi('/_authenticated/models/$section')
 
@@ -124,13 +127,13 @@ export function VendorsTable() {
       size: 250,
       meta: { mobileTitle: true },
       cell: ({ row }) => (
-        <div className='flex min-w-0 items-center gap-2'>
-          <span className='flex size-7 shrink-0 items-center justify-center'>
-            {getLobeIcon(row.original.icon, 24)}
+        <div className='flex min-w-0 items-center gap-2.5'>
+          <span className='flex size-6 shrink-0 items-center justify-center'>
+            {getLobeIcon(row.original.icon, 22)}
           </span>
           <Button
             variant='link'
-            className='text-foreground h-auto min-w-0 justify-start p-0 text-left'
+            className='text-foreground h-auto min-w-0 justify-start p-0 text-left font-medium'
             title={row.original.name}
             onClick={() => {
               setCurrentVendor(row.original)
@@ -148,7 +151,7 @@ export function VendorsTable() {
       size: 350,
       cell: ({ row }) => (
         <TooltipHint content={row.original.description}>
-          <p className='text-muted-foreground line-clamp-2 max-w-lg break-words whitespace-normal'>
+          <p className='text-muted-foreground mx-auto line-clamp-2 max-w-lg text-xs! break-words whitespace-normal'>
             {row.original.description || '—'}
           </p>
         </TooltipHint>
@@ -161,7 +164,7 @@ export function VendorsTable() {
       cell: ({ row }) => (
         <Button
           variant='link'
-          className='h-auto p-0 tabular-nums'
+          className='h-auto p-0 font-mono text-xs! tabular-nums'
           onClick={() =>
             void navigate({
               to: '/models/$section',
@@ -178,12 +181,20 @@ export function VendorsTable() {
     {
       accessorKey: 'created_time',
       header: t('Created At'),
-      cell: ({ row }) => formatTimestampToDate(row.original.created_time),
+      cell: ({ row }) => (
+        <span className='text-[12px]! tabular-nums'>
+          {formatTimestampToDate(row.original.created_time)}
+        </span>
+      ),
     },
     {
       accessorKey: 'updated_time',
       header: t('Updated At'),
-      cell: ({ row }) => formatTimestampToDate(row.original.updated_time),
+      cell: ({ row }) => (
+        <span className='text-[12px]! tabular-nums'>
+          {formatTimestampToDate(row.original.updated_time)}
+        </span>
+      ),
     },
     {
       id: 'actions',
@@ -262,12 +273,13 @@ export function VendorsTable() {
         emptyTitle={t('No vendors found')}
         emptyDescription={t('Add a vendor or adjust your search.')}
         applyHeaderSize
+        tableClassName={MODELS_TABLE_CLASS_NAME}
+        getColumnClassName={modelsTableColumnClassName}
         toolbarProps={{
           searchPlaceholder: t('Search vendor names or descriptions'),
           searchDebounceMs: 300,
           hideViewOptions: true,
           afterFilters: <DataTableViewOptions table={table} />,
-          endActions: <VendorsPrimaryButtons />,
           filters: [
             {
               columnId: 'model_count',

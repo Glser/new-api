@@ -52,6 +52,7 @@ export function UserConsoleStart(props: {
   onDataScopeChange?: (value: ConsoleDataScope) => void
 }) {
   const { t } = useTranslation()
+  const onDataScopeChange = props.onDataScopeChange
 
   return (
     <div className='flex flex-wrap items-center justify-between gap-3'>
@@ -64,12 +65,12 @@ export function UserConsoleStart(props: {
         </span>
       </div>
       <div className='flex w-full flex-wrap items-center justify-start gap-2 @min-[48rem]/console:w-auto @min-[48rem]/console:justify-end'>
-        {props.showDataScope && props.dataScope && props.onDataScopeChange ? (
+        {props.showDataScope && props.dataScope && onDataScopeChange ? (
           <Tabs
             value={props.dataScope}
             onValueChange={(value) => {
               if (value === 'site' || value === 'self') {
-                props.onDataScopeChange(value)
+                onDataScopeChange(value)
               }
             }}
             className='shrink-0'

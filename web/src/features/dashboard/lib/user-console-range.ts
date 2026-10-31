@@ -138,4 +138,3 @@ export function saveConsoleDataScope(scope: ConsoleDataScope) {
     // Ignore storage errors.
   }
 }
-

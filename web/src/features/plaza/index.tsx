@@ -48,7 +48,6 @@ import {
 import { usePlazaFilters } from './hooks/use-plaza-filters'
 import { groupModelsByCategory, PLAZA_CATEGORY_ORDER } from './lib/categories'
 
-
 /** 页面左右留白按 zoom 反算，保证不同屏幕上视觉 gutter 稳定，不随整页缩放贴边。 */
 const plazaShellClassName =
   'relative mx-auto w-full max-w-[1440px] pt-16 pb-8 sm:pt-20 sm:pb-10 px-[calc(20px/var(--plaza-scale,1))] sm:px-[calc(40px/var(--plaza-scale,1))] lg:px-[calc(64px/var(--plaza-scale,1))] xl:px-[calc(80px/var(--plaza-scale,1))]'

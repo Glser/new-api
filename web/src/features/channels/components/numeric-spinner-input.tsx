@@ -146,7 +146,7 @@ export function NumericSpinnerInput({
         onBlur={handleControlBlur}
       >
         {label ? (
-          <span className='text-muted-foreground shrink-0 text-[11px] leading-none'>
+          <span className='text-muted-foreground shrink-0 text-xs leading-tight'>
             {label}
           </span>
         ) : null}
@@ -157,14 +157,14 @@ export function NumericSpinnerInput({
             onClick={handleDecrement}
             disabled={disabled || atMin}
             className={cn(
-              'border-border/80 text-muted-foreground flex size-5 items-center justify-center rounded-full border transition-colors',
+              'border-border/80 text-muted-foreground flex size-6 items-center justify-center rounded-full border transition-colors',
               !disabled && !atMin && 'hover:bg-muted hover:text-foreground',
               (disabled || atMin) && 'opacity-30'
             )}
           >
-            <Minus className='size-3' />
+            <Minus className='size-3.5' />
           </button>
-          <span className='min-w-5 px-0.5 text-center font-mono text-xs tabular-nums'>
+          <span className='min-w-6 px-0.5 text-center font-mono text-sm tabular-nums'>
             {localValue}
           </span>
           <button
@@ -173,12 +173,12 @@ export function NumericSpinnerInput({
             onClick={handleIncrement}
             disabled={disabled || atMax}
             className={cn(
-              'border-border/80 text-muted-foreground flex size-5 items-center justify-center rounded-full border transition-colors',
+              'border-border/80 text-muted-foreground flex size-6 items-center justify-center rounded-full border transition-colors',
               !disabled && !atMax && 'hover:bg-muted hover:text-foreground',
               (disabled || atMax) && 'opacity-30'
             )}
           >
-            <Plus className='size-3' />
+            <Plus className='size-3.5' />
           </button>
         </div>
       </div>

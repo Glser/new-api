@@ -22,11 +22,11 @@ import { useTranslation } from 'react-i18next'
 import { Dialog } from '@/components/dialog'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { PluginIcon } from '@/features/task-plugins/components/plugin-icon'
 
 import type { TaskPluginOption } from '../../api'
 import { UpstreamModelSelection } from '../upstream-model-selection'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 type ConfigureModelsDialogProps = {
   open: boolean
@@ -122,9 +122,7 @@ export function ConfigureModelsDialog(props: ConfigureModelsDialogProps) {
               <TabsTrigger value='all'>{t('All')}</TabsTrigger>
               {plugins.map((item) => (
                 <TooltipHint key={item.key} content={item.name}>
-                  <TabsTrigger
-                    value={`plugin:${item.key}`}
-                  >
+                  <TabsTrigger value={`plugin:${item.key}`}>
                     <span aria-hidden='true'>
                       <PluginIcon plugin={item} size={16} />
                     </span>

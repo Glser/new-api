@@ -35,7 +35,7 @@ export function ApiKeysPrimaryButtons() {
         onClick={() => setOpen('create')}
       >
         <Plus data-icon='inline-start' className='size-4' />
-        <span className='leading-none'>{t('Create API Key')}</span>
+        {t('Create API Key')}
       </Button>
     </div>
   )

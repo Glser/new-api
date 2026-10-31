@@ -361,52 +361,52 @@ function NotificationList({
 
   return (
     <div className='flex flex-col gap-2.5 py-1'>
-        {items.map((item) => {
-          const created = item.publishDate
-            ? formatDateTimeObject(new Date(item.publishDate))
-            : ''
-          const extraText = item.extra ? stripMarkup(item.extra) : ''
+      {items.map((item) => {
+        const created = item.publishDate
+          ? formatDateTimeObject(new Date(item.publishDate))
+          : ''
+        const extraText = item.extra ? stripMarkup(item.extra) : ''
 
-          return (
-            <button
-              key={item.key}
-              type='button'
-              onClick={() => onSelect(item)}
-              className='border-border/70 bg-card hover:border-border hover:bg-muted/25 focus-visible:ring-ring/40 w-full rounded-2xl border px-3.5 py-3 text-left shadow-[0_1px_0_rgba(0,0,0,0.02)] transition-colors focus-visible:ring-2 focus-visible:outline-none'
-            >
-              <span className='flex items-start gap-1.5'>
-                <span className='flex shrink-0 flex-wrap items-center gap-1.5 pt-0.5'>
-                  <StatusChip
-                    className={TYPE_BADGE_CLASS[item.type || 'default']}
-                  >
-                    {getTypeLabel(item.type, t)}
-                  </StatusChip>
-                  <StatusChip
-                    className={
-                      item.unread
-                        ? 'bg-primary/10 text-primary'
-                        : 'bg-muted text-muted-foreground'
-                    }
-                  >
-                    {item.unread ? t('Unread') : t('Read')}
-                  </StatusChip>
-                </span>
-                <span className='text-foreground min-w-0 flex-1 text-[13.5px] leading-snug font-medium'>
-                  {item.title}
-                </span>
+        return (
+          <button
+            key={item.key}
+            type='button'
+            onClick={() => onSelect(item)}
+            className='border-border/70 bg-card hover:border-border hover:bg-muted/25 focus-visible:ring-ring/40 w-full rounded-2xl border px-3.5 py-3 text-left shadow-[0_1px_0_rgba(0,0,0,0.02)] transition-colors focus-visible:ring-2 focus-visible:outline-none'
+          >
+            <span className='flex items-start gap-1.5'>
+              <span className='flex shrink-0 flex-wrap items-center gap-1.5 pt-0.5'>
+                <StatusChip
+                  className={TYPE_BADGE_CLASS[item.type || 'default']}
+                >
+                  {getTypeLabel(item.type, t)}
+                </StatusChip>
+                <StatusChip
+                  className={
+                    item.unread
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-muted text-muted-foreground'
+                  }
+                >
+                  {item.unread ? t('Unread') : t('Read')}
+                </StatusChip>
               </span>
-              <span className='text-muted-foreground mt-1.5 block text-xs'>
-                {t('View full announcement')}
-                {created ? ` · ${t('Created:')} ${created}` : null}
+              <span className='text-foreground min-w-0 flex-1 text-[13.5px] leading-snug font-medium'>
+                {item.title}
               </span>
-              {extraText ? (
-                <span className='text-muted-foreground mt-2 block text-xs leading-relaxed'>
-                  {t('Remarks:')} {extraText}
-                </span>
-              ) : null}
-            </button>
-          )
-        })}
+            </span>
+            <span className='text-muted-foreground mt-1.5 block text-xs'>
+              {t('View full announcement')}
+              {created ? ` · ${t('Created:')} ${created}` : null}
+            </span>
+            {extraText ? (
+              <span className='text-muted-foreground mt-2 block text-xs leading-relaxed'>
+                {t('Remarks:')} {extraText}
+              </span>
+            ) : null}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -420,27 +420,27 @@ function NotificationDetail({
 }) {
   return (
     <div className='space-y-3 py-1'>
-        <div className='flex flex-wrap items-center gap-1.5'>
-          <StatusChip className={TYPE_BADGE_CLASS[item.type || 'default']}>
-            {getTypeLabel(item.type, t)}
-          </StatusChip>
-          <StatusChip className='bg-muted text-muted-foreground'>
-            {t('Read')}
-          </StatusChip>
-        </div>
-        <div className='text-sm leading-relaxed'>
-          <RichContent breaks content={item.content} />
-        </div>
-        {item.extra ? (
-          <div className='border-border/60 bg-muted/30 rounded-xl border px-3 py-2.5'>
-            <p className='text-muted-foreground mb-1 text-[11px] font-medium'>
-              {t('Remarks:')}
-            </p>
-            <div className='text-muted-foreground text-xs leading-relaxed'>
-              <RichContent breaks content={item.extra} />
-            </div>
+      <div className='flex flex-wrap items-center gap-1.5'>
+        <StatusChip className={TYPE_BADGE_CLASS[item.type || 'default']}>
+          {getTypeLabel(item.type, t)}
+        </StatusChip>
+        <StatusChip className='bg-muted text-muted-foreground'>
+          {t('Read')}
+        </StatusChip>
+      </div>
+      <div className='text-sm leading-relaxed'>
+        <RichContent breaks content={item.content} />
+      </div>
+      {item.extra ? (
+        <div className='border-border/60 bg-muted/30 rounded-xl border px-3 py-2.5'>
+          <p className='text-muted-foreground mb-1 text-[11px] font-medium'>
+            {t('Remarks:')}
+          </p>
+          <div className='text-muted-foreground text-xs leading-relaxed'>
+            <RichContent breaks content={item.extra} />
           </div>
-        ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

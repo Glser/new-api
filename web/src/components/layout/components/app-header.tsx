@@ -102,7 +102,7 @@ export function AppHeader({
   const dynamicLinks = useTopNavLinks()
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
 
-  const pathname = useRouterState().location.pathname
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
 
   return (
     <Header>

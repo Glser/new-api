@@ -182,7 +182,7 @@ export function UpstreamUpdateTags({ channel }: { channel: Channel }) {
 /**
  * Priority cell component with inline editing
  */
-function PriorityCell({ channel }: { channel: Channel }) {
+export function PriorityCell({ channel }: { channel: Channel }) {
   if (isTagAggregateRow(channel)) {
     return <TagPriorityCell channel={channel} />
   }
@@ -284,7 +284,7 @@ function ChannelFieldCell({
 /**
  * Weight cell component with inline editing
  */
-function WeightCell({ channel }: { channel: Channel }) {
+export function WeightCell({ channel }: { channel: Channel }) {
   if (isTagAggregateRow(channel)) {
     return <TagWeightCell channel={channel} />
   }
@@ -448,11 +448,11 @@ export function BalanceCell({ channel }: { channel: Channel }) {
     if (layout === 'card') {
       return (
         <div className='flex min-w-0 items-baseline gap-1.5'>
-          <span className='text-muted-foreground text-[11px] leading-none font-medium'>
+          <span className='text-muted-foreground text-xs leading-tight font-medium'>
             {t('Used')}
           </span>
           <TooltipHint content={sensitiveVisible ? usedLabel : maskedUsedLabel}>
-            <span className='min-w-0 truncate font-mono text-[11px] leading-none font-semibold tabular-nums'>
+            <span className='min-w-0 truncate font-mono text-[13px] leading-tight font-semibold tabular-nums'>
               {sensitiveVisible ? usedDisplay : SENSITIVE_MASK}
             </span>
           </TooltipHint>
@@ -571,13 +571,13 @@ export function BalanceCell({ channel }: { channel: Channel }) {
       <div className='min-w-0'>
         <div className='flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1'>
           <div className='flex min-w-0 items-center gap-1'>
-            <span className='text-muted-foreground shrink-0 text-[11px] leading-none font-medium'>
+            <span className='text-muted-foreground shrink-0 text-xs leading-tight font-medium'>
               {t('Used')}
             </span>
             <TooltipHint
               content={sensitiveVisible ? usedLabel : maskedUsedLabel}
             >
-              <span className='min-w-0 truncate font-mono text-[11px] leading-none font-semibold tabular-nums'>
+              <span className='min-w-0 truncate font-mono text-[13px] leading-tight font-semibold tabular-nums'>
                 {sensitiveVisible ? usedDisplay : SENSITIVE_MASK}
               </span>
             </TooltipHint>
@@ -601,12 +601,12 @@ export function BalanceCell({ channel }: { channel: Channel }) {
               }
               className='hover:bg-muted/60 inline-flex shrink-0 items-center gap-1 rounded-md px-0 py-0 leading-none'
             >
-              <span className='text-muted-foreground shrink-0 text-[11px] leading-none font-medium'>
+              <span className='text-muted-foreground shrink-0 text-xs leading-tight font-medium'>
                 {t('Remaining')}
               </span>
               <span
                 className={cn(
-                  'min-w-0 truncate font-mono text-[11px] leading-none font-semibold tabular-nums',
+                  'min-w-0 truncate font-mono text-[13px] leading-tight font-semibold tabular-nums',
                   remainingTone,
                   isUpdating && 'text-muted-foreground'
                 )}
@@ -616,7 +616,7 @@ export function BalanceCell({ channel }: { channel: Channel }) {
               {channel.type === 57 ? null : (
                 <RefreshCw
                   className={cn(
-                    'text-muted-foreground size-3 shrink-0',
+                    'text-muted-foreground size-3.5 shrink-0',
                     isUpdating && 'animate-spin'
                   )}
                   aria-hidden='true'

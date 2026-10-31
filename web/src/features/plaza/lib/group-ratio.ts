@@ -26,4 +26,3 @@ export function formatGroupRatio(
     : ratio.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
   return `x${formatted}`
 }
-

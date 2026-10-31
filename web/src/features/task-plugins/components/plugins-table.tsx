@@ -34,6 +34,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Switch } from '@/components/ui/switch'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { getChannelTypeLabel } from '@/features/channels/lib'
 import { handleServerError } from '@/lib/handle-server-error'
 import { resolveLocalizedText } from '@/lib/localized-text'
@@ -49,7 +50,6 @@ import type { TaskPluginListItem, TaskPluginUsage } from '../types'
 import { PluginCard } from './plugin-card'
 import { PluginIcon } from './plugin-icon'
 import { PluginWebsiteLink } from './plugin-website-link'
-import { TooltipHint } from '@/components/ui/tooltip'
 
 const VIEW_MODE_STORAGE_KEY = 'task-plugins-view-mode'
 
@@ -136,9 +136,7 @@ export function PluginsTable(props: PluginsTableProps) {
           )
           return (
             <TooltipHint content={description || undefined}>
-              <div
-                className='flex min-w-0 items-center gap-2'
-              >
+              <div className='flex min-w-0 items-center gap-2'>
                 <span className='shrink-0'>
                   <PluginIcon
                     plugin={{
