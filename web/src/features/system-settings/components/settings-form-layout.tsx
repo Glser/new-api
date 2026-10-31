@@ -66,6 +66,38 @@ export function SettingsFormGrid(props: SettingsFormGridProps) {
   )
 }
 
+export function SettingsSwitchGrid(props: SettingsFormGridProps) {
+  return (
+    <div
+      data-settings-form-span='full'
+      className={cn('grid min-w-0 gap-2 sm:grid-cols-2', props.className)}
+    >
+      {props.children}
+    </div>
+  )
+}
+
+export function SettingsStack(props: SettingsFormGridProps) {
+  return (
+    <div className={cn('flex flex-col gap-3', props.className)}>
+      {props.children}
+    </div>
+  )
+}
+
+export function SettingsStackRow(props: SettingsFormGridProps) {
+  return (
+    <div
+      className={cn(
+        'grid items-stretch gap-3 xl:grid-cols-2 [&_section]:h-full',
+        props.className
+      )}
+    >
+      {props.children}
+    </div>
+  )
+}
+
 export function SettingsFormGridItem(props: SettingsFormGridItemProps) {
   return (
     <div

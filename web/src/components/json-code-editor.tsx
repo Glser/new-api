@@ -39,6 +39,7 @@ import {
   type CursorLocation,
 } from '@/components/json-code-editor/json-code-editor-utils'
 import { Button } from '@/components/ui/button'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
@@ -266,56 +267,78 @@ export function JsonCodeEditor({
   return (
     <div
       className={cn(
-        'border-input bg-background focus-within:border-ring focus-within:ring-ring/50 overflow-hidden rounded-lg border transition-colors focus-within:ring-3',
+        '@container/json-editor border-input bg-background focus-within:border-ring focus-within:ring-ring/50 overflow-hidden rounded-lg border transition-colors focus-within:ring-3',
         className
       )}
       data-form-root={dataFormRoot}
       {...rootProps}
     >
-      <div className='bg-muted/30 flex h-8 items-center justify-between border-b px-2'>
+      <div className='bg-muted/30 flex h-8 items-center justify-between gap-1 overflow-hidden border-b px-2'>
         <div className='text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs font-medium'>
-          <Braces className='h-3.5 w-3.5' aria-hidden='true' />
-          <span>{t('JSON')}</span>
-          <span className='text-muted-foreground/70 font-mono'>
+          <Braces className='h-3.5 w-3.5 shrink-0' aria-hidden='true' />
+          <span className='truncate'>{t('JSON')}</span>
+          <span className='text-muted-foreground/70 hidden font-mono @min-[22rem]/json-editor:inline'>
             {cursorText}
           </span>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex shrink-0 items-center gap-0.5'>
           <span
             className={cn(
               'flex items-center gap-1 text-xs',
               jsonStatus.isValid ? 'text-emerald-600' : 'text-destructive'
             )}
+            title={statusMessage}
           >
             {jsonStatus.isValid ? (
               <CheckCircle2 className='h-3.5 w-3.5' aria-hidden='true' />
             ) : (
-              <AlertCircle className='h-3.5 w-3.5' aria-hidden='true' />
+              <>
+                <AlertCircle className='h-3.5 w-3.5' aria-hidden='true' />
+                <span className='hidden @min-[28rem]/json-editor:inline'>
+                  {statusMessage}
+                </span>
+                <span className='sr-only'>{statusMessage}</span>
+              </>
             )}
-            {statusMessage}
           </span>
-          <Button
-            type='button'
-            variant='ghost'
-            size='sm'
-            className='h-6 px-2 text-xs'
-            onClick={handleCopy}
-            disabled={disabled || !value}
-          >
-            <Copy className='mr-1 h-3.5 w-3.5' aria-hidden='true' />
-            {t('Copy')}
-          </Button>
-          <Button
-            type='button'
-            variant='ghost'
-            size='sm'
-            className='h-6 px-2 text-xs'
-            onClick={formatJson}
-            disabled={disabled || !jsonStatus.isValid || !value.trim()}
-          >
-            <Code2 className='mr-1 h-3.5 w-3.5' aria-hidden='true' />
-            {t('Format JSON')}
-          </Button>
+          <TooltipHint content={t('Copy')}>
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              className='h-6 px-1.5 text-xs @min-[28rem]/json-editor:px-2'
+              onClick={handleCopy}
+              disabled={disabled || !value}
+              aria-label={t('Copy')}
+            >
+              <Copy
+                className='h-3.5 w-3.5 @min-[28rem]/json-editor:mr-1'
+                aria-hidden='true'
+              />
+              <span className='hidden @min-[28rem]/json-editor:inline'>
+                {t('Copy')}
+              </span>
+            </Button>
+          </TooltipHint>
+          <TooltipHint content={t('Format JSON')}>
+            <Button
+              type='button'
+              variant='ghost'
+              size='sm'
+              className='h-6 px-1.5 text-xs @min-[28rem]/json-editor:px-2'
+              onClick={formatJson}
+              disabled={disabled || !jsonStatus.isValid || !value.trim()}
+              aria-label={t('Format JSON')}
+            >
+              <Code2
+                className='h-3.5 w-3.5 @min-[28rem]/json-editor:mr-1'
+                aria-hidden='true'
+              />
+              <span className='hidden @min-[28rem]/json-editor:inline'>
+                {t('Format JSON')}
+              </span>
+            </Button>
+          </TooltipHint>
         </div>
       </div>
       <div

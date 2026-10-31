@@ -22,12 +22,6 @@ import type { Channel } from '@/features/channels/types'
 import { getModels } from '@/features/models/api'
 import type { Model } from '@/features/models/types'
 import { getPricing } from '@/features/pricing/api'
-import {
-  DEFAULT_TOKEN_UNIT,
-  QUOTA_TYPE_VALUES,
-} from '@/features/pricing/constants'
-import { isTokenBasedModel } from '@/features/pricing/lib/model-helpers'
-import { formatPrice, formatRequestPrice } from '@/features/pricing/lib/price'
 import type { PricingModel } from '@/features/pricing/types'
 import { api } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
@@ -45,24 +39,11 @@ function buildModelPrices(
   const prices: Record<string, TopologyModelPrice> = {}
   for (const model of models) {
     if (!model.model_name) continue
-    let priceText = ''
-    let priceUnit = ''
-    if (isTokenBasedModel(model)) {
-      const input = formatPrice(model, 'input', DEFAULT_TOKEN_UNIT)
-      const output = formatPrice(model, 'output', DEFAULT_TOKEN_UNIT)
-      priceText = `${input} / ${output}`
-      priceUnit = '/1M'
-    } else if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) {
-      priceText = formatRequestPrice(model)
-      priceUnit = 'per-call'
-    }
     prices[model.model_name] = {
       name: model.model_name,
       icon: model.icon,
       vendorIcon: model.vendor_icon,
-      quotaType: model.quota_type,
-      priceText,
-      priceUnit,
+      pricing: model,
     }
   }
   return prices

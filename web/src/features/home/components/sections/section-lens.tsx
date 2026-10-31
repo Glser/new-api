@@ -31,9 +31,13 @@ import {
   glassPanelClassName,
 } from '@/features/home/components/section-styles'
 import { cn } from '@/lib/utils'
+import { normalizeExternalHref } from '@/components/layout/lib/url-utils'
+import { useStatus } from '@/hooks/use-status'
 
 export function SectionLens() {
   const { t } = useTranslation()
+  const { status } = useStatus()
+  const videoExploreUrl = normalizeExternalHref(status?.video_explore_url)
 
   const scenes = [
     {
@@ -72,7 +76,11 @@ export function SectionLens() {
           titleSecondary={t('sec_lens_title_p2')}
           description={t('sec_lens_desc')}
           action={
-            <SectionPrimaryLink to='/models' label={t('sec_lens_action')} />
+            <SectionPrimaryLink
+              to='/models'
+              href={videoExploreUrl || undefined}
+              label={t('sec_lens_action')}
+            />
           }
         />
 

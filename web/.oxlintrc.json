@@ -110,6 +110,7 @@
           "getBillingSectionNavItems",
           "getBillingSectionContent",
           "getBillingSectionMeta",
+          "resolveBillingSectionId",
           "getContentSectionNavItems",
           "getContentSectionContent",
           "getContentSectionMeta",
@@ -117,6 +118,7 @@
           "getModelsSectionNavItems",
           "getModelsSectionContent",
           "getModelsSectionMeta",
+          "resolveModelsSectionId",
           "getOperationsSectionNavItems",
           "getOperationsSectionContent",
           "getOperationsSectionMeta",
@@ -126,6 +128,7 @@
           "getSiteSectionNavItems",
           "getSiteSectionContent",
           "getSiteSectionMeta",
+          "resolveSiteSectionId",
           "getUsageLogsSectionNavItems",
           "isUsageLogsSectionId",
           "useSuppressSettingsSectionHeader"

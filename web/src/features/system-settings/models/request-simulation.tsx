@@ -284,7 +284,7 @@ export function RequestSimulation(props: RequestSimulationProps) {
             </Field>
           )
         })}
-        <div className='grid gap-4 sm:grid-cols-2'>
+        <div className='grid gap-4'>
           <Field>
             <FieldLabel htmlFor={bodyId}>
               {t('Simulated request body')}

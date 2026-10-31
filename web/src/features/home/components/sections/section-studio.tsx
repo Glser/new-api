@@ -33,9 +33,13 @@ import {
   compactPanelClassName,
 } from '@/features/home/components/section-styles'
 import { cn } from '@/lib/utils'
+import { normalizeExternalHref } from '@/components/layout/lib/url-utils'
+import { useStatus } from '@/hooks/use-status'
 
 export function SectionStudio() {
   const { t } = useTranslation()
+  const { status } = useStatus()
+  const studioUrl = normalizeExternalHref(status?.studio_url)
   const [activeStep, setActiveStep] = useState(0)
 
   const steps = [
@@ -94,6 +98,7 @@ export function SectionStudio() {
           action={
             <SectionPrimaryLink
               to='/dashboard'
+              href={studioUrl || undefined}
               label={t('sec_studio_action')}
             />
           }

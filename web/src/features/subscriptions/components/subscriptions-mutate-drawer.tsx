@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { CalendarClock, CreditCard, RefreshCw, Settings2 } from 'lucide-react'
+import { CalendarClock, Check, CreditCard, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -25,6 +25,7 @@ import { toast } from 'sonner'
 
 import {
   SideDrawerSection,
+  SideDrawerSectionHeader,
   sideDrawerContentClassName,
   sideDrawerFooterClassName,
   sideDrawerFormClassName,
@@ -269,34 +270,44 @@ export function SubscriptionsMutateDrawer({
         }
       }}
     >
-      <SheetContent className={sideDrawerContentClassName('sm:max-w-[600px]')}>
-        <SheetHeader className={sideDrawerHeaderClassName()}>
-          <SheetTitle>
-            {isEdit ? t('Update plan info') : t('Create new subscription plan')}
-          </SheetTitle>
-          <SheetDescription>
-            {isEdit
-              ? t('Modify existing subscription plan configuration')
-              : t(
-                  'Fill in the following info to create a new subscription plan'
-                )}
-          </SheetDescription>
+      <SheetContent
+        className={sideDrawerContentClassName('max-w-none sm:!max-w-[600px]')}
+      >
+        <SheetHeader
+          className={sideDrawerHeaderClassName(
+            'flex-row items-center gap-3 bg-muted/30 px-5 py-5 backdrop-blur-none supports-[backdrop-filter]:bg-muted/30 sm:py-5'
+          )}
+        >
+          <IconBadge
+            size='lg'
+            className='rounded-full bg-[#c4f82a] text-[#28350a]'
+          >
+            <CreditCard />
+          </IconBadge>
+          <div className='min-w-0 flex-1 pr-6'>
+            <SheetTitle className='text-lg font-semibold tracking-tight sm:text-xl'>
+              {isEdit
+                ? t('Update plan info')
+                : t('Create new subscription plan')}
+            </SheetTitle>
+            <SheetDescription className='mt-1 text-xs leading-5'>
+              {isEdit
+                ? t('Modify existing subscription plan configuration')
+                : t(
+                    'Fill in the following info to create a new subscription plan'
+                  )}
+            </SheetDescription>
+          </div>
         </SheetHeader>
         <Form {...form}>
           <form
             id='subscription-form'
             onSubmit={form.handleSubmit(onSubmit)}
-            className={sideDrawerFormClassName()}
+            className={sideDrawerFormClassName(
+              'gap-5 px-5 py-5 [&_[data-slot=form-description]]:text-xs [&_[data-slot=form-description]]:leading-5 [&_[data-slot=form-label]]:pl-[3px] [&_[data-slot=form-label]]:text-xs [&_[data-slot=input]]:h-10 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:bg-muted/20 [&_[data-slot=input]]:px-3 [&_[data-slot=select-trigger]]:h-10 [&_[data-slot=select-trigger]]:rounded-xl [&_[data-slot=select-trigger]]:bg-muted/20 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:bg-muted/20'
+            )}
           >
-            {/* Basic Info */}
             <SideDrawerSection>
-              <h3 className='flex items-center gap-2 text-sm font-medium'>
-                <IconBadge tone='info' size='xs'>
-                  <Settings2 />
-                </IconBadge>
-                {t('Basic Info')}
-              </h3>
-
               <FormField
                 control={form.control}
                 name='title'
@@ -397,12 +408,12 @@ export function SubscriptionsMutateDrawer({
                 />
               </div>
 
-              <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+              <div className='grid grid-cols-1 items-start gap-3 sm:grid-cols-2'>
                 <FormField
                   control={form.control}
                   name='upgrade_group'
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className='min-w-0'>
                       <FormLabel>{t('Upgrade Group')}</FormLabel>
                       <FormControl>
                         <Combobox
@@ -417,7 +428,7 @@ export function SubscriptionsMutateDrawer({
                             field.onChange(v === '__none__' ? '' : v)
                           }
                           value={field.value || ''}
-                          className='w-full'
+                          className='h-10 w-full min-w-0 [&_[data-slot=input-group]]:h-10'
                           placeholder={t('No Upgrade')}
                         />
                       </FormControl>
@@ -430,7 +441,7 @@ export function SubscriptionsMutateDrawer({
                   control={form.control}
                   name='downgrade_group'
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className='min-w-0'>
                       <FormLabel>{t('Downgrade Group')}</FormLabel>
                       <FormControl>
                         <Combobox
@@ -448,7 +459,7 @@ export function SubscriptionsMutateDrawer({
                             field.onChange(v === '__none__' ? '' : v)
                           }
                           value={field.value || ''}
-                          className='w-full'
+                          className='h-10 w-full min-w-0 [&_[data-slot=input-group]]:h-10'
                           placeholder={t('Downgrade to pre-purchase group')}
                         />
                       </FormControl>
@@ -516,7 +527,11 @@ export function SubscriptionsMutateDrawer({
                   control={form.control}
                   name='enabled'
                   render={({ field }) => (
-                    <FormItem className={sideDrawerSwitchItemClassName()}>
+                    <FormItem
+                      className={sideDrawerSwitchItemClassName(
+                        'bg-muted/30 min-h-16 rounded-2xl border p-4'
+                      )}
+                    >
                       <FormLabel className='!mt-0'>
                         {t('Enabled Status')}
                       </FormLabel>
@@ -524,6 +539,7 @@ export function SubscriptionsMutateDrawer({
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className='data-checked:bg-foreground'
                         />
                       </FormControl>
                     </FormItem>
@@ -534,7 +550,11 @@ export function SubscriptionsMutateDrawer({
                   control={form.control}
                   name='allow_balance_pay'
                   render={({ field }) => (
-                    <FormItem className={sideDrawerSwitchItemClassName()}>
+                    <FormItem
+                      className={sideDrawerSwitchItemClassName(
+                        'bg-muted/30 min-h-16 rounded-2xl border p-4'
+                      )}
+                    >
                       <FormLabel className='!mt-0'>
                         {t('Allow balance redemption')}
                       </FormLabel>
@@ -542,6 +562,7 @@ export function SubscriptionsMutateDrawer({
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className='data-checked:bg-foreground'
                         />
                       </FormControl>
                     </FormItem>
@@ -552,7 +573,11 @@ export function SubscriptionsMutateDrawer({
                   control={form.control}
                   name='allow_wallet_overflow'
                   render={({ field }) => (
-                    <FormItem className={sideDrawerSwitchItemClassName()}>
+                    <FormItem
+                      className={sideDrawerSwitchItemClassName(
+                        'bg-muted/30 min-h-16 rounded-2xl border p-4'
+                      )}
+                    >
                       <FormLabel className='!mt-0'>
                         {t('Allow wallet balance after quota used up')}
                       </FormLabel>
@@ -560,6 +585,7 @@ export function SubscriptionsMutateDrawer({
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className='data-checked:bg-foreground'
                         />
                       </FormControl>
                     </FormItem>
@@ -570,12 +596,11 @@ export function SubscriptionsMutateDrawer({
 
             {/* Duration Settings */}
             <SideDrawerSection>
-              <h3 className='flex items-center gap-2 text-sm font-medium'>
-                <IconBadge tone='chart-4' size='xs'>
-                  <CalendarClock />
-                </IconBadge>
-                {t('Duration Settings')}
-              </h3>
+              <SideDrawerSectionHeader
+                icon={<CalendarClock />}
+                iconTone='chart-4'
+                title={t('Duration Settings')}
+              />
 
               <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                 <FormField
@@ -664,12 +689,11 @@ export function SubscriptionsMutateDrawer({
 
             {/* Quota Reset */}
             <SideDrawerSection>
-              <h3 className='flex items-center gap-2 text-sm font-medium'>
-                <IconBadge tone='success' size='xs'>
-                  <RefreshCw />
-                </IconBadge>
-                {t('Quota Reset')}
-              </h3>
+              <SideDrawerSectionHeader
+                icon={<RefreshCw />}
+                iconTone='success'
+                title={t('Quota Reset')}
+              />
 
               <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
                 <FormField
@@ -734,12 +758,11 @@ export function SubscriptionsMutateDrawer({
 
             {/* Payment Config */}
             <SideDrawerSection>
-              <h3 className='flex items-center gap-2 text-sm font-medium'>
-                <IconBadge tone='warning' size='xs'>
-                  <CreditCard />
-                </IconBadge>
-                {t('Third-party Payment Config')}
-              </h3>
+              <SideDrawerSectionHeader
+                icon={<CreditCard />}
+                iconTone='warning'
+                title={t('Third-party Payment Config')}
+              />
 
               <FormField
                 control={form.control}
@@ -823,15 +846,25 @@ export function SubscriptionsMutateDrawer({
             </SideDrawerSection>
           </form>
         </Form>
-        <SheetFooter className={sideDrawerFooterClassName()}>
-          <SheetClose render={<Button variant='outline' />}>
+        <SheetFooter className={sideDrawerFooterClassName('px-5')}>
+          <SheetClose
+            render={
+              <Button
+                variant='outline'
+                className='h-9 w-full sm:w-auto sm:min-w-24'
+              />
+            }
+          >
             {t('Close')}
           </SheetClose>
           <Button
+            shine
             form='subscription-form'
             type='submit'
             disabled={isSubmitting}
+            className='h-9 w-full sm:w-auto sm:min-w-28'
           >
+            <Check data-icon='inline-start' />
             {isSubmitting ? t('Saving...') : t('Save changes')}
           </Button>
         </SheetFooter>

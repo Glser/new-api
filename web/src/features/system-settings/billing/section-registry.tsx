@@ -18,6 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { parseCurrencyDisplayType } from '@/lib/currency'
 
+import {
+  SettingsStack,
+  SettingsStackRow,
+} from '../components/settings-form-layout'
 import { CheckinSettingsSection } from '../general/checkin-settings-section'
 import { PricingSection } from '../general/pricing-section'
 import { QuotaSettingsSection } from '../general/quota-settings-section'
@@ -53,153 +57,138 @@ const getGroupDefaults = (settings: BillingSettings) => ({
     settings['group_ratio_setting.group_special_usable_group'],
 })
 
+const BILLING_SECTION_ALIASES = {
+  currency: 'quota',
+  'model-pricing': 'quota',
+  'group-pricing': 'quota',
+  payment: 'quota',
+  checkin: 'quota',
+} as const
+
 const BILLING_SECTIONS = [
   {
     id: 'quota',
-    titleKey: 'Quota Settings',
+    titleKey: 'Billing & Payment',
+    stacked: true,
     build: (settings: BillingSettings) => (
-      <QuotaSettingsSection
-        defaultValues={{
-          QuotaForNewUser: settings.QuotaForNewUser,
-          PreConsumedQuota: settings.PreConsumedQuota,
-          QuotaForInviter: settings.QuotaForInviter,
-          QuotaForInvitee: settings.QuotaForInvitee,
-          TopUpLink: settings.TopUpLink,
-          general_setting: {
-            docs_link: settings['general_setting.docs_link'],
-          },
-          quota_setting: {
-            enable_free_model_pre_consume:
-              settings['quota_setting.enable_free_model_pre_consume'],
-          },
-        }}
-        complianceConfirmed={
-          (settings['payment_setting.compliance_confirmed'] ?? false) &&
-          settings['payment_setting.compliance_terms_version'] === 'v1'
-        }
-      />
-    ),
-  },
-  {
-    id: 'currency',
-    titleKey: 'Currency & Display',
-    build: (settings: BillingSettings) => (
-      <PricingSection
-        defaultValues={{
-          QuotaPerUnit: settings.QuotaPerUnit,
-          USDExchangeRate: settings.USDExchangeRate,
-          DisplayInCurrencyEnabled: settings.DisplayInCurrencyEnabled,
-          DisplayTokenStatEnabled: settings.DisplayTokenStatEnabled,
-          general_setting: {
-            quota_display_type: parseCurrencyDisplayType(
-              settings['general_setting.quota_display_type']
-            ),
-            custom_currency_symbol:
-              settings['general_setting.custom_currency_symbol'] ?? '¤',
-            custom_currency_exchange_rate:
-              settings['general_setting.custom_currency_exchange_rate'] ?? 1,
-          },
-        }}
-      />
-    ),
-  },
-  {
-    id: 'model-pricing',
-    titleKey: 'Model Pricing',
-    build: (settings: BillingSettings) => (
-      <RatioSettingsCard
-        titleKey='Model Pricing'
-        modelDefaults={getModelDefaults(settings)}
-        groupDefaults={getGroupDefaults(settings)}
-        toolPricesDefault={settings['tool_price_setting.prices']}
-        visibleTabs={['models', 'unset-models', 'tool-prices', 'upstream-sync']}
-      />
-    ),
-  },
-  {
-    id: 'group-pricing',
-    titleKey: 'Group Pricing',
-    build: (settings: BillingSettings) => (
-      <RatioSettingsCard
-        titleKey='Group Pricing'
-        modelDefaults={getModelDefaults(settings)}
-        groupDefaults={getGroupDefaults(settings)}
-        toolPricesDefault={settings['tool_price_setting.prices']}
-        visibleTabs={['groups']}
-      />
-    ),
-  },
-  {
-    id: 'payment',
-    titleKey: 'Payment Gateway',
-    build: (settings: BillingSettings) => (
-      <PaymentSettingsSection
-        defaultValues={{
-          PayAddress: settings.PayAddress,
-          EpayId: settings.EpayId,
-          EpayKey: settings.EpayKey,
-          Price: settings.Price,
-          MinTopUp: settings.MinTopUp,
-          CustomCallbackAddress: settings.CustomCallbackAddress,
-          PayMethods: settings.PayMethods,
-          AmountOptions: settings['payment_setting.amount_options'],
-          AmountDiscount: settings['payment_setting.amount_discount'],
-          StripeApiSecret: settings.StripeApiSecret,
-          StripeWebhookSecret: settings.StripeWebhookSecret,
-          StripePriceId: settings.StripePriceId,
-          StripeUnitPrice: settings.StripeUnitPrice,
-          StripeMinTopUp: settings.StripeMinTopUp,
-          StripePromotionCodesEnabled: settings.StripePromotionCodesEnabled,
-          CreemApiKey: settings.CreemApiKey,
-          CreemWebhookSecret: settings.CreemWebhookSecret,
-          CreemTestMode: settings.CreemTestMode,
-          CreemProducts: settings.CreemProducts,
-        }}
-        waffoDefaultValues={{
-          WaffoEnabled: settings.WaffoEnabled ?? false,
-          WaffoApiKey: settings.WaffoApiKey ?? '',
-          WaffoPrivateKey: settings.WaffoPrivateKey ?? '',
-          WaffoPublicCert: settings.WaffoPublicCert ?? '',
-          WaffoSandboxPublicCert: settings.WaffoSandboxPublicCert ?? '',
-          WaffoSandboxApiKey: settings.WaffoSandboxApiKey ?? '',
-          WaffoSandboxPrivateKey: settings.WaffoSandboxPrivateKey ?? '',
-          WaffoSandbox: settings.WaffoSandbox ?? false,
-          WaffoMerchantId: settings.WaffoMerchantId ?? '',
-          WaffoCurrency: settings.WaffoCurrency ?? 'USD',
-          WaffoUnitPrice: settings.WaffoUnitPrice ?? 1,
-          WaffoMinTopUp: settings.WaffoMinTopUp ?? 1,
-          WaffoNotifyUrl: settings.WaffoNotifyUrl ?? '',
-          WaffoReturnUrl: settings.WaffoReturnUrl ?? '',
-          WaffoPayMethods: settings.WaffoPayMethods ?? '[]',
-        }}
-        waffoPancakeDefaultValues={{
-          WaffoPancakeMerchantID: settings.WaffoPancakeMerchantID ?? '',
-          WaffoPancakePrivateKey: settings.WaffoPancakePrivateKey ?? '',
-          WaffoPancakeReturnURL: settings.WaffoPancakeReturnURL ?? '',
-        }}
-        waffoPancakeProvisionedStoreID={settings.WaffoPancakeStoreID ?? ''}
-        waffoPancakeProvisionedProductID={settings.WaffoPancakeProductID ?? ''}
-        complianceDefaults={{
-          confirmed: settings['payment_setting.compliance_confirmed'] ?? false,
-          termsVersion:
-            settings['payment_setting.compliance_terms_version'] ?? '',
-          confirmedAt: settings['payment_setting.compliance_confirmed_at'] ?? 0,
-          confirmedBy: settings['payment_setting.compliance_confirmed_by'] ?? 0,
-        }}
-      />
-    ),
-  },
-  {
-    id: 'checkin',
-    titleKey: 'Check-in Rewards',
-    build: (settings: BillingSettings) => (
-      <CheckinSettingsSection
-        defaultValues={{
-          enabled: settings['checkin_setting.enabled'],
-          minQuota: settings['checkin_setting.min_quota'],
-          maxQuota: settings['checkin_setting.max_quota'],
-        }}
-      />
+      <SettingsStack>
+        <RatioSettingsCard
+          titleKey='Pricing Ratios'
+          modelDefaults={getModelDefaults(settings)}
+          groupDefaults={getGroupDefaults(settings)}
+          toolPricesDefault={settings['tool_price_setting.prices']}
+          visibleTabs={[
+            'models',
+            'unset-models',
+            'groups',
+            'tool-prices',
+            'upstream-sync',
+          ]}
+        />
+        <PaymentSettingsSection
+          defaultValues={{
+            PayAddress: settings.PayAddress,
+            EpayId: settings.EpayId,
+            EpayKey: settings.EpayKey,
+            Price: settings.Price,
+            MinTopUp: settings.MinTopUp,
+            CustomCallbackAddress: settings.CustomCallbackAddress,
+            PayMethods: settings.PayMethods,
+            AmountOptions: settings['payment_setting.amount_options'],
+            AmountDiscount: settings['payment_setting.amount_discount'],
+            StripeApiSecret: settings.StripeApiSecret,
+            StripeWebhookSecret: settings.StripeWebhookSecret,
+            StripePriceId: settings.StripePriceId,
+            StripeUnitPrice: settings.StripeUnitPrice,
+            StripeMinTopUp: settings.StripeMinTopUp,
+            StripePromotionCodesEnabled: settings.StripePromotionCodesEnabled,
+            CreemApiKey: settings.CreemApiKey,
+            CreemWebhookSecret: settings.CreemWebhookSecret,
+            CreemTestMode: settings.CreemTestMode,
+            CreemProducts: settings.CreemProducts,
+          }}
+          waffoDefaultValues={{
+            WaffoEnabled: settings.WaffoEnabled ?? false,
+            WaffoApiKey: settings.WaffoApiKey ?? '',
+            WaffoPrivateKey: settings.WaffoPrivateKey ?? '',
+            WaffoPublicCert: settings.WaffoPublicCert ?? '',
+            WaffoSandboxPublicCert: settings.WaffoSandboxPublicCert ?? '',
+            WaffoSandboxApiKey: settings.WaffoSandboxApiKey ?? '',
+            WaffoSandboxPrivateKey: settings.WaffoSandboxPrivateKey ?? '',
+            WaffoSandbox: settings.WaffoSandbox ?? false,
+            WaffoMerchantId: settings.WaffoMerchantId ?? '',
+            WaffoCurrency: settings.WaffoCurrency ?? 'USD',
+            WaffoUnitPrice: settings.WaffoUnitPrice ?? 1,
+            WaffoMinTopUp: settings.WaffoMinTopUp ?? 1,
+            WaffoNotifyUrl: settings.WaffoNotifyUrl ?? '',
+            WaffoReturnUrl: settings.WaffoReturnUrl ?? '',
+            WaffoPayMethods: settings.WaffoPayMethods ?? '[]',
+          }}
+          waffoPancakeDefaultValues={{
+            WaffoPancakeMerchantID: settings.WaffoPancakeMerchantID ?? '',
+            WaffoPancakePrivateKey: settings.WaffoPancakePrivateKey ?? '',
+            WaffoPancakeReturnURL: settings.WaffoPancakeReturnURL ?? '',
+          }}
+          waffoPancakeProvisionedStoreID={settings.WaffoPancakeStoreID ?? ''}
+          waffoPancakeProvisionedProductID={
+            settings.WaffoPancakeProductID ?? ''
+          }
+          complianceDefaults={{
+            confirmed:
+              settings['payment_setting.compliance_confirmed'] ?? false,
+            termsVersion:
+              settings['payment_setting.compliance_terms_version'] ?? '',
+            confirmedAt:
+              settings['payment_setting.compliance_confirmed_at'] ?? 0,
+            confirmedBy:
+              settings['payment_setting.compliance_confirmed_by'] ?? 0,
+          }}
+        />
+        <SettingsStackRow>
+          <QuotaSettingsSection
+            defaultValues={{
+              QuotaForNewUser: settings.QuotaForNewUser,
+              PreConsumedQuota: settings.PreConsumedQuota,
+              QuotaForInviter: settings.QuotaForInviter,
+              QuotaForInvitee: settings.QuotaForInvitee,
+              TopUpLink: settings.TopUpLink,
+              quota_setting: {
+                enable_free_model_pre_consume:
+                  settings['quota_setting.enable_free_model_pre_consume'],
+              },
+            }}
+            complianceConfirmed={
+              (settings['payment_setting.compliance_confirmed'] ?? false) &&
+              settings['payment_setting.compliance_terms_version'] === 'v1'
+            }
+          />
+          <PricingSection
+            defaultValues={{
+              QuotaPerUnit: settings.QuotaPerUnit,
+              USDExchangeRate: settings.USDExchangeRate,
+              DisplayInCurrencyEnabled: settings.DisplayInCurrencyEnabled,
+              DisplayTokenStatEnabled: settings.DisplayTokenStatEnabled,
+              general_setting: {
+                quota_display_type: parseCurrencyDisplayType(
+                  settings['general_setting.quota_display_type']
+                ),
+                custom_currency_symbol:
+                  settings['general_setting.custom_currency_symbol'] ?? '¤',
+                custom_currency_exchange_rate:
+                  settings['general_setting.custom_currency_exchange_rate'] ??
+                  1,
+              },
+            }}
+          />
+        </SettingsStackRow>
+        <CheckinSettingsSection
+          defaultValues={{
+            enabled: settings['checkin_setting.enabled'],
+            minQuota: settings['checkin_setting.min_quota'],
+            maxQuota: settings['checkin_setting.max_quota'],
+          }}
+        />
+      </SettingsStack>
     ),
   },
 ] as const
@@ -221,3 +210,17 @@ export const BILLING_DEFAULT_SECTION = billingRegistry.defaultSection
 export const getBillingSectionNavItems = billingRegistry.getSectionNavItems
 export const getBillingSectionContent = billingRegistry.getSectionContent
 export const getBillingSectionMeta = billingRegistry.getSectionMeta
+
+export function resolveBillingSectionId(section: string): BillingSectionId {
+  if ((BILLING_SECTION_IDS as readonly string[]).includes(section)) {
+    return section as BillingSectionId
+  }
+
+  if (section in BILLING_SECTION_ALIASES) {
+    return BILLING_SECTION_ALIASES[
+      section as keyof typeof BILLING_SECTION_ALIASES
+    ]
+  }
+
+  return BILLING_DEFAULT_SECTION
+}

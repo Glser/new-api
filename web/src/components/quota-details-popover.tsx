@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { Fragment, type ReactNode } from 'react'
 
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
@@ -43,16 +43,12 @@ export function QuotaDetailsPopover(props: QuotaDetailsPopoverProps) {
     <Popover>
       <div className={cn('w-full min-w-0', props.className)}>
         <PopoverTrigger
-          render={
-            <Button
-              variant='ghost'
-              aria-label={props.triggerLabel}
-              className={cn(
-                'h-auto w-full min-w-0 justify-start px-0 py-0.5 text-left font-normal hover:bg-transparent aria-expanded:bg-transparent',
-                props.triggerClassName
-              )}
-            />
-          }
+          aria-label={props.triggerLabel}
+          className={cn(
+            buttonVariants({ variant: 'ghost' }),
+            'h-auto w-full min-w-0 justify-start px-0 py-0.5 text-left font-normal hover:bg-transparent aria-expanded:bg-transparent',
+            props.triggerClassName
+          )}
         >
           {props.children}
         </PopoverTrigger>

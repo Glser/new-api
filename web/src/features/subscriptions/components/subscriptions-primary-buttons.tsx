@@ -27,13 +27,15 @@ export function SubscriptionsPrimaryButtons() {
   const { t } = useTranslation()
   const { setOpen, complianceConfirmed } = useSubscriptions()
   return (
-    <div className='flex gap-2'>
+    <div className='flex shrink-0 items-center'>
       <Button
-        size='sm'
+        shine
+        size='lg'
+        className='h-9 px-3'
         onClick={() => setOpen('create')}
         disabled={!complianceConfirmed}
       >
-        <Plus className='h-4 w-4' />
+        <Plus data-icon='inline-start' className='size-4' />
         {t('Create Plan')}
       </Button>
     </div>

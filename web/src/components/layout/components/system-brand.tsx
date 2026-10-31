@@ -87,7 +87,9 @@ export function SystemBrand(props: SystemBrandProps) {
             />
           )}
         </div>
-        <span className='max-w-[12rem] truncate leading-none'>{name}</span>
+        <span className='max-w-[12rem] translate-y-px truncate leading-none'>
+          {name}
+        </span>
       </Link>
     )
   }

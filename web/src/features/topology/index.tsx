@@ -20,12 +20,20 @@ For commercial licensing, please contact support@quantumnous.com
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Connection } from '@xyflow/react'
 import { Plus } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { EmptyState } from '@/components/empty-state'
 import { Main } from '@/components/layout'
+import { RenderWhenOpen } from '@/components/render-when-open'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { updateChannel } from '@/features/channels/api'
@@ -53,22 +61,31 @@ import {
   hasPermission,
 } from '@/lib/admin-permissions'
 import { handleServerError } from '@/lib/handle-server-error'
+import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { getTopologyGraph, getTopologyLayout, saveTopologyLayout } from './api'
+import { GroupMutateDrawer } from './components/group-mutate-drawer'
 import { TopologyCanvas } from './components/topology-canvas'
 import { TopologyOverlays } from './components/topology-overlays'
 import { TopologyTrafficProvider } from './components/topology-traffic-provider'
-import { addUniqueItem, buildTopologyGraph, removeItem } from './lib/graph'
+import {
+  addUniqueItem,
+  buildTopologyGraph,
+  removeItem,
+  resolveTopologyModel,
+} from './lib/graph'
 import { layoutGraphNodes } from './lib/layout'
 import {
   TOPOLOGY_LAYOUT_VERSION,
   emptyTopologyLayout,
+  groupNodeId,
   parseChannelNodeId,
   parseGroupNodeId,
   parseModelNodeId,
   type TopologyEdge,
   type TopologyFilters,
+  type TopologyGraphPayload,
   type TopologyLayout,
   type TopologyNode,
 } from './types'
@@ -80,7 +97,6 @@ const topologyQueryKeys = {
 
 function TopologyCanvasBody(props: {
   loading: boolean
-  hasChannels: boolean
   graphNodes: TopologyNode[]
   graphEdges: TopologyEdge[]
   layout: TopologyLayout
@@ -92,12 +108,13 @@ function TopologyCanvasBody(props: {
   onNodeClick: (node: TopologyNode) => void
   onCreateChannel: () => void
   showMiniMap?: boolean
+  focusNodeId?: string
 }) {
   const { t } = useTranslation()
   if (props.loading) {
     return <Skeleton className='h-full min-h-[28rem] rounded-2xl' />
   }
-  if (!props.hasChannels) {
+  if (props.graphNodes.length === 0) {
     return (
       <EmptyState
         title={t('No channels yet')}
@@ -125,6 +142,7 @@ function TopologyCanvasBody(props: {
       onDeleteEdges={props.onDeleteEdges}
       onNodeClick={props.onNodeClick}
       showMiniMap={props.showMiniMap}
+      focusNodeId={props.focusNodeId}
     />
   )
 }
@@ -144,17 +162,23 @@ function TopologyWorkspace() {
   const [filters, setFilters] = useState<TopologyFilters>({
     search: '',
     group: '',
-    status: '',
+    channel: '',
+    model: '',
   })
   const [searchInput, setSearchInput] = useState('')
   const [showMiniMap, setShowMiniMap] = useState(false)
   const [liveTraffic, setLiveTraffic] = useState(true)
+  const [groupDrawerOpen, setGroupDrawerOpen] = useState(false)
+  const [editingGroupName, setEditingGroupName] = useState<string>()
+  const [focusNodeId, setFocusNodeId] = useState<string>()
   const [selectedNodeId, setSelectedNodeId] = useState<string>()
   const [relayoutVersion, setRelayoutVersion] = useState(0)
   const layoutRef = useRef<TopologyLayout>(emptyTopologyLayout())
   const saveTimer = useRef<number | undefined>(undefined)
   const canWriteRef = useRef(canWrite)
-  canWriteRef.current = canWrite
+  useLayoutEffect(() => {
+    canWriteRef.current = canWrite
+  }, [canWrite])
 
   const graphQuery = useQuery({
     queryKey: topologyQueryKeys.graph,
@@ -171,7 +195,13 @@ function TopologyWorkspace() {
     return queryClient.getQueryCache().subscribe((event) => {
       if (event.type !== 'updated') return
       const key = event.query.queryKey
-      if (!Array.isArray(key) || key[0] !== channelsQueryKeys.all[0]) return
+      if (
+        !Array.isArray(key) ||
+        (key[0] !== channelsQueryKeys.all[0] &&
+          key[0] !== modelsQueryKeys.all[0])
+      ) {
+        return
+      }
       void queryClient.invalidateQueries({ queryKey: topologyQueryKeys.graph })
     })
   }, [queryClient])
@@ -212,10 +242,45 @@ function TopologyWorkspace() {
     return buildTopologyGraph(graphQuery.data, filters, selection)
   }, [filters, graphQuery.data, selection])
 
+  const handleChannelStatusChanged = useCallback(
+    (channelId: number, status: number) => {
+      queryClient.setQueryData<TopologyGraphPayload>(
+        topologyQueryKeys.graph,
+        (current) =>
+          current
+            ? {
+                ...current,
+                channels: current.channels.map((channel) =>
+                  channel.id === channelId ? { ...channel, status } : channel
+                ),
+              }
+            : current
+      )
+      void queryClient.invalidateQueries({
+        queryKey: topologyQueryKeys.graph,
+      })
+    },
+    [queryClient]
+  )
+
   const graphNodes = useMemo(
     () =>
-      layoutGraphNodes(graph.nodes, layoutQuery.data ?? emptyTopologyLayout()),
-    [graph.nodes, layoutQuery.data]
+      layoutGraphNodes(
+        graph.nodes.map((node) =>
+          node.type === 'channel'
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  onStatusChanged: (status: number) =>
+                    handleChannelStatusChanged(node.data.channelId, status),
+                },
+              }
+            : node
+        ),
+        layoutQuery.data ?? emptyTopologyLayout()
+      ),
+    [graph.nodes, handleChannelStatusChanged, layoutQuery.data]
   )
 
   const persistLayout = useCallback(
@@ -376,6 +441,17 @@ function TopologyWorkspace() {
   const handleNodeClick = useCallback(
     (node: TopologyNode) => {
       setSelectedNodeId(node.id)
+      if (node.type === 'userGroup') {
+        if (user?.role !== ROLE.SUPER_ADMIN) {
+          toast.message(
+            t('Group settings are managed by a super administrator.')
+          )
+          return
+        }
+        setEditingGroupName(node.data.name)
+        setGroupDrawerOpen(true)
+        return
+      }
       if (node.type === 'channel') {
         const channel = node.data.channel ?? findChannel(node.data.channelId)
         if (!channel) return
@@ -384,26 +460,21 @@ function TopologyWorkspace() {
         return
       }
       if (node.type === 'model') {
-        const registryId = node.data.registryId
-        const model = graphQuery.data?.models.find(
-          (item) => item.id === registryId
+        setCurrentModel(
+          resolveTopologyModel(graphQuery.data?.models ?? [], node.data.name)
         )
-        if (!model) {
-          toast.message(t('This model is only configured on channels'))
-          return
-        }
-        setCurrentModel(model)
         setModelOpen('update-model')
       }
     },
     [
       findChannel,
-      graphQuery.data?.models,
+      graphQuery.data,
       setChannelOpen,
       setCurrentChannel,
       setCurrentModel,
       setModelOpen,
       t,
+      user?.role,
     ]
   )
 
@@ -421,13 +492,13 @@ function TopologyWorkspace() {
         <div className='relative min-h-0 flex-1 overflow-hidden'>
           <TopologyCanvasBody
             loading={loading}
-            hasChannels={Boolean(graphQuery.data?.channels.length)}
             graphNodes={graphNodes}
             graphEdges={graph.edges}
             layout={layoutQuery.data ?? emptyTopologyLayout()}
             canWrite={canWrite}
             relayoutVersion={relayoutVersion}
             showMiniMap={showMiniMap}
+            focusNodeId={focusNodeId}
             onLayoutChange={handleLayoutChange}
             onConnect={handleConnect}
             onDeleteEdges={handleDeleteEdges}
@@ -443,6 +514,12 @@ function TopologyWorkspace() {
             filters={filters}
             onFiltersChange={setFilters}
             groups={groupOptions}
+            channels={graphQuery.data?.channels ?? []}
+            models={
+              graphQuery.data?.models
+                .map((model) => model.model_name)
+                .filter(Boolean) ?? []
+            }
             stats={stats}
             truncated={graph.truncated}
             shownModels={graph.shownModels}
@@ -450,6 +527,7 @@ function TopologyWorkspace() {
             loading={loading}
             refreshing={graphQuery.isFetching}
             canWrite={canWrite}
+            canCreateGroup={user?.role === ROLE.SUPER_ADMIN}
             showMiniMap={showMiniMap}
             onToggleMiniMap={() => setShowMiniMap((value) => !value)}
             liveTraffic={liveTraffic}
@@ -459,6 +537,10 @@ function TopologyWorkspace() {
               void layoutQuery.refetch()
             }}
             onRelayout={handleRelayout}
+            onCreateGroup={() => {
+              setEditingGroupName(undefined)
+              setGroupDrawerOpen(true)
+            }}
             onCreateChannel={() => {
               setCurrentChannel(null)
               setChannelOpen('create-channel')
@@ -472,6 +554,26 @@ function TopologyWorkspace() {
       </TopologyTrafficProvider>
       <ChannelsDialogs />
       <ModelsDialogs />
+      {user?.role === ROLE.SUPER_ADMIN && (
+        <RenderWhenOpen open={groupDrawerOpen}>
+          <GroupMutateDrawer
+            key={
+              editingGroupName === undefined
+                ? 'create'
+                : `edit:${editingGroupName}`
+            }
+            open={groupDrawerOpen}
+            groupName={editingGroupName}
+            onOpenChange={setGroupDrawerOpen}
+            onSaved={(name) => {
+              setSearchInput('')
+              setFilters({ search: '', group: '', channel: '', model: '' })
+              setSelectedNodeId(groupNodeId(name))
+              setFocusNodeId(groupNodeId(name))
+            }}
+          />
+        </RenderWhenOpen>
+      )}
     </Main>
   )
 }

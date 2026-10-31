@@ -248,13 +248,11 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const groupMultiplier = getDisplayGroupRatio(props.model, props.selectedGroup)
   const officialVsSite = useMemo(
     () =>
-      isTokenBased
-        ? getOfficialVsSitePrice(props.model, groupMultiplier, {
-            now: billingTime === undefined ? undefined : new Date(billingTime),
-            usdOfficial: showUsdOfficial,
-          })
-        : null,
-    [isTokenBased, props.model, groupMultiplier, billingTime, showUsdOfficial]
+      getOfficialVsSitePrice(props.model, groupMultiplier, {
+        now: billingTime === undefined ? undefined : new Date(billingTime),
+        usdOfficial: showUsdOfficial,
+      }),
+    [props.model, groupMultiplier, billingTime, showUsdOfficial]
   )
   const officialPriceParts = useMemo(() => {
     if (officialVsSite?.officialRequestUSD != null) {
@@ -312,14 +310,21 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
       const fixed = dynamicSummary?.primaryEntries.find(
         (entry) => entry.field === 'fixedPrice'
       )
-      if (fixed) {
-        return [
-          {
-            label: t('Per-call'),
-            text: fixed.formattedRange ?? fixed.formatted,
-          },
-        ]
-      }
+      return [
+        {
+          label: t('Per-call'),
+          text:
+            fixed?.formattedRange ??
+            fixed?.formatted ??
+            formatRequestPrice(
+              props.model,
+              showRechargePrice,
+              priceRate,
+              usdExchangeRate,
+              props.selectedGroup
+            ),
+        },
+      ]
     }
     const fromExpr = toSiteTokenPricePartsFromSummary(
       dynamicSummary?.primaryEntries ?? [],

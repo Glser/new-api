@@ -41,6 +41,7 @@ type SettingsPageProps<
   ) => ReactNode
   getSectionMeta: (sectionId: TSectionId) => {
     titleKey: string
+    stacked?: boolean
   }
   extraArgs?: TExtraArgs
   loadingMessage?: string
@@ -52,6 +53,8 @@ type SettingsPageProps<
 
 type SettingsPageFrameProps = {
   title: ReactNode
+  showPageActions?: boolean
+  stacked?: boolean
   children: ReactNode
 }
 
@@ -60,11 +63,13 @@ function SettingsPageFrame(props: SettingsPageFrameProps) {
     useState<HTMLDivElement | null>(null)
   const [titleStatusContainer, setTitleStatusContainer] =
     useState<HTMLSpanElement | null>(null)
+  const showPageActions = props.showPageActions ?? true
 
   return (
     <SettingsPageProvider
       actionsContainer={actionsContainer}
       titleStatusContainer={titleStatusContainer}
+      suppressSectionHeader={props.stacked !== true}
     >
       <SectionPageLayout>
         <SectionPageLayout.Title>
@@ -76,14 +81,16 @@ function SettingsPageFrame(props: SettingsPageFrameProps) {
             />
           </span>
         </SectionPageLayout.Title>
-        <SectionPageLayout.Actions>
-          <div
-            ref={setActionsContainer}
-            className='flex flex-wrap items-center justify-end gap-2'
-          />
-        </SectionPageLayout.Actions>
+        {showPageActions ? (
+          <SectionPageLayout.Actions>
+            <div
+              ref={setActionsContainer}
+              className='flex flex-wrap items-center justify-end gap-2'
+            />
+          </SectionPageLayout.Actions>
+        ) : null}
         <SectionPageLayout.Content>
-          <div className='flex h-full min-h-0 w-full flex-col gap-4'>
+          <div className='flex h-full min-h-0 w-full flex-col gap-3'>
             {props.children}
           </div>
         </SectionPageLayout.Content>
@@ -116,6 +123,8 @@ export function SettingsPage<
   const params = useParams({ from: routePath as any })
   const activeSection = (params?.section ?? defaultSection) as TSectionId
   const sectionMeta = getSectionMeta(activeSection)
+  const isStacked = sectionMeta.stacked === true
+  const pageTitle = t(sectionMeta.titleKey)
 
   const settings = useMemo(() => {
     const baseSettings = getOptionValue(
@@ -129,7 +138,11 @@ export function SettingsPage<
 
   if (isLoading) {
     return (
-      <SettingsPageFrame title={t(sectionMeta.titleKey)}>
+      <SettingsPageFrame
+        title={pageTitle}
+        stacked={isStacked}
+        showPageActions={!isStacked}
+      >
         <div className='text-muted-foreground flex min-h-40 items-center justify-center text-sm'>
           {t(loadingMessage)}
         </div>
@@ -144,7 +157,11 @@ export function SettingsPage<
   )
 
   return (
-    <SettingsPageFrame title={t(sectionMeta.titleKey)}>
+    <SettingsPageFrame
+      title={pageTitle}
+      stacked={isStacked}
+      showPageActions={!isStacked}
+    >
       {sectionContent}
     </SettingsPageFrame>
   )

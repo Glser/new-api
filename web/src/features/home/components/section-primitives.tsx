@@ -45,7 +45,7 @@ export function SectionHeader(props: {
 }) {
   return (
     <AnimateInView className='mb-7 flex flex-col items-start justify-between gap-4 sm:mb-8 md:flex-row md:items-end lg:pl-4 xl:pl-6'>
-      <div>
+      <div className='lg:-ml-3 xl:-ml-5'>
         {props.kicker ? (
           <div className='mb-3 font-mono text-xs font-semibold tracking-[0.2em] text-emerald-500 uppercase'>
             {props.kicker}
@@ -75,23 +75,36 @@ export function SectionHeader(props: {
  */
 export function SectionPrimaryLink(props: {
   to: string
+  href?: string
   label: string
   className?: string
 }) {
-  return (
-    <Link
-      to={props.to}
-      className={cn(
-        'group relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)] active:translate-y-px',
-        props.className
-      )}
-    >
+  const content = (
+    <>
       <span
         aria-hidden
         className='pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full'
       />
       <span>{props.label}</span>
       <ArrowUpRight className='size-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
+    </>
+  )
+  const className = cn(
+    'group relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-xl bg-foreground px-4 text-xs font-semibold text-background shadow-[0_4px_14px_rgba(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(0,0,0,0.18)] dark:shadow-[0_4px_18px_rgba(255,255,255,0.06)] active:translate-y-px',
+    props.className
+  )
+
+  if (props.href) {
+    return (
+      <a href={props.href} className={className}>
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <Link to={props.to} className={className}>
+      {content}
     </Link>
   )
 }

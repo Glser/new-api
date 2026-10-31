@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
-import { Pencil } from 'lucide-react'
+import { Check, Pencil, UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 
 import {
   SideDrawerSection,
+  SideDrawerSectionHeader,
   sideDrawerContentClassName,
   sideDrawerFooterClassName,
   sideDrawerFormClassName,
@@ -43,6 +44,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { IconBadge } from '@/components/ui/icon-badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -229,29 +231,40 @@ export function UsersMutateDrawer({
         }}
       >
         <SheetContent
-          className={sideDrawerContentClassName('sm:max-w-[600px]')}
+          className={sideDrawerContentClassName('max-w-none sm:!max-w-[600px]')}
         >
-          <SheetHeader className={sideDrawerHeaderClassName()}>
-            <SheetTitle>
-              {isUpdate ? t('Update') : t('Create')} {t('User')}
-            </SheetTitle>
-            <SheetDescription>
-              {isUpdate
-                ? t('Update the user by providing necessary info.')
-                : t('Add a new user by providing necessary info.')}
-            </SheetDescription>
+          <SheetHeader
+            className={sideDrawerHeaderClassName(
+              'flex-row items-center gap-3 bg-muted/30 px-5 py-5 backdrop-blur-none supports-[backdrop-filter]:bg-muted/30 sm:py-5'
+            )}
+          >
+            <IconBadge
+              size='lg'
+              className='rounded-full bg-[#c4f82a] text-[#28350a]'
+            >
+              {isUpdate ? <Pencil /> : <UserPlus />}
+            </IconBadge>
+            <div className='min-w-0 flex-1 pr-6'>
+              <SheetTitle className='text-lg font-semibold tracking-tight sm:text-xl'>
+                {isUpdate ? t('Update') : t('Create')} {t('User')}
+              </SheetTitle>
+              <SheetDescription className='mt-1 text-xs leading-5'>
+                {isUpdate
+                  ? t('Update the user by providing necessary info.')
+                  : t('Add a new user by providing necessary info.')}
+              </SheetDescription>
+            </div>
           </SheetHeader>
           <Form {...form}>
             <form
               id='user-form'
               onSubmit={form.handleSubmit(onSubmit)}
-              className={sideDrawerFormClassName()}
+              className={sideDrawerFormClassName(
+                'gap-5 px-5 py-5 [&_[data-slot=form-description]]:text-xs [&_[data-slot=form-description]]:leading-5 [&_[data-slot=form-label]]:pl-[3px] [&_[data-slot=form-label]]:text-xs [&_[data-slot=input]]:h-10 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:bg-muted/20 [&_[data-slot=input]]:px-3 [&_[data-slot=select-trigger]]:h-10 [&_[data-slot=select-trigger]]:rounded-xl [&_[data-slot=select-trigger]]:bg-muted/20 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:bg-muted/20'
+              )}
             >
-              {/* Basic Information */}
               <SideDrawerSection>
-                <h3 className='text-sm font-medium'>
-                  {t('Basic Information')}
-                </h3>
+                <SideDrawerSectionHeader title={t('Basic Information')} />
 
                 <FormField
                   control={form.control}
@@ -358,7 +371,7 @@ export function UsersMutateDrawer({
               {/* Group & Quota Settings (Update only) */}
               {isUpdate && (
                 <SideDrawerSection>
-                  <h3 className='text-sm font-medium'>{t('Group & Quota')}</h3>
+                  <SideDrawerSectionHeader title={t('Group & Quota')} />
 
                   <FormField
                     control={form.control}
@@ -408,9 +421,10 @@ export function UsersMutateDrawer({
                           <Button
                             type='button'
                             variant='outline'
+                            className='h-10 shrink-0 rounded-xl'
                             onClick={() => setQuotaDialogOpen(true)}
                           >
-                            <Pencil className='mr-1 h-4 w-4' />
+                            <Pencil data-icon='inline-start' />
                             {t('Adjust Quota')}
                           </Button>
                         </div>
@@ -448,14 +462,12 @@ export function UsersMutateDrawer({
                 targetIsAdmin &&
                 permissionCatalog.resources.length > 0 && (
                   <SideDrawerSection>
-                    <h3 className='text-sm font-medium'>
-                      {t('Admin Permissions')}
-                    </h3>
-                    <p className='text-muted-foreground text-xs'>
-                      {t(
+                    <SideDrawerSectionHeader
+                      title={t('Admin Permissions')}
+                      description={t(
                         'Default administrator permissions can be overridden for this user.'
                       )}
-                    </p>
+                    />
                     <FormField
                       control={form.control}
                       name='admin_permissions'
@@ -470,7 +482,7 @@ export function UsersMutateDrawer({
                               {permissionCatalog.resources.map((resource) => (
                                 <div
                                   key={resource.resource}
-                                  className='space-y-2 rounded-md border p-3'
+                                  className='bg-muted/30 space-y-2 rounded-2xl border p-3.5'
                                 >
                                   <div className='text-sm font-medium'>
                                     {t(resource.label_key)}
@@ -538,14 +550,12 @@ export function UsersMutateDrawer({
               {/* Binding Information (Read-only) */}
               {isUpdate && (
                 <SideDrawerSection>
-                  <h3 className='text-sm font-medium'>
-                    {t('Binding Information')}
-                  </h3>
-                  <p className='text-muted-foreground text-xs'>
-                    {t(
+                  <SideDrawerSectionHeader
+                    title={t('Binding Information')}
+                    description={t(
                       'Third-party account bindings (read-only, managed by user in Security & Access)'
                     )}
-                  </p>
+                  />
 
                   <div className='flex flex-col gap-3'>
                     {BINDING_FIELDS.map(({ key, label }) => (
@@ -567,11 +577,25 @@ export function UsersMutateDrawer({
               )}
             </form>
           </Form>
-          <SheetFooter className={sideDrawerFooterClassName()}>
-            <SheetClose render={<Button variant='outline' />}>
+          <SheetFooter className={sideDrawerFooterClassName('px-5')}>
+            <SheetClose
+              render={
+                <Button
+                  variant='outline'
+                  className='h-9 w-full sm:w-auto sm:min-w-24'
+                />
+              }
+            >
               {t('Close')}
             </SheetClose>
-            <Button form='user-form' type='submit' disabled={isSubmitting}>
+            <Button
+              shine
+              form='user-form'
+              type='submit'
+              disabled={isSubmitting}
+              className='h-9 w-full sm:w-auto sm:min-w-28'
+            >
+              <Check data-icon='inline-start' />
               {isSubmitting ? t('Saving...') : t('Save changes')}
             </Button>
           </SheetFooter>
@@ -585,6 +609,7 @@ export function UsersMutateDrawer({
           onOpenChange={setQuotaDialogOpen}
           userId={currentRow.id}
           currentQuota={parseQuotaFromDollars(currentQuotaRaw || 0)}
+          username={currentRow.username}
           onSuccess={refreshUserData}
         />
       )}

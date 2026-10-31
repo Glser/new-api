@@ -16,6 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import {
+  SettingsStack,
+  SettingsStackRow,
+} from '../components/settings-form-layout'
 import type { ContentSettings } from '../types'
 import { createSectionRegistry } from '../utils/section-registry'
 import { AgentSettingsSection } from './agent-settings-section'
@@ -41,87 +45,50 @@ function validateDataExportDefaultTime(value: string): 'week' | 'hour' | 'day' {
 const CONTENT_SECTIONS = [
   {
     id: 'dashboard',
-    titleKey: 'Data Dashboard',
+    titleKey: 'Console Content',
+    stacked: true,
     build: (settings: ContentSettings) => (
-      <DashboardSection
-        defaultValues={{
-          DataExportEnabled: settings.DataExportEnabled,
-          DataExportInterval: settings.DataExportInterval,
-          DataExportDefaultTime: validateDataExportDefaultTime(
-            settings.DataExportDefaultTime
-          ),
-        }}
-      />
-    ),
-  },
-  {
-    id: 'announcements',
-    titleKey: 'Announcements',
-    build: (settings: ContentSettings) => (
-      <AnnouncementsSection
-        enabled={settings['console_setting.announcements_enabled']}
-        data={settings['console_setting.announcements']}
-      />
-    ),
-  },
-  {
-    id: 'api-info',
-    titleKey: 'API Addresses',
-    build: (settings: ContentSettings) => (
-      <ApiInfoSection
-        enabled={settings['console_setting.api_info_enabled']}
-        data={settings['console_setting.api_info']}
-      />
-    ),
-  },
-  {
-    id: 'faq',
-    titleKey: 'FAQ',
-    build: (settings: ContentSettings) => (
-      <FAQSection
-        enabled={settings['console_setting.faq_enabled']}
-        data={settings['console_setting.faq']}
-      />
-    ),
-  },
-  {
-    id: 'uptime-kuma',
-    titleKey: 'Uptime Kuma',
-    build: (settings: ContentSettings) => (
-      <UptimeKumaSection
-        enabled={settings['console_setting.uptime_kuma_enabled']}
-        data={settings['console_setting.uptime_kuma_groups']}
-      />
-    ),
-  },
-  {
-    id: 'chat',
-    titleKey: 'Chat Presets',
-    build: (settings: ContentSettings) => (
-      <ChatSettingsSection defaultValue={settings.Chats} />
-    ),
-  },
-  {
-    id: 'agent',
-    titleKey: 'Agent Tools',
-    build: (settings: ContentSettings) => (
-      <AgentSettingsSection defaultValue={settings.Agents} />
-    ),
-  },
-  {
-    id: 'drawing',
-    titleKey: 'Drawing',
-    build: (settings: ContentSettings) => (
-      <DrawingSettingsSection
-        defaultValues={{
-          DrawingEnabled: settings.DrawingEnabled,
-          MjNotifyEnabled: settings.MjNotifyEnabled,
-          MjAccountFilterEnabled: settings.MjAccountFilterEnabled,
-          MjForwardUrlEnabled: settings.MjForwardUrlEnabled,
-          MjModeClearEnabled: settings.MjModeClearEnabled,
-          MjActionCheckSuccessEnabled: settings.MjActionCheckSuccessEnabled,
-        }}
-      />
+      <SettingsStack>
+        <DashboardSection
+          defaultValues={{
+            DataExportEnabled: settings.DataExportEnabled,
+            DataExportInterval: settings.DataExportInterval,
+            DataExportDefaultTime: validateDataExportDefaultTime(
+              settings.DataExportDefaultTime
+            ),
+          }}
+        />
+        <AnnouncementsSection
+          enabled={settings['console_setting.announcements_enabled']}
+          data={settings['console_setting.announcements']}
+        />
+        <ApiInfoSection
+          enabled={settings['console_setting.api_info_enabled']}
+          data={settings['console_setting.api_info']}
+        />
+        <FAQSection
+          enabled={settings['console_setting.faq_enabled']}
+          data={settings['console_setting.faq']}
+        />
+        <UptimeKumaSection
+          enabled={settings['console_setting.uptime_kuma_enabled']}
+          data={settings['console_setting.uptime_kuma_groups']}
+        />
+        <SettingsStackRow className='grid-cols-1'>
+          <ChatSettingsSection defaultValue={settings.Chats} />
+          <AgentSettingsSection defaultValue={settings.Agents} />
+        </SettingsStackRow>
+        <DrawingSettingsSection
+          defaultValues={{
+            DrawingEnabled: settings.DrawingEnabled,
+            MjNotifyEnabled: settings.MjNotifyEnabled,
+            MjAccountFilterEnabled: settings.MjAccountFilterEnabled,
+            MjForwardUrlEnabled: settings.MjForwardUrlEnabled,
+            MjModeClearEnabled: settings.MjModeClearEnabled,
+            MjActionCheckSuccessEnabled: settings.MjActionCheckSuccessEnabled,
+          }}
+        />
+      </SettingsStack>
     ),
   },
 ] as const

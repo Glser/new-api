@@ -20,14 +20,14 @@
 }
 
 .topology-flow .react-flow__edge-path {
-  stroke-width: 1.8;
   fill: none;
   stroke-linecap: round;
+  transition: opacity 160ms ease;
 }
 
 .topology-flow .react-flow__edge.selected .react-flow__edge-path,
 .topology-flow .react-flow__edge:focus .react-flow__edge-path {
-  stroke-width: 2.4;
+  opacity: 1 !important;
 }
 
 .topology-flow .react-flow__connection-line {
@@ -52,13 +52,14 @@
 }
 
 .topology-flash-card {
-  animation: topology-node-flash 1.2s ease-out;
+  animation: topology-node-flash 1.2s ease-out infinite;
 }
 
 .topology-flow .react-flow__edge.topology-flash-edge .react-flow__edge-path {
-  stroke-width: 2.6;
-  stroke-dasharray: 7 10;
-  animation: topology-edge-flow 0.85s linear infinite;
+  stroke-width: 1.7px !important;
+  stroke-dasharray: 4 8;
+  opacity: 0.9 !important;
+  animation: topology-edge-flow 1.2s linear infinite;
 }
 
 @keyframes topology-node-flash {

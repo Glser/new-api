@@ -52,6 +52,9 @@ interface MaskedValueDisplayProps {
   copyTooltip: string
   /** 复制按钮的 aria-label */
   copyAriaLabel: string
+  className?: string
+  triggerClassName?: string
+  contentAlign?: 'start' | 'center' | 'end'
 }
 
 /**
@@ -59,14 +62,21 @@ interface MaskedValueDisplayProps {
  */
 export function MaskedValueDisplay(props: MaskedValueDisplayProps) {
   return (
-    <div className='flex max-w-full min-w-0 items-center'>
+    <div
+      className={cn(
+        'flex max-w-full min-w-0 items-center',
+        props.className
+      )}
+    >
       <Popover>
-        <PopoverTrigger render={<MaskedValueTrigger />}>
+        <PopoverTrigger
+          render={<MaskedValueTrigger className={props.triggerClassName} />}
+        >
           <span className='truncate'>{props.maskedValue}</span>
         </PopoverTrigger>
         <PopoverContent
           className='w-auto max-w-[min(90vw,28rem)]'
-          align='start'
+          align={props.contentAlign ?? 'start'}
         >
           <div className='space-y-2'>
             <p className='text-muted-foreground text-xs'>{props.label}</p>

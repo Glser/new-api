@@ -21,7 +21,6 @@ import { useTranslation } from 'react-i18next'
 import { SectionPageLayout } from '@/components/layout'
 
 import { RedemptionsDialogs } from './components/redemptions-dialogs'
-import { RedemptionsPrimaryButtons } from './components/redemptions-primary-buttons'
 import { RedemptionsProvider } from './components/redemptions-provider'
 import { RedemptionsTable } from './components/redemptions-table'
 
@@ -31,11 +30,10 @@ export function Redemptions() {
     <RedemptionsProvider>
       <SectionPageLayout fixedContent>
         <SectionPageLayout.Title>
-          {t('Redemption Codes')}
+          <span className='truncate text-xl font-bold tracking-tight sm:text-2xl 2xl:text-3xl'>
+            {t('Redemption Codes')}
+          </span>
         </SectionPageLayout.Title>
-        <SectionPageLayout.Actions>
-          <RedemptionsPrimaryButtons />
-        </SectionPageLayout.Actions>
         <SectionPageLayout.Content>
           <RedemptionsTable />
         </SectionPageLayout.Content>

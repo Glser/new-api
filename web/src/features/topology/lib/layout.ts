@@ -26,9 +26,9 @@ import {
 const ROW_ORDER = ['userGroup', 'channel', 'model'] as const
 
 const NODE_WIDTH = {
-  userGroup: 380,
+  userGroup: 360,
   channel: 360,
-  model: 380,
+  model: 340,
 } as const
 
 const NODE_HEIGHT = {
@@ -68,7 +68,8 @@ export function applyAutoLayout(nodes: TopologyNode[]): TopologyNode[] {
         position: { x, y },
         style: { width: NODE_WIDTH[type] },
         width: NODE_WIDTH[type],
-        height: NODE_HEIGHT[type],
+        // Let React Flow measure expanded model prices instead of fixing their height.
+        height: type === 'model' ? undefined : NODE_HEIGHT[type],
       })
       x += NODE_WIDTH[type] + GAP_X
     }

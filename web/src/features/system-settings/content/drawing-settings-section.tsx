@@ -34,6 +34,7 @@ import { Switch } from '@/components/ui/switch'
 
 import {
   SettingsForm,
+  SettingsSwitchGrid,
   SettingsSwitchContent,
   SettingsSwitchItem,
 } from '../components/settings-form-layout'
@@ -138,14 +139,14 @@ export function DrawingSettingsSection({
             isSaving={updateOption.isPending}
             saveLabel='Save drawing settings'
           />
-          <div className='space-y-4'>
+          <SettingsSwitchGrid>
             {switches.map((item) => (
               <FormField
                 key={item.name}
                 control={form.control}
                 name={item.name}
                 render={({ field }) => (
-                  <SettingsSwitchItem>
+                  <SettingsSwitchItem className='rounded-lg border px-3 py-2'>
                     <SettingsSwitchContent>
                       <FormLabel>{item.label}</FormLabel>
                       <FormDescription>{item.description}</FormDescription>
@@ -161,7 +162,7 @@ export function DrawingSettingsSection({
                 )}
               />
             ))}
-          </div>
+          </SettingsSwitchGrid>
         </SettingsForm>
       </Form>
     </SettingsSection>

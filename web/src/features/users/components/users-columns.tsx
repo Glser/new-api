@@ -156,12 +156,9 @@ export function useUsersColumns(): ColumnDef<User>[] {
       id: 'quota',
       accessorKey: 'quota',
       header: `${t('Available Balance')} (${quotaUnit})`,
-      cell: ({ row }) => {
-        const user = row.original
-        return <UserQuotaCell remaining={user.quota} used={user.used_quota} />
-      },
-      size: 130,
-      minSize: 120,
+      cell: ({ row }) => <UserQuotaCell user={row.original} />,
+      size: 148,
+      minSize: 136,
       meta: { mobileOrder: 40 },
     },
     {

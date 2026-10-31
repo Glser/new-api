@@ -245,7 +245,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                 {logoContent}
               </div>
               <TooltipHint content={displaySiteName}>
-                <span className='max-w-48 truncate text-[0.9375rem] leading-none font-semibold tracking-tight'>
+                <span className='max-w-48 translate-y-px truncate text-[0.9375rem] leading-none font-semibold tracking-tight'>
                   {loading ? (
                     <Skeleton className='h-4 w-16' />
                   ) : (

@@ -79,7 +79,7 @@ export function Hero(props: HeroProps) {
       <div className='mx-auto my-auto w-full max-w-7xl py-6 sm:py-8 md:py-10'>
         <div className='grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12 xl:gap-16'>
           {/* Left Column: Shifted leftwards */}
-          <div className='flex flex-col items-start text-left lg:col-span-7 lg:pl-4 xl:col-span-7 xl:pl-6'>
+          <div className='flex flex-col items-start text-left lg:col-span-7 lg:pl-1 xl:col-span-7 xl:pl-1'>
             {/* Brand Logo & API Wordmark */}
             <div
               className='landing-animate-fade-up mb-8 inline-flex items-center gap-3 sm:mb-10 sm:gap-4.5'

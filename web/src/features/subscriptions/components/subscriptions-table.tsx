@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 
 import { DataTablePage, useDataTable } from '@/components/data-table'
 import { requireServerSuccess } from '@/lib/server-error-message'
+import { cn } from '@/lib/utils'
 
 import { getAdminPlans } from '../api'
 import { useSubscriptionsColumns } from './subscriptions-columns'
@@ -61,6 +62,11 @@ export function SubscriptionsTable() {
       )}
       skeletonKeyPrefix='subscriptions-skeleton'
       applyHeaderSize
+      tableClassName={cn(
+        '@container/activity [&_[data-slot=table]]:min-w-[64rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-(--table-header) [&_[data-slot=table]_th]:bg-(--table-header) [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/activity:[&_[data-slot=table]_td]:text-sm @min-[48rem]/activity:[&_[data-slot=table]_th]:text-sm',
+        '[&_[data-slot=table]_th>div]:justify-center [&_[data-slot=table]_th_button]:ms-0'
+      )}
+      getColumnClassName={() => 'py-2.5 text-center'}
     />
   )
 }

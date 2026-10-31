@@ -16,9 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useState } from 'react'
+
 import { cn } from '@/lib/utils'
 
-import { useSuppressSettingsSectionHeader } from './settings-page-context'
+import {
+  SettingsSectionChromeProvider,
+  useSuppressSettingsSectionHeader,
+} from './settings-page-context'
 
 type SettingsSectionProps = {
   title: string
@@ -34,20 +39,52 @@ export function SettingsSection({
   className,
 }: SettingsSectionProps) {
   const suppressHeader = useSuppressSettingsSectionHeader()
+  const [actionsContainer, setActionsContainer] =
+    useState<HTMLDivElement | null>(null)
+  const [statusContainer, setStatusContainer] =
+    useState<HTMLSpanElement | null>(null)
+  const showHeader = !suppressHeader
 
-  return (
-    <section className={cn('flex flex-col gap-4', className)}>
-      {!suppressHeader && (
-        <div className='flex flex-col gap-1'>
-          <h3
-            {...titleProps}
-            className={cn('text-base font-semibold', titleProps?.className)}
-          >
-            {title}
-          </h3>
-        </div>
+  const content = (
+    <section
+      className={cn(
+        'flex flex-col gap-4',
+        showHeader && 'bg-card rounded-xl border p-3 sm:p-4',
+        className
       )}
+    >
+      {showHeader ? (
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <span className='inline-flex min-w-0 items-center gap-2'>
+            <h3
+              {...titleProps}
+              className={cn('text-base font-semibold', titleProps?.className)}
+            >
+              {title}
+            </h3>
+            <span
+              ref={setStatusContainer}
+              className='inline-flex min-w-0 shrink-0 items-center'
+            />
+          </span>
+          <div
+            ref={setActionsContainer}
+            className='flex flex-wrap items-center justify-end gap-2'
+          />
+        </div>
+      ) : null}
       {children}
     </section>
+  )
+
+  if (!showHeader) return content
+
+  return (
+    <SettingsSectionChromeProvider
+      actionsContainer={actionsContainer}
+      statusContainer={statusContainer}
+    >
+      {content}
+    </SettingsSectionChromeProvider>
   )
 }

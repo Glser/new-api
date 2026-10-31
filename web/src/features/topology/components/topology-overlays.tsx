@@ -76,12 +76,12 @@ function OverlayIconButton(props: {
       <Button
         type='button'
         variant='ghost'
-        size='icon'
+        size='icon-lg'
         disabled={props.disabled}
         onClick={props.onClick}
         aria-label={props.label}
         className={cn(
-          'size-8 rounded-lg',
+          'rounded-lg [&_svg]:size-4.5',
           props.active
             ? 'bg-white text-foreground shadow-sm ring-1 ring-black/10 hover:bg-white hover:text-foreground dark:bg-white/20 dark:ring-white/20 dark:hover:bg-white/25'
             : 'hover:bg-muted'
@@ -99,6 +99,8 @@ export function TopologyOverlays(props: {
   filters: TopologyFilters
   onFiltersChange: (filters: TopologyFilters) => void
   groups: string[]
+  channels: { id: number; name: string }[]
+  models: string[]
   stats: {
     groups: number
     channels: number
@@ -111,6 +113,7 @@ export function TopologyOverlays(props: {
   loading?: boolean
   refreshing?: boolean
   canWrite: boolean
+  canCreateGroup: boolean
   showMiniMap: boolean
   onToggleMiniMap: () => void
   liveTraffic: boolean
@@ -119,12 +122,16 @@ export function TopologyOverlays(props: {
   onRelayout: () => void
   onCreateChannel: () => void
   onCreateModel: () => void
+  onCreateGroup: () => void
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [filterOpen, setFilterOpen] = useState(false)
   const hasFilters = Boolean(
-    props.search.trim() || props.filters.group || props.filters.status
+    props.search.trim() ||
+    props.filters.group ||
+    props.filters.channel ||
+    props.filters.model
   )
 
   return (
@@ -149,7 +156,7 @@ export function TopologyOverlays(props: {
       ) : null}
 
       <div className='absolute bottom-4 left-1/2 -translate-x-1/2'>
-        <div className={dockClass}>
+        <div className={cn(dockClass, 'p-1')}>
           <SearchPopover
             open={filterOpen}
             onOpenChange={setFilterOpen}
@@ -159,7 +166,17 @@ export function TopologyOverlays(props: {
             filters={props.filters}
             onFiltersChange={props.onFiltersChange}
             groups={props.groups}
+            channels={props.channels}
+            models={props.models}
           />
+          {props.canCreateGroup && (
+            <OverlayIconButton
+              label={t('Create Group')}
+              onClick={props.onCreateGroup}
+            >
+              <Users className='size-4' />
+            </OverlayIconButton>
+          )}
           {props.canWrite ? (
             <>
               <OverlayIconButton
@@ -210,16 +227,27 @@ export function TopologyOverlays(props: {
                   <Button
                     type='button'
                     variant='ghost'
-                    size='icon'
-                    className='hover:bg-muted data-popup-open:text-foreground size-8 rounded-lg data-popup-open:bg-white data-popup-open:shadow-sm data-popup-open:ring-1 data-popup-open:ring-black/10 dark:data-popup-open:bg-white/20 dark:data-popup-open:ring-white/20'
+                    size='icon-lg'
+                    className='hover:bg-muted data-popup-open:text-foreground rounded-lg data-popup-open:bg-white data-popup-open:shadow-sm data-popup-open:ring-1 data-popup-open:ring-black/10 dark:data-popup-open:bg-white/20 dark:data-popup-open:ring-white/20'
                     aria-label={t('More')}
                   />
                 }
               >
-                <ArrowUpRight className='size-4' />
+                <ArrowUpRight className='size-4.5' />
               </DropdownMenuTrigger>
             </TooltipHint>
             <DropdownMenuContent side='top' align='center'>
+              <DropdownMenuItem
+                onClick={() =>
+                  navigate({
+                    to: '/system-settings/billing/$section',
+                    params: { section: 'group-pricing' },
+                  })
+                }
+              >
+                <Users />
+                {t('Groups')}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate({ to: '/channels' })}>
                 <Table2 />
                 {t('Channels')}
@@ -252,6 +280,8 @@ function SearchPopover(props: {
   filters: TopologyFilters
   onFiltersChange: (filters: TopologyFilters) => void
   groups: string[]
+  channels: { id: number; name: string }[]
+  models: string[]
 }) {
   const { t } = useTranslation()
   return (
@@ -262,10 +292,10 @@ function SearchPopover(props: {
             <Button
               type='button'
               variant='ghost'
-              size='icon'
+              size='icon-lg'
               aria-label={t('Filter')}
               className={cn(
-                'size-8 rounded-lg',
+                'rounded-lg',
                 props.open || props.hasFilters
                   ? 'bg-white text-foreground shadow-sm ring-1 ring-black/10 hover:bg-white hover:text-foreground dark:bg-white/20 dark:ring-white/20 dark:hover:bg-white/25'
                   : 'hover:bg-muted'
@@ -273,10 +303,14 @@ function SearchPopover(props: {
             />
           }
         >
-          <Search className='size-4' />
+          <Search className='size-4.5' />
         </PopoverTrigger>
       </TooltipHint>
-      <PopoverContent className='w-72 p-2' side='top' align='start'>
+      <PopoverContent
+        className='w-[min(28rem,calc(100vw-2rem))] p-2'
+        side='top'
+        align='start'
+      >
         <div className='flex items-center gap-1'>
           <Search className='text-muted-foreground ml-1.5 size-4 shrink-0' />
           <Input
@@ -286,23 +320,27 @@ function SearchPopover(props: {
             className='h-8 border-0 bg-transparent shadow-none focus-visible:ring-0'
           />
         </div>
-        <div className='mt-2 flex gap-2 px-1 pb-1'>
+        <div className='mt-2 grid grid-cols-3 gap-1 px-1 pb-1'>
           <Select
-            value={props.filters.group || 'all'}
+            value={props.filters.group || null}
             onValueChange={(value) => {
               props.onFiltersChange({
                 ...props.filters,
                 group:
-                  value === 'all' || typeof value !== 'string' ? '' : value,
+                  value === '__all_groups__' || typeof value !== 'string'
+                    ? ''
+                    : value,
               })
             }}
           >
-            <SelectTrigger size='sm' className='h-8 flex-1'>
+            <SelectTrigger size='sm' className='h-8 w-full min-w-0'>
               <SelectValue placeholder={t('All groups')} />
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>
               <SelectGroup>
-                <SelectItem value='all'>{t('All groups')}</SelectItem>
+                <SelectItem value='__all_groups__'>
+                  {t('All groups')}
+                </SelectItem>
                 {props.groups.map((group) => (
                   <SelectItem key={group} value={group}>
                     {group}
@@ -312,23 +350,58 @@ function SearchPopover(props: {
             </SelectContent>
           </Select>
           <Select
-            value={props.filters.status || 'all'}
+            value={props.filters.channel || null}
             onValueChange={(value) => {
               props.onFiltersChange({
                 ...props.filters,
-                status:
-                  value === 'all' || typeof value !== 'string' ? '' : value,
+                channel:
+                  value === '__all_channels__' || typeof value !== 'string'
+                    ? ''
+                    : value,
               })
             }}
           >
-            <SelectTrigger size='sm' className='h-8 w-32'>
-              <SelectValue placeholder={t('All Status')} />
+            <SelectTrigger size='sm' className='h-8 w-full min-w-0'>
+              <SelectValue placeholder={t('All channels')} />
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>
               <SelectGroup>
-                <SelectItem value='all'>{t('All Status')}</SelectItem>
-                <SelectItem value='enabled'>{t('Enabled')}</SelectItem>
-                <SelectItem value='disabled'>{t('Disabled')}</SelectItem>
+                <SelectItem value='__all_channels__'>
+                  {t('All channels')}
+                </SelectItem>
+                {props.channels.map((channel) => (
+                  <SelectItem key={channel.id} value={String(channel.id)}>
+                    {channel.name} (#{channel.id})
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Select
+            value={props.filters.model || null}
+            onValueChange={(value) => {
+              props.onFiltersChange({
+                ...props.filters,
+                model:
+                  value === '__all_models__' || typeof value !== 'string'
+                    ? ''
+                    : value,
+              })
+            }}
+          >
+            <SelectTrigger size='sm' className='h-8 w-full min-w-0'>
+              <SelectValue placeholder={t('All models')} />
+            </SelectTrigger>
+            <SelectContent alignItemWithTrigger={false}>
+              <SelectGroup>
+                <SelectItem value='__all_models__'>
+                  {t('All models')}
+                </SelectItem>
+                {props.models.map((model) => (
+                  <SelectItem key={model} value={model}>
+                    {model}
+                  </SelectItem>
+                ))}
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -367,11 +440,12 @@ function StatsPopover(props: {
             <Button
               type='button'
               variant='ghost'
-              className='data-popup-open:text-foreground h-8 rounded-lg px-2 text-[11px] font-medium data-popup-open:bg-white data-popup-open:shadow-sm data-popup-open:ring-1 data-popup-open:ring-black/10 dark:data-popup-open:bg-white/20 dark:data-popup-open:ring-white/20'
+              size='lg'
+              className='data-popup-open:text-foreground rounded-lg text-xs font-medium data-popup-open:bg-white data-popup-open:shadow-sm data-popup-open:ring-1 data-popup-open:ring-black/10 dark:data-popup-open:bg-white/20 dark:data-popup-open:ring-white/20'
             />
           }
         >
-          <Users className='size-3.5' />
+          <Users className='size-4' />
           <span className='tabular-nums'>{props.stats.groups}</span>
           <span className='text-muted-foreground'>/</span>
           <span className='tabular-nums'>{props.stats.channels}</span>

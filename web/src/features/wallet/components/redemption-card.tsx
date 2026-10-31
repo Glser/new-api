@@ -22,12 +22,14 @@ import {
   RefreshIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import { useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
+import { isValidHttpUrl, splitHttpUrlList } from '@/lib/http-url-list'
 
 interface RedemptionCardProps {
   code: string
@@ -39,10 +41,47 @@ interface RedemptionCardProps {
   topupLink?: string
 }
 
-const XIANYU_REDEMPTION_URL = 'https://m.tb.cn/h.8IP2BiK?tk=sbDgT7Lla3k'
+function RedemptionPurchaseLink(props: { links: string[] }) {
+  const { t } = useTranslation()
+  const [index, setIndex] = useState(0)
+
+  const handleOpen = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.type === 'auxclick' && event.button !== 1) return
+    event.preventDefault()
+    window.open(event.currentTarget.href, '_blank', 'noopener,noreferrer')
+    setIndex((current) => (current + 1) % props.links.length)
+  }
+
+  return (
+    <Button
+      render={
+        <a
+          href={props.links[index]}
+          target='_blank'
+          rel='noopener noreferrer'
+          onClick={handleOpen}
+          onAuxClick={handleOpen}
+        />
+      }
+      variant='link'
+      size='sm'
+      className='h-auto px-0 text-xs'
+    >
+      {t('Get one here')}
+      <HugeiconsIcon
+        icon={ArrowUpRight01Icon}
+        className='size-3.5'
+        aria-hidden='true'
+      />
+    </Button>
+  )
+}
 
 export function RedemptionCard(props: RedemptionCardProps) {
   const { t } = useTranslation()
+  const topupLinks = splitHttpUrlList(props.topupLink ?? '').filter(
+    isValidHttpUrl
+  )
   return (
     <section
       className='@container/redemption flex min-w-0 flex-col gap-3 border-t px-5 py-4 sm:px-6 sm:py-5 @min-[56rem]/wallet:border-t-0 @min-[56rem]/wallet:border-l'
@@ -65,56 +104,17 @@ export function RedemptionCard(props: RedemptionCardProps) {
             <p className='text-muted-foreground text-xs leading-relaxed'>
               {t('Redeem a code to add credit to your wallet.')}
             </p>
-            <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
-              <span className='text-muted-foreground text-xs'>
-                {t('Need a redemption code?')}
-              </span>
-              <div className='flex items-center gap-2'>
-                {props.topupLink && (
-                  <Button
-                    render={
-                      <a
-                        href={props.topupLink}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                      />
-                    }
-                    variant='link'
-                    size='sm'
-                    className='h-auto px-0 text-xs'
-                  >
-                    {t('Get one here')}
-                    <HugeiconsIcon
-                      icon={ArrowUpRight01Icon}
-                      className='size-3.5'
-                      aria-hidden='true'
-                    />
-                  </Button>
-                )}
-                <Button
-                  render={
-                    <a
-                      href={XIANYU_REDEMPTION_URL}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    />
-                  }
-                  variant='ghost'
-                  size='icon'
-                  aria-label={t('Get a code on Xianyu')}
-                  title={t('Get a code on Xianyu')}
-                  className='size-7 overflow-hidden p-0'
-                >
-                  <img
-                    src='/xianyu-logo.png'
-                    alt=''
-                    width={32}
-                    height={32}
-                    className='size-full object-cover'
-                  />
-                </Button>
+            {topupLinks.length > 0 && (
+              <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
+                <span className='text-muted-foreground text-xs'>
+                  {t('Need a redemption code?')}
+                </span>
+                <RedemptionPurchaseLink
+                  key={props.topupLink}
+                  links={topupLinks}
+                />
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

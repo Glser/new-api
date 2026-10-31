@@ -187,7 +187,7 @@ type PaymentBaseFormValues = Omit<
 >
 
 const CURRENT_COMPLIANCE_TERMS_VERSION = 'v1'
-const paymentTabContentClassName = 'mt-6 min-w-0'
+const paymentTabContentClassName = 'mt-4 min-w-0'
 
 type PaymentComplianceDefaults = {
   confirmed: boolean
@@ -878,16 +878,26 @@ export function PaymentSettingsSection({
             saveLabel='Save all settings'
           />
           <Tabs defaultValue='general' className='min-w-0'>
-            <div className='overflow-x-auto pb-1'>
-              <TabsList className='grid min-w-[44rem] grid-cols-6'>
-                <TabsTrigger value='general'>{t('General')}</TabsTrigger>
-                <TabsTrigger value='epay'>Epay</TabsTrigger>
-                <TabsTrigger value='stripe'>{t('Stripe')}</TabsTrigger>
-                <TabsTrigger value='creem'>Creem</TabsTrigger>
-                <TabsTrigger value='waffo-pancake'>Waffo Pancake</TabsTrigger>
-                <TabsTrigger value='waffo'>Waffo</TabsTrigger>
-              </TabsList>
-            </div>
+            <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
+              <TabsTrigger value='general' className='px-2.5 text-xs'>
+                {t('General')}
+              </TabsTrigger>
+              <TabsTrigger value='epay' className='px-2.5 text-xs'>
+                Epay
+              </TabsTrigger>
+              <TabsTrigger value='stripe' className='px-2.5 text-xs'>
+                {t('Stripe')}
+              </TabsTrigger>
+              <TabsTrigger value='creem' className='px-2.5 text-xs'>
+                Creem
+              </TabsTrigger>
+              <TabsTrigger value='waffo-pancake' className='px-2.5 text-xs'>
+                Waffo Pancake
+              </TabsTrigger>
+              <TabsTrigger value='waffo' className='px-2.5 text-xs'>
+                Waffo
+              </TabsTrigger>
+            </TabsList>
 
             <TabsContent value='general' className={paymentTabContentClassName}>
               <div className='space-y-4'>

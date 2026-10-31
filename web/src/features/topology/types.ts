@@ -21,6 +21,7 @@ import type { Edge, Node } from '@xyflow/react'
 
 import type { Channel } from '@/features/channels/types'
 import type { Model } from '@/features/models/types'
+import type { PricingModel } from '@/features/pricing/types'
 
 export type TopologyNodeType = 'userGroup' | 'channel' | 'model'
 
@@ -36,6 +37,7 @@ export type TopologyChannelData = {
   channelId: number
   channel: Channel
   color: string
+  onStatusChanged?: (status: number) => void
 }
 
 export type TopologyModelData = {
@@ -46,8 +48,7 @@ export type TopologyModelData = {
   status?: number
   icon?: string
   vendorIcon?: string
-  priceText?: string
-  priceUnit?: string
+  pricing?: PricingModel
   color: string
 }
 
@@ -75,9 +76,7 @@ export type TopologyModelPrice = {
   name: string
   icon?: string
   vendorIcon?: string
-  quotaType: number
-  priceText: string
-  priceUnit: string
+  pricing: PricingModel
 }
 
 export type TopologyGraphPayload = {
@@ -91,7 +90,8 @@ export type TopologyGraphPayload = {
 export type TopologyFilters = {
   search: string
   group: string
-  status: string
+  channel: string
+  model: string
 }
 
 export const TOPOLOGY_LAYOUT_VERSION = 5

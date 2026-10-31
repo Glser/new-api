@@ -1,3 +1,4 @@
+import { SettingsPage } from '../components/settings-page'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -16,15 +17,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { SettingsPage } from '../components/settings-page'
-import type { ModelSettings } from '../types'
+import { defaultSecuritySettings } from '../security/default-settings'
 import {
   MODELS_DEFAULT_SECTION,
   getModelsSectionContent,
   getModelsSectionMeta,
+  type ModelsPageSettings,
 } from './section-registry.tsx'
 
-const defaultModelSettings: ModelSettings = {
+const defaultModelSettings: ModelsPageSettings = {
   'global.pass_through_request_enabled': false,
   'global.thinking_model_blacklist': '[]',
   'global.chat_completions_to_responses_policy': '{}',
@@ -85,6 +86,7 @@ const defaultModelSettings: ModelSettings = {
   'channel_affinity_setting.rules': '[]',
   'model_deployment.ionet.api_key': '',
   'model_deployment.ionet.enabled': false,
+  ...defaultSecuritySettings,
 }
 
 export function ModelSettings() {

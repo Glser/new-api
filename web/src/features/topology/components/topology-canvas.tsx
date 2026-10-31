@@ -33,7 +33,13 @@ import {
   type OnBeforeDelete,
   type ReactFlowInstance,
 } from '@xyflow/react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import '@xyflow/react/dist/style.css'
 import '../topology-flow.css'
@@ -75,6 +81,7 @@ type TopologyCanvasProps = {
   onDeleteEdges: (edges: TopologyEdge[]) => Promise<boolean> | boolean
   onNodeClick: (node: TopologyNode) => void
   showMiniMap?: boolean
+  focusNodeId?: string
 }
 
 function isValidTopologyConnection(connection: Connection | Edge) {
@@ -87,7 +94,7 @@ function isValidTopologyConnection(connection: Connection | Edge) {
 
 function applyEdgeFlash(edges: TopologyEdge[], flashingIds: Set<string>) {
   return edges.map((edge) => {
-    const flash = flashingIds.has(edge.id)
+    const flash = edge.data?.disabled !== true && flashingIds.has(edge.id)
     const className = flash ? 'topology-flash-edge' : undefined
     if (edge.className === className && Boolean(edge.animated) === flash) {
       return edge
@@ -105,14 +112,15 @@ function mergeGraphNodes(
   return incoming.map((node) => {
     const previous = currentById.get(node.id)
     if (!previous) return node
+    const widthChanged = previous.width !== node.width
     return {
       ...node,
       position: previous.position,
       selected: previous.selected,
       dragging: previous.dragging,
-      width: previous.width,
-      height: previous.height,
-      measured: previous.measured,
+      width: node.width ?? previous.width,
+      height: node.type === 'model' ? undefined : previous.height,
+      measured: widthChanged ? undefined : previous.measured,
     }
   })
 }
@@ -123,6 +131,7 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
     TopologyEdge
   > | null>(null)
   const fittedRef = useRef(false)
+  const focusedNodeRef = useRef<string | undefined>(undefined)
   const viewportReadyRef = useRef(false)
   const migratedRef = useRef(
     (props.layout.version ?? 1) >= TOPOLOGY_LAYOUT_VERSION
@@ -133,11 +142,19 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   const onDeleteEdgesRef = useRef(props.onDeleteEdges)
   const onNodeClickRef = useRef(props.onNodeClick)
   const canWriteRef = useRef(props.canWrite)
-  onLayoutChangeRef.current = props.onLayoutChange
-  onConnectRef.current = props.onConnect
-  onDeleteEdgesRef.current = props.onDeleteEdges
-  onNodeClickRef.current = props.onNodeClick
-  canWriteRef.current = props.canWrite
+  useLayoutEffect(() => {
+    onLayoutChangeRef.current = props.onLayoutChange
+    onConnectRef.current = props.onConnect
+    onDeleteEdgesRef.current = props.onDeleteEdges
+    onNodeClickRef.current = props.onNodeClick
+    canWriteRef.current = props.canWrite
+  }, [
+    props.onLayoutChange,
+    props.onConnect,
+    props.onDeleteEdges,
+    props.onNodeClick,
+    props.canWrite,
+  ])
 
   const flashingIds = useFlashingIds()
   const draggingRef = useRef(false)
@@ -150,8 +167,36 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   }, [props.graphNodes])
 
   useEffect(() => {
+    // eslint-disable-next-line react/set-state-in-effect -- Synchronize controlled React Flow edges with the server graph and traffic highlights.
     setEdges(applyEdgeFlash(props.graphEdges, flashingIds))
   }, [flashingIds, props.graphEdges])
+
+  useEffect(() => {
+    const id = props.focusNodeId
+    if (!id || focusedNodeRef.current === id) return
+    if (!props.graphNodes.some((candidate) => candidate.id === id)) return
+    let timer: number | undefined
+    const focusNode = (attempt = 0) => {
+      const instance = instanceRef.current
+      const node = instance?.getNode(id)
+      // Wait for the controlled nodes and initial viewport to finish updating.
+      if (!instance || !node || !viewportReadyRef.current) {
+        if (attempt < 40) {
+          timer = window.setTimeout(() => focusNode(attempt + 1), 50)
+        }
+        return
+      }
+      focusedNodeRef.current = id
+      void instance.fitView({
+        nodes: [node],
+        padding: 0.5,
+        maxZoom: 0.9,
+        duration: 220,
+      })
+    }
+    focusNode()
+    return () => window.clearTimeout(timer)
+  }, [props.focusNodeId, props.graphNodes])
 
   useEffect(() => {
     if (props.graphNodes.length === 0) return
@@ -295,7 +340,7 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         onNodeDragStart={handleNodeDragStart}
         onNodeDragStop={handleNodeDragStop}
         autoPanOnNodeDrag={false}
-        nodeDragThreshold={2}
+        nodeDragThreshold={6}
         onMoveEnd={handleMoveEnd}
         onNodeClick={(event, node) => {
           const target = event.target

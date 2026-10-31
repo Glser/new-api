@@ -47,6 +47,7 @@ import { FormNavigationGuard } from '../components/form-navigation-guard'
 import {
   SettingsForm,
   SettingsSwitchContent,
+  SettingsSwitchGrid,
   SettingsSwitchItem,
 } from '../components/settings-form-layout'
 import { SettingsPageFormActions } from '../components/settings-page-context'
@@ -321,20 +322,43 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
               </div>
             )}
 
-            {showDisplayInCurrencyOption && (
+            <SettingsSwitchGrid>
+              {showDisplayInCurrencyOption ? (
+                <FormField
+                  control={form.control}
+                  name='DisplayInCurrencyEnabled'
+                  render={({ field }) => (
+                    <SettingsSwitchItem className='rounded-lg border px-3 py-2'>
+                      <SettingsSwitchContent>
+                        <FormLabel>{t('Display in Currency')}</FormLabel>
+                        <FormDescription>
+                          {displayType === 'TOKENS'
+                            ? t(
+                                'Tokens-only mode will show raw quota values regardless of this toggle.'
+                              )
+                            : t('Show prices in currency instead of quota.')}
+                        </FormDescription>
+                      </SettingsSwitchContent>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </SettingsSwitchItem>
+                  )}
+                />
+              ) : null}
+
               <FormField
                 control={form.control}
-                name='DisplayInCurrencyEnabled'
+                name='DisplayTokenStatEnabled'
                 render={({ field }) => (
-                  <SettingsSwitchItem>
+                  <SettingsSwitchItem className='rounded-lg border px-3 py-2'>
                     <SettingsSwitchContent>
-                      <FormLabel>{t('Display in Currency')}</FormLabel>
+                      <FormLabel>{t('Display Token Statistics')}</FormLabel>
                       <FormDescription>
-                        {displayType === 'TOKENS'
-                          ? t(
-                              'Tokens-only mode will show raw quota values regardless of this toggle.'
-                            )
-                          : t('Show prices in currency instead of quota.')}
+                        {t('Show token usage statistics in the UI')}
                       </FormDescription>
                     </SettingsSwitchContent>
                     <FormControl>
@@ -346,28 +370,7 @@ export function PricingSection({ defaultValues }: PricingSectionProps) {
                   </SettingsSwitchItem>
                 )}
               />
-            )}
-
-            <FormField
-              control={form.control}
-              name='DisplayTokenStatEnabled'
-              render={({ field }) => (
-                <SettingsSwitchItem>
-                  <SettingsSwitchContent>
-                    <FormLabel>{t('Display Token Statistics')}</FormLabel>
-                    <FormDescription>
-                      {t('Show token usage statistics in the UI')}
-                    </FormDescription>
-                  </SettingsSwitchContent>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </SettingsSwitchItem>
-              )}
-            />
+            </SettingsSwitchGrid>
           </SettingsForm>
         </Form>
       </SettingsSection>

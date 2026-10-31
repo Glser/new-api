@@ -30,9 +30,8 @@ import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/context/theme-provider'
 import { useStatus } from '@/hooks/use-status'
 import { loadEmotionBall, type EmotionBallInstance } from '@/lib/emotion-ball'
+import { isValidHttpUrl, splitHttpUrlList } from '@/lib/http-url-list'
 
-const CONTACT_SUPPORT_IMAGE_SRC =
-  'https://api.oioi.lat/uploads/wx.jpg?v=20260903'
 const POSITION_STORAGE_KEY = 'contact-support-widget-position'
 const BUTTON_SIZE = 56
 const VIEWPORT_MARGIN = 24
@@ -159,16 +158,50 @@ function announcementPlainText(raw: string): string {
   return text.replaceAll(/\s+/g, ' ').trim()
 }
 
+function ContactSupportImage(props: { src: string }) {
+  const { t } = useTranslation()
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return (
+      <p className='text-muted-foreground text-xs'>
+        {t(
+          'Contact image could not be loaded. Close and reopen to try the next image.'
+        )}
+      </p>
+    )
+  }
+
+  return (
+    <img
+      src={props.src}
+      alt={t('Contact information')}
+      className='h-auto w-full rounded-md object-contain'
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
 export function ContactSupportWidget() {
   const { t } = useTranslation()
   const { resolvedTheme } = useTheme()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const isDark = resolvedTheme === 'dark'
-  const [imageFailed, setImageFailed] = useState(false)
   const [open, setOpen] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [typedText, setTypedText] = useState('')
   const { status } = useStatus()
+  const imageConfig = status?.contact_support_image_url ?? ''
+  const imageSources = useMemo(
+    () => splitHttpUrlList(imageConfig).filter(isValidHttpUrl),
+    [imageConfig]
+  )
+  const hasImages = imageSources.length > 0
+  const showImage = open && hasImages
+  const nextImageRef = useRef({ config: '', index: 0 })
+  const [selectedImage, setSelectedImage] = useState({ config: '', src: '' })
+  const imageSrc =
+    selectedImage.config === imageConfig ? selectedImage.src : imageSources[0]
   const docsLine = t('For AI tool setup issues, check the docs first')
   const contactLine = t('Got a question? Click me to contact support')
   const speechLines = useMemo(() => {
@@ -179,8 +212,8 @@ export function ContactSupportWidget() {
     const lines = announcements
       .map((item) => announcementPlainText(String(item?.content || '')))
       .filter((line) => line.length > 0)
-    return [...lines, docsLine, contactLine]
-  }, [status, docsLine, contactLine])
+    return [...lines, docsLine, ...(hasImages ? [contactLine] : [])]
+  }, [status, docsLine, contactLine, hasImages])
   const [position, setPosition] = useState<WidgetPosition>(() =>
     clampPosition(readStoredPosition() ?? getDefaultPosition())
   )
@@ -400,8 +433,18 @@ export function ContactSupportWidget() {
     if (suppressClickRef.current || dragRef.current?.moved) {
       return
     }
+    if (!hasImages) {
+      ballRef.current?.spin(1)
+      return
+    }
     setOpen((current) => !current)
     if (!open) {
+      if (nextImageRef.current.config !== imageConfig) {
+        nextImageRef.current = { config: imageConfig, index: 0 }
+      }
+      const index = nextImageRef.current.index
+      setSelectedImage({ config: imageConfig, src: imageSources[index] })
+      nextImageRef.current.index = (index + 1) % imageSources.length
       ballRef.current?.spin(1)
     }
   }
@@ -416,7 +459,7 @@ export function ContactSupportWidget() {
         height: BUTTON_SIZE,
       }}
     >
-      {!open && (
+      {!showImage && (
         <div
           className='pointer-events-none absolute bottom-full left-1/2 mb-2 w-max max-w-52 -translate-x-1/2'
           aria-hidden='true'
@@ -432,8 +475,8 @@ export function ContactSupportWidget() {
         type='button'
         className={`pointer-events-auto touch-none overflow-visible rounded-full border-0 bg-transparent p-0 shadow-none transition-transform select-none hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         style={{ width: BUTTON_SIZE, height: BUTTON_SIZE }}
-        aria-label={t('Contact Support')}
-        aria-expanded={open}
+        aria-label={t(hasImages ? 'Contact Support' : 'System Announcements')}
+        aria-expanded={showImage}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={endDrag}
@@ -446,7 +489,7 @@ export function ContactSupportWidget() {
           aria-hidden='true'
         />
       </button>
-      {open && (
+      {showImage && (
         <div className='bg-popover text-popover-foreground ring-foreground/10 pointer-events-auto absolute right-0 bottom-full mb-3 w-72 rounded-xl p-3 shadow-md ring-1'>
           <div className='mb-2'>
             <div className='text-sm font-medium'>{t('Contact Support')}</div>
@@ -454,18 +497,7 @@ export function ContactSupportWidget() {
               {t('Scan with WeChat to contact us')}
             </p>
           </div>
-          {imageFailed ? (
-            <p className='text-muted-foreground text-xs'>
-              {t('Add your contact image at public/contact-support.png')}
-            </p>
-          ) : (
-            <img
-              src={CONTACT_SUPPORT_IMAGE_SRC}
-              alt={t('Contact information')}
-              className='h-auto w-full rounded-md object-contain'
-              onError={() => setImageFailed(true)}
-            />
-          )}
+          <ContactSupportImage key={imageSrc} src={imageSrc} />
         </div>
       )}
     </div>

@@ -16,75 +16,114 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { QuotaDetailsPopover } from '@/components/quota-details-popover'
 import { StatusBadge } from '@/components/status-badge'
+import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { formatQuotaWithCurrency, getCurrencyDisplay } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
+import { isUserDeleted } from '../constants'
+import type { User } from '../types'
+import { useUsers } from './users-provider'
+
 type UserQuotaCellProps = {
-  remaining: number
-  used: number
+  user: User
 }
 
 export function UserQuotaCell(props: UserQuotaCellProps) {
   const { t } = useTranslation()
+  const { setOpen, setCurrentRow } = useUsers()
   useSystemConfigStore((state) => state.config.currency)
 
   const { meta: currency } = getCurrencyDisplay()
   const quotaUnit = currency.kind === 'tokens' ? t('Tokens') : currency.symbol
-  const hasQuota = props.remaining !== 0 || props.used !== 0
-  const formattedRemaining = formatQuotaWithCurrency(props.remaining, {
+  const remaining = props.user.quota
+  const used = props.user.used_quota
+  const hasQuota = remaining !== 0 || used !== 0
+  const canAdjust = !isUserDeleted(props.user)
+  const formattedRemaining = formatQuotaWithCurrency(remaining, {
     showSymbol: false,
   })
-  const formattedUsed = formatQuotaWithCurrency(props.used, {
+  const formattedUsed = formatQuotaWithCurrency(used, {
     showSymbol: false,
   })
 
   return (
-    <QuotaDetailsPopover
-      title={`${t('Quota')} (${quotaUnit})`}
-      triggerLabel={
-        hasQuota
-          ? `${t('Available Balance')} ${formattedRemaining}; ${t('Used amount')} ${formattedUsed}`
-          : t('No Quota')
-      }
-      details={[
-        { label: t('Available Balance'), value: formattedRemaining },
-        { label: t('Total Used'), value: formattedUsed },
-      ]}
-      triggerClassName='justify-center text-center'
-    >
-      {hasQuota ? (
-        <span className='grid w-full grid-cols-1 justify-items-center gap-y-1 text-center text-sm tabular-nums'>
-          <span
-            className={cn(
-              props.remaining < 0 && 'text-destructive',
-              props.remaining === 0 && 'text-muted-foreground'
-            )}
-          >
-            {formattedRemaining}
+    <div className='mx-auto flex items-start justify-center gap-0.5'>
+      <QuotaDetailsPopover
+        title={`${t('Quota')} (${quotaUnit})`}
+        triggerLabel={
+          hasQuota
+            ? `${t('Available Balance')} ${formattedRemaining}; ${t('Used amount')} ${formattedUsed}`
+            : t('No Quota')
+        }
+        details={[
+          { label: t('Available Balance'), value: formattedRemaining },
+          { label: t('Total Used'), value: formattedUsed },
+        ]}
+        className='w-auto min-w-0'
+        triggerClassName='w-auto justify-center text-center'
+      >
+        {hasQuota ? (
+          <span className='grid w-full grid-cols-1 justify-items-center gap-y-1 text-center text-sm tabular-nums'>
+            <span
+              className={cn(
+                remaining < 0 && 'text-destructive',
+                remaining === 0 && 'text-muted-foreground'
+              )}
+            >
+              {formattedRemaining}
+            </span>
+            <span
+              data-table-text='secondary'
+              className='text-muted-foreground flex items-baseline justify-center gap-1 text-xs font-normal'
+            >
+              <span>{t('Used amount')}</span>
+              <span>{formattedUsed}</span>
+            </span>
           </span>
-          <span
-            data-table-text='secondary'
-            className='text-muted-foreground flex items-baseline justify-center gap-1 text-xs font-normal'
-          >
-            <span>{t('Used amount')}</span>
-            <span>{formattedUsed}</span>
+        ) : (
+          <span className='flex w-full justify-center'>
+            <StatusBadge
+              label={t('No Quota')}
+              variant='neutral'
+              copyable={false}
+              className='font-normal'
+            />
           </span>
-        </span>
-      ) : (
-        <span className='flex w-full justify-center'>
-          <StatusBadge
-            label={t('No Quota')}
-            variant='neutral'
-            copyable={false}
-            className='font-normal'
-          />
-        </span>
+        )}
+      </QuotaDetailsPopover>
+      {canAdjust && (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                type='button'
+                variant='ghost'
+                size='icon-xs'
+                className='text-muted-foreground hover:text-foreground mt-0.5 shrink-0'
+                aria-label={t('Adjust Quota')}
+                onClick={() => {
+                  setCurrentRow(props.user)
+                  setOpen('adjust-quota')
+                }}
+              />
+            }
+          >
+            <Pencil />
+          </TooltipTrigger>
+          <TooltipContent>{t('Adjust Quota')}</TooltipContent>
+        </Tooltip>
       )}
-    </QuotaDetailsPopover>
+    </div>
   )
 }

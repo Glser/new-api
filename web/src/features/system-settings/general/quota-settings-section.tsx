@@ -35,6 +35,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { formatQuota } from '@/lib/format'
+import { isValidHttpUrlList } from '@/lib/http-url-list'
 
 import { FormDirtyIndicator } from '../components/form-dirty-indicator'
 import { FormNavigationGuard } from '../components/form-navigation-guard'
@@ -55,19 +56,8 @@ const quotaSchema = z.object({
   PreConsumedQuota: z.coerce.number().min(0),
   QuotaForInviter: z.coerce.number().min(0),
   QuotaForInvitee: z.coerce.number().min(0),
-  TopUpLink: z.string(),
-  general_setting: z.object({
-    // Empty keeps the built-in `/docs` route. A non-empty value is opened as an
-    // external link, so it must be an absolute URL — without one the browser
-    // resolves it against the current origin and the nav link 404s.
-    docs_link: z
-      .string()
-      .trim()
-      .refine((value) => value === '' || /^https?:\/\//i.test(value), {
-        // Plain string, not `t()`: this schema is built at module scope, before
-        // any translator exists.
-        message: 'Enter a full URL starting with http:// or https://',
-      }),
+  TopUpLink: z.string().refine(isValidHttpUrlList, {
+    message: 'Enter valid http:// or https:// links separated by commas.',
   }),
   quota_setting: z.object({
     enable_free_model_pre_consume: z.boolean(),
@@ -286,27 +276,9 @@ export function QuotaSettingsSection({
                     />
                   </FormControl>
                   <FormDescription>
-                    {t('External link for users to purchase quota')}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name='general_setting.docs_link'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Documentation Link')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('https://docs.example.com')}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {t('Link to your documentation site')}
+                    {t(
+                      'Purchase links for redemption codes. Separate multiple links with commas; clicks open each link in order and repeat. Leave blank to hide the entry.'
+                    )}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

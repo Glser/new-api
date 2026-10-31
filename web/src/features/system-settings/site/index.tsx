@@ -16,27 +16,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { defaultAuthSettings } from '../auth/default-settings'
 import { SettingsPage } from '../components/settings-page'
-import type { SiteSettings } from '../types'
 import {
   SITE_DEFAULT_SECTION,
   getSiteSectionContent,
   getSiteSectionMeta,
+  type SitePageSettings,
 } from './section-registry.tsx'
 
-const defaultSiteSettings: SiteSettings = {
+const defaultSiteSettings: SitePageSettings = {
   Notice: '',
   SystemName: 'New API',
   Logo: '',
   Footer: '',
   About: '',
   HomePageContent: '',
-  ServerAddress: '',
   TaskPublicAddress: '',
+  'general_setting.docs_link': '',
+  'general_setting.studio_url': '',
+  'general_setting.video_explore_url': '',
+  'general_setting.contact_support_image_url': '',
   'legal.user_agreement': '',
   'legal.privacy_policy': '',
   HeaderNavModules: '',
   SidebarModulesAdmin: '',
+  ...defaultAuthSettings,
 }
 
 export function SiteSettings() {

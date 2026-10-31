@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Check, Ticket } from 'lucide-react'
 import { type FormEvent, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -25,6 +26,7 @@ import { toast } from 'sonner'
 import { DateTimePicker } from '@/components/datetime-picker'
 import {
   SideDrawerSection,
+  SideDrawerSectionHeader,
   sideDrawerContentClassName,
   sideDrawerFooterClassName,
   sideDrawerFormClassName,
@@ -40,6 +42,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { IconBadge } from '@/components/ui/icon-badge'
 import { Input } from '@/components/ui/input'
 import {
   Sheet,
@@ -269,35 +272,48 @@ export function RedemptionsMutateDrawer({
         }}
       >
         <SheetContent
-          className={sideDrawerContentClassName('sm:max-w-[600px]')}
+          className={sideDrawerContentClassName('max-w-none sm:!max-w-[600px]')}
         >
-          <SheetHeader className={sideDrawerHeaderClassName()}>
-            <SheetTitle>
-              {isUpdate
-                ? t('Update Redemption Code')
-                : t('Create Redemption Code')}
-            </SheetTitle>
-            <SheetDescription>
-              {isUpdate
-                ? t('Update the redemption code by providing necessary info.')
-                : t(
-                    'Add new redemption code(s) by providing necessary info.'
-                  )}{' '}
-              {t('Click save when you&apos;re done.')}
-            </SheetDescription>
+          <SheetHeader
+            className={sideDrawerHeaderClassName(
+              'flex-row items-center gap-3 bg-muted/30 px-5 py-5 backdrop-blur-none supports-[backdrop-filter]:bg-muted/30 sm:py-5'
+            )}
+          >
+            <IconBadge
+              size='lg'
+              className='rounded-full bg-[#c4f82a] text-[#28350a]'
+            >
+              <Ticket />
+            </IconBadge>
+            <div className='min-w-0 flex-1 pr-6'>
+              <SheetTitle className='text-lg font-semibold tracking-tight sm:text-xl'>
+                {isUpdate
+                  ? t('Update Redemption Code')
+                  : t('Create Redemption Code')}
+              </SheetTitle>
+              <SheetDescription className='mt-1 text-xs leading-5'>
+                {isUpdate
+                  ? t('Update the redemption code by providing necessary info.')
+                  : t('Add new redemption code(s) by providing necessary info.')}
+              </SheetDescription>
+            </div>
           </SheetHeader>
           <Form {...form}>
             <form
               id='redemption-form'
               onSubmit={handleSubmit}
-              className={sideDrawerFormClassName()}
               aria-busy={isLoadingRedemption}
+              inert={!isUpdateReady || isSubmitting ? true : undefined}
+              className={sideDrawerFormClassName(
+                'gap-5 px-5 py-5 [&_[data-slot=form-description]]:text-xs [&_[data-slot=form-description]]:leading-5 [&_[data-slot=form-label]]:pl-[3px] [&_[data-slot=form-label]]:text-xs [&_[data-slot=input]]:h-10 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:bg-muted/20 [&_[data-slot=input]]:px-3 [&_[data-slot=button]]:rounded-xl'
+              )}
             >
               <fieldset
                 disabled={!isUpdateReady || isSubmitting}
                 className='contents'
               >
                 <SideDrawerSection>
+                  <SideDrawerSectionHeader title={t('Basic Information')} />
                   <FormField
                     control={form.control}
                     name='name'
@@ -365,6 +381,7 @@ export function RedemptionsMutateDrawer({
                               type='button'
                               variant='outline'
                               size='sm'
+                              className='h-9 rounded-xl'
                               onClick={() => handleSetExpiry(0, 0, 0)}
                             >
                               {t('Never')}
@@ -373,6 +390,7 @@ export function RedemptionsMutateDrawer({
                               type='button'
                               variant='outline'
                               size='sm'
+                              className='h-9 rounded-xl'
                               onClick={() => handleSetExpiry(1, 0, 0)}
                             >
                               {t('1M')}
@@ -381,6 +399,7 @@ export function RedemptionsMutateDrawer({
                               type='button'
                               variant='outline'
                               size='sm'
+                              className='h-9 rounded-xl'
                               onClick={() => handleSetExpiry(0, 7, 0)}
                             >
                               {t('1W')}
@@ -389,6 +408,7 @@ export function RedemptionsMutateDrawer({
                               type='button'
                               variant='outline'
                               size='sm'
+                              className='h-9 rounded-xl'
                               onClick={() => handleSetExpiry(0, 1, 0)}
                             >
                               {t('1 Day')}
@@ -438,15 +458,25 @@ export function RedemptionsMutateDrawer({
               </fieldset>
             </form>
           </Form>
-          <SheetFooter className={sideDrawerFooterClassName()}>
-            <SheetClose render={<Button variant='outline' />}>
+          <SheetFooter className={sideDrawerFooterClassName('px-5')}>
+            <SheetClose
+              render={
+                <Button
+                  variant='outline'
+                  className='h-9 w-full sm:w-auto sm:min-w-24'
+                />
+              }
+            >
               {t('Close')}
             </SheetClose>
             <Button
+              shine
               form='redemption-form'
               type='submit'
               disabled={isSubmitting || !isUpdateReady}
+              className='h-9 w-full sm:w-auto sm:min-w-28'
             >
+              <Check data-icon='inline-start' />
               {submitButtonLabel}
             </Button>
           </SheetFooter>

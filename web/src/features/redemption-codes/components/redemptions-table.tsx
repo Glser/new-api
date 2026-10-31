@@ -30,6 +30,7 @@ import {
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { createServerError } from '@/lib/server-error-message'
+import { cn } from '@/lib/utils'
 
 import { getRedemptions, searchRedemptions } from '../api'
 import {
@@ -42,6 +43,7 @@ import type { Redemption } from '../types'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { useRedemptionsColumns } from './redemptions-columns'
 import { RedemptionsMobileList } from './redemptions-mobile-list'
+import { RedemptionsPrimaryButtons } from './redemptions-primary-buttons'
 import { useRedemptions } from './redemptions-provider'
 
 const route = getRouteApi('/_authenticated/redemption-codes/')
@@ -169,9 +171,20 @@ export function RedemptionsTable() {
       )}
       skeletonKeyPrefix='redemptions-skeleton'
       applyHeaderSize
+      tableClassName={cn(
+        '@container/redemptions [&_[data-slot=table]]:min-w-[64rem] [&_[data-slot=table]]:table-auto [&_[data-slot=table]_thead]:bg-(--table-header) [&_[data-slot=table]_th]:bg-(--table-header) [&_[data-slot=table]_th]:h-10 [&_[data-slot=table]_th]:px-3 [&_[data-slot=table]_th]:text-center [&_[data-slot=table]_th]:text-xs [&_[data-slot=table]_td]:px-3 [&_[data-slot=table]_td]:text-center [&_[data-slot=table]_td]:text-xs @min-[48rem]/redemptions:[&_[data-slot=table]_td]:text-sm @min-[48rem]/redemptions:[&_[data-slot=table]_th]:text-sm @min-[80rem]/redemptions:[&_[data-slot=table]_td]:px-3 @min-[80rem]/redemptions:[&_[data-slot=table]_th]:px-3',
+        '[&_[data-slot=table]_th>div]:justify-center [&_[data-slot=table]_th_button]:ms-0'
+      )}
+      getColumnClassName={(_columnId, kind) =>
+        kind === 'header'
+          ? 'text-center [&>div]:mx-auto [&>div]:justify-center'
+          : 'py-2.5 text-center [&>div]:mx-auto [&>div]:items-center [&>div]:justify-center'
+      }
       toolbarProps={{
         searchPlaceholder: t('Filter by name or ID...'),
         searchDebounceMs: 500,
+        hideViewOptions: true,
+        endActions: <RedemptionsPrimaryButtons />,
         filters: [
           {
             columnId: 'status',

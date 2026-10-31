@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { TOKEN_UNIT_DIVISORS } from '../constants'
+import { QUOTA_TYPE_VALUES, TOKEN_UNIT_DIVISORS } from '../constants'
 import type { PricingModel, TokenUnit } from '../types'
 import { getDynamicPricingSummary, getModelTokenPrices } from './dynamic-price'
 
@@ -144,13 +144,18 @@ export function getOfficialVsSitePrice(
     }
   }
 
-  const requestUSD = readOfficialAmount(
+  const dynamicRequestUSD = readOfficialAmount(
     getDynamicPricingSummary(model, {
       tokenUnit: 'M',
       now: options?.now,
       groupRatioMultiplier: 1,
     })?.primaryEntries.find((entry) => entry.field === 'fixedPrice')?.value
   )
+  const requestUSD =
+    dynamicRequestUSD ??
+    (model.quota_type === QUOTA_TYPE_VALUES.REQUEST
+      ? readOfficialAmount(model.model_price)
+      : null)
   if (requestUSD == null || requestUSD <= 0) return null
 
   return {

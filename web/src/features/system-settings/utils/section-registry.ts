@@ -25,6 +25,8 @@ import type { ReactNode } from 'react'
 export type SectionDefinition<TSettings, TExtraArgs extends unknown[] = []> = {
   id: string
   titleKey: string
+  /** Render every included block on one page instead of a dedicated route. */
+  stacked?: boolean
   build: (settings: TSettings, ...extraArgs: TExtraArgs) => ReactNode
 }
 
@@ -90,11 +92,28 @@ export function createSectionRegistry<
     return section
   }
 
+  function getSectionTabs() {
+    return sections.map((section) => ({
+      id: section.id as SectionId,
+      titleKey: section.titleKey,
+    }))
+  }
+
+  function getSectionUrls() {
+    return sections.map((section) =>
+      urlStyle === 'path'
+        ? `${basePath}/${section.id}`
+        : `${basePath}?section=${section.id}`
+    )
+  }
+
   return {
     sectionIds,
     defaultSection,
     getSectionNavItems,
     getSectionContent,
     getSectionMeta,
+    getSectionTabs,
+    getSectionUrls,
   }
 }

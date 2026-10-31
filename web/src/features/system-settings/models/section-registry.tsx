@@ -16,9 +16,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import {
+  SettingsStack,
+  SettingsStackRow,
+} from '../components/settings-form-layout'
 import { ChannelAffinitySection } from '../general/channel-affinity'
 import { IoNetDeploymentSettingsSection } from '../integrations/ionet-deployment-settings-section'
-import type { ModelSettings } from '../types'
+import { getSecuritySectionContent } from '../security/section-registry.tsx'
+import type { ModelSettings, SecuritySettings } from '../types'
 import { safeJsonParse } from '../utils/json-parser'
 import { createSectionRegistry } from '../utils/section-registry'
 import { ClaudeSettingsCard } from './claude-settings-card'
@@ -27,6 +32,8 @@ import { GlobalSettingsCard } from './global-settings-card'
 import { GrokSettingsCard } from './grok-settings-card'
 import { RoutingReliabilitySection } from './routing-reliability-section'
 import { formatPrefixList } from './usd-price-prefixes'
+
+export type ModelsPageSettings = ModelSettings & SecuritySettings
 
 function formatJsonForEditor(value: string, fallback: string) {
   const raw = (value ?? '').toString().trim()
@@ -38,163 +45,159 @@ function formatJsonForEditor(value: string, fallback: string) {
   }
 }
 
+const MODELS_SECTION_ALIASES = {
+  'routing-reliability': 'global',
+  gemini: 'global',
+  claude: 'global',
+  grok: 'global',
+  'channel-affinity': 'global',
+  'model-deployment': 'global',
+  'rate-limit': 'global',
+  'sensitive-words': 'global',
+  ssrf: 'global',
+  'token-limits': 'global',
+} as const
+
 const MODELS_SECTIONS = [
   {
     id: 'global',
-    titleKey: 'Global Model Configuration',
-    build: (settings: ModelSettings) => (
-      <GlobalSettingsCard
-        defaultValues={{
-          global: {
-            pass_through_request_enabled:
-              settings['global.pass_through_request_enabled'],
-            thinking_model_blacklist: formatJsonForEditor(
-              settings['global.thinking_model_blacklist'],
-              '[]'
-            ),
-            chat_completions_to_responses_policy: formatJsonForEditor(
-              settings['global.chat_completions_to_responses_policy'],
-              '{}'
-            ),
-          },
-          general_setting: {
-            ping_interval_enabled:
-              settings['general_setting.ping_interval_enabled'],
-            ping_interval_seconds:
-              settings['general_setting.ping_interval_seconds'],
-            // 表单里是逗号分隔文本，存储里是 JSON 数组
-            model_square_usd_price_prefixes: formatPrefixList(
-              safeJsonParse<string[]>(
-                settings['general_setting.model_square_usd_price_prefixes'],
-                { fallback: [] }
-              )
-            ),
-          },
-        }}
-      />
-    ),
-  },
-  {
-    id: 'routing-reliability',
-    titleKey: 'Routing Reliability',
-    build: (settings: ModelSettings) => (
-      <RoutingReliabilitySection
-        defaultValues={{
-          RetryTimes: settings.RetryTimes,
-          ChannelDisableThreshold: settings.ChannelDisableThreshold,
-          AutomaticDisableChannelEnabled:
-            settings.AutomaticDisableChannelEnabled,
-          AutomaticEnableChannelEnabled: settings.AutomaticEnableChannelEnabled,
-          AutomaticDisableKeywords: settings.AutomaticDisableKeywords,
-          AutomaticDisableStatusCodes: settings.AutomaticDisableStatusCodes,
-          AutomaticRetryStatusCodes: settings.AutomaticRetryStatusCodes,
-          'monitor_setting.auto_test_channel_enabled':
-            settings['monitor_setting.auto_test_channel_enabled'],
-          'monitor_setting.auto_test_channel_minutes':
-            settings['monitor_setting.auto_test_channel_minutes'],
-          'monitor_setting.channel_test_concurrency':
-            settings['monitor_setting.channel_test_concurrency'],
-          'monitor_setting.channel_test_mode':
-            settings['monitor_setting.channel_test_mode'],
-        }}
-      />
-    ),
-  },
-  {
-    id: 'gemini',
-    titleKey: 'Gemini',
-    build: (settings: ModelSettings) => (
-      <GeminiSettingsCard
-        defaultValues={{
-          gemini: {
-            safety_settings: settings['gemini.safety_settings'],
-            version_settings: settings['gemini.version_settings'],
-            supported_imagine_models:
-              settings['gemini.supported_imagine_models'],
-            thinking_adapter_enabled:
-              settings['gemini.thinking_adapter_enabled'],
-            thinking_adapter_budget_tokens_percentage:
-              settings['gemini.thinking_adapter_budget_tokens_percentage'],
-            function_call_thought_signature_enabled:
-              settings['gemini.function_call_thought_signature_enabled'],
-            remove_function_response_id_enabled:
-              settings['gemini.remove_function_response_id_enabled'],
-          },
-        }}
-      />
-    ),
-  },
-  {
-    id: 'claude',
-    titleKey: 'Claude',
-    build: (settings: ModelSettings) => (
-      <ClaudeSettingsCard
-        defaultValues={{
-          claude: {
-            model_headers_settings: settings['claude.model_headers_settings'],
-            default_max_tokens: settings['claude.default_max_tokens'],
-            thinking_adapter_enabled:
-              settings['claude.thinking_adapter_enabled'],
-            thinking_adapter_budget_tokens_percentage:
-              settings['claude.thinking_adapter_budget_tokens_percentage'],
-          },
-        }}
-      />
-    ),
-  },
-  {
-    id: 'grok',
-    titleKey: 'Grok',
-    build: (settings: ModelSettings) => (
-      <GrokSettingsCard
-        defaultValues={{
-          'grok.violation_deduction_enabled':
-            settings['grok.violation_deduction_enabled'] ?? true,
-          'grok.violation_deduction_amount':
-            settings['grok.violation_deduction_amount'] ?? 0.05,
-        }}
-      />
-    ),
-  },
-  {
-    id: 'channel-affinity',
-    titleKey: 'Channel Affinity',
-    build: (settings: ModelSettings) => (
-      <ChannelAffinitySection
-        defaultValues={{
-          'channel_affinity_setting.enabled':
-            settings['channel_affinity_setting.enabled'],
-          'channel_affinity_setting.switch_on_success':
-            settings['channel_affinity_setting.switch_on_success'],
-          'channel_affinity_setting.keep_on_channel_disabled':
-            settings['channel_affinity_setting.keep_on_channel_disabled'],
-          'channel_affinity_setting.max_entries':
-            settings['channel_affinity_setting.max_entries'],
-          'channel_affinity_setting.default_ttl_seconds':
-            settings['channel_affinity_setting.default_ttl_seconds'],
-          'channel_affinity_setting.rules':
-            settings['channel_affinity_setting.rules'],
-        }}
-      />
-    ),
-  },
-  {
-    id: 'model-deployment',
-    titleKey: 'Model Deployment',
-    build: (settings: ModelSettings) => (
-      <IoNetDeploymentSettingsSection
-        defaultValues={{
-          enabled: settings['model_deployment.ionet.enabled'],
-          apiKey: settings['model_deployment.ionet.api_key'],
-        }}
-      />
+    titleKey: 'Models & Routing',
+    stacked: true,
+    build: (settings: ModelsPageSettings) => (
+      <SettingsStack>
+        <GlobalSettingsCard
+          defaultValues={{
+            global: {
+              pass_through_request_enabled:
+                settings['global.pass_through_request_enabled'],
+              thinking_model_blacklist: formatJsonForEditor(
+                settings['global.thinking_model_blacklist'],
+                '[]'
+              ),
+              chat_completions_to_responses_policy: formatJsonForEditor(
+                settings['global.chat_completions_to_responses_policy'],
+                '{}'
+              ),
+            },
+            general_setting: {
+              ping_interval_enabled:
+                settings['general_setting.ping_interval_enabled'],
+              ping_interval_seconds:
+                settings['general_setting.ping_interval_seconds'],
+              model_square_usd_price_prefixes: formatPrefixList(
+                safeJsonParse<string[]>(
+                  settings['general_setting.model_square_usd_price_prefixes'],
+                  { fallback: [] }
+                )
+              ),
+            },
+          }}
+        />
+        <RoutingReliabilitySection
+          defaultValues={{
+            RetryTimes: settings.RetryTimes,
+            ChannelDisableThreshold: settings.ChannelDisableThreshold,
+            AutomaticDisableChannelEnabled:
+              settings.AutomaticDisableChannelEnabled,
+            AutomaticEnableChannelEnabled:
+              settings.AutomaticEnableChannelEnabled,
+            AutomaticDisableKeywords: settings.AutomaticDisableKeywords,
+            AutomaticDisableStatusCodes: settings.AutomaticDisableStatusCodes,
+            AutomaticRetryStatusCodes: settings.AutomaticRetryStatusCodes,
+            'monitor_setting.auto_test_channel_enabled':
+              settings['monitor_setting.auto_test_channel_enabled'],
+            'monitor_setting.auto_test_channel_minutes':
+              settings['monitor_setting.auto_test_channel_minutes'],
+            'monitor_setting.channel_test_concurrency':
+              settings['monitor_setting.channel_test_concurrency'],
+            'monitor_setting.channel_test_mode':
+              settings['monitor_setting.channel_test_mode'],
+          }}
+        />
+        <SettingsStackRow>
+          <GeminiSettingsCard
+            defaultValues={{
+              gemini: {
+                safety_settings: settings['gemini.safety_settings'],
+                version_settings: settings['gemini.version_settings'],
+                supported_imagine_models:
+                  settings['gemini.supported_imagine_models'],
+                thinking_adapter_enabled:
+                  settings['gemini.thinking_adapter_enabled'],
+                thinking_adapter_budget_tokens_percentage:
+                  settings['gemini.thinking_adapter_budget_tokens_percentage'],
+                function_call_thought_signature_enabled:
+                  settings['gemini.function_call_thought_signature_enabled'],
+                remove_function_response_id_enabled:
+                  settings['gemini.remove_function_response_id_enabled'],
+              },
+            }}
+          />
+          <ClaudeSettingsCard
+            defaultValues={{
+              claude: {
+                model_headers_settings:
+                  settings['claude.model_headers_settings'],
+                default_max_tokens: settings['claude.default_max_tokens'],
+                thinking_adapter_enabled:
+                  settings['claude.thinking_adapter_enabled'],
+                thinking_adapter_budget_tokens_percentage:
+                  settings['claude.thinking_adapter_budget_tokens_percentage'],
+              },
+            }}
+          />
+        </SettingsStackRow>
+        <SettingsStackRow>
+          <GrokSettingsCard
+            defaultValues={{
+              'grok.violation_deduction_enabled':
+                settings['grok.violation_deduction_enabled'] ?? true,
+              'grok.violation_deduction_amount':
+                settings['grok.violation_deduction_amount'] ?? 0.05,
+            }}
+          />
+          <IoNetDeploymentSettingsSection
+            defaultValues={{
+              enabled: settings['model_deployment.ionet.enabled'],
+              apiKey: settings['model_deployment.ionet.api_key'],
+            }}
+          />
+        </SettingsStackRow>
+        <ChannelAffinitySection
+          defaultValues={{
+            'channel_affinity_setting.enabled':
+              settings['channel_affinity_setting.enabled'],
+            'channel_affinity_setting.switch_on_success':
+              settings['channel_affinity_setting.switch_on_success'],
+            'channel_affinity_setting.keep_on_channel_disabled':
+              settings['channel_affinity_setting.keep_on_channel_disabled'],
+            'channel_affinity_setting.max_entries':
+              settings['channel_affinity_setting.max_entries'],
+            'channel_affinity_setting.default_ttl_seconds':
+              settings['channel_affinity_setting.default_ttl_seconds'],
+            'channel_affinity_setting.rules':
+              settings['channel_affinity_setting.rules'],
+          }}
+        />
+        <SettingsStackRow>
+          {getSecuritySectionContent('rate-limit', settings)}
+          {getSecuritySectionContent('sensitive-words', settings)}
+        </SettingsStackRow>
+        <SettingsStackRow>
+          {getSecuritySectionContent('ssrf', settings)}
+          {getSecuritySectionContent('token-limits', settings)}
+        </SettingsStackRow>
+      </SettingsStack>
     ),
   },
 ] as const
 
 export type ModelSectionId = (typeof MODELS_SECTIONS)[number]['id']
 
-const modelsRegistry = createSectionRegistry<ModelSectionId, ModelSettings>({
+const modelsRegistry = createSectionRegistry<
+  ModelSectionId,
+  ModelsPageSettings
+>({
   sections: MODELS_SECTIONS,
   defaultSection: 'global',
   basePath: '/system-settings/models',
@@ -206,3 +209,17 @@ export const MODELS_DEFAULT_SECTION = modelsRegistry.defaultSection
 export const getModelsSectionNavItems = modelsRegistry.getSectionNavItems
 export const getModelsSectionContent = modelsRegistry.getSectionContent
 export const getModelsSectionMeta = modelsRegistry.getSectionMeta
+
+export function resolveModelsSectionId(section: string): ModelSectionId {
+  if ((MODELS_SECTION_IDS as readonly string[]).includes(section)) {
+    return section as ModelSectionId
+  }
+
+  if (section in MODELS_SECTION_ALIASES) {
+    return MODELS_SECTION_ALIASES[
+      section as keyof typeof MODELS_SECTION_ALIASES
+    ]
+  }
+
+  return MODELS_DEFAULT_SECTION
+}

@@ -31,14 +31,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { isValidHttpUrlList } from '@/lib/http-url-list'
 
 import { FormDirtyIndicator } from '../components/form-dirty-indicator'
 import { FormNavigationGuard } from '../components/form-navigation-guard'
 import {
   SettingsForm,
   SettingsFormGrid,
-  SettingsFormGridItem,
 } from '../components/settings-form-layout'
 import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
@@ -46,18 +45,29 @@ import { useSettingsForm } from '../hooks/use-settings-form'
 import { useUpdateOption } from '../hooks/use-update-option'
 import { isValidTaskPublicAddress } from './task-public-address'
 
+// Empty keeps the built-in `/docs` route; external links must be absolute.
+const docsLinkSchema = z
+  .string()
+  .trim()
+  .refine((value) => value === '' || /^https?:\/\//i.test(value), {
+    message: 'Enter a full URL starting with http:// or https://',
+  })
+
+const generalSettingSchema = z.object({
+  docs_link: docsLinkSchema,
+  studio_url: docsLinkSchema,
+  video_explore_url: docsLinkSchema,
+  contact_support_image_url: z.string().refine(isValidHttpUrlList, {
+    message: 'Enter valid http:// or https:// links separated by commas.',
+  }),
+})
+
 const _systemInfoSchema = z.object({
   SystemName: z.string().min(1),
   ServerAddress: z.string().optional(),
   TaskPublicAddress: z.string().refine(isValidTaskPublicAddress),
   Logo: z.string().url().optional().or(z.literal('')),
-  Footer: z.string().optional(),
-  About: z.string().optional(),
-  HomePageContent: z.string().optional(),
-  legal: z.object({
-    user_agreement: z.string().optional(),
-    privacy_policy: z.string().optional(),
-  }),
+  general_setting: generalSettingSchema,
 })
 
 type SystemInfoFormValues = z.infer<typeof _systemInfoSchema>
@@ -80,12 +90,15 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
     ServerAddress: normalizeValue(defaultValues.ServerAddress),
     TaskPublicAddress: normalizeValue(defaultValues.TaskPublicAddress),
     Logo: normalizeValue(defaultValues.Logo),
-    Footer: normalizeValue(defaultValues.Footer),
-    About: normalizeValue(defaultValues.About),
-    HomePageContent: normalizeValue(defaultValues.HomePageContent),
-    legal: {
-      user_agreement: normalizeValue(defaultValues.legal?.user_agreement),
-      privacy_policy: normalizeValue(defaultValues.legal?.privacy_policy),
+    general_setting: {
+      docs_link: normalizeValue(defaultValues.general_setting.docs_link),
+      studio_url: normalizeValue(defaultValues.general_setting.studio_url),
+      video_explore_url: normalizeValue(
+        defaultValues.general_setting.video_explore_url
+      ),
+      contact_support_image_url: normalizeValue(
+        defaultValues.general_setting.contact_support_image_url
+      ),
     },
   }
 
@@ -101,13 +114,7 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
         ),
     }),
     Logo: z.string().url().optional().or(z.literal('')),
-    Footer: z.string().optional(),
-    About: z.string().optional(),
-    HomePageContent: z.string().optional(),
-    legal: z.object({
-      user_agreement: z.string().optional(),
-      privacy_policy: z.string().optional(),
-    }),
+    general_setting: generalSettingSchema,
   })
 
   const { form, handleSubmit, handleReset, isDirty, isSubmitting } =
@@ -224,123 +231,78 @@ export function SystemInfoSection({ defaultValues }: SystemInfoSectionProps) {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name='Footer'
+                name='general_setting.docs_link'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('Footer')}</FormLabel>
+                    <FormLabel>{t('Documentation Link')}</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder={t(
-                          '© 2025 Your Company. All rights reserved.'
-                        )}
-                        rows={4}
+                      <Input
+                        placeholder={t('https://docs.example.com')}
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      {t('Footer text displayed at the bottom of pages')}
+                      {t('Link to your documentation site')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name='About'
+                name='general_setting.studio_url'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('About')}</FormLabel>
+                    <FormLabel>{t('Creative Workspace URL')}</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder={t(
-                          'Enter HTML code (e.g., <p>About us...</p>) or a URL (e.g., https://example.com) to embed as iframe'
-                        )}
-                        rows={4}
+                      <Input
+                        placeholder={t('https://example.com/workspace')}
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      {t(
-                        'Supports HTML markup or iframe embedding. Enter HTML code directly, or provide a complete URL to automatically embed it as an iframe.'
-                      )}
+                      {t('Leave blank to use the built-in dashboard page')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <SettingsFormGridItem span='full'>
-                <FormField
-                  control={form.control}
-                  name='HomePageContent'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('Home Page Content')}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t('Welcome to our New API...')}
-                          rows={6}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {t(
-                          'Content displayed on the home page (supports Markdown)'
-                        )}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </SettingsFormGridItem>
-
               <FormField
                 control={form.control}
-                name='legal.user_agreement'
+                name='general_setting.video_explore_url'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('User Agreement')}</FormLabel>
+                    <FormLabel>{t('Explore Video Capabilities URL')}</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder={t(
-                          'Provide Markdown, HTML, or an external URL for the user agreement'
-                        )}
-                        rows={6}
+                      <Input
+                        placeholder={t('https://example.com/video')}
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      {t(
-                        'Leave empty to disable the agreement requirement. Supports Markdown, HTML, or a full URL to redirect users.'
-                      )}
+                      {t('Leave blank to use the built-in models page')}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name='legal.privacy_policy'
+                name='general_setting.contact_support_image_url'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{t('Privacy Policy')}</FormLabel>
+                    <FormLabel>{t('Contact image links')}</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder={t(
-                          'Provide Markdown, HTML, or an external URL for the privacy policy'
-                        )}
-                        rows={6}
+                      <Input
+                        placeholder='https://example.com/contact.png'
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
                       {t(
-                        'Leave empty to disable the privacy policy requirement. Supports Markdown, HTML, or a full URL to redirect users.'
+                        'Separate image URLs with commas. Each time the support widget opens, it shows the next image and repeats. Leave blank to keep announcements without contact images.'
                       )}
                     </FormDescription>
                     <FormMessage />

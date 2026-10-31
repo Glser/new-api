@@ -89,7 +89,7 @@ export function NoticeSection({ defaultValue }: NoticeSectionProps) {
                 <FormLabel>{t('Announcement content')}</FormLabel>
                 <FormControl>
                   <Textarea
-                    rows={8}
+                    rows={5}
                     placeholder={t(
                       'Planned maintenance on Friday at 22:00 UTC...'
                     )}

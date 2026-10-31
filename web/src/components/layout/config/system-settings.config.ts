@@ -17,25 +17,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { TFunction } from 'i18next'
-import {
-  Box,
-  CreditCard,
-  Layout,
-  Settings,
-  Shield,
-  ShieldAlert,
-  Wrench,
-} from 'lucide-react'
+import { Box, CreditCard, Layout, Settings, Wrench } from 'lucide-react'
 
-import { getAuthSectionNavItems } from '@/features/system-settings/auth/section-registry.tsx'
-import { getBillingSectionNavItems } from '@/features/system-settings/billing/section-registry.tsx'
-import { getContentSectionNavItems } from '@/features/system-settings/content/section-registry.tsx'
-import { getModelsSectionNavItems } from '@/features/system-settings/models/section-registry.tsx'
-import { getOperationsSectionNavItems } from '@/features/system-settings/operations/section-registry.tsx'
-import { getSecuritySectionNavItems } from '@/features/system-settings/security/section-registry.tsx'
-import { getSiteSectionNavItems } from '@/features/system-settings/site/section-registry.tsx'
+import type { NavCollapsible, NavGroup, NavItem, SidebarView } from '../types'
 
-import type { NavCollapsible, NavGroup, SidebarView } from '../types'
+const STACKED_SECTION_ACTIVE_URLS = [
+  '/system-settings/site/notice',
+  '/system-settings/site/header-navigation',
+  '/system-settings/site/sidebar-modules',
+  '/system-settings/site/basic-auth',
+  '/system-settings/site/bot-protection',
+  '/system-settings/site/oauth',
+  '/system-settings/site/passkey',
+  '/system-settings/site/custom-oauth',
+  '/system-settings/auth/basic-auth',
+  '/system-settings/auth/bot-protection',
+  '/system-settings/auth/oauth',
+  '/system-settings/auth/passkey',
+  '/system-settings/auth/custom-oauth',
+]
 
 /**
  * Sidebar nav groups for the System Settings nested view.
@@ -51,43 +51,92 @@ function getSystemSettingsNavGroups(t: TFunction): NavGroup[] {
       title: t('System Administration'),
       items: [
         {
-          title: t('Site & Branding'),
+          title: t('Site & Authentication'),
           icon: Settings,
-          items: getSiteSectionNavItems(t),
-        },
-        {
-          title: t('Authentication'),
-          icon: Shield,
-          items: getAuthSectionNavItems(t),
+          url: '/system-settings/site/system-info',
+          activeUrls: STACKED_SECTION_ACTIVE_URLS,
         },
         {
           title: t('Billing & Payment'),
           icon: CreditCard,
-          items: getBillingSectionNavItems(t),
+          url: '/system-settings/billing/quota',
+          activeUrls: [
+            '/system-settings/billing/currency',
+            '/system-settings/billing/model-pricing',
+            '/system-settings/billing/group-pricing',
+            '/system-settings/billing/payment',
+            '/system-settings/billing/checkin',
+          ],
         },
         {
           title: t('Models & Routing'),
           icon: Box,
-          items: getModelsSectionNavItems(t),
-        },
-        {
-          title: t('Security & Limits'),
-          icon: ShieldAlert,
-          items: getSecuritySectionNavItems(t),
+          url: '/system-settings/models/global',
+          activeUrls: [
+            '/system-settings/models/routing-reliability',
+            '/system-settings/models/gemini',
+            '/system-settings/models/claude',
+            '/system-settings/models/grok',
+            '/system-settings/models/channel-affinity',
+            '/system-settings/models/model-deployment',
+            '/system-settings/security/rate-limit',
+            '/system-settings/security/sensitive-words',
+            '/system-settings/security/ssrf',
+            '/system-settings/security/token-limits',
+          ],
         },
         {
           title: t('Console Content'),
           icon: Layout,
-          items: getContentSectionNavItems(t),
+          url: '/system-settings/content/dashboard',
+          activeUrls: [
+            '/system-settings/content/announcements',
+            '/system-settings/content/api-info',
+            '/system-settings/content/faq',
+            '/system-settings/content/uptime-kuma',
+            '/system-settings/content/chat',
+            '/system-settings/content/agent',
+            '/system-settings/content/drawing',
+          ],
         },
         {
           title: t('Operations'),
           icon: Wrench,
-          items: getOperationsSectionNavItems(t),
+          url: '/system-settings/operations/behavior',
+          activeUrls: [
+            '/system-settings/operations/alerts',
+            '/system-settings/operations/email',
+            '/system-settings/operations/worker',
+            '/system-settings/operations/logs',
+            '/system-settings/operations/performance',
+            '/system-settings/operations/update-checker',
+          ],
         },
       ],
     },
   ]
+}
+
+function flattenSettingsCategory(category: NavItem): NavCollapsible['items'] {
+  if ('items' in category && category.items) {
+    return category.items.map((item) => ({
+      ...item,
+      icon: category.icon,
+    }))
+  }
+
+  if ('url' in category && category.url) {
+    return [
+      {
+        title: category.title,
+        url: category.url,
+        icon: category.icon,
+        activeUrls: category.activeUrls,
+      },
+    ]
+  }
+
+  return []
 }
 
 /**
@@ -100,14 +149,9 @@ export function getSystemSettingsNavItems(
 ): NavCollapsible['items'] {
   const settingsGroup = getSystemSettingsNavGroups(t)[0]
 
-  return settingsGroup.items.flatMap((category) => {
-    if (!('items' in category) || !category.items) return []
-
-    return category.items.map((item) => ({
-      ...item,
-      icon: category.icon,
-    }))
-  })
+  return settingsGroup.items.flatMap((category) =>
+    flattenSettingsCategory(category)
+  )
 }
 
 /**

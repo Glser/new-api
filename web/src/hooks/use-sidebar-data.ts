@@ -29,7 +29,6 @@ import {
   MessageSquare,
   PlugZap,
   Radio,
-  ServerCog,
   Settings,
   Ticket,
   User,
@@ -146,14 +145,14 @@ export function useSidebarData(): SidebarData {
             icon: Radio,
           },
           {
-            title: t('Topology'),
-            url: '/topology',
-            icon: Workflow,
-          },
-          {
             title: t('Models'),
             url: '/models/metadata',
             icon: Box,
+          },
+          {
+            title: t('Topology'),
+            url: '/topology',
+            icon: Workflow,
           },
           {
             title: t('Users'),
@@ -169,12 +168,6 @@ export function useSidebarData(): SidebarData {
             title: t('Subscriptions'),
             url: '/subscriptions',
             icon: CreditCard,
-          },
-          {
-            title: t('System Info'),
-            url: '/system-info',
-            icon: ServerCog,
-            requiredRole: ROLE.SUPER_ADMIN,
           },
           {
             title: t('Task Plugins'),

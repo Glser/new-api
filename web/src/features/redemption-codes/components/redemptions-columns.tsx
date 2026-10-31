@@ -29,11 +29,15 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { formatQuota, formatTimestampToDate } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 import { REDEMPTION_FILTER_EXPIRED, REDEMPTION_STATUSES } from '../constants'
 import { isRedemptionExpired, isTimestampExpired } from '../lib'
 import type { Redemption } from '../types'
 import { DataTableRowActions } from './data-table-row-actions'
+
+const TABLE_DATA_TEXT =
+  'text-foreground text-[12px]! tabular-nums @min-[48rem]/redemptions:text-[14px]! @min-[80rem]/redemptions:text-[15px]!'
 
 export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
   const { t } = useTranslation()
@@ -46,7 +50,7 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
           indeterminate={table.getIsSomePageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label={t('Select all')}
-          className='translate-y-[2px]'
+          className='mx-auto'
         />
       ),
       cell: ({ row }) => (
@@ -54,7 +58,7 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label={t('Select row')}
-          className='translate-y-[2px]'
+          className='mx-auto'
         />
       ),
       enableSorting: false,
@@ -67,17 +71,22 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
       meta: { mobileHidden: true },
       cell: ({ row }) => {
         return (
-          <TableId value={row.getValue('id') as number} className='w-[60px]' />
+          <TableId
+            value={row.getValue('id') as number}
+            className='[font-family:inherit]'
+          />
         )
       },
-      size: 80,
+      size: 72,
     },
     {
       accessorKey: 'name',
       header: t('Name'),
       meta: { mobileTitle: true },
       cell: ({ row }) => (
-        <span className='font-medium'>{row.getValue('name')}</span>
+        <span className='mx-auto block max-w-[180px] truncate text-center'>
+          {row.getValue('name')}
+        </span>
       ),
       size: 180,
     },
@@ -96,7 +105,7 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
               label={t('Expired')}
               variant='warning'
               copyable={false}
-              className='-ml-1.5'
+              className='mx-auto font-normal'
             />
           )
         }
@@ -112,7 +121,7 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
             label={t(statusConfig.labelKey)}
             variant={statusConfig.variant}
             copyable={false}
-            className='-ml-1.5'
+            className='mx-auto font-normal'
           />
         )
       },
@@ -148,6 +157,9 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
             maskedValue={maskedKey}
             copyTooltip={t('Copy code')}
             copyAriaLabel={t('Copy redemption code')}
+            className='mx-auto justify-center'
+            triggerClassName='justify-center'
+            contentAlign='center'
           />
         )
       },
@@ -160,12 +172,9 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
       cell: ({ row }) => {
         const quota = row.getValue('quota') as number
         return (
-          <StatusBadge
-            label={formatQuota(quota)}
-            variant='neutral'
-            copyable={false}
-            className='-ml-1.5'
-          />
+          <span className={cn(TABLE_DATA_TEXT, 'font-medium')}>
+            {formatQuota(quota)}
+          </span>
         )
       },
       size: 120,
@@ -176,9 +185,9 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
       meta: { mobileHidden: true },
       cell: ({ row }) => {
         return (
-          <div className='min-w-[160px] font-mono text-sm'>
+          <span className={TABLE_DATA_TEXT}>
             {formatTimestampToDate(row.getValue('created_time'))}
-          </div>
+          </span>
         )
       },
       size: 180,
@@ -190,22 +199,15 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
       cell: ({ row }) => {
         const expiredTime = row.getValue('expired_time') as number
         if (expiredTime === 0) {
-          return (
-            <StatusBadge
-              label={t('Never')}
-              variant='neutral'
-              copyable={false}
-              className='-ml-1.5'
-            />
-          )
+          return <span className='text-muted-foreground/60'>{t('Never')}</span>
         }
         const isExpired = isTimestampExpired(expiredTime)
         return (
-          <div
-            className={`min-w-[160px] font-mono text-sm ${isExpired ? 'text-destructive' : ''}`}
+          <span
+            className={cn(TABLE_DATA_TEXT, isExpired && 'text-destructive')}
           >
             {formatTimestampToDate(expiredTime)}
-          </div>
+          </span>
         )
       },
       size: 180,
@@ -219,23 +221,20 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
         const redemption = row.original
 
         if (userId === 0) {
-          return <span className='text-muted-foreground text-sm'>-</span>
+          return <span className='text-muted-foreground/60'>-</span>
         }
 
         return (
           <Tooltip>
             <TooltipTrigger
               render={
-                <StatusBadge
-                  label={t('User {{id}}', { id: userId })}
-                  variant='neutral'
-                  copyable={false}
-                  className='cursor-help'
-                />
+                <span className={cn(TABLE_DATA_TEXT, 'cursor-help')}>
+                  {t('User {{id}}', { id: userId })}
+                </span>
               }
             />
             <TooltipContent>
-              <div className='space-y-1 text-xs'>
+              <div className='space-y-1 text-center text-xs'>
                 <div>
                   {t('User ID:')} {userId}
                 </div>
@@ -256,6 +255,7 @@ export function useRedemptionsColumns(): ColumnDef<Redemption>[] {
       id: 'actions',
       header: () => t('Actions'),
       cell: ({ row }) => <DataTableRowActions row={row} />,
+      size: 80,
       meta: { pinned: 'right' as const },
     },
   ]

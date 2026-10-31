@@ -124,7 +124,7 @@ type FlatOAuthDefaults = {
 }
 
 const oauthTabContentClassName =
-  'grid min-w-0 gap-x-5 gap-y-6 lg:grid-cols-2 [&>[data-slot=form-item]]:min-w-0 lg:[&>[data-slot=form-item]:has([data-slot=switch])]:col-span-2'
+  'grid min-w-0 gap-x-4 gap-y-4 lg:grid-cols-2 [&>[data-slot=form-item]]:min-w-0 lg:[&>[data-slot=form-item]:has([data-slot=switch])]:col-span-2'
 
 type OAuthSetupGuideRow = {
   label: ReactNode
@@ -143,7 +143,7 @@ function OAuthSetupGuide(props: OAuthSetupGuideProps) {
   return (
     <Alert className='lg:col-span-2'>
       <AlertTitle>{props.title}</AlertTitle>
-      <AlertDescription className='space-y-3 text-sm'>
+      <AlertDescription className='space-y-2 text-sm'>
         <div>{props.description}</div>
         <div className='space-y-2'>
           {props.rows.map((row) => (
@@ -384,13 +384,25 @@ export function OAuthSection(props: OAuthSectionProps) {
             <FormDirtyIndicator isDirty={form.formState.isDirty} />
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className='grid w-full grid-cols-6'>
-                <TabsTrigger value='github'>{t('GitHub')}</TabsTrigger>
-                <TabsTrigger value='discord'>{t('Discord')}</TabsTrigger>
-                <TabsTrigger value='oidc'>{t('OIDC')}</TabsTrigger>
-                <TabsTrigger value='telegram'>{t('Telegram')}</TabsTrigger>
-                <TabsTrigger value='linuxdo'>{t('LinuxDO')}</TabsTrigger>
-                <TabsTrigger value='wechat'>{t('WeChat')}</TabsTrigger>
+              <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
+                <TabsTrigger value='github' className='px-2.5 text-xs'>
+                  {t('GitHub')}
+                </TabsTrigger>
+                <TabsTrigger value='discord' className='px-2.5 text-xs'>
+                  {t('Discord')}
+                </TabsTrigger>
+                <TabsTrigger value='oidc' className='px-2.5 text-xs'>
+                  {t('OIDC')}
+                </TabsTrigger>
+                <TabsTrigger value='telegram' className='px-2.5 text-xs'>
+                  {t('Telegram')}
+                </TabsTrigger>
+                <TabsTrigger value='linuxdo' className='px-2.5 text-xs'>
+                  {t('LinuxDO')}
+                </TabsTrigger>
+                <TabsTrigger value='wechat' className='px-2.5 text-xs'>
+                  {t('WeChat')}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value='github' className={oauthTabContentClassName}>

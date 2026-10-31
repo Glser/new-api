@@ -21,20 +21,48 @@ import * as React from 'react'
 
 import { cn } from '@/lib/utils'
 
-function Popover({ ...props }: PopoverPrimitive.Root.Props) {
-  return <PopoverPrimitive.Root data-slot='popover' {...props} />
+const PopoverTriggerContext = React.createContext<React.RefObject<
+  HTMLElement | null
+> | null>(null)
+
+function Popover({
+  onOpenChange,
+  ...props
+}: PopoverPrimitive.Root.Props) {
+  const triggerRef = React.useRef<HTMLElement | null>(null)
+
+  return (
+    <PopoverTriggerContext.Provider value={triggerRef}>
+      <PopoverPrimitive.Root
+        data-slot='popover'
+        onOpenChange={(open, eventDetails) => {
+          if (isPopoverDismissFromTrigger(eventDetails, triggerRef.current)) {
+            eventDetails.cancel()
+            return
+          }
+          onOpenChange?.(open, eventDetails)
+        }}
+        {...props}
+      />
+    </PopoverTriggerContext.Provider>
+  )
 }
 
 const PopoverTrigger = React.forwardRef<
   HTMLElement,
   PopoverPrimitive.Trigger.Props
 >(function PopoverTrigger(props, ref) {
+  const triggerRef = React.useContext(PopoverTriggerContext)
   const setTriggerRef = React.useCallback(
-    (element: HTMLButtonElement | null) => {
-      if (typeof ref === 'function') return ref(element)
+    (element: HTMLElement | null) => {
+      if (triggerRef) triggerRef.current = element
+      if (typeof ref === 'function') {
+        ref(element)
+        return
+      }
       if (ref) ref.current = element
     },
-    [ref]
+    [ref, triggerRef]
   )
 
   return (
@@ -130,7 +158,7 @@ function PopoverContent({
           className={cn(
             'bg-popover text-popover-foreground ring-foreground/10 z-50 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg p-2.5 text-sm shadow-md ring-1 outline-hidden',
             animate &&
-              'data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 duration-100',
+              'data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 duration-100 data-closed:animate-none data-[instant]:animate-none',
             className
           )}
           {...props}

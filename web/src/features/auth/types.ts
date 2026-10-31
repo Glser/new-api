@@ -94,6 +94,9 @@ export interface SystemStatus {
     version?: string
     system_name?: string
     logo?: string
+    contact_support_image_url?: string
+    studio_url?: string
+    video_explore_url?: string
     github_oauth?: boolean
     github_client_id?: string
     discord_oauth?: boolean
@@ -141,6 +144,9 @@ export interface SystemStatus {
   version?: string
   system_name?: string
   logo?: string
+  contact_support_image_url?: string
+  studio_url?: string
+  video_explore_url?: string
   github_oauth?: boolean
   github_client_id?: string
   discord_oauth?: boolean

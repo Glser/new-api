@@ -233,10 +233,12 @@ function ChannelCardComponent({
   row,
   channel: channelProp,
   isSelected = false,
+  onStatusChanged,
 }: {
   row?: Row<Channel>
   channel?: Channel
   isSelected?: boolean
+  onStatusChanged?: (status: number) => void
 }) {
   const { t, i18n } = useTranslation()
   const { sensitiveVisible } = useChannels()
@@ -257,7 +259,7 @@ function ChannelCardComponent({
   const nameCell = renderCell('name')
   const actionsFromRow = renderCell('actions')
   const actionsCell = actionsFromRow ?? (
-    <DataTableRowActions channel={channel} />
+    <DataTableRowActions channel={channel} onStatusChanged={onStatusChanged} />
   )
   const statusCell = renderCell('status') ?? (
     <ChannelCardStatus channel={channel} />
@@ -391,7 +393,7 @@ function ChannelCardComponent({
               </div>
             )}
           </div>
-          <div className='-mr-1 flex shrink-0 items-center gap-0.5'>
+          <div className='nodrag nopan -mr-1 flex shrink-0 items-center gap-0.5'>
             {showStatusBadge ? statusCell : null}
             {!isTagRow ? toggleActions : null}
             {isTagRow ? actionsCell : menuActions}

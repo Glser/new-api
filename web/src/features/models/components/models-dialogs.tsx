@@ -66,6 +66,11 @@ export function ModelsDialogs() {
 
       <LazyWhenOpen open={isModelMutateOpen}>
         <ModelMutateDrawer
+          key={
+            currentRow && currentRow.id > 0
+              ? `metadata:${currentRow.id}`
+              : `channel:${currentRow?.model_name ?? ''}`
+          }
           open={isModelMutateOpen}
           initialSection={open === 'price-model' ? 'pricing' : 'metadata'}
           onOpenChange={closeDialog}

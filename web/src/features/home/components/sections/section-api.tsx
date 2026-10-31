@@ -102,7 +102,7 @@ export function SectionAPI() {
           titleSecondary={t('sec_api_title_p2')}
           description={t('sec_api_desc')}
           action={
-            <SectionPrimaryLink to='/dashboard' label={t('sec_api_action')} />
+            <SectionPrimaryLink to='/keys' label={t('sec_api_action')} />
           }
         />
 

@@ -34,6 +34,7 @@ import type {
   TopologyGroupData,
   TopologyModelData,
 } from '../types'
+import { TopologyModelPricing } from './topology-model-pricing'
 
 function areNodeVisualPropsEqual<T>(
   prev: NodeProps & { data: T },
@@ -149,11 +150,10 @@ function TopologyChannelNodeComponent(
   const disabled = props.data.channel.status !== CHANNEL_STATUS.ENABLED
   return (
     <div
-      className={cn(
-        'relative w-full',
-        '[&_button]:nodrag [&_input]:nodrag [&_[role=combobox]]:nodrag',
-        flashing && 'topology-flash-card'
-      )}
+      className={cn('relative w-full', flashing && 'topology-flash-card')}
+      style={
+        { '--topology-flash': topologyColorAlpha(color, 0.55) } as CSSProperties
+      }
     >
       <Handle
         id='in-group'
@@ -168,7 +168,11 @@ function TopologyChannelNodeComponent(
         style={handleStyle(color, 'bottom')}
       />
       <div className={cn(disabled && 'opacity-80')}>
-        <ChannelCard channel={props.data.channel} isSelected={props.selected} />
+        <ChannelCard
+          channel={props.data.channel}
+          isSelected={props.selected}
+          onStatusChanged={props.data.onStatusChanged}
+        />
       </div>
     </div>
   )
@@ -186,14 +190,6 @@ function TopologyModelNodeComponent(
   const color = props.data.color
   const iconKey = props.data.icon || props.data.vendorIcon
   const icon = iconKey ? getLobeIcon(iconKey, 28) : null
-  let unitLabel = props.data.priceUnit
-  if (props.data.priceUnit === 'per-call') unitLabel = t('Per-call')
-  let priceHint: string | undefined
-  if (props.data.priceUnit === '/1M') {
-    priceHint = `${t('Input')} / ${t('Output')} /1M`
-  } else if (unitLabel) {
-    priceHint = unitLabel
-  }
 
   return (
     <FlowCard nodeId={props.id} selected={props.selected} color={color}>
@@ -203,7 +199,7 @@ function TopologyModelNodeComponent(
         position={Position.Top}
         style={handleStyle(color, 'top')}
       />
-      <div className='flex items-start gap-3.5'>
+      <div className='flex items-center gap-3.5'>
         <div className='bg-background/70 flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl'>
           {icon ?? (
             <span className='text-muted-foreground text-sm font-semibold'>
@@ -215,22 +211,18 @@ function TopologyModelNodeComponent(
           <div className='truncate text-lg leading-7 font-semibold'>
             {props.data.name}
           </div>
-          {props.data.priceText ? (
-            <div className='text-muted-foreground mt-1 truncate text-sm'>
-              <span className='text-foreground font-medium tabular-nums'>
-                {props.data.priceText}
-              </span>
-              {priceHint ? (
-                <span className='ml-1 opacity-70'>{priceHint}</span>
-              ) : null}
-            </div>
-          ) : (
+          {!props.data.pricing && (
             <div className='text-muted-foreground mt-1 text-sm'>
               {t('Channel-only model')}
             </div>
           )}
         </div>
       </div>
+      {props.data.pricing && (
+        <div className='mt-3 border-t pt-3'>
+          <TopologyModelPricing model={props.data.pricing} />
+        </div>
+      )}
     </FlowCard>
   )
 }

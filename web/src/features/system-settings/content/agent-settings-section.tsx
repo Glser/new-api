@@ -188,7 +188,10 @@ export function AgentSettingsSection({
   }
 
   return (
-    <SettingsSection title={t('Agent Showcase Configuration')}>
+    <SettingsSection
+      title={t('Agent Showcase Configuration')}
+      className='min-w-0'
+    >
       <p className='text-muted-foreground text-sm'>
         {t(
           'Configure external AI coding agents, CLI tools and IDE extensions displayed on the landing hero and sign-in page.'
@@ -197,19 +200,20 @@ export function AgentSettingsSection({
       <Form {...form}>
         <SettingsForm
           onSubmit={form.handleSubmit(onSubmit)}
-          className='space-y-4'
+          className='flex flex-1 flex-col gap-2'
         >
           <FormField
             control={form.control}
             name='Agents'
             render={({ field }) => (
-              <FormItem>
+              <FormItem className='flex flex-1 flex-col'>
                 <FormLabel>{t('Agent List (JSON)')}</FormLabel>
                 <FormControl>
                   <JsonCodeEditor
                     value={field.value}
                     onChange={field.onChange}
-                    heightClassName='h-96 min-h-60 max-h-96'
+                    className='flex flex-1 flex-col [&>div:first-child]:shrink-0'
+                    heightClassName='min-h-96 flex-1 [contain:size]'
                     placeholder='[{"id": "...", "name": "...", "tag": "...", "guide_url": "...", "icon_key": "..."}]'
                   />
                 </FormControl>

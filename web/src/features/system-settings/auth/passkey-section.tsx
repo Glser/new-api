@@ -737,7 +737,7 @@ export function PasskeySection(props: PasskeySectionProps) {
                 <FormLabel>{t('Allowed Passkey websites')}</FormLabel>
                 <FormControl>
                   <Textarea
-                    rows={4}
+                    rows={3}
                     placeholder={currentOrigin}
                     value={field.value ?? ''}
                     onChange={(event) => field.onChange(event.target.value)}

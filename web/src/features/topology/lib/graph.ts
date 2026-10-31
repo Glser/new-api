@@ -45,6 +45,22 @@ export type TopologySelection = {
   groupName?: string
 }
 
+export function resolveTopologyModel(models: Model[], name: string): Model {
+  // Channel-only models all have id 0, so identity must come from the name.
+  const model = models.find((candidate) => candidate.model_name === name)
+  if (model) return model
+  return {
+    id: 0,
+    model_name: name,
+    has_metadata: false,
+    status: 1,
+    sync_official: 1,
+    name_rule: 0,
+    created_time: 0,
+    updated_time: 0,
+  }
+}
+
 function uniqueSorted(values: Iterable<string>) {
   return [...new Set(values)].sort((a, b) => {
     if (a === 'default') return -1
@@ -65,7 +81,8 @@ export function buildTopologyGraph(
 ) {
   const search = filters.search.trim().toLowerCase()
   const selectedGroup = filters.group.trim()
-  const selectedStatus = filters.status.trim()
+  const selectedChannel = filters.channel.trim()
+  const selectedModel = filters.model.trim()
 
   const registryByName = new Map<string, Model>()
   for (const model of payload.models) {
@@ -101,21 +118,16 @@ export function buildTopologyGraph(
   ])
 
   const visibleChannels = payload.channels.filter((channel) => {
-    if (
-      selectedStatus === 'enabled' &&
-      channel.status !== CHANNEL_STATUS.ENABLED
-    ) {
-      return false
-    }
-    if (
-      selectedStatus === 'disabled' &&
-      channel.status === CHANNEL_STATUS.ENABLED
-    ) {
-      return false
-    }
+    if (selectedChannel && String(channel.id) !== selectedChannel) return false
     if (
       selectedGroup &&
       !parseGroupsList(channel.group).includes(selectedGroup)
+    ) {
+      return false
+    }
+    if (
+      selectedModel &&
+      !parseModelsList(channel.models).includes(selectedModel)
     ) {
       return false
     }
@@ -139,7 +151,14 @@ export function buildTopologyGraph(
     if (search && !matchesSearch(name, search)) {
       return bound.some((id) => visibleChannelIds.has(id))
     }
-    if (!search && selectedGroup === '' && selectedStatus === '') return true
+    if (
+      !search &&
+      selectedGroup === '' &&
+      selectedChannel === '' &&
+      selectedModel === ''
+    ) {
+      return true
+    }
     return (
       bound.some((id) => visibleChannelIds.has(id)) ||
       matchesSearch(name, search)
@@ -158,9 +177,10 @@ export function buildTopologyGraph(
     : new Set<string>()
 
   let visibleModelNames = modelNames.filter((name) => {
+    if (selectedModel && name !== selectedModel) return false
     if (search && matchesSearch(name, search)) return true
     if (selectedChannelModels.has(name)) return true
-    if (selectedGroup || selectedStatus || search) {
+    if (selectedGroup || selectedChannel || selectedModel || search) {
       return relatedModelNames.has(name)
     }
     return relatedModelNames.has(name) || registryByName.has(name)
@@ -225,14 +245,13 @@ export function buildTopologyGraph(
         position: { x: 0, y: 0 },
         data: {
           name,
-          registryId: model?.id,
+          registryId: model && model.id > 0 ? model.id : undefined,
           channelCount: modelChannels.get(name)?.size ?? 0,
           vendorId: model?.vendor_id,
           status: model?.status,
           icon: price?.icon,
           vendorIcon: price?.vendorIcon,
-          priceText: price?.priceText,
-          priceUnit: price?.priceUnit,
+          pricing: price?.pricing,
           color: topologyColor(`model:${name}`),
         } satisfies TopologyModelData,
       }
@@ -242,6 +261,7 @@ export function buildTopologyGraph(
   const edges: TopologyEdge[] = []
   for (const channel of visibleChannels) {
     const channelId = channelNodeId(channel.id)
+    const channelDisabled = channel.status !== CHANNEL_STATUS.ENABLED
     for (const group of channelGroups.get(channel.id) ?? []) {
       if (!visibleGroupSet.has(group)) continue
       const color = topologyColor(`group:${group}`)
@@ -252,13 +272,24 @@ export function buildTopologyGraph(
         sourceHandle: 'out',
         targetHandle: 'in-group',
         type: 'default',
-        style: { stroke: color, strokeWidth: 1.8 },
-        data: { color },
+        style: channelDisabled
+          ? { stroke: '#94a3b8', strokeWidth: 1.2, opacity: 0.55 }
+          : {
+              stroke: color,
+              strokeWidth: 1.3,
+              strokeDasharray: '5 8',
+              opacity: 0.5,
+            },
+        data: { color, disabled: channelDisabled },
       })
     }
     for (const modelName of channelModels.get(channel.id) ?? []) {
       if (!visibleModelSet.has(modelName)) continue
       const color = topologyColor(`channel:${channel.id}`)
+      const registeredModel = registryByName.get(modelName)
+      const disabled =
+        channelDisabled ||
+        (registeredModel != null && registeredModel.status !== 1)
       edges.push({
         id: `cm:${channel.id}:${modelName}`,
         source: channelId,
@@ -266,8 +297,15 @@ export function buildTopologyGraph(
         sourceHandle: 'out-model',
         targetHandle: 'in',
         type: 'default',
-        style: { stroke: color, strokeWidth: 1.7, strokeDasharray: '7 8' },
-        data: { color },
+        style: disabled
+          ? { stroke: '#94a3b8', strokeWidth: 1.2, opacity: 0.55 }
+          : {
+              stroke: color,
+              strokeWidth: 1.3,
+              strokeDasharray: '5 8',
+              opacity: 0.38,
+            },
+        data: { color, disabled },
       })
     }
   }

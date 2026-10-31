@@ -28,6 +28,9 @@ import type { UpdateOptionRequest, UpdatePasskeyDomainsRequest } from '../types'
 
 // Configuration keys that require status refresh
 const STATUS_RELATED_KEYS = new Set([
+  'general_setting.contact_support_image_url',
+  'general_setting.studio_url',
+  'general_setting.video_explore_url',
   'HeaderNavModules',
   'SidebarModulesAdmin',
   'Notice',

@@ -222,6 +222,12 @@ func SyncOptions(frequency int) {
 }
 
 func validateOptionValue(key string, value string) error {
+	if key == "TopUpLink" {
+		return validateHTTPURLList(value, "充值链接")
+	}
+	if key == "general_setting.contact_support_image_url" {
+		return validateHTTPURLList(value, "联系图片链接")
+	}
 	if key == operation_setting.ToolPriceOptionKey {
 		return operation_setting.ValidateToolPricesJSON(value)
 	}

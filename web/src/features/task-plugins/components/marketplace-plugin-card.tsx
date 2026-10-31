@@ -27,8 +27,11 @@ import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { TooltipHint } from '@/components/ui/tooltip'
 import { getChannelTypeLabel } from '@/features/channels/lib'
 import { resolveLocalizedText } from '@/lib/localized-text'
+import { cn } from '@/lib/utils'
 
 import {
   findMarketplaceVersion,
@@ -39,7 +42,6 @@ import {
 import { fetchPluginIconDataUri } from '../lib/plugin-icon-file'
 import type { MarketplacePlugin, TaskPluginListItem } from '../types'
 import { PluginIcon } from './plugin-icon'
-import { PluginWebsiteLink } from './plugin-website-link'
 
 type MarketplacePluginCardProps = {
   plugin: MarketplacePlugin
@@ -56,7 +58,6 @@ export function MarketplacePluginCard(props: MarketplacePluginCardProps) {
   const description = resolveLocalizedText(plugin.description, i18n.language)
   const channelTypes = plugin.channelTypes ?? []
   const latestEntry = findMarketplaceVersion(plugin, plugin.latest)
-  const labelClass = 'text-muted-foreground text-[11px] font-medium select-none'
   const builtInVersion = marketplaceBuiltInVersion(props.installed)
   // Same-origin-as-index rule as the source itself: a logo is only ever
   // fetched from the repository the administrator chose to trust.
@@ -65,91 +66,94 @@ export function MarketplacePluginCard(props: MarketplacePluginCardProps) {
       ? resolvePluginSourceUrl(props.indexUrl, plugin.iconFile.path)
       : null
 
+  let statusNote = <span className='invisible'>-</span>
+  if (!latestEntry?.sha256) {
+    statusNote = (
+      <div className='text-destructive flex min-w-0 items-center gap-1'>
+        <TriangleAlert className='size-3 shrink-0' aria-hidden='true' />
+        <span className='truncate'>{t('No integrity hash')}</span>
+      </div>
+    )
+  } else if (builtInVersion) {
+    statusNote = (
+      <span className='text-muted-foreground truncate font-mono'>
+        {t('Built-in v{{factory}} / marketplace v{{market}}', {
+          factory: builtInVersion,
+          market: plugin.latest,
+        })}
+      </span>
+    )
+  }
+
   return (
-    <div className='flex h-full flex-col gap-2.5 rounded-xl border p-3'>
-      <div className='flex items-start justify-between gap-2'>
-        <div className='flex min-w-0 flex-1 items-center gap-2.5'>
-          <span className='mt-0.5 shrink-0'>
-            {iconUrl ? (
-              <MarketplacePluginLogo
-                plugin={plugin}
-                iconUrl={iconUrl}
-                sha256={plugin.iconFile?.sha256}
-              />
-            ) : (
-              <PluginIcon plugin={plugin} size={20} />
-            )}
-          </span>
-          <div className='min-w-0'>
-            <div className='truncate text-sm font-medium'>{plugin.name}</div>
-            <div className='text-muted-foreground truncate font-mono text-xs'>
-              {plugin.key}
-            </div>
+    <Card
+      data-card-hover='false'
+      size='sm'
+      className={cn(
+        'group/plugin-card min-w-0 gap-3 py-3.5 ring-inset transition-[translate,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-[0_1px_2px_rgba(15,23,42,0.05),0_16px_36px_-24px_rgba(15,23,42,0.22)] dark:hover:shadow-[0_18px_50px_-24px_rgba(0,0,0,0.6)]'
+      )}
+    >
+      <CardHeader className='flex flex-row items-center gap-3 px-4'>
+        <div className='flex size-8 shrink-0 items-center justify-center'>
+          {iconUrl ? (
+            <MarketplacePluginLogo
+              plugin={plugin}
+              iconUrl={iconUrl}
+              sha256={plugin.iconFile?.sha256}
+            />
+          ) : (
+            <PluginIcon plugin={plugin} size={20} />
+          )}
+        </div>
+        <div className='min-w-0 flex-1 overflow-hidden'>
+          <TooltipHint content={plugin.name}>
+            <span className='min-w-0 truncate py-px text-base leading-snug font-semibold'>
+              {plugin.name}
+            </span>
+          </TooltipHint>
+          <div className='text-muted-foreground truncate font-mono text-xs'>
+            {plugin.key}
           </div>
         </div>
-        <InstallStateBadge state={props.installState} />
-      </div>
-
-      <PluginWebsiteLink website={plugin.website} />
-
-      {description ? (
-        <p className='text-muted-foreground line-clamp-2 text-xs'>
-          {description}
-        </p>
-      ) : null}
-
-      <div className='grid grid-cols-3 gap-x-3 gap-y-1'>
-        <div className='min-w-0'>
-          <div className={labelClass}>{t('Latest version')}</div>
-          <div className='truncate font-mono text-xs'>{plugin.latest}</div>
+        <div className='-mr-1 shrink-0'>
+          <InstallStateBadge state={props.installState} />
         </div>
-        <div className='min-w-0'>
-          <div className={labelClass}>{t('Channel type')}</div>
-          <div className='truncate text-xs'>
+      </CardHeader>
+
+      <CardContent className='flex flex-col gap-2.5 px-4'>
+        <p className='text-muted-foreground line-clamp-2 h-10 text-sm leading-5 break-words'>
+          {description || '\u00a0'}
+        </p>
+
+        <div className='text-muted-foreground flex h-6 min-w-0 items-center justify-between gap-3 text-xs'>
+          <span className='min-w-0 truncate font-mono'>v{plugin.latest}</span>
+          <span className='min-w-0 truncate'>
             {channelTypes.length > 0
               ? t(getChannelTypeLabel(channelTypes[0]))
               : t('Task Plugin')}
-          </div>
-        </div>
-        <div className='min-w-0'>
-          <div className={labelClass}>{t('Models')}</div>
-          <div className='truncate text-xs'>{plugin.models?.length ?? 0}</div>
-        </div>
-      </div>
-
-      {builtInVersion && (
-        <div className='text-xs'>
-          <span className={labelClass}>{t('Versions')}</span>{' '}
-          <span className='font-mono'>
-            {t('Built-in v{{factory}} / marketplace v{{market}}', {
-              factory: builtInVersion,
-              market: plugin.latest,
-            })}
+          </span>
+          <span className='shrink-0 tabular-nums'>
+            {t('Models')} {plugin.models?.length ?? 0}
           </span>
         </div>
-      )}
 
-      {!latestEntry?.sha256 && (
-        <div className='text-destructive flex items-center gap-1 text-xs'>
-          <TriangleAlert className='size-3 shrink-0' aria-hidden='true' />
-          {t('No integrity hash')}
+        <div className='flex h-4 min-w-0 items-center text-xs'>
+          {statusNote}
         </div>
-      )}
 
-      <div className='mt-auto border-t pt-2'>
         <Button
           size='sm'
           variant={
             props.installState.status === 'up_to_date' ? 'outline' : 'default'
           }
-          className='w-full'
+          className='mt-auto h-8 w-full'
           onClick={props.onInstall}
         >
           <Download />
           {t('Install')}
         </Button>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 

@@ -60,7 +60,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
-import { MODEL_FETCHABLE_TYPES } from '../constants'
+import { CHANNEL_STATUS, MODEL_FETCHABLE_TYPES } from '../constants'
 import {
   channelsQueryKeys,
   handleDeleteChannel,
@@ -80,11 +80,13 @@ import { useChannels } from './channels-provider'
 interface DataTableRowActionsProps {
   row?: Row<Channel>
   channel?: Channel
+  onStatusChanged?: (status: number) => void
 }
 
 export function DataTableRowActions({
   row,
   channel: channelProp,
+  onStatusChanged,
 }: DataTableRowActionsProps) {
   const { t } = useTranslation()
   const layout = useContext(ChannelRowActionsLayoutContext)
@@ -167,7 +169,16 @@ export function DataTableRowActions({
     e?.stopPropagation()
     setIsTogglingStatus(true)
     try {
-      await handleToggleChannelStatus(channel.id, channel.status, queryClient)
+      await handleToggleChannelStatus(
+        channel.id,
+        channel.status,
+        queryClient,
+        () => {
+          onStatusChanged?.(
+            isEnabled ? CHANNEL_STATUS.MANUAL_DISABLED : CHANNEL_STATUS.ENABLED
+          )
+        }
+      )
     } finally {
       setIsTogglingStatus(false)
     }
@@ -277,7 +288,9 @@ export function DataTableRowActions({
               <Button
                 variant='ghost'
                 size='icon-sm'
-                className='data-popup-open:bg-muted'
+                className='nodrag nopan data-popup-open:bg-muted'
+                onClick={(event) => event.stopPropagation()}
+                aria-label={t('Open menu')}
               />
             }
           >

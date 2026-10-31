@@ -66,6 +66,33 @@ export function useSuppressSettingsSectionHeader() {
   return useContext(SettingsPageContext).suppressSectionHeader
 }
 
+type SettingsSectionChromeValue = {
+  actionsContainer: HTMLDivElement | null
+  statusContainer: HTMLElement | null
+}
+
+const SettingsSectionChromeContext =
+  createContext<SettingsSectionChromeValue | null>(null)
+
+type SettingsSectionChromeProviderProps = SettingsSectionChromeValue & {
+  children: ReactNode
+}
+
+export function SettingsSectionChromeProvider(
+  props: SettingsSectionChromeProviderProps
+) {
+  return (
+    <SettingsSectionChromeContext.Provider
+      value={{
+        actionsContainer: props.actionsContainer,
+        statusContainer: props.statusContainer,
+      }}
+    >
+      {props.children}
+    </SettingsSectionChromeContext.Provider>
+  )
+}
+
 type SettingsPageTitleStatusPortalProps = {
   children: ReactNode
 }
@@ -74,10 +101,12 @@ export function SettingsPageTitleStatusPortal(
   props: SettingsPageTitleStatusPortalProps
 ) {
   const { titleStatusContainer } = useContext(SettingsPageContext)
+  const sectionChrome = useContext(SettingsSectionChromeContext)
+  const target = sectionChrome?.statusContainer ?? titleStatusContainer
 
-  if (!titleStatusContainer) return null
+  if (!target) return null
 
-  return createPortal(props.children, titleStatusContainer)
+  return createPortal(props.children, target)
 }
 
 type SettingsPageActionsPortalProps = {
@@ -88,14 +117,16 @@ export function SettingsPageActionsPortal(
   props: SettingsPageActionsPortalProps
 ) {
   const { actionsContainer } = useContext(SettingsPageContext)
+  const sectionChrome = useContext(SettingsSectionChromeContext)
+  const target = sectionChrome?.actionsContainer ?? actionsContainer
 
-  if (!actionsContainer) return null
+  if (!target) return null
 
   return createPortal(
     <div className='flex flex-wrap items-center justify-end gap-2'>
       {props.children}
     </div>,
-    actionsContainer
+    target
   )
 }
 

@@ -226,7 +226,7 @@ function MarketplaceSourceSection(props: MarketplaceSourceSectionProps) {
       </div>
 
       {props.isLoading && (
-        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3'>
+        <div className='grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-4'>
           <Skeleton className='h-40 w-full' />
           <Skeleton className='h-40 w-full' />
           <Skeleton className='h-40 w-full' />
@@ -253,7 +253,7 @@ function MarketplaceSourceSection(props: MarketplaceSourceSectionProps) {
       )}
 
       {props.index && props.index.plugins.length > 0 && (
-        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3'>
+        <div className='grid [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))] gap-4'>
           {props.index.plugins.map((plugin) => {
             const installState = deriveInstallState(plugin, props.installed)
             return (

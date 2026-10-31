@@ -34,7 +34,7 @@ import { DataTableRowActions } from './data-table-row-actions'
 
 export function useSubscriptionsColumns(): ColumnDef<PlanRecord>[] {
   const { t } = useTranslation()
-  const { currency } = useSystemConfig()
+  useSystemConfig()
 
   return useMemo(
     (): ColumnDef<PlanRecord>[] => [
@@ -54,7 +54,7 @@ export function useSubscriptionsColumns(): ColumnDef<PlanRecord>[] {
         cell: ({ row }) => {
           const plan = row.original.plan
           return (
-            <div className='max-w-full min-w-0'>
+            <div className='mx-auto max-w-full min-w-0 text-center'>
               <div className='truncate font-medium'>{plan.title}</div>
               {plan.subtitle && (
                 <div className='text-muted-foreground truncate text-xs'>
@@ -124,14 +124,12 @@ export function useSubscriptionsColumns(): ColumnDef<PlanRecord>[] {
               label={t('Enable')}
               variant='success'
               copyable={false}
-              className='-ml-1.5'
             />
           ) : (
             <StatusBadge
               label={t('Disable')}
               variant='neutral'
               copyable={false}
-              className='-ml-1.5'
             />
           ),
         size: 80,
@@ -206,12 +204,6 @@ export function useSubscriptionsColumns(): ColumnDef<PlanRecord>[] {
         meta: { pinned: 'right' as const },
       },
     ],
-    [
-      t,
-      currency?.quotaDisplayType,
-      currency?.customCurrencySymbol,
-      currency?.usdExchangeRate,
-      currency?.customCurrencyExchangeRate,
-    ]
+    [t]
   )
 }

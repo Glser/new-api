@@ -367,8 +367,11 @@ export function PluginsTable(props: PluginsTableProps) {
         applyHeaderSize
         enableCardView
         viewModeStorageKey={VIEW_MODE_STORAGE_KEY}
-        renderCard={(row) => <PluginCard row={row} />}
-        cardGridClassName='grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3'
+        renderCard={(row, { isSelected }) => (
+          <PluginCard row={row} isSelected={isSelected} />
+        )}
+        cardGridClassName='grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr))]'
+        cardItemClassName='group/plugin-card relative z-0 min-w-0 self-start overflow-visible border-0 !bg-transparent p-0 shadow-none hover:z-10 data-[state=selected]:border-transparent'
         toolbarProps={{ searchPlaceholder: t('Filter plugins...') }}
       />
       <ConfirmDialog

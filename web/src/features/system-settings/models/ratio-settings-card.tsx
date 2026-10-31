@@ -38,7 +38,6 @@ import {
 import { pricingOptions } from '@/features/model-pricing/pricing'
 import { handleServerError } from '@/lib/handle-server-error'
 
-import { SettingsPageTitleStatusPortal } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
 import { positiveIntegerSchema } from '../utils/numeric-field'
@@ -460,14 +459,6 @@ export function RatioSettingsCard({
     'tool-prices': 'Tool prices',
     'upstream-sync': 'Upstream price sync',
   }
-  const tabsGridClass =
-    {
-      1: 'grid-cols-1',
-      2: 'grid-cols-2',
-      3: 'grid-cols-3',
-      4: 'grid-cols-4',
-      5: 'grid-cols-5',
-    }[visibleTabs.length] ?? 'grid-cols-4'
   const defaultTab = visibleTabs[0] ?? 'models'
 
   const renderTabContent = (tab: RatioTabId) => {
@@ -523,36 +514,23 @@ export function RatioSettingsCard({
     return <UpstreamRatioSync />
   }
 
-  const renderTabSwitcher = () => (
-    <TabsList className={`grid w-fit max-w-full ${tabsGridClass}`}>
-      {visibleTabs.map((tab) => (
-        <TabsTrigger key={tab} value={tab}>
-          {t(tabLabels[tab])}
-        </TabsTrigger>
-      ))}
-    </TabsList>
-  )
-
   return (
     <>
-      {visibleTabs.length === 1 ? (
-        <SettingsSection
-          title={t(titleKey)}
-          className={
-            defaultTab === 'models' || defaultTab === 'unset-models'
-              ? 'min-h-0 flex-1'
-              : undefined
-          }
-        >
-          {renderTabContent(defaultTab)}
-        </SettingsSection>
-      ) : (
-        <Tabs defaultValue={defaultTab} className='h-full min-h-0 gap-6'>
-          <SettingsPageTitleStatusPortal>
-            {renderTabSwitcher()}
-          </SettingsPageTitleStatusPortal>
-
-          <SettingsSection title={t(titleKey)} className='min-h-0 flex-1'>
+      <SettingsSection title={t(titleKey)} className='min-h-0 flex-1'>
+        {visibleTabs.length === 1 ? (
+          renderTabContent(defaultTab)
+        ) : (
+          <Tabs
+            defaultValue={defaultTab}
+            className='flex min-h-0 flex-col gap-4'
+          >
+            <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>
+              {visibleTabs.map((tab) => (
+                <TabsTrigger key={tab} value={tab} className='px-2.5 text-xs'>
+                  {t(tabLabels[tab])}
+                </TabsTrigger>
+              ))}
+            </TabsList>
             {visibleTabs.map((tab) => (
               <TabsContent
                 key={tab}
@@ -566,9 +544,9 @@ export function RatioSettingsCard({
                 {renderTabContent(tab)}
               </TabsContent>
             ))}
-          </SettingsSection>
-        </Tabs>
-      )}
+          </Tabs>
+        )}
+      </SettingsSection>
 
       <ConfirmDialog
         open={confirmOpen}

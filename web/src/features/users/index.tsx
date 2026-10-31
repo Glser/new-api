@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { SectionPageLayout } from '@/components/layout'
 import { RenderWhenOpen } from '@/components/render-when-open'
 
+import { UserQuotaDialog } from './components/user-quota-dialog'
 import { UsersDeleteDialog } from './components/users-delete-dialog'
 import { UsersMutateDrawer } from './components/users-mutate-drawer'
 import { UsersProvider, useUsers } from './components/users-provider'
@@ -28,7 +29,7 @@ import { UsersTable } from './components/users-table'
 
 function UsersContent() {
   const { t } = useTranslation()
-  const { open, setOpen, currentRow } = useUsers()
+  const { open, setOpen, currentRow, triggerRefresh } = useUsers()
   const isMutateOpen = open === 'create' || open === 'update'
 
   return (
@@ -55,6 +56,20 @@ function UsersContent() {
       </RenderWhenOpen>
       <RenderWhenOpen open={open === 'delete'}>
         <UsersDeleteDialog />
+      </RenderWhenOpen>
+      <RenderWhenOpen open={open === 'adjust-quota'}>
+        {currentRow ? (
+          <UserQuotaDialog
+            open={open === 'adjust-quota'}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) setOpen(null)
+            }}
+            userId={currentRow.id}
+            currentQuota={currentRow.quota}
+            username={currentRow.username}
+            onSuccess={triggerRefresh}
+          />
+        ) : null}
       </RenderWhenOpen>
     </>
   )
