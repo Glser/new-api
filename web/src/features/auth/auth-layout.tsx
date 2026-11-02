@@ -39,7 +39,8 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <div className='relative h-8 w-8'>
           {loading ? (
             <Skeleton className='absolute inset-0 rounded-full' />
-          ) : logo === '/logo.png' ? (
+          ) : null}
+          {!loading && logo === '/logo.png' ? (
             <>
               <img
                 src='/logo.png'
@@ -52,13 +53,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 className='hidden h-8 w-8 rounded-full object-contain dark:block'
               />
             </>
-          ) : (
+          ) : null}
+          {!loading && logo !== '/logo.png' ? (
             <img
               src={logo}
               alt={t('Logo')}
               className='h-8 w-8 rounded-full object-cover'
             />
-          )}
+          ) : null}
         </div>
         {loading ? (
           <Skeleton className='h-6 w-24' />

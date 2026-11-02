@@ -59,37 +59,44 @@ export function SectionTasks() {
       getUptimeStatus().catch(() => null),
       getPerfMetricsSummary(24).catch(() => null),
       getPricing().catch(() => null),
-    ]).then(([uptimeRes, perfRes, pricingRes]) => {
-      if (!mounted) return
-      const average = (values: number[]) =>
-        values.reduce((sum, value) => sum + value, 0) / values.length
-      // uptime 监控的值是 0~1 小数，需换算成百分数
-      const monitorRates = (uptimeRes?.data ?? [])
-        .flatMap((group) => group.monitors ?? [])
-        .map((monitor) => Number(monitor.uptime))
-        .filter((rate) => Number.isFinite(rate))
-      const models = perfRes?.data?.models ?? []
-      const successRates = models
-        .map((model) => Number(model.success_rate))
-        .filter((rate) => Number.isFinite(rate))
-      const latencies = models
-        .map((model) => Number(model.avg_latency_ms))
-        .filter((ms) => Number.isFinite(ms) && ms > 0)
-      const vendors =
-        pricingRes && Array.isArray(pricingRes.vendors)
-          ? pricingRes.vendors
-          : []
-      setStats({
-        uptimePct:
-          monitorRates.length > 0
-            ? average(monitorRates) * 100
-            : successRates.length > 0
-              ? average(successRates)
-              : null,
-        avgLatencyMs: latencies.length > 0 ? average(latencies) : null,
-        vendorCount: vendors.length > 0 ? vendors.length : null,
+    ])
+      .then(([uptimeRes, perfRes, pricingRes]) => {
+        if (!mounted) return
+        const average = (values: number[]) =>
+          values.reduce((sum, value) => sum + value, 0) / values.length
+        // uptime 监控的值是 0~1 小数，需换算成百分数
+        const monitorRates = (uptimeRes?.data ?? [])
+          .flatMap((group) => group.monitors ?? [])
+          .map((monitor) => Number(monitor.uptime))
+          .filter((rate) => Number.isFinite(rate))
+        const models = perfRes?.data?.models ?? []
+        const successRates = models
+          .map((model) => Number(model.success_rate))
+          .filter((rate) => Number.isFinite(rate))
+        const latencies = models
+          .map((model) => Number(model.avg_latency_ms))
+          .filter((ms) => Number.isFinite(ms) && ms > 0)
+        const vendors =
+          pricingRes && Array.isArray(pricingRes.vendors)
+            ? pricingRes.vendors
+            : []
+        let uptimePct: number | null = null
+        if (monitorRates.length > 0) {
+          uptimePct = average(monitorRates) * 100
+        } else if (successRates.length > 0) {
+          uptimePct = average(successRates)
+        }
+        setStats({
+          uptimePct,
+          avgLatencyMs: latencies.length > 0 ? average(latencies) : null,
+          vendorCount: vendors.length > 0 ? vendors.length : null,
+        })
       })
-    })
+      .catch(() => {
+        if (mounted) {
+          setStats({ uptimePct: null, avgLatencyMs: null, vendorCount: null })
+        }
+      })
     return () => {
       mounted = false
     }

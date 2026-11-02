@@ -23,18 +23,20 @@ import {
   type TopologyNode,
 } from '../types'
 
-const ROW_ORDER = ['userGroup', 'channel', 'model'] as const
+const ROW_ORDER = ['cluster', 'userGroup', 'channel', 'model'] as const
 
 const NODE_WIDTH = {
   userGroup: 360,
   channel: 360,
   model: 340,
+  cluster: 420,
 } as const
 
 const NODE_HEIGHT = {
   userGroup: 112,
   channel: 252,
   model: 112,
+  cluster: 220,
 } as const
 
 const START_X = 32
@@ -47,6 +49,7 @@ const INITIAL_VIEW_WORLD_WIDTH = 1280
 
 export function applyAutoLayout(nodes: TopologyNode[]): TopologyNode[] {
   const buckets: Record<string, TopologyNode[]> = {
+    cluster: [],
     userGroup: [],
     channel: [],
     model: [],
@@ -97,6 +100,71 @@ export function collectPositions(nodes: TopologyNode[]) {
     positions[node.id] = { x: node.position.x, y: node.position.y }
   }
   return positions
+}
+
+const CLUSTER_PADDING = 24
+const CLUSTER_HEADER = 36
+
+function nodeSize(node: TopologyNode) {
+  const type = node.type ?? 'channel'
+  return {
+    width: node.measured?.width ?? node.width ?? NODE_WIDTH[type],
+    height: node.measured?.height ?? node.height ?? NODE_HEIGHT[type],
+  }
+}
+
+export function createClusterBounds(nodes: TopologyNode[], memberIds: string[]) {
+  const members = nodes.filter((node) => memberIds.includes(node.id))
+  if (members.length === 0) {
+    return { x: 40, y: 40, width: 480, height: 280 }
+  }
+  let minX = Number.POSITIVE_INFINITY
+  let minY = Number.POSITIVE_INFINITY
+  let maxX = Number.NEGATIVE_INFINITY
+  let maxY = Number.NEGATIVE_INFINITY
+  for (const node of members) {
+    const size = nodeSize(node)
+    minX = Math.min(minX, node.position.x)
+    minY = Math.min(minY, node.position.y)
+    maxX = Math.max(maxX, node.position.x + size.width)
+    maxY = Math.max(maxY, node.position.y + size.height)
+  }
+  return {
+    x: minX - CLUSTER_PADDING,
+    y: minY - CLUSTER_PADDING - CLUSTER_HEADER,
+    width: maxX - minX + CLUSTER_PADDING * 2,
+    height: maxY - minY + CLUSTER_PADDING * 2 + CLUSTER_HEADER,
+  }
+}
+
+export function nestClusterMembers(
+  nodes: TopologyNode[],
+  clusterId: string,
+  memberIds: string[]
+): TopologyNode[] {
+  const bounds = createClusterBounds(nodes, memberIds)
+  const memberSet = new Set(memberIds)
+  return nodes.map((node) => {
+    if (node.id === clusterId) {
+      return {
+        ...node,
+        position: { x: bounds.x, y: bounds.y },
+        style: { ...node.style, width: bounds.width, height: bounds.height },
+        width: bounds.width,
+        height: bounds.height,
+      }
+    }
+    if (!memberSet.has(node.id)) return node
+    return {
+      ...node,
+      parentId: clusterId,
+      extent: 'parent' as const,
+      position: {
+        x: node.position.x - bounds.x,
+        y: node.position.y - bounds.y,
+      },
+    }
+  })
 }
 
 export function layoutGraphNodes(

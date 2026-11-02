@@ -125,7 +125,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
     ],
   })
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: [
       'logs',
       logCategory,
@@ -151,6 +151,7 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
 
       return result.data || DEFAULT_LOGS_DATA
     },
+    staleTime: 0,
     placeholderData: (previousData, previousQuery) => {
       if (
         previousQuery?.queryKey[1] === logCategory &&
@@ -215,9 +216,13 @@ export function UsageLogsTable({ logCategory }: UsageLogsTableProps) {
       }
       toolbar={
         isCommon ? (
-          <CommonLogsFilterBar table={table} />
+          <CommonLogsFilterBar table={table} onSearch={refetch} />
         ) : (
-          <TaskLogsFilterBar table={table} logCategory={logCategory} />
+          <TaskLogsFilterBar
+            table={table}
+            logCategory={logCategory}
+            onSearch={refetch}
+          />
         )
       }
       renderRow={(row) => {

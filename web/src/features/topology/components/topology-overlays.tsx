@@ -30,7 +30,6 @@ import {
   Share2,
   Table2,
   Users,
-  Workflow,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -119,10 +118,12 @@ export function TopologyOverlays(props: {
   liveTraffic: boolean
   onToggleLiveTraffic: () => void
   onRefresh: () => void
-  onRelayout: () => void
   onCreateChannel: () => void
   onCreateModel: () => void
   onCreateGroup: () => void
+  onCreateCluster?: () => void
+  canCreateCluster?: boolean
+  groupingMode?: boolean
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -177,6 +178,19 @@ export function TopologyOverlays(props: {
               <Users className='size-4' />
             </OverlayIconButton>
           )}
+          {props.canCreateCluster && (
+            <OverlayIconButton
+              label={
+                props.groupingMode
+                  ? t('Confirm card group')
+                  : t('Group selected cards')
+              }
+              active={props.groupingMode}
+              onClick={props.onCreateCluster}
+            >
+              <Box className='size-4' />
+            </OverlayIconButton>
+          )}
           {props.canWrite ? (
             <>
               <OverlayIconButton
@@ -194,9 +208,6 @@ export function TopologyOverlays(props: {
             </>
           ) : null}
           <StatsPopover stats={props.stats} loading={props.loading} />
-          <OverlayIconButton label={t('Rearrange')} onClick={props.onRelayout}>
-            <Workflow className='size-4' />
-          </OverlayIconButton>
           <OverlayIconButton
             label={t('Refresh')}
             disabled={props.refreshing}

@@ -98,6 +98,7 @@ function buildSearchSourceKey(values: {
 
 interface CommonLogsFilterBarProps<TData> {
   table: Table<TData>
+  onSearch: () => unknown
 }
 
 export function CommonLogsFilterBar<TData>(
@@ -208,20 +209,22 @@ export function CommonLogsFilterBar<TData>(
   const handleApply = useCallback(
     (nextFilters: CommonLogFilters = filters) => {
       const filterParams = buildSearchParams(nextFilters, 'common')
+      const nextSearch = {
+        ...filterParams,
+        type: [logType],
+        page: 1,
+      }
       startTransition(() => {
         void navigate({
           to: '/usage-logs/$section',
           params: { section: 'common' },
-          search: {
-            ...filterParams,
-            type: [logType],
-            page: 1,
-          },
+          search: nextSearch,
           replace: true,
         })
       })
+      void props.onSearch()
     },
-    [filters, logType, navigate]
+    [filters, logType, navigate, props]
   )
 
   const handleReset = useCallback(() => {

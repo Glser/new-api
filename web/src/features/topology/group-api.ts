@@ -131,3 +131,20 @@ export async function updateTopologyGroup(
 ) {
   return saveTopologyGroup(input, name)
 }
+
+export async function deleteTopologyGroup(name: string) {
+  const { optionMap, ratios, topupRatios, usableGroups } =
+    await getGroupSettings()
+  delete ratios[name]
+  delete topupRatios[name]
+  delete usableGroups[name]
+  const updates = [
+    { key: 'TopupGroupRatio', value: JSON.stringify(topupRatios) },
+    { key: 'UserUsableGroups', value: JSON.stringify(usableGroups) },
+    { key: 'GroupRatio', value: JSON.stringify(ratios) },
+  ]
+  for (const update of updates) {
+    if (update.value === optionMap.get(update.key)) continue
+    requireServerSuccess(await updateSystemOption(update))
+  }
+}

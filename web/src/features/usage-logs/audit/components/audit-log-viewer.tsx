@@ -76,6 +76,7 @@ export function AuditLogViewer(props: {
       requireServerSuccess(await getAuditLogs(props.scope, params)),
     enabled: canQuery && !invalidRange,
     retry: false,
+    staleTime: 0,
   })
   const accessDenied =
     props.scope === 'all' &&

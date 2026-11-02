@@ -31,6 +31,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { EmptyState } from '@/components/empty-state'
 import { Main } from '@/components/layout'
 import { RenderWhenOpen } from '@/components/render-when-open'
@@ -49,12 +50,13 @@ import {
   parseGroupsList,
   parseModelsList,
 } from '@/features/channels/lib'
+import { ModelDeleteDialog } from '@/features/models/components/dialogs/model-delete-dialog'
 import { ModelsDialogs } from '@/features/models/components/models-dialogs'
 import {
   ModelsProvider,
   useModels,
 } from '@/features/models/components/models-provider'
-import { modelsQueryKeys } from '@/features/models/lib/query-keys'
+import { modelsQueryKeys, vendorsQueryKeys } from '@/features/models/lib/query-keys'
 import {
   ADMIN_PERMISSION_ACTIONS,
   ADMIN_PERMISSION_RESOURCES,
@@ -66,7 +68,9 @@ import { useAuthStore } from '@/stores/auth-store'
 
 import { getTopologyGraph, getTopologyLayout, saveTopologyLayout } from './api'
 import { GroupMutateDrawer } from './components/group-mutate-drawer'
+import { deleteTopologyGroup } from './group-api'
 import { TopologyCanvas } from './components/topology-canvas'
+import { TopologyNodeActionsProvider } from './components/topology-nodes'
 import { TopologyOverlays } from './components/topology-overlays'
 import { TopologyTrafficProvider } from './components/topology-traffic-provider'
 import {
@@ -75,12 +79,14 @@ import {
   removeItem,
   resolveTopologyModel,
 } from './lib/graph'
-import { layoutGraphNodes } from './lib/layout'
+import { createClusterBounds, layoutGraphNodes } from './lib/layout'
 import {
   TOPOLOGY_LAYOUT_VERSION,
   emptyTopologyLayout,
+  clusterNodeId,
   groupNodeId,
   parseChannelNodeId,
+  parseClusterNodeId,
   parseGroupNodeId,
   parseModelNodeId,
   type TopologyEdge,
@@ -106,9 +112,11 @@ function TopologyCanvasBody(props: {
   onConnect: (connection: Connection) => Promise<boolean> | boolean
   onDeleteEdges: (edges: TopologyEdge[]) => Promise<boolean> | boolean
   onNodeClick: (node: TopologyNode) => void
+  onSelectionChange?: (nodeIds: string[]) => void
   onCreateChannel: () => void
   showMiniMap?: boolean
   focusNodeId?: string
+  groupingMode?: boolean
 }) {
   const { t } = useTranslation()
   if (props.loading) {
@@ -141,8 +149,10 @@ function TopologyCanvasBody(props: {
       onConnect={props.onConnect}
       onDeleteEdges={props.onDeleteEdges}
       onNodeClick={props.onNodeClick}
+      onSelectionChange={props.onSelectionChange}
       showMiniMap={props.showMiniMap}
       focusNodeId={props.focusNodeId}
+      groupingMode={props.groupingMode}
     />
   )
 }
@@ -172,7 +182,12 @@ function TopologyWorkspace() {
   const [editingGroupName, setEditingGroupName] = useState<string>()
   const [focusNodeId, setFocusNodeId] = useState<string>()
   const [selectedNodeId, setSelectedNodeId] = useState<string>()
-  const [relayoutVersion, setRelayoutVersion] = useState(0)
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
+  const [groupingMode, setGroupingMode] = useState(false)
+  const [pendingClusterIds, setPendingClusterIds] = useState<string[]>()
+  const [relayoutVersion] = useState(0)
+  const [pendingGroupDelete, setPendingGroupDelete] = useState<string>()
+  const [pendingModelDelete, setPendingModelDelete] = useState<string>()
   const layoutRef = useRef<TopologyLayout>(emptyTopologyLayout())
   const saveTimer = useRef<number | undefined>(undefined)
   const canWriteRef = useRef(canWrite)
@@ -198,7 +213,9 @@ function TopologyWorkspace() {
       if (
         !Array.isArray(key) ||
         (key[0] !== channelsQueryKeys.all[0] &&
-          key[0] !== modelsQueryKeys.all[0])
+          key[0] !== modelsQueryKeys.all[0] &&
+          key[0] !== vendorsQueryKeys.all[0] &&
+          key[0] !== 'system-options')
       ) {
         return
       }
@@ -263,26 +280,6 @@ function TopologyWorkspace() {
     [queryClient]
   )
 
-  const graphNodes = useMemo(
-    () =>
-      layoutGraphNodes(
-        graph.nodes.map((node) =>
-          node.type === 'channel'
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  onStatusChanged: (status: number) =>
-                    handleChannelStatusChanged(node.data.channelId, status),
-                },
-              }
-            : node
-        ),
-        layoutQuery.data ?? emptyTopologyLayout()
-      ),
-    [graph.nodes, handleChannelStatusChanged, layoutQuery.data]
-  )
-
   const persistLayout = useCallback(
     (next: TopologyLayout, immediate = false) => {
       queryClient.setQueryData(topologyQueryKeys.layout, next)
@@ -332,6 +329,66 @@ function TopologyWorkspace() {
     },
     [persistLayout]
   )
+
+  const handleDeleteGroup = useCallback((name: string) => {
+    setPendingGroupDelete(name)
+  }, [])
+
+  const handleDeleteModel = useCallback((name: string) => {
+    setPendingModelDelete(name)
+  }, [])
+
+  const handleSelectionChange = useCallback((nodeIds: string[]) => {
+    setSelectedNodeIds((current) =>
+      current.length === nodeIds.length &&
+      current.every((id, index) => id === nodeIds[index])
+        ? current
+        : nodeIds
+    )
+  }, [])
+
+  const handleDeleteCluster = useCallback(
+    (clusterId: string) => {
+      const layout = layoutRef.current
+      const clusters = { ...layout.clusters }
+      delete clusters[clusterId]
+      persistLayout({ ...layout, clusters })
+    },
+    [persistLayout]
+  )
+
+  const graphNodes = useMemo(() => {
+    const layout = layoutQuery.data ?? emptyTopologyLayout()
+    const actionNodes = graph.nodes
+    const clusterNodes: TopologyNode[] = []
+    for (const [clusterId, cluster] of Object.entries(layout.clusters ?? {})) {
+      const memberIds = cluster.memberIds.filter((id) =>
+        actionNodes.some((node) => node.id === id)
+      )
+      if (memberIds.length === 0) continue
+      const bounds = createClusterBounds(actionNodes, memberIds)
+      const saved = layout.positions[clusterId]
+      clusterNodes.push({
+        id: clusterNodeId(clusterId),
+        type: 'cluster',
+        position: saved ?? { x: bounds.x, y: bounds.y },
+        style: { width: bounds.width, height: bounds.height },
+        width: bounds.width,
+        height: bounds.height,
+        zIndex: -1,
+        dragHandle: '.topology-cluster-handle',
+        data: {
+          name: cluster.name,
+          memberIds,
+          color: '#64748b',
+        },
+      })
+    }
+    return layoutGraphNodes([...clusterNodes, ...actionNodes], layout)
+  }, [
+    graph.nodes,
+    layoutQuery.data,
+  ])
 
   const invalidateGraph = useCallback(async () => {
     await Promise.all([
@@ -440,6 +497,7 @@ function TopologyWorkspace() {
 
   const handleNodeClick = useCallback(
     (node: TopologyNode) => {
+      if (groupingMode) return
       setSelectedNodeId(node.id)
       if (node.type === 'userGroup') {
         if (user?.role !== ROLE.SUPER_ADMIN) {
@@ -473,14 +531,12 @@ function TopologyWorkspace() {
       setCurrentChannel,
       setCurrentModel,
       setModelOpen,
+      groupingMode,
       t,
       user?.role,
     ]
   )
 
-  const handleRelayout = useCallback(() => {
-    setRelayoutVersion((value) => value + 1)
-  }, [])
 
   const groupOptions = graphQuery.data?.groups ?? []
   const loading = graphQuery.isLoading || layoutQuery.isLoading
@@ -489,6 +545,15 @@ function TopologyWorkspace() {
   return (
     <Main>
       <TopologyTrafficProvider enabled={liveTraffic}>
+        <TopologyNodeActionsProvider
+          value={{
+            canWrite,
+            onStatusChanged: handleChannelStatusChanged,
+            onDeleteGroup: handleDeleteGroup,
+            onDeleteModel: handleDeleteModel,
+            onDeleteCluster: handleDeleteCluster,
+          }}
+        >
         <div className='relative min-h-0 flex-1 overflow-hidden'>
           <TopologyCanvasBody
             loading={loading}
@@ -503,6 +568,8 @@ function TopologyWorkspace() {
             onConnect={handleConnect}
             onDeleteEdges={handleDeleteEdges}
             onNodeClick={handleNodeClick}
+            onSelectionChange={handleSelectionChange}
+            groupingMode={groupingMode}
             onCreateChannel={() => {
               setCurrentChannel(null)
               setChannelOpen('create-channel')
@@ -536,7 +603,26 @@ function TopologyWorkspace() {
               void graphQuery.refetch()
               void layoutQuery.refetch()
             }}
-            onRelayout={handleRelayout}
+            canCreateCluster={canWrite}
+            groupingMode={groupingMode}
+            onCreateCluster={() => {
+              if (!groupingMode) {
+                setSelectedNodeIds([])
+                setGroupingMode(true)
+                toast.message(t('Drag a box to select cards'))
+                return
+              }
+              const memberIds = selectedNodeIds.filter(
+                (id) => !parseClusterNodeId(id)
+              )
+              if (memberIds.length < 2) {
+                setGroupingMode(false)
+                setSelectedNodeIds([])
+                toast.message(t('Select at least two cards to group'))
+                return
+              }
+              setPendingClusterIds(memberIds)
+            }}
             onCreateGroup={() => {
               setEditingGroupName(undefined)
               setGroupDrawerOpen(true)
@@ -551,9 +637,102 @@ function TopologyWorkspace() {
             }}
           />
         </div>
+        </TopologyNodeActionsProvider>
       </TopologyTrafficProvider>
       <ChannelsDialogs />
       <ModelsDialogs />
+      <ConfirmDialog
+        open={pendingClusterIds != null}
+        onOpenChange={(open) => {
+          if (!open) setPendingClusterIds(undefined)
+        }}
+        title={t('Create card group')}
+        desc={t('Group {{count}} selected cards so they move together?', {
+          count: pendingClusterIds?.length ?? 0,
+        })}
+        confirmText={t('Confirm grouping')}
+        handleConfirm={() => {
+          const memberIds = pendingClusterIds ?? []
+          if (memberIds.length < 2) return
+          const clusterId = clusterNodeId(`g${Date.now()}`)
+          const layout = layoutRef.current
+          const bounds = createClusterBounds(graphNodes, memberIds)
+          persistLayout({
+            ...layout,
+            clusters: {
+              ...layout.clusters,
+              [clusterId]: {
+                name: t('Card group'),
+                memberIds,
+              },
+            },
+            positions: {
+              ...layout.positions,
+              [clusterId]: { x: bounds.x, y: bounds.y },
+            },
+          })
+          setPendingClusterIds(undefined)
+          setGroupingMode(false)
+          setSelectedNodeIds([])
+        }}
+      />
+      <ConfirmDialog
+        open={pendingGroupDelete != null}
+        onOpenChange={(open) => {
+          if (!open) setPendingGroupDelete(undefined)
+        }}
+        title={t('Delete group')}
+        desc={t(
+          'Are you sure you want to delete group "{{name}}"? This action cannot be undone.',
+          { name: pendingGroupDelete ?? '' }
+        )}
+        confirmText={t('Delete')}
+        destructive
+        handleConfirm={() => {
+          if (!pendingGroupDelete) return
+          const groupName = pendingGroupDelete
+          const boundChannels = (graphQuery.data?.channels ?? []).filter(
+            (channel) => parseGroupsList(channel.group).includes(groupName)
+          )
+          void Promise.all(
+            boundChannels.map((channel) =>
+              updateChannel(channel.id, {
+                group: formatGroupsString(
+                  removeItem(parseGroupsList(channel.group), groupName)
+                ),
+              })
+            )
+          )
+            .then(() => deleteTopologyGroup(groupName))
+            .then(async () => {
+              toast.success(t('Group deleted'))
+              setPendingGroupDelete(undefined)
+              await queryClient.invalidateQueries({
+                queryKey: topologyQueryKeys.graph,
+              })
+            })
+            .catch((error: Error) => {
+              handleServerError(error, t('Failed to delete group'))
+            })
+        }}
+      />
+      {pendingModelDelete ? (
+        <ModelDeleteDialog
+          models={[
+            resolveTopologyModel(
+              graphQuery.data?.models ?? [],
+              pendingModelDelete
+            ),
+          ]}
+          onClose={() => setPendingModelDelete(undefined)}
+          onSuccess={() => {
+            setPendingModelDelete(undefined)
+            void queryClient.invalidateQueries({
+              queryKey: topologyQueryKeys.graph,
+            })
+          }}
+        />
+      ) : null}
       {user?.role === ROLE.SUPER_ADMIN && (
         <RenderWhenOpen open={groupDrawerOpen}>
           <GroupMutateDrawer

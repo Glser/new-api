@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 
 import { getChannels, getGroups } from '@/features/channels/api'
 import type { Channel } from '@/features/channels/types'
-import { getModels } from '@/features/models/api'
+import { getModels, getVendors } from '@/features/models/api'
 import type { Model } from '@/features/models/types'
 import { getPricing } from '@/features/pricing/api'
 import type { PricingModel } from '@/features/pricing/types'
@@ -99,13 +99,22 @@ async function fetchAllModels() {
 }
 
 export async function getTopologyGraph(): Promise<TopologyGraphPayload> {
-  const [channels, models, groupsResponse, pricing] = await Promise.all([
-    fetchAllChannels(),
-    fetchAllModels(),
-    getGroups(),
-    getPricing().catch(() => null),
-  ])
+  const [channels, models, groupsResponse, vendorsResponse, pricing] =
+    await Promise.all([
+      fetchAllChannels(),
+      fetchAllModels(),
+      getGroups(),
+      getVendors({ page_size: 1000 }).catch(() => null),
+      getPricing().catch(() => null),
+    ])
   const groups = requireServerSuccess(groupsResponse).data ?? []
+  const vendors = vendorsResponse
+    ? (requireServerSuccess(vendorsResponse).data?.items ?? [])
+    : []
+  const vendorIcons: Record<number, string> = {}
+  for (const vendor of vendors) {
+    if (vendor.icon) vendorIcons[vendor.id] = vendor.icon
+  }
   let groupRatio: Record<string, number> = {}
   let modelPrices = buildModelPrices([])
   if (pricing) {
@@ -117,7 +126,14 @@ export async function getTopologyGraph(): Promise<TopologyGraphPayload> {
       /* pricing is optional for the canvas */
     }
   }
-  return { channels, models, groups, groupRatio, modelPrices }
+  return {
+    channels,
+    models,
+    groups,
+    groupRatio,
+    modelPrices,
+    vendorIcons,
+  }
 }
 
 const layoutRequest = {
@@ -139,6 +155,7 @@ export async function getTopologyLayout(): Promise<TopologyLayout> {
       version: data.version || 1,
       positions: data.positions ?? {},
       collapsed: data.collapsed ?? {},
+      clusters: data.clusters ?? {},
     }
   } catch {
     return emptyTopologyLayout()

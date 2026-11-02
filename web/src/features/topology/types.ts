@@ -23,7 +23,13 @@ import type { Channel } from '@/features/channels/types'
 import type { Model } from '@/features/models/types'
 import type { PricingModel } from '@/features/pricing/types'
 
-export type TopologyNodeType = 'userGroup' | 'channel' | 'model'
+export type TopologyNodeType = 'userGroup' | 'channel' | 'model' | 'cluster'
+
+export type TopologyClusterData = {
+  name: string
+  memberIds: string[]
+  color: string
+}
 
 export type TopologyGroupData = {
   name: string
@@ -37,7 +43,6 @@ export type TopologyChannelData = {
   channelId: number
   channel: Channel
   color: string
-  onStatusChanged?: (status: number) => void
 }
 
 export type TopologyModelData = {
@@ -56,6 +61,7 @@ export type TopologyNode =
   | Node<TopologyGroupData, 'userGroup'>
   | Node<TopologyChannelData, 'channel'>
   | Node<TopologyModelData, 'model'>
+  | Node<TopologyClusterData, 'cluster'>
 
 export type TopologyEdge = Edge
 
@@ -65,11 +71,17 @@ export type TopologyViewport = {
   zoom: number
 }
 
+export type TopologyClusterLayout = {
+  name: string
+  memberIds: string[]
+}
+
 export type TopologyLayout = {
   version: number
   viewport?: Partial<TopologyViewport>
   positions: Record<string, { x: number; y: number }>
   collapsed?: Record<string, boolean>
+  clusters?: Record<string, TopologyClusterLayout>
 }
 
 export type TopologyModelPrice = {
@@ -85,6 +97,7 @@ export type TopologyGraphPayload = {
   groups: string[]
   groupRatio: Record<string, number>
   modelPrices: Record<string, TopologyModelPrice>
+  vendorIcons: Record<number, string>
 }
 
 export type TopologyFilters = {
@@ -94,7 +107,7 @@ export type TopologyFilters = {
   model: string
 }
 
-export const TOPOLOGY_LAYOUT_VERSION = 5
+export const TOPOLOGY_LAYOUT_VERSION = 6
 export const MAX_VISIBLE_MODELS = 100
 
 export function groupNodeId(name: string) {
@@ -123,11 +136,20 @@ export function parseModelNodeId(id: string) {
   return id.startsWith('model:') ? id.slice('model:'.length) : null
 }
 
+export function clusterNodeId(id: string) {
+  return id.startsWith('cluster:') ? id : `cluster:${id}`
+}
+
+export function parseClusterNodeId(id: string) {
+  return id.startsWith('cluster:') ? id.slice('cluster:'.length) : null
+}
+
 export function emptyTopologyLayout(): TopologyLayout {
   return {
     version: TOPOLOGY_LAYOUT_VERSION,
     viewport: { x: 0, y: 0, zoom: 1 },
     positions: {},
     collapsed: {},
+    clusters: {},
   }
 }

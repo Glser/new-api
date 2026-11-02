@@ -24,6 +24,7 @@ import {
   MiniMap,
   Panel,
   ReactFlow,
+  SelectionMode,
   applyEdgeChanges,
   applyNodeChanges,
   type Connection,
@@ -60,6 +61,7 @@ import {
 } from '../types'
 import {
   TopologyChannelNode,
+  TopologyClusterNode,
   TopologyGroupNode,
   TopologyModelNode,
 } from './topology-nodes'
@@ -68,6 +70,7 @@ const nodeTypes = {
   userGroup: TopologyGroupNode,
   channel: TopologyChannelNode,
   model: TopologyModelNode,
+  cluster: TopologyClusterNode,
 }
 
 type TopologyCanvasProps = {
@@ -82,6 +85,8 @@ type TopologyCanvasProps = {
   onNodeClick: (node: TopologyNode) => void
   showMiniMap?: boolean
   focusNodeId?: string
+  onSelectionChange?: (nodeIds: string[]) => void
+  groupingMode?: boolean
 }
 
 function isValidTopologyConnection(connection: Connection | Edge) {
@@ -141,18 +146,21 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   const onConnectRef = useRef(props.onConnect)
   const onDeleteEdgesRef = useRef(props.onDeleteEdges)
   const onNodeClickRef = useRef(props.onNodeClick)
+  const onSelectionChangeRef = useRef(props.onSelectionChange)
   const canWriteRef = useRef(props.canWrite)
   useLayoutEffect(() => {
     onLayoutChangeRef.current = props.onLayoutChange
     onConnectRef.current = props.onConnect
     onDeleteEdgesRef.current = props.onDeleteEdges
     onNodeClickRef.current = props.onNodeClick
+    onSelectionChangeRef.current = props.onSelectionChange
     canWriteRef.current = props.canWrite
   }, [
     props.onLayoutChange,
     props.onConnect,
     props.onDeleteEdges,
     props.onNodeClick,
+    props.onSelectionChange,
     props.canWrite,
   ])
 
@@ -303,12 +311,58 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
       return onDeleteEdgesRef.current(deletedEdges)
     }, [])
 
-  const handleNodeDragStart = useCallback(() => {
-    draggingRef.current = true
+  const clusterDragOriginRef = useRef<{
+    id: string
+    x: number
+    y: number
+    members: Array<{ id: string; x: number; y: number }>
+  } | null>(null)
+
+  const handleNodeDragStart = useCallback(
+    (_event: unknown, node: TopologyNode) => {
+      draggingRef.current = true
+      if (node.type !== 'cluster') {
+        clusterDragOriginRef.current = null
+        return
+      }
+      const memberIds = new Set(node.data.memberIds)
+      const current = (instanceRef.current?.getNodes() ?? []) as TopologyNode[]
+      clusterDragOriginRef.current = {
+        id: node.id,
+        x: node.position.x,
+        y: node.position.y,
+        members: current
+          .filter((item) => memberIds.has(item.id))
+          .map((item) => ({
+            id: item.id,
+            x: item.position.x,
+            y: item.position.y,
+          })),
+      }
+    },
+    []
+  )
+
+  const handleNodeDrag = useCallback((_event: unknown, node: TopologyNode) => {
+    const origin = clusterDragOriginRef.current
+    if (!origin || origin.id !== node.id) return
+    const dx = node.position.x - origin.x
+    const dy = node.position.y - origin.y
+    setNodes((current) =>
+      current.map((item) => {
+        const member = origin.members.find((entry) => entry.id === item.id)
+        if (!member) return item
+        return {
+          ...item,
+          position: { x: member.x + dx, y: member.y + dy },
+        }
+      })
+    )
   }, [])
 
   const handleNodeDragStop = useCallback(() => {
     draggingRef.current = false
+    clusterDragOriginRef.current = null
     const current = instanceRef.current?.getNodes() ?? []
     onLayoutChangeRef.current({
       positions: collectPositions(current as TopologyNode[]),
@@ -338,10 +392,21 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         onConnect={handleConnect}
         onBeforeDelete={handleBeforeDelete}
         onNodeDragStart={handleNodeDragStart}
+        onNodeDrag={handleNodeDrag}
         onNodeDragStop={handleNodeDragStop}
         autoPanOnNodeDrag={false}
         nodeDragThreshold={6}
+        selectionOnDrag={props.groupingMode === true}
+        panOnDrag={props.groupingMode === true ? [1, 2] : true}
+        panOnScroll
+        selectionMode={SelectionMode.Partial}
+        multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
+        nodesDraggable={props.groupingMode !== true}
+        elementsSelectable={props.groupingMode === true}
         onMoveEnd={handleMoveEnd}
+        onSelectionChange={({ nodes: selectedNodes }) => {
+          onSelectionChangeRef.current?.(selectedNodes.map((node) => node.id))
+        }}
         onNodeClick={(event, node) => {
           const target = event.target
           if (
@@ -356,7 +421,6 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         }}
         isValidConnection={isValidTopologyConnection}
         nodesConnectable={props.canWrite}
-        elementsSelectable
         onlyRenderVisibleElements
         selectNodesOnDrag={false}
         elevateNodesOnSelect={false}

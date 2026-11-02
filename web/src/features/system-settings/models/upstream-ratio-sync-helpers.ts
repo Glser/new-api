@@ -162,10 +162,14 @@ export function getSyncExpressionPricing(
             `${conditionLabels[condition.var]} ${condition.op} ${Number(condition.value).toLocaleString()}`
         )
         .join(' ∧ '),
-      lines: fields.map((field) => ({
-        label: t(field.shortLabel),
-        value: `$${formatPricingNumber(Number(tier[field.tierField!]))}`,
-      })),
+      lines: fields.map((field) => {
+        const tierField = field.tierField
+        const value = tierField ? Number(tier[tierField]) : Number.NaN
+        return {
+          label: t(field.shortLabel),
+          value: `$${formatPricingNumber(value)}`,
+        }
+      }),
     })),
   }
 }

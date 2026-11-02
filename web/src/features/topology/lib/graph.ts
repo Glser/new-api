@@ -249,8 +249,11 @@ export function buildTopologyGraph(
           channelCount: modelChannels.get(name)?.size ?? 0,
           vendorId: model?.vendor_id,
           status: model?.status,
-          icon: price?.icon,
-          vendorIcon: price?.vendorIcon,
+          icon: model?.icon || price?.icon,
+          vendorIcon:
+            (model?.vendor_id
+              ? payload.vendorIcons?.[model.vendor_id]
+              : undefined) || price?.vendorIcon,
           pricing: price?.pricing,
           color: topologyColor(`model:${name}`),
         } satisfies TopologyModelData,
@@ -264,7 +267,7 @@ export function buildTopologyGraph(
     const channelDisabled = channel.status !== CHANNEL_STATUS.ENABLED
     for (const group of channelGroups.get(channel.id) ?? []) {
       if (!visibleGroupSet.has(group)) continue
-      const color = topologyColor(`group:${group}`)
+      const color = topologyColor(`channel:${channel.id}`)
       edges.push({
         id: `gc:${group}:${channel.id}`,
         source: groupNodeId(group),

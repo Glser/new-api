@@ -73,6 +73,7 @@ export function CommonLogsStats() {
       }
       return DEFAULT_LOG_STATS
     },
+    staleTime: 0,
     placeholderData: (previousData) => previousData,
   })
 

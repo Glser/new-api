@@ -42,6 +42,7 @@ type TaskLogsFilters = DrawingLogFilters | TaskLogFilters
 interface TaskLogsFilterBarProps<TData> {
   table: Table<TData>
   logCategory: TaskLikeLogCategory
+  onSearch: () => unknown
 }
 
 function getFilterValue(
@@ -128,7 +129,8 @@ export function TaskLogsFilterBar<TData>(props: TaskLogsFilterBarProps<TData>) {
         replace: true,
       })
     })
-  }, [filters, navigate, props.logCategory])
+    void props.onSearch()
+  }, [filters, navigate, props])
 
   const handleReset = useCallback(() => {
     const { start, end } = getDefaultTimeRange()
