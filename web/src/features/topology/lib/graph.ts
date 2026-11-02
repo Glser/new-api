@@ -37,7 +37,7 @@ import {
   type TopologyModelData,
   type TopologyNode,
 } from '../types'
-import { topologyColor } from './colors'
+import { topologyChannelColor, topologyColor } from './colors'
 
 export type TopologySelection = {
   nodeId?: string
@@ -77,7 +77,8 @@ function matchesSearch(text: string, search: string) {
 export function buildTopologyGraph(
   payload: TopologyGraphPayload,
   filters: TopologyFilters,
-  selection: TopologySelection = {}
+  selection: TopologySelection = {},
+  isDark = false
 ) {
   const search = filters.search.trim().toLowerCase()
   const selectedGroup = filters.group.trim()
@@ -222,7 +223,7 @@ export function buildTopologyGraph(
           channelCount: channelIds.length,
           modelCount: models.size,
           ratio: payload.groupRatio?.[name] ?? null,
-          color: topologyColor(`group:${name}`),
+          color: topologyColor(`group:${name}`, isDark),
         } satisfies TopologyGroupData,
       }
     }),
@@ -233,7 +234,7 @@ export function buildTopologyGraph(
       data: {
         channelId: channel.id,
         channel,
-        color: topologyColor(`channel:${channel.id}`),
+        color: topologyChannelColor(channel.id, isDark),
       } satisfies TopologyChannelData,
     })),
     ...visibleModelNames.map((name) => {
@@ -255,7 +256,7 @@ export function buildTopologyGraph(
               ? payload.vendorIcons?.[model.vendor_id]
               : undefined) || price?.vendorIcon,
           pricing: price?.pricing,
-          color: topologyColor(`model:${name}`),
+          color: topologyColor(`model:${name}`, isDark),
         } satisfies TopologyModelData,
       }
     }),
@@ -267,7 +268,7 @@ export function buildTopologyGraph(
     const channelDisabled = channel.status !== CHANNEL_STATUS.ENABLED
     for (const group of channelGroups.get(channel.id) ?? []) {
       if (!visibleGroupSet.has(group)) continue
-      const color = topologyColor(`channel:${channel.id}`)
+      const color = topologyChannelColor(channel.id, isDark)
       edges.push({
         id: `gc:${group}:${channel.id}`,
         source: groupNodeId(group),
@@ -279,16 +280,15 @@ export function buildTopologyGraph(
           ? { stroke: '#94a3b8', strokeWidth: 1.2, opacity: 0.55 }
           : {
               stroke: color,
-              strokeWidth: 1.3,
-              strokeDasharray: '5 8',
-              opacity: 0.5,
+              strokeWidth: 1.6,
+              opacity: 0.86,
             },
         data: { color, disabled: channelDisabled },
       })
     }
     for (const modelName of channelModels.get(channel.id) ?? []) {
       if (!visibleModelSet.has(modelName)) continue
-      const color = topologyColor(`channel:${channel.id}`)
+      const color = topologyChannelColor(channel.id, isDark)
       const registeredModel = registryByName.get(modelName)
       const disabled =
         channelDisabled ||
@@ -304,9 +304,8 @@ export function buildTopologyGraph(
           ? { stroke: '#94a3b8', strokeWidth: 1.2, opacity: 0.55 }
           : {
               stroke: color,
-              strokeWidth: 1.3,
-              strokeDasharray: '5 8',
-              opacity: 0.38,
+              strokeWidth: 1.7,
+              opacity: 0.92,
             },
         data: { color, disabled },
       })

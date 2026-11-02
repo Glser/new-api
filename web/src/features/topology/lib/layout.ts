@@ -23,7 +23,7 @@ import {
   type TopologyNode,
 } from '../types'
 
-const ROW_ORDER = ['cluster', 'userGroup', 'channel', 'model'] as const
+const ROW_ORDER = ['userGroup', 'channel', 'model'] as const
 
 const NODE_WIDTH = {
   userGroup: 360,
@@ -48,13 +48,14 @@ export const INITIAL_CANVAS_ZOOM = 0.76
 const INITIAL_VIEW_WORLD_WIDTH = 1280
 
 export function applyAutoLayout(nodes: TopologyNode[]): TopologyNode[] {
+  const clusters = nodes.filter((node) => node.type === 'cluster')
   const buckets: Record<string, TopologyNode[]> = {
-    cluster: [],
     userGroup: [],
     channel: [],
     model: [],
   }
   for (const node of nodes) {
+    if (node.type === 'cluster') continue
     const type = node.type ?? 'channel'
     buckets[type].push(node)
   }
@@ -78,7 +79,7 @@ export function applyAutoLayout(nodes: TopologyNode[]): TopologyNode[] {
     }
     y += NODE_HEIGHT[type] + ROW_GAP_Y
   }
-  return result
+  return syncClusterFrames([...clusters, ...result])
 }
 
 export function mergeLayoutPositions(
@@ -86,6 +87,7 @@ export function mergeLayoutPositions(
   layout: TopologyLayout
 ): TopologyNode[] {
   return nodes.map((node) => {
+    if (node.type === 'cluster') return node
     const saved = layout.positions[node.id]
     if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
       return { ...node, position: { x: saved.x, y: saved.y } }
@@ -97,13 +99,13 @@ export function mergeLayoutPositions(
 export function collectPositions(nodes: TopologyNode[]) {
   const positions: Record<string, { x: number; y: number }> = {}
   for (const node of nodes) {
+    if (node.type === 'cluster') continue
     positions[node.id] = { x: node.position.x, y: node.position.y }
   }
   return positions
 }
 
-const CLUSTER_PADDING = 24
-const CLUSTER_HEADER = 36
+const CLUSTER_PADDING = 18
 
 function nodeSize(node: TopologyNode) {
   const type = node.type ?? 'channel'
@@ -131,40 +133,36 @@ export function createClusterBounds(nodes: TopologyNode[], memberIds: string[]) 
   }
   return {
     x: minX - CLUSTER_PADDING,
-    y: minY - CLUSTER_PADDING - CLUSTER_HEADER,
+    y: minY - CLUSTER_PADDING,
     width: maxX - minX + CLUSTER_PADDING * 2,
-    height: maxY - minY + CLUSTER_PADDING * 2 + CLUSTER_HEADER,
+    height: maxY - minY + CLUSTER_PADDING * 2,
   }
 }
 
-export function nestClusterMembers(
-  nodes: TopologyNode[],
-  clusterId: string,
-  memberIds: string[]
-): TopologyNode[] {
-  const bounds = createClusterBounds(nodes, memberIds)
-  const memberSet = new Set(memberIds)
-  return nodes.map((node) => {
-    if (node.id === clusterId) {
-      return {
-        ...node,
-        position: { x: bounds.x, y: bounds.y },
-        style: { ...node.style, width: bounds.width, height: bounds.height },
-        width: bounds.width,
-        height: bounds.height,
-      }
+export function syncClusterFrames(nodes: TopologyNode[]): TopologyNode[] {
+  const clusters = nodes.filter((node) => node.type === 'cluster')
+  if (clusters.length === 0) return nodes
+  const others = nodes.filter((node) => node.type !== 'cluster')
+  const frames = clusters.map((cluster) => {
+    const bounds = createClusterBounds(others, cluster.data.memberIds)
+    if (
+      cluster.position.x === bounds.x &&
+      cluster.position.y === bounds.y &&
+      cluster.width === bounds.width &&
+      cluster.height === bounds.height
+    ) {
+      return cluster
     }
-    if (!memberSet.has(node.id)) return node
     return {
-      ...node,
-      parentId: clusterId,
-      extent: 'parent' as const,
-      position: {
-        x: node.position.x - bounds.x,
-        y: node.position.y - bounds.y,
-      },
+      ...cluster,
+      position: { x: bounds.x, y: bounds.y },
+      style: { ...cluster.style, width: bounds.width, height: bounds.height },
+      width: bounds.width,
+      height: bounds.height,
+      zIndex: 0,
     }
   })
+  return [...frames, ...others]
 }
 
 export function layoutGraphNodes(
@@ -176,7 +174,7 @@ export function layoutGraphNodes(
   if (relayout || (layout.version ?? 1) < TOPOLOGY_LAYOUT_VERSION) {
     return arranged
   }
-  return mergeLayoutPositions(arranged, layout)
+  return syncClusterFrames(mergeLayoutPositions(arranged, layout))
 }
 
 export function getInitialViewNodes(nodes: TopologyNode[]): TopologyNode[] {

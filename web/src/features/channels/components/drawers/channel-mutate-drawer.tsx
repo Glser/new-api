@@ -898,13 +898,6 @@ export function ChannelMutateDrawer({
   // Load channel data into form when editing
   useEffect(() => {
     if (!open) {
-      setModelConfiguration(null)
-      form.reset(CHANNEL_FORM_DEFAULT_VALUES)
-      loadedForm.current = null
-      setProviderTarget(null)
-      setChoosingProvider(true)
-      setConfigurationSection('connection')
-      setPendingErrorFocus(null)
       return
     }
     if (isEditing && channelData?.data) {
@@ -943,6 +936,12 @@ export function ChannelMutateDrawer({
         channelData.data.status_code_mapping || ''
     } else if (!isEditing) {
       form.reset(CHANNEL_FORM_DEFAULT_VALUES)
+      loadedForm.current = null
+      setModelConfiguration(null)
+      setProviderTarget(null)
+      setChoosingProvider(true)
+      setConfigurationSection('connection')
+      setPendingErrorFocus(null)
       initialModelsRef.current = []
       initialModelMappingRef.current = ''
       initialStatusCodeMappingRef.current = ''

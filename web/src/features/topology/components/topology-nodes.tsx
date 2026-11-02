@@ -214,12 +214,7 @@ function TopologyChannelNodeComponent(
   const flashing = useFlashingIds().has(props.id)
   const disabled = props.data.channel.status !== CHANNEL_STATUS.ENABLED
   return (
-    <div
-      className={cn('relative w-full', flashing && 'topology-flash-card')}
-      style={
-        { '--topology-flash': topologyColorAlpha(color, 0.55) } as CSSProperties
-      }
-    >
+    <div className='relative w-full'>
       <Handle
         id='in-group'
         type='target'
@@ -232,7 +227,18 @@ function TopologyChannelNodeComponent(
         position={Position.Bottom}
         style={handleStyle(color, 'bottom')}
       />
-      <div className={cn(disabled && 'opacity-80')}>
+      <div
+        className={cn(
+          'overflow-visible rounded-xl',
+          disabled && 'opacity-80',
+          flashing && 'topology-flash-card'
+        )}
+        style={
+          {
+            '--topology-flash': topologyColorAlpha(color, 0.55),
+          } as CSSProperties
+        }
+      >
         <ChannelCard
           channel={props.data.channel}
           isSelected={props.selected}
@@ -308,21 +314,16 @@ export const TopologyModelNode = memo(
 function TopologyClusterNodeComponent(
   props: NodeProps & { data: TopologyClusterData }
 ) {
-  const { t } = useTranslation()
   const actions = useTopologyNodeActions()
   return (
     <div
-      className='pointer-events-none h-full w-full rounded-3xl border border-dashed bg-transparent px-4 py-3'
-      style={{ borderColor: topologyColorAlpha(props.data.color, 0.4) }}
+      className='topology-cluster-handle relative h-full w-full cursor-grab rounded-[28px] border-2 border-dashed bg-transparent'
+      style={{ borderColor: topologyColorAlpha(props.data.color, 0.55) }}
     >
-      <div className='topology-cluster-handle pointer-events-auto flex cursor-grab items-center justify-between gap-2'>
-        <div className='truncate text-sm font-medium'>{props.data.name}</div>
+      <div className='absolute top-1 right-1'>
         <NodeDeleteButton
           onDelete={() => actions?.onDeleteCluster(props.id)}
         />
-      </div>
-      <div className='text-muted-foreground mt-1 text-xs'>
-        {t('{{count}} cards', { count: props.data.memberIds.length })}
       </div>
     </div>
   )

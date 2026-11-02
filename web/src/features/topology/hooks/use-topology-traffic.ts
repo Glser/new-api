@@ -26,7 +26,7 @@ import { api } from '@/lib/api'
 
 import { channelNodeId, groupNodeId, modelNodeId } from '../types'
 
-const FLASH_MS = 1400
+const FLASH_MS = 1000
 const EMPTY = new Set<string>()
 
 export const TopologyTrafficContext = createContext<Set<string>>(EMPTY)
@@ -53,6 +53,24 @@ export function useTopologyTraffic(enabled: boolean) {
   const primedRef = useRef(false)
   const expiresRef = useRef(new Map<string, number>())
   const [flashing, setFlashing] = useState<Set<string>>(EMPTY)
+
+  const flashIds = (ids: string[]) => {
+    if (ids.length === 0) return
+    const expireAt = Date.now() + FLASH_MS
+    for (const id of ids) expiresRef.current.set(id, expireAt)
+    setFlashing(new Set(expiresRef.current.keys()))
+    window.setTimeout(() => {
+      const now = Date.now()
+      for (const [id, exp] of expiresRef.current) {
+        if (exp <= now) expiresRef.current.delete(id)
+      }
+      setFlashing(
+        expiresRef.current.size === 0
+          ? EMPTY
+          : new Set(expiresRef.current.keys())
+      )
+    }, FLASH_MS)
+  }
 
   const query = useQuery({
     queryKey: ['topology-traffic'],
@@ -88,22 +106,7 @@ export function useTopologyTraffic(enabled: boolean) {
       seenRef.current = new Set(items.map((item) => item.id))
     }
 
-    const nextIds = fresh.flatMap(idsFromLog)
-    if (nextIds.length === 0) return
-    const expireAt = Date.now() + FLASH_MS
-    for (const id of nextIds) expiresRef.current.set(id, expireAt)
-    setFlashing(new Set(expiresRef.current.keys()))
-    window.setTimeout(() => {
-      const now = Date.now()
-      for (const [id, exp] of expiresRef.current) {
-        if (exp <= now) expiresRef.current.delete(id)
-      }
-      setFlashing(
-        expiresRef.current.size === 0
-          ? EMPTY
-          : new Set(expiresRef.current.keys())
-      )
-    }, FLASH_MS)
+    flashIds(fresh.flatMap(idsFromLog))
   }, [query.data])
 
   useEffect(() => {

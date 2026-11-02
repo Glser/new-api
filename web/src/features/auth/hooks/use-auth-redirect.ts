@@ -58,14 +58,15 @@ export function useAuthRedirect() {
         return
       }
       applyAuthBundle(bundle)
+      const targetPath =
+        sanitizeAuthRedirect(redirectTo, window.location.origin) ?? '/dashboard'
+      // Leave the zoomed login layout before changing language. i18n updates
+      // would otherwise re-render SignInScaleFrame and flash an enlarged page.
+      await navigate({ href: targetPath, replace: true })
       const savedLang = getSavedLanguage(bundle.user)
       if (savedLang && savedLang !== i18n.language) {
         await i18n.changeLanguage(savedLang)
       }
-
-      const targetPath =
-        sanitizeAuthRedirect(redirectTo, window.location.origin) ?? '/dashboard'
-      await navigate({ href: targetPath, replace: true })
     },
     [navigate, sessionID]
   )

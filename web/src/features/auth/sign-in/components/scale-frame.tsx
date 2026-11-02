@@ -34,13 +34,15 @@ export function SignInScaleFrame(props: {
   } as CSSProperties
 
   return (
-    <div
-      data-testid='sign-in-scale-frame'
-      data-sign-in-scale={String(scale)}
-      className={cn('relative w-full overflow-hidden', props.className)}
-      style={style}
-    >
-      {props.children}
+    <div className='relative h-svh w-full overflow-hidden'>
+      <div
+        data-testid='sign-in-scale-frame'
+        data-sign-in-scale={String(scale)}
+        className={cn('relative w-full overflow-hidden', props.className)}
+        style={style}
+      >
+        {props.children}
+      </div>
     </div>
   )
 }

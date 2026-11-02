@@ -55,7 +55,7 @@ export function ChannelsDialogs() {
         <ChannelMutateDrawer
           open={isChannelMutateOpen}
           onOpenChange={closeDialog}
-          currentRow={open === 'update-channel' ? currentRow : null}
+          currentRow={open === 'create-channel' ? null : currentRow}
         />
       </LazyWhenOpen>
 

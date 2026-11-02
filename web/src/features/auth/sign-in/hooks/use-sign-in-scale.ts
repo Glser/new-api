@@ -37,5 +37,7 @@ function getClientScale(): number {
 }
 
 export function useSignInScale(): number {
-  return useSyncExternalStore(subscribeToViewport, getClientScale, () => 1)
+  // Use the same snapshot on server and client so the first paint is not
+  // scale=1 followed by a zoomed login page.
+  return useSyncExternalStore(subscribeToViewport, getClientScale, getClientScale)
 }

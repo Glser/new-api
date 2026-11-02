@@ -11,7 +11,7 @@
   background: transparent;
   box-shadow: none;
   padding: 0;
-  will-change: transform;
+  overflow: visible;
 }
 
 .topology-flow .react-flow__node.dragging {
@@ -22,12 +22,33 @@
 .topology-flow .react-flow__edge-path {
   fill: none;
   stroke-linecap: round;
+  stroke-dasharray: none;
   transition: opacity 160ms ease;
 }
 
-.topology-flow .react-flow__edge.selected .react-flow__edge-path,
-.topology-flow .react-flow__edge:focus .react-flow__edge-path {
-  opacity: 1 !important;
+.topology-flow .react-flow__edges {
+  overflow: visible;
+}
+
+.topology-flow .react-flow__edge.selected,
+.topology-flow .react-flow__edge:focus,
+.topology-flow .react-flow__edge:focus-visible {
+  z-index: 12;
+}
+
+.topology-edge-halo {
+  pointer-events: none;
+  animation: topology-edge-halo 1.2s ease-out infinite;
+}
+
+@keyframes topology-edge-halo {
+  0%,
+  100% {
+    opacity: 0.22;
+  }
+  35% {
+    opacity: 0.48;
+  }
 }
 
 .topology-flow .react-flow__connection-line {
@@ -52,27 +73,40 @@
 }
 
 .topology-flash-card {
-  animation: topology-node-flash 1.2s ease-out infinite;
+  position: relative;
+}
+
+.topology-flash-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 12px 28px -8px var(--topology-flash), 0 0 18px var(--topology-flash);
+  animation: topology-node-flash 1s ease-out;
 }
 
 .topology-flow .react-flow__edge.topology-flash-edge .react-flow__edge-path {
-  stroke-width: 1.7px !important;
-  stroke-dasharray: 4 8;
-  opacity: 0.9 !important;
-  animation: topology-edge-flow 1.2s linear infinite;
+  stroke-width: 1.8px !important;
+  stroke-dasharray: 4 8 !important;
+  stroke-linecap: butt;
+  opacity: 0.95 !important;
+  animation: topology-edge-flow 1s linear;
 }
 
 @keyframes topology-node-flash {
   0% {
-    box-shadow: 0 0 0 0 var(--topology-flash);
+    opacity: 0.35;
+    transform: scale(0.98);
   }
   35% {
-    box-shadow:
-      0 0 0 6px transparent,
-      0 0 22px var(--topology-flash);
+    opacity: 1;
+    transform: scale(1);
   }
   100% {
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    opacity: 0;
+    transform: scale(1);
   }
 }
 
@@ -80,4 +114,8 @@
   to {
     stroke-dashoffset: -34;
   }
+}
+
+.topology-flow.is-grouping .react-flow__pane {
+  cursor: crosshair;
 }

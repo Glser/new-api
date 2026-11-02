@@ -24,12 +24,13 @@ import {
   Box,
   Cable,
   Compass,
+  Group,
   Radio,
   RefreshCw,
   Search,
+  Shapes,
   Share2,
   Table2,
-  Users,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -175,20 +176,7 @@ export function TopologyOverlays(props: {
               label={t('Create Group')}
               onClick={props.onCreateGroup}
             >
-              <Users className='size-4' />
-            </OverlayIconButton>
-          )}
-          {props.canCreateCluster && (
-            <OverlayIconButton
-              label={
-                props.groupingMode
-                  ? t('Confirm card group')
-                  : t('Group selected cards')
-              }
-              active={props.groupingMode}
-              onClick={props.onCreateCluster}
-            >
-              <Box className='size-4' />
+              <Shapes className='size-4' />
             </OverlayIconButton>
           )}
           {props.canWrite ? (
@@ -231,6 +219,19 @@ export function TopologyOverlays(props: {
           >
             <Activity className='size-4' />
           </OverlayIconButton>
+          {props.canCreateCluster && (
+            <OverlayIconButton
+              label={
+                props.groupingMode
+                  ? t('Cancel grouping')
+                  : t('Group selected cards')
+              }
+              active={props.groupingMode}
+              onClick={props.onCreateCluster}
+            >
+              <Group className='size-4' />
+            </OverlayIconButton>
+          )}
           <DropdownMenu>
             <TooltipHint content={t('More')}>
               <DropdownMenuTrigger
@@ -256,7 +257,7 @@ export function TopologyOverlays(props: {
                   })
                 }
               >
-                <Users />
+                <Shapes />
                 {t('Groups')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate({ to: '/channels' })}>
@@ -433,7 +434,7 @@ function StatsPopover(props: {
 }) {
   const { t } = useTranslation()
   const items = [
-    { icon: Users, label: t('Groups'), value: props.stats.groups },
+    { icon: Shapes, label: t('Groups'), value: props.stats.groups },
     { icon: Radio, label: t('Channels'), value: props.stats.channels },
     { icon: Box, label: t('Models'), value: props.stats.models },
     {
@@ -456,7 +457,7 @@ function StatsPopover(props: {
             />
           }
         >
-          <Users className='size-4' />
+          <Shapes className='size-4' />
           <span className='tabular-nums'>{props.stats.groups}</span>
           <span className='text-muted-foreground'>/</span>
           <span className='tabular-nums'>{props.stats.channels}</span>
@@ -486,5 +487,39 @@ function StatsPopover(props: {
         </div>
       </PopoverContent>
     </Popover>
+  )
+}
+
+export function TopologyGroupingPrompt(props: {
+  open: boolean
+  count: number
+  x: number
+  y: number
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  const { t } = useTranslation()
+  if (!props.open) return null
+  const left = Math.max(12, Math.min(props.x + 16, window.innerWidth - 280))
+  const top = Math.max(12, Math.min(props.y + 16, window.innerHeight - 140))
+  return (
+    <div
+      className='pointer-events-auto fixed z-50 w-64 rounded-xl border border-border/70 bg-background/95 p-3 shadow-[0_12px_32px_rgba(0,0,0,0.16)] backdrop-blur-xl dark:shadow-[0_16px_36px_rgba(0,0,0,0.45)]'
+      style={{ left, top }}
+    >
+      <div className='text-sm leading-5 font-medium'>
+        {t('Group {{count}} selected cards so they move together?', {
+          count: props.count,
+        })}
+      </div>
+      <div className='mt-3 flex justify-end gap-2'>
+        <Button type='button' variant='ghost' size='sm' onClick={props.onCancel}>
+          {t('Cancel')}
+        </Button>
+        <Button type='button' size='sm' onClick={props.onConfirm}>
+          {t('Confirm grouping')}
+        </Button>
+      </div>
+    </div>
   )
 }

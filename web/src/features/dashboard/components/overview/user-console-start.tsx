@@ -21,15 +21,24 @@ import { BrainCircuit, KeyRound, Palette } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { normalizeExternalHref } from '@/components/layout/lib/url-utils'
 import { ShineButton } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { ConsoleDataScope } from '@/features/dashboard/lib'
+import { useStatus } from '@/hooks/use-status'
 
 function ShineAction(props: {
-  to: '/keys' | '/pricing' | '/playground'
+  to?: '/keys' | '/pricing' | '/playground'
+  href?: string
   children: ReactNode
   solid?: boolean
 }) {
+  const render = props.href ? (
+    <a href={props.href} target='_blank' rel='noreferrer' />
+  ) : (
+    <Link to={props.to ?? '/playground'} />
+  )
+
   return (
     <ShineButton
       variant={props.solid ? 'default' : 'outline'}
@@ -39,7 +48,7 @@ function ShineAction(props: {
           ? 'h-9 bg-[oklch(0.24_0_0)] px-2.5 text-xs font-semibold text-white hover:bg-[oklch(0.30_0_0)] @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm dark:bg-[oklch(0.90_0_0)] dark:text-neutral-950 dark:hover:bg-[oklch(0.84_0_0)] [a]:hover:bg-[oklch(0.30_0_0)] dark:[a]:hover:bg-[oklch(0.84_0_0)]'
           : 'h-9 px-2.5 text-xs @min-[48rem]/console:px-3 @min-[48rem]/console:text-sm'
       }
-      render={<Link to={props.to} />}
+      render={render}
     >
       {props.children}
     </ShineButton>
@@ -52,6 +61,8 @@ export function UserConsoleStart(props: {
   onDataScopeChange?: (value: ConsoleDataScope) => void
 }) {
   const { t } = useTranslation()
+  const { status } = useStatus()
+  const studioUrl = normalizeExternalHref(status?.studio_url)
   const onDataScopeChange = props.onDataScopeChange
 
   return (
@@ -93,7 +104,11 @@ export function UserConsoleStart(props: {
           <BrainCircuit data-icon='inline-start' />
           {t('Browse models')}
         </ShineAction>
-        <ShineAction to='/playground' solid>
+        <ShineAction
+          to='/playground'
+          href={studioUrl || undefined}
+          solid
+        >
           <Palette data-icon='inline-start' />
           {t('Creative workbench')}
         </ShineAction>

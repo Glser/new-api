@@ -17,23 +17,56 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-const PALETTE = [
-  '#5b7cfa',
-  '#8b5cf6',
-  '#10b981',
-  '#ec4899',
-  '#06b6d4',
-  '#f59e0b',
-  '#6366f1',
-  '#14b8a6',
+/** Same aurora rank palette as the console bar chart. */
+const AURORA_RANK_COLORS_LIGHT = [
+  '#8FCFC4',
+  '#9FBFEA',
+  '#B9A9E8',
+  '#E5B6A7',
+  '#8FC8D8',
+  '#D2CC9A',
+  '#A8B9E0',
+  '#D6A9C2',
+  '#A8D0A5',
+  '#BDB8D0',
 ]
 
-export function topologyColor(key: string) {
-  let hash = 0
+const AURORA_RANK_COLORS_DARK = [
+  '#8CD8C7',
+  '#9FC8F4',
+  '#C0AEF2',
+  '#E9B9AA',
+  '#8BD0E1',
+  '#D9D19C',
+  '#AFC0EA',
+  '#DCAAC5',
+  '#A7D9A5',
+  '#C2BCD8',
+]
+
+function getAuroraPalette(isDark = false) {
+  return isDark ? AURORA_RANK_COLORS_DARK : AURORA_RANK_COLORS_LIGHT
+}
+
+function hashKey(key: string) {
+  let hash = 2166136261
   for (const char of key) {
-    hash = (hash * 33 + char.charCodeAt(0)) >>> 0
+    hash ^= char.charCodeAt(0)
+    hash = Math.imul(hash, 16777619)
   }
-  return PALETTE[hash % PALETTE.length]
+  return hash >>> 0
+}
+
+export function topologyColor(key: string, isDark = false) {
+  const palette = getAuroraPalette(isDark)
+  return palette[hashKey(key) % palette.length]
+}
+
+export function topologyChannelColor(channelId: number, isDark = false) {
+  const palette = getAuroraPalette(isDark)
+  // Keep the last swatch for overflow, matching the console "Other" bar.
+  const usable = palette.length > 1 ? palette.slice(0, -1) : palette
+  return usable[(((Math.max(0, channelId) * 4) >>> 0) + 1) % usable.length]
 }
 
 export function topologyColorAlpha(color: string, alpha: number) {

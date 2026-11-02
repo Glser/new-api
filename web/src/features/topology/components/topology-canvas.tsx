@@ -51,6 +51,7 @@ import {
   applyAutoLayout,
   collectPositions,
   getInitialViewNodes,
+  syncClusterFrames,
 } from '../lib/layout'
 import {
   TOPOLOGY_LAYOUT_VERSION,
@@ -59,6 +60,7 @@ import {
   type TopologyNode,
   type TopologyViewport,
 } from '../types'
+import { TopologyFlowEdge } from './topology-edges'
 import {
   TopologyChannelNode,
   TopologyClusterNode,
@@ -71,6 +73,10 @@ const nodeTypes = {
   channel: TopologyChannelNode,
   model: TopologyModelNode,
   cluster: TopologyClusterNode,
+}
+
+const edgeTypes = {
+  default: TopologyFlowEdge,
 }
 
 type TopologyCanvasProps = {
@@ -86,7 +92,13 @@ type TopologyCanvasProps = {
   showMiniMap?: boolean
   focusNodeId?: string
   onSelectionChange?: (nodeIds: string[]) => void
+  onSelectionComplete?: (payload: {
+    nodeIds: string[]
+    clientX: number
+    clientY: number
+  }) => void
   groupingMode?: boolean
+  selectionResetKey?: number
 }
 
 function isValidTopologyConnection(connection: Connection | Edge) {
@@ -97,14 +109,34 @@ function isValidTopologyConnection(connection: Connection | Edge) {
   return false
 }
 
-function applyEdgeFlash(edges: TopologyEdge[], flashingIds: Set<string>) {
+function applyEdgeFlash(
+  edges: TopologyEdge[],
+  flashingIds: Set<string>,
+  current: TopologyEdge[] = []
+) {
+  const currentById = new Map(current.map((edge) => [edge.id, edge]))
   return edges.map((edge) => {
+    const previous = currentById.get(edge.id)
     const flash = edge.data?.disabled !== true && flashingIds.has(edge.id)
     const className = flash ? 'topology-flash-edge' : undefined
-    if (edge.className === className && Boolean(edge.animated) === flash) {
-      return edge
+    const selected = previous?.selected
+    if (
+      previous &&
+      previous.className === className &&
+      Boolean(previous.animated) === flash &&
+      previous.selected === selected &&
+      previous.source === edge.source &&
+      previous.target === edge.target &&
+      previous.style === edge.style
+    ) {
+      return previous
     }
-    return { ...edge, className, animated: flash }
+    return {
+      ...edge,
+      className,
+      animated: flash,
+      selected,
+    }
   })
 }
 
@@ -117,6 +149,13 @@ function mergeGraphNodes(
   return incoming.map((node) => {
     const previous = currentById.get(node.id)
     if (!previous) return node
+    if (node.type === 'cluster') {
+      return {
+        ...node,
+        selected: previous.selected,
+        dragging: previous.dragging,
+      }
+    }
     const widthChanged = previous.width !== node.width
     return {
       ...node,
@@ -124,7 +163,10 @@ function mergeGraphNodes(
       selected: previous.selected,
       dragging: previous.dragging,
       width: node.width ?? previous.width,
-      height: node.type === 'model' ? undefined : previous.height,
+      height:
+        node.type === 'model'
+          ? undefined
+          : (node.height ?? previous.height),
       measured: widthChanged ? undefined : previous.measured,
     }
   })
@@ -147,6 +189,9 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   const onDeleteEdgesRef = useRef(props.onDeleteEdges)
   const onNodeClickRef = useRef(props.onNodeClick)
   const onSelectionChangeRef = useRef(props.onSelectionChange)
+  const onSelectionCompleteRef = useRef(props.onSelectionComplete)
+  const groupingModeRef = useRef(props.groupingMode === true)
+  const selectedIdsRef = useRef<string[]>([])
   const canWriteRef = useRef(props.canWrite)
   useLayoutEffect(() => {
     onLayoutChangeRef.current = props.onLayoutChange
@@ -154,6 +199,8 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
     onDeleteEdgesRef.current = props.onDeleteEdges
     onNodeClickRef.current = props.onNodeClick
     onSelectionChangeRef.current = props.onSelectionChange
+    onSelectionCompleteRef.current = props.onSelectionComplete
+    groupingModeRef.current = props.groupingMode === true
     canWriteRef.current = props.canWrite
   }, [
     props.onLayoutChange,
@@ -161,11 +208,19 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
     props.onDeleteEdges,
     props.onNodeClick,
     props.onSelectionChange,
+    props.onSelectionComplete,
+    props.groupingMode,
     props.canWrite,
   ])
 
   const flashingIds = useFlashingIds()
   const draggingRef = useRef(false)
+  const clusterDragOriginRef = useRef<{
+    id: string
+    x: number
+    y: number
+    members: Array<{ id: string; x: number; y: number }>
+  } | null>(null)
   const [nodes, setNodes] = useState<TopologyNode[]>(props.graphNodes)
   const [edges, setEdges] = useState<TopologyEdge[]>(props.graphEdges)
 
@@ -175,8 +230,20 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   }, [props.graphNodes])
 
   useEffect(() => {
+    if (!props.selectionResetKey) return
+    selectedIdsRef.current = []
+    setNodes((current) =>
+      current.map((node) =>
+        node.selected ? { ...node, selected: false } : node
+      )
+    )
+  }, [props.selectionResetKey])
+
+  useEffect(() => {
     // eslint-disable-next-line react/set-state-in-effect -- Synchronize controlled React Flow edges with the server graph and traffic highlights.
-    setEdges(applyEdgeFlash(props.graphEdges, flashingIds))
+    setEdges((current) =>
+      applyEdgeFlash(props.graphEdges, flashingIds, current)
+    )
   }, [flashingIds, props.graphEdges])
 
   useEffect(() => {
@@ -291,7 +358,11 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   }, [props.relayoutVersion])
 
   const onNodesChange = useCallback((changes: NodeChange<TopologyNode>[]) => {
-    setNodes((current) => applyNodeChanges(changes, current) as TopologyNode[])
+    setNodes((current) => {
+      const next = applyNodeChanges(changes, current) as TopologyNode[]
+      if (clusterDragOriginRef.current) return next
+      return syncClusterFrames(next)
+    })
   }, [])
 
   const onEdgesChange = useCallback((changes: EdgeChange<TopologyEdge>[]) => {
@@ -310,13 +381,6 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
       if (!canWriteRef.current) return false
       return onDeleteEdgesRef.current(deletedEdges)
     }, [])
-
-  const clusterDragOriginRef = useRef<{
-    id: string
-    x: number
-    y: number
-    members: Array<{ id: string; x: number; y: number }>
-  } | null>(null)
 
   const handleNodeDragStart = useCallback(
     (_event: unknown, node: TopologyNode) => {
@@ -363,9 +427,12 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   const handleNodeDragStop = useCallback(() => {
     draggingRef.current = false
     clusterDragOriginRef.current = null
-    const current = instanceRef.current?.getNodes() ?? []
-    onLayoutChangeRef.current({
-      positions: collectPositions(current as TopologyNode[]),
+    setNodes((current) => {
+      const next = syncClusterFrames(current)
+      onLayoutChangeRef.current({
+        positions: collectPositions(next),
+      })
+      return next
     })
   }, [])
 
@@ -379,11 +446,25 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   )
 
   return (
-    <div className='topology-flow bg-background h-full min-h-0 overflow-hidden'>
+    <div
+      className={
+        props.groupingMode
+          ? 'topology-flow is-grouping bg-background h-full min-h-0 overflow-hidden'
+          : 'topology-flow bg-background h-full min-h-0 overflow-hidden'
+      }
+    >
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={nodes.map((node) => ({
+          ...node,
+          selectable:
+            props.groupingMode === true && node.type !== 'cluster',
+        }))}
+        edges={edges.map((edge) => ({
+          ...edge,
+          selectable: props.groupingMode !== true,
+        }))}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onInit={(instance) => {
           instanceRef.current = instance
         }}
@@ -402,10 +483,33 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         selectionMode={SelectionMode.Partial}
         multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
         nodesDraggable={props.groupingMode !== true}
-        elementsSelectable={props.groupingMode === true}
+        elementsSelectable
         onMoveEnd={handleMoveEnd}
+        onSelectionStart={() => {
+          selectedIdsRef.current = []
+        }}
         onSelectionChange={({ nodes: selectedNodes }) => {
-          onSelectionChangeRef.current?.(selectedNodes.map((node) => node.id))
+          const nodeIds = selectedNodes
+            .filter((node) => node.type !== 'cluster')
+            .map((node) => node.id)
+          selectedIdsRef.current = nodeIds
+          onSelectionChangeRef.current?.(nodeIds)
+        }}
+        onSelectionEnd={(event) => {
+          if (!groupingModeRef.current) return
+          onSelectionCompleteRef.current?.({
+            nodeIds: selectedIdsRef.current,
+            clientX: event.clientX,
+            clientY: event.clientY,
+          })
+        }}
+        onEdgeClick={(_event, edge) => {
+          setEdges((current) =>
+            current.map((item) => ({
+              ...item,
+              selected: item.id === edge.id,
+            }))
+          )
         }}
         onNodeClick={(event, node) => {
           const target = event.target
