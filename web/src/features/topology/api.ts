@@ -107,7 +107,10 @@ export async function getTopologyGraph(): Promise<TopologyGraphPayload> {
       getVendors({ page_size: 1000 }).catch(() => null),
       getPricing().catch(() => null),
     ])
-  const groups = requireServerSuccess(groupsResponse).data ?? []
+  const groupsPayload = requireServerSuccess(groupsResponse)
+  const groups = groupsPayload.data ?? []
+  // The admin canvas needs configured ratios, not user-specific pricing ratios.
+  const groupRatio = groupsPayload.group_ratio
   const vendors = vendorsResponse
     ? (requireServerSuccess(vendorsResponse).data?.items ?? [])
     : []
@@ -115,12 +118,10 @@ export async function getTopologyGraph(): Promise<TopologyGraphPayload> {
   for (const vendor of vendors) {
     if (vendor.icon) vendorIcons[vendor.id] = vendor.icon
   }
-  let groupRatio: Record<string, number> = {}
   let modelPrices = buildModelPrices([])
   if (pricing) {
     try {
       const pricingPayload = requireServerSuccess(pricing)
-      groupRatio = pricingPayload.group_ratio ?? {}
       modelPrices = buildModelPrices(pricingPayload.data ?? [])
     } catch {
       /* pricing is optional for the canvas */

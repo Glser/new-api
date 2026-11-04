@@ -26,7 +26,8 @@ import { api } from '@/lib/api'
 
 import { channelNodeId, groupNodeId, modelNodeId } from '../types'
 
-const FLASH_MS = 1000
+// Match the card feedback duration in topology-flow.css.
+const FLASH_MS = 2400
 const EMPTY = new Set<string>()
 
 export const TopologyTrafficContext = createContext<Set<string>>(EMPTY)

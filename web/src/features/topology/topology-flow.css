@@ -15,7 +15,6 @@
 }
 
 .topology-flow .react-flow__node.dragging {
-  cursor: grabbing;
   z-index: 20;
 }
 
@@ -83,16 +82,64 @@
   z-index: -1;
   border-radius: inherit;
   pointer-events: none;
-  box-shadow: 0 12px 28px -8px var(--topology-flash), 0 0 18px var(--topology-flash);
-  animation: topology-node-flash 1s ease-out;
+  box-shadow:
+    0 12px 28px -8px var(--topology-flash),
+    0 0 18px var(--topology-flash);
+  animation: topology-node-flash 2.4s ease-out;
 }
 
 .topology-flow .react-flow__edge.topology-flash-edge .react-flow__edge-path {
-  stroke-width: 1.8px !important;
-  stroke-dasharray: 4 8 !important;
-  stroke-linecap: butt;
+  stroke-width: 2.4px !important;
+  stroke-dasharray: none !important;
   opacity: 0.95 !important;
-  animation: topology-edge-flow 1s linear;
+  animation: none;
+}
+
+.topology-edge-traffic {
+  fill: none;
+  pointer-events: none;
+  stroke-linecap: round;
+  animation: topology-traffic-appear 200ms ease-out;
+}
+
+.topology-flow .react-flow__edge .topology-edge-traffic path {
+  stroke-dasharray: var(--topology-beam-length)
+    calc(100px - var(--topology-beam-length));
+  animation: topology-edge-flow 1.2s cubic-bezier(0.32, 0.25, 0.68, 0.75)
+    infinite;
+}
+
+.topology-edge-trail {
+  --topology-beam-length: 20px;
+  stroke-width: 8px;
+  opacity: 0.28;
+  filter: blur(2px);
+}
+
+.topology-edge-beam {
+  --topology-beam-length: 12px;
+  stroke: color-mix(in oklab, currentColor 78%, #18181b);
+  stroke-width: 3.5px;
+}
+
+.dark .topology-edge-beam,
+.react-flow.dark .topology-edge-beam {
+  stroke: color-mix(in oklab, currentColor 80%, #fff);
+}
+
+.topology-edge-tip {
+  --topology-beam-length: 4px;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+@keyframes topology-traffic-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes topology-node-flash {
@@ -100,7 +147,8 @@
     opacity: 0.35;
     transform: scale(0.98);
   }
-  35% {
+  15%,
+  65% {
     opacity: 1;
     transform: scale(1);
   }
@@ -111,11 +159,60 @@
 }
 
 @keyframes topology-edge-flow {
+  from {
+    stroke-dashoffset: var(--topology-beam-length);
+  }
   to {
-    stroke-dashoffset: -34;
+    stroke-dashoffset: calc(var(--topology-beam-length) - 100px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topology-flow .react-flow__edge .topology-edge-traffic path {
+    animation: none;
+    stroke-dasharray: none;
+  }
+
+  .topology-edge-trail {
+    filter: none;
+    opacity: 0.16;
+  }
+
+  .topology-edge-tip {
+    display: none;
+  }
+
+  .topology-edge-halo,
+  .topology-flash-card::after {
+    animation: none;
+    opacity: 0.5;
   }
 }
 
 .topology-flow.is-grouping .react-flow__pane {
-  cursor: crosshair;
+  cursor: var(--topology-cursor-connect);
+}
+.topology-flow {
+  --topology-cursor-grab: url('./assets/cursor-grab.svg') 16 15, grab;
+  --topology-cursor-grabbing:
+    url('./assets/cursor-grabbing.svg') 16 15, grabbing;
+  --topology-cursor-connect:
+    url('./assets/cursor-connect.svg') 16 16, crosshair;
+}
+
+.topology-flow .react-flow__pane.draggable,
+.topology-flow .react-flow__node.draggable,
+.topology-flow .react-flow__nodesselection-rect,
+.topology-flow .topology-cluster-handle {
+  cursor: var(--topology-cursor-grab);
+}
+
+.topology-flow .react-flow__pane.dragging,
+.topology-flow .react-flow__node.draggable.dragging,
+.topology-flow .react-flow__node.dragging .topology-cluster-handle {
+  cursor: var(--topology-cursor-grabbing);
+}
+
+.topology-flow .react-flow__handle.connectionindicator {
+  cursor: var(--topology-cursor-connect);
 }

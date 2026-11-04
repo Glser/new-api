@@ -16,11 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { BaseEdge, getBezierPath, type EdgeProps } from '@xyflow/react'
+import {
+  BaseEdge,
+  getBezierPath,
+  type Edge,
+  type EdgeProps,
+} from '@xyflow/react'
 import { memo } from 'react'
 
 function TopologyFlowEdgeComponent(
-  props: EdgeProps<{ color?: string; disabled?: boolean }>
+  props: EdgeProps<Edge<{ color?: string; disabled?: boolean }>>
 ) {
   const [path] = getBezierPath({
     sourceX: props.sourceX,
@@ -54,6 +59,18 @@ function TopologyFlowEdgeComponent(
         style={props.style}
         interactionWidth={28}
       />
+      {props.animated && !props.data?.disabled ? (
+        <g
+          className='topology-edge-traffic'
+          color={color}
+          stroke={color}
+          aria-hidden='true'
+        >
+          <path d={path} pathLength={100} className='topology-edge-trail' />
+          <path d={path} pathLength={100} className='topology-edge-beam' />
+          <path d={path} pathLength={100} className='topology-edge-tip' />
+        </g>
+      ) : null}
     </>
   )
 }
