@@ -61,6 +61,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -72,6 +80,8 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { ModelPricingPanel } from '@/features/model-pricing/model-pricing-panel'
+import { FALLBACK_PLAZA_CATEGORIES } from '@/features/plaza/lib/categories'
+import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
 import {
   requireServerSuccess,
   createServerError,
@@ -90,6 +100,9 @@ import {
 } from '../../lib/model-form'
 import type { Model } from '../../types'
 import { ModelConnections } from '../model-connections'
+
+/** Select needs a non-empty value; it maps to an empty category (auto). */
+const AUTO_CATEGORY = '__auto__'
 
 export function ModelMutateDrawer(props: {
   open: boolean
@@ -139,6 +152,10 @@ export function ModelMutateDrawer(props: {
     enabled: props.open,
   })
   const vendors = vendorsQuery.data?.data?.items ?? []
+  const { categories: plazaCategories } = usePricingData(props.open)
+  const categoryOptions = plazaCategories?.length
+    ? plazaCategories
+    : FALLBACK_PLAZA_CATEGORIES
   const selectedVendor = vendors.find(
     (vendor) => vendor.id === form.watch('vendor_id')
   )
@@ -483,6 +500,84 @@ export function ModelMutateDrawer(props: {
                             <FormMessage />
                           </FormItem>
                         )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='category'
+                        render={({ field }) => {
+                          const current = field.value ?? ''
+                          // A category deleted in settings stays visible so it
+                          // can be replaced instead of silently reset.
+                          const isStale =
+                            current !== '' &&
+                            !categoryOptions.some(
+                              (category) => category.key === current
+                            )
+                          const items = [
+                            { value: AUTO_CATEGORY, label: t('Auto-detect') },
+                            ...categoryOptions.map((category) => ({
+                              value: category.key,
+                              label: t(category.label),
+                            })),
+                            ...(isStale
+                              ? [
+                                  {
+                                    value: current,
+                                    label: t('{{key}} (deleted)', {
+                                      key: current,
+                                    }),
+                                  },
+                                ]
+                              : []),
+                          ]
+                          return (
+                            <FormItem>
+                              <FormLabel className='pl-[3px]'>
+                                {t('Plaza category')}
+                              </FormLabel>
+                              <Select
+                                items={items}
+                                value={current || AUTO_CATEGORY}
+                                onValueChange={(value) =>
+                                  field.onChange(
+                                    !value || value === AUTO_CATEGORY
+                                      ? ''
+                                      : value
+                                  )
+                                }
+                              >
+                                <FormControl>
+                                  <SelectTrigger className='w-full'>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent alignItemWithTrigger={false}>
+                                  <SelectGroup>
+                                    {items.map((item) => (
+                                      <SelectItem
+                                        key={item.value}
+                                        value={item.value}
+                                      >
+                                        {item.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>
+                                {isStale
+                                  ? t(
+                                      'This category was removed in settings. Pick another one before saving.'
+                                    )
+                                  : t(
+                                      'Which section of the model plaza this model appears in. Auto-detect uses the model endpoints.'
+                                    )}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )
+                        }}
                       />
                     </SideDrawerSection>
 

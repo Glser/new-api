@@ -3,6 +3,7 @@ package controller
 import (
 	"net/http"
 
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting"
@@ -23,6 +24,22 @@ func GetGroups(c *gin.Context) {
 		"data":        groupNames,
 		"group_ratio": groupRatios,
 	})
+}
+
+func RenameGroup(c *gin.Context) {
+	var request struct {
+		OldName string `json:"old_name"`
+		NewName string `json:"new_name"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if err := model.RenameManagedGroup(request.OldName, request.NewName); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, nil)
 }
 
 func GetUserGroups(c *gin.Context) {

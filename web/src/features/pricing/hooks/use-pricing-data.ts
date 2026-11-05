@@ -70,6 +70,8 @@ export function usePricingData(enabled = true) {
     groupRatio: data?.group_ratio ?? {},
     usableGroup: data?.usable_group ?? {},
     endpointMap: data?.supported_endpoint ?? {},
+    requestExamples: data?.request_examples ?? {},
+    categories: data?.categories,
     autoGroups: data?.auto_groups ?? [],
     isLoading,
     error,

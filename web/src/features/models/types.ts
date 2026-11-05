@@ -44,6 +44,8 @@ export interface Model {
   description?: string
   icon?: string
   tags?: string
+  /** Model plaza category key; empty means auto-detect from endpoints. */
+  category?: string
   vendor_id?: number
   endpoints?: string
   supported_endpoints?: string[]

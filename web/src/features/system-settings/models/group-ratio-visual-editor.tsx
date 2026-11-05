@@ -3,6 +3,7 @@ import {
   ChevronDown,
   GripVertical,
   Info,
+  Pencil,
   Plus,
   Trash2,
 } from 'lucide-react'
@@ -15,6 +16,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import { StaticDataTable } from '@/components/data-table/static/static-data-table'
 import { StaticRowActions } from '@/components/data-table/static/static-row-actions'
@@ -68,7 +70,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 
+import { useRenameGroup } from '../hooks/use-update-option'
 import { safeJsonParse } from '../utils/json-parser'
+
+const PROTECTED_GROUPS = ['default', 'auto', 'all']
 
 type GroupRatioVisualEditorProps = {
   groupRatio: string
@@ -78,6 +83,8 @@ type GroupRatioVisualEditorProps = {
   autoGroups: string
   maxTokenAutoGroupsField: ReactNode
   groupSpecialUsableGroup: string
+  savedGroupNames: string[]
+  hasUnsavedChanges: boolean
   onChange: (field: string, value: string) => void
 }
 
@@ -251,6 +258,8 @@ export const GroupRatioVisualEditor = memo(function GroupRatioVisualEditor({
   autoGroups,
   maxTokenAutoGroupsField,
   groupSpecialUsableGroup,
+  savedGroupNames,
+  hasUnsavedChanges,
   onChange,
 }: GroupRatioVisualEditorProps) {
   const { t } = useTranslation()
@@ -322,6 +331,8 @@ export const GroupRatioVisualEditor = memo(function GroupRatioVisualEditor({
         groupRatio={groupRatio}
         userUsableGroups={userUsableGroups}
         topupGroupRatio={topupGroupRatio}
+        savedGroupNames={savedGroupNames}
+        hasUnsavedChanges={hasUnsavedChanges}
         onChange={onChange}
         onShowDetail={setDetailGroup}
       />
@@ -414,6 +425,8 @@ type GroupPricingTableProps = {
   groupRatio: string
   userUsableGroups: string
   topupGroupRatio: string
+  savedGroupNames: string[]
+  hasUnsavedChanges: boolean
   onChange: (field: string, value: string) => void
   onShowDetail: (name: string) => void
 }
@@ -422,10 +435,15 @@ function GroupPricingTable({
   groupRatio,
   userUsableGroups,
   topupGroupRatio,
+  savedGroupNames,
+  hasUnsavedChanges,
   onChange,
   onShowDetail,
 }: GroupPricingTableProps) {
   const { t } = useTranslation()
+  const renameGroup = useRenameGroup()
+  const [renameTarget, setRenameTarget] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState('')
   const [rows, setRows] = useState<GroupPricingRow[]>(() =>
     buildGroupPricingRows(groupRatio, userUsableGroups, topupGroupRatio)
   )
@@ -545,6 +563,7 @@ function GroupPricingTable({
                 cell: (row) => (
                   <Input
                     value={row.name}
+                    readOnly={savedGroupNames.includes(row.name)}
                     onChange={(event) =>
                       updateRow(row._id, 'name', event.target.value)
                     }
@@ -636,6 +655,26 @@ function GroupPricingTable({
                     >
                       <Info className='h-4 w-4' />
                     </Button>
+                    {savedGroupNames.includes(row.name) &&
+                      !PROTECTED_GROUPS.includes(row.name) && (
+                        <Button
+                          variant='ghost'
+                          size='sm'
+                          onClick={() => {
+                            if (hasUnsavedChanges) {
+                              toast.warning(
+                                t('Save group ratios before renaming a group')
+                              )
+                              return
+                            }
+                            setRenameTarget(row.name)
+                            setRenameValue(row.name)
+                          }}
+                          aria-label={t('Rename')}
+                        >
+                          <Pencil className='h-4 w-4' />
+                        </Button>
+                      )}
                     <Button
                       variant='ghost'
                       size='sm'
@@ -659,6 +698,50 @@ function GroupPricingTable({
           )}
         </div>
       </CardContent>
+
+      <Dialog
+        open={renameTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenameTarget(null)
+        }}
+        title={t('Rename group')}
+        description={t(
+          'Updates channels, users, tokens, auto groups and group settings together. Existing logs keep the old name.'
+        )}
+        contentHeight='auto'
+        bodyClassName='space-y-4'
+        footer={
+          <>
+            <Button variant='outline' onClick={() => setRenameTarget(null)}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              disabled={
+                renameGroup.isPending ||
+                !renameValue.trim() ||
+                renameValue.trim() === renameTarget
+              }
+              onClick={() => {
+                if (!renameTarget) return
+                renameGroup.mutate(
+                  { oldName: renameTarget, newName: renameValue.trim() },
+                  { onSuccess: () => setRenameTarget(null) }
+                )
+              }}
+            >
+              {renameGroup.isPending ? t('Saving...') : t('Rename')}
+            </Button>
+          </>
+        }
+      >
+        <div className='space-y-2 py-4'>
+          <Label>{t('New group name')}</Label>
+          <Input
+            value={renameValue}
+            onChange={(event) => setRenameValue(event.target.value)}
+          />
+        </div>
+      </Dialog>
     </Card>
   )
 }

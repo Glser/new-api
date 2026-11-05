@@ -340,7 +340,7 @@ function ChannelCardComponent({
               </div>
             </TooltipHint>
           )}
-          <div className='min-w-0 flex-1 overflow-hidden'>
+          <div className='-ml-1.5 min-w-0 flex-1 overflow-hidden'>
             {isTagRow ? (
               <div className='min-w-0 overflow-hidden text-base leading-snug [&_.font-medium]:font-semibold [&_.font-semibold]:text-base'>
                 {nameCell}
@@ -348,7 +348,7 @@ function ChannelCardComponent({
             ) : (
               <div className='flex min-w-0 items-center gap-1.5'>
                 <TooltipHint content={displayName}>
-                  <span className='min-w-0 truncate py-px text-base leading-snug font-semibold'>
+                  <span className='min-w-0 -translate-y-px truncate py-px text-base leading-snug font-semibold'>
                     {displayName}
                   </span>
                 </TooltipHint>
@@ -402,7 +402,7 @@ function ChannelCardComponent({
 
         <CardContent className='flex flex-col gap-3 px-4'>
           {!isTagRow ? (
-            <p className='text-muted-foreground line-clamp-2 min-h-5 text-sm leading-5 break-words'>
+            <p className='text-muted-foreground line-clamp-2 h-10 px-2 text-sm leading-5 break-words'>
               {remark || ' '}
             </p>
           ) : null}

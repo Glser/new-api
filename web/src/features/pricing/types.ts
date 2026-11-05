@@ -76,6 +76,8 @@ export type PricingModel = {
   audio_completion_ratio?: number | null
   enable_groups: string[]
   tags?: string
+  /** Plaza category key set in model management; empty means auto-detect. */
+  category?: string
   supported_endpoint_types?: string[]
   key?: string
   group_ratio?: Record<string, number>
@@ -124,6 +126,22 @@ export type ModelCapability =
 /** group name -> description, as returned by /api/pricing usable_group */
 export type PricingUsableGroup = Record<string, string>
 
+/** A model plaza category from system settings. `other` is always last. */
+export type PlazaCategoryConfig = {
+  key: string
+  label: string
+  icon?: string
+}
+
+export type RequestExampleAuth = 'bearer' | 'x-api-key' | 'query'
+
+/** Call sample for one endpoint protocol, configured in system settings. */
+export type RequestExample = {
+  auth: RequestExampleAuth
+  headers?: Record<string, string>
+  body: Record<string, unknown>
+}
+
 export type PricingData = {
   success: boolean
   message?: string
@@ -132,6 +150,8 @@ export type PricingData = {
   group_ratio: Record<string, number>
   usable_group: PricingUsableGroup
   supported_endpoint: Record<string, string>
+  request_examples?: Record<string, RequestExample>
+  categories?: PlazaCategoryConfig[]
   auto_groups: string[]
 }
 

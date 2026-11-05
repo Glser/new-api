@@ -38,6 +38,7 @@ type Model struct {
 	Description        string         `json:"description,omitempty" gorm:"type:text"`
 	Icon               string         `json:"icon,omitempty" gorm:"type:varchar(128)"`
 	Tags               string         `json:"tags,omitempty" gorm:"type:varchar(255)"`
+	Category           string         `json:"category,omitempty" gorm:"type:varchar(64);default:''"` // 模型广场分类，空表示按端点推算；不参与官方同步
 	VendorID           int            `json:"vendor_id,omitempty" gorm:"index"`
 	Endpoints          string         `json:"endpoints,omitempty" gorm:"type:text"`
 	SupportedEndpoints []string       `json:"supported_endpoints,omitempty" gorm:"-"`
@@ -265,7 +266,7 @@ func (mi *Model) Update() error {
 		}
 		mi.UpdatedTime = common.GetTimestamp()
 		return tx.Model(&Model{}).Where("id = ?", mi.Id).
-			Select("model_name", "description", "icon", "tags", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").Updates(mi).Error
+			Select("model_name", "description", "icon", "tags", "category", "vendor_id", "endpoints", "status", "sync_official", "name_rule", "updated_time").Updates(mi).Error
 	})
 }
 

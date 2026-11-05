@@ -46,7 +46,10 @@ import {
   PlazaVendorRow,
 } from './components'
 import { usePlazaFilters } from './hooks/use-plaza-filters'
-import { groupModelsByCategory, PLAZA_CATEGORY_ORDER } from './lib/categories'
+import {
+  FALLBACK_PLAZA_CATEGORIES,
+  groupModelsByCategory,
+} from './lib/categories'
 
 /** 页面左右留白按 zoom 反算，保证不同屏幕上视觉 gutter 稳定，不随整页缩放贴边。 */
 const plazaShellClassName =
@@ -65,6 +68,7 @@ export function Plaza() {
     usableGroup,
     endpointMap,
     autoGroups,
+    categories,
     isLoading,
     priceRate,
     usdExchangeRate,
@@ -103,18 +107,22 @@ export function Plaza() {
     [usableGroup]
   )
 
+  const categoryList = categories?.length
+    ? categories
+    : FALLBACK_PLAZA_CATEGORIES
+
   const groupedModels = useMemo(
-    () => groupModelsByCategory(filteredModels),
-    [filteredModels]
+    () => groupModelsByCategory(filteredModels, categoryList),
+    [filteredModels, categoryList]
   )
 
-  /** 只展示有模型的分类 */
+  /** 只展示有模型的分类，顺序跟后台配置一致 */
   const visibleCategories = useMemo(
     () =>
-      PLAZA_CATEGORY_ORDER.filter(
-        (category) => groupedModels[category].length > 0
+      categoryList.filter(
+        (category) => (groupedModels.get(category.key)?.length ?? 0) > 0
       ),
-    [groupedModels]
+    [categoryList, groupedModels]
   )
 
   const perfQuery = useQuery({
@@ -204,9 +212,9 @@ export function Plaza() {
               <div className='flex flex-col gap-7 sm:gap-8'>
                 {visibleCategories.map((category) => (
                   <PlazaCategorySection
-                    key={category}
+                    key={category.key}
                     category={category}
-                    models={groupedModels[category]}
+                    models={groupedModels.get(category.key) ?? []}
                     onModelClick={handleModelClick}
                     priceRate={priceRate}
                     usdExchangeRate={usdExchangeRate}

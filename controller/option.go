@@ -16,6 +16,7 @@ import (
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/console_setting"
+	"github.com/QuantumNous/new-api/setting/model_plaza_setting"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
@@ -473,6 +474,16 @@ func UpdateOption(c *gin.Context) {
 				"success": false,
 				"message": err.Error(),
 			})
+			return
+		}
+	case model_plaza_setting.RequestExamplesOptionKey:
+		if err = model_plaza_setting.ValidateRequestExamples(option.Value.(string)); err != nil {
+			common.ApiErrorMsg(c, err.Error())
+			return
+		}
+	case model_plaza_setting.CategoriesOptionKey:
+		if err = model_plaza_setting.ValidateCategories(option.Value.(string)); err != nil {
+			common.ApiErrorMsg(c, err.Error())
 			return
 		}
 	}

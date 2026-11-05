@@ -8,6 +8,7 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/setting/model_plaza_setting"
 
 	"github.com/gin-gonic/gin"
 )
@@ -118,6 +119,10 @@ func CreateModelMeta(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if !model_plaza_setting.IsValidModelCategory(m.Category) {
+		common.ApiErrorMsg(c, "模型分类不存在: "+m.Category)
+		return
+	}
 	// 名称冲突检查
 	if dup, err := model.IsModelNameDuplicated(0, m.ModelName); err != nil {
 		common.ApiError(c, err)
@@ -167,6 +172,10 @@ func UpdateModelMeta(c *gin.Context) {
 		}
 		if err := model.ValidateMetadataValues(model.MetadataValues{Endpoints: m.Endpoints, Status: m.Status, NameRule: m.NameRule}); err != nil {
 			common.ApiError(c, err)
+			return
+		}
+		if !model_plaza_setting.IsValidModelCategory(m.Category) {
+			common.ApiErrorMsg(c, "模型分类不存在: "+m.Category)
 			return
 		}
 		// 名称冲突检查

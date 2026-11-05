@@ -20,7 +20,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef, RowSelectionState } from '@tanstack/react-table'
 import {
   Check,
-  CircleX,
   Copy,
   Gauge,
   Info,
@@ -452,11 +451,6 @@ function ChannelTestDialogContent({
     [baseModels, removedModels]
   )
 
-  const failedModels = useMemo(
-    () => models.filter((model) => testResults[model]?.status === 'error'),
-    [models, testResults]
-  )
-
   const filteredModels = useMemo(() => {
     if (!searchTerm) return models
     const keyword = searchTerm.toLowerCase()
@@ -758,16 +752,6 @@ function ChannelTestDialogContent({
     ]
   )
 
-  const handleSelectFailedModels = useCallback(() => {
-    setRowSelection(() => {
-      const next: RowSelectionState = {}
-      for (const model of failedModels) {
-        next[model] = true
-      }
-      return next
-    })
-  }, [failedModels])
-
   const remainingModelCount = models.length - selectedModels.length
 
   const handleRemoveSelectedModels = useCallback(async () => {
@@ -1058,43 +1042,15 @@ function ChannelTestDialogContent({
                       : t('Stop testing')}
                   </Button>
                 ) : (
-                  <>
-                    <Button
-                      shine
-                      size='sm'
-                      onClick={() => handleBatchTest(modelsToTest)}
-                      disabled={isAnyTesting || modelsToTest.length === 0}
-                    >
-                      <Gauge data-icon='inline-start' />
-                      {testAllButtonLabel}
-                    </Button>
-                    {failedModels.length > 0 && (
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        onClick={handleSelectFailedModels}
-                      >
-                        <CircleX data-icon='inline-start' />
-                        {t('Select failed models ({{count}})', {
-                          count: failedModels.length,
-                        })}
-                      </Button>
-                    )}
-                    {selectedModels.length > 0 && (
-                      <Button
-                        variant='outline'
-                        size='sm'
-                        className='text-destructive hover:text-destructive'
-                        onClick={() => setIsRemoveDialogOpen(true)}
-                        disabled={isAnyTesting || isRemovingModels}
-                      >
-                        <Trash2 data-icon='inline-start' />
-                        {t('Remove selected models ({{count}})', {
-                          count: selectedModels.length,
-                        })}
-                      </Button>
-                    )}
-                  </>
+                  <Button
+                    shine
+                    size='sm'
+                    onClick={() => handleBatchTest(modelsToTest)}
+                    disabled={isAnyTesting || modelsToTest.length === 0}
+                  >
+                    <Gauge data-icon='inline-start' />
+                    {testAllButtonLabel}
+                  </Button>
                 )}
               </div>
             </div>
@@ -1126,6 +1082,22 @@ function ChannelTestDialogContent({
                 }
                 emptyCellClassName='text-muted-foreground h-16 text-center text-sm'
               />
+              {selectedModels.length > 0 && (
+                <div className='flex justify-end'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='text-destructive hover:text-destructive'
+                    onClick={() => setIsRemoveDialogOpen(true)}
+                    disabled={isAnyTesting || isRemovingModels}
+                  >
+                    <Trash2 data-icon='inline-start' />
+                    {t('Remove selected models ({{count}})', {
+                      count: selectedModels.length,
+                    })}
+                  </Button>
+                </div>
+              )}
               <DataTablePagination table={table} />
             </div>
           </div>

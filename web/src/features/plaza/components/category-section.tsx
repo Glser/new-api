@@ -16,37 +16,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import {
-  Boxes,
-  Film,
-  Image,
-  MessagesSquare,
-  type LucideIcon,
-} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { ModelCard } from '@/features/pricing/components/model-card'
 import type { ModelPerfBadgeData } from '@/features/pricing/components/model-perf-badge'
 import { DEFAULT_TOKEN_UNIT } from '@/features/pricing/constants'
-import type { PricingModel, TokenUnit } from '@/features/pricing/types'
+import type {
+  PlazaCategoryConfig,
+  PricingModel,
+  TokenUnit,
+} from '@/features/pricing/types'
 
-import {
-  PLAZA_CATEGORIES,
-  PLAZA_CATEGORY_LABEL_KEYS,
-  type PlazaCategory,
-} from '../lib/categories'
-
-const CATEGORY_ICONS: Record<PlazaCategory, LucideIcon> = {
-  // 双气泡而不是单气泡：这一区讲的是「和模型对话」，两个气泡比一个评论
-  // 气泡更贴近聊天气泡的语义。
-  [PLAZA_CATEGORIES.CHAT]: MessagesSquare,
-  [PLAZA_CATEGORIES.IMAGE]: Image,
-  [PLAZA_CATEGORIES.VIDEO]: Film,
-  [PLAZA_CATEGORIES.OTHER]: Boxes,
-}
+import { getPlazaCategoryIcon } from '../lib/category-icons'
 
 export function PlazaCategorySection(props: {
-  category: PlazaCategory
+  category: PlazaCategoryConfig
 
   models: PricingModel[]
   onModelClick: (modelName: string) => void
@@ -63,9 +47,11 @@ export function PlazaCategorySection(props: {
     return null
   }
 
-  const categoryLabel = t(PLAZA_CATEGORY_LABEL_KEYS[props.category])
-  const CategoryIcon = CATEGORY_ICONS[props.category]
-  const headingId = `plaza-category-${props.category}`
+  // Built-in labels are translation keys; custom labels have no key, so
+  // i18next returns them unchanged.
+  const categoryLabel = t(props.category.label)
+  const CategoryIcon = getPlazaCategoryIcon(props.category.icon)
+  const headingId = `plaza-category-${props.category.key}`
 
   return (
     <section aria-labelledby={headingId} className='flex flex-col gap-4'>

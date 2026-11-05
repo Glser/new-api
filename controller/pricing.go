@@ -6,6 +6,7 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
+	"github.com/QuantumNous/new-api/setting/model_plaza_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 
 	"github.com/gin-gonic/gin"
@@ -71,9 +72,21 @@ func GetPricing(c *gin.Context) {
 		"group_ratio":        groupRatio,
 		"usable_group":       usableGroup,
 		"supported_endpoint": model.GetSupportedEndpointMap(),
+		"request_examples":   model_plaza_setting.GetEffectiveRequestExamples(),
+		"categories":         model_plaza_setting.GetEffectiveCategories(),
 		"auto_groups":        service.GetUserAutoGroup(group),
 		"pricing_version":    "a42d372ccf0b5dd13ecf71203521f9d2",
 	})
+}
+
+// GetDefaultRequestExamples 返回内置调用示例，供后台配置预填和恢复默认
+func GetDefaultRequestExamples(c *gin.Context) {
+	common.ApiSuccess(c, model_plaza_setting.GetDefaultRequestExamples())
+}
+
+// GetDefaultPlazaCategories 返回内置分类（不含“其他”），供后台“恢复默认”使用
+func GetDefaultPlazaCategories(c *gin.Context) {
+	common.ApiSuccess(c, model_plaza_setting.GetDefaultCategories())
 }
 
 func ResetModelRatio(c *gin.Context) {

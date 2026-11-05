@@ -29,6 +29,8 @@ import { ChatSettingsSection } from './chat-settings-section'
 import { DashboardSection } from './dashboard-section'
 import { DrawingSettingsSection } from './drawing-settings-section'
 import { FAQSection } from './faq-section'
+import { PlazaCategoriesSection } from './plaza-categories-section'
+import { RequestExamplesSection } from './request-examples-section'
 import { UptimeKumaSection } from './uptime-kuma-section'
 
 /**
@@ -69,6 +71,12 @@ const CONTENT_SECTIONS = [
         <FAQSection
           enabled={settings['console_setting.faq_enabled']}
           data={settings['console_setting.faq']}
+        />
+        <PlazaCategoriesSection
+          data={settings['model_plaza_setting.categories']}
+        />
+        <RequestExamplesSection
+          data={settings['model_plaza_setting.request_examples']}
         />
         <UptimeKumaSection
           enabled={settings['console_setting.uptime_kuma_enabled']}

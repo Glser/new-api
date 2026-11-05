@@ -16,6 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import type {
+  PlazaCategoryConfig,
+  RequestExample,
+} from '@/features/pricing/types'
 import { api } from '@/lib/api'
 
 import type {
@@ -40,6 +44,32 @@ export async function getSystemOptions() {
 
 export async function updateSystemOption(request: UpdateOptionRequest) {
   const res = await api.put<UpdateOptionResponse>('/api/option/', request)
+  return res.data
+}
+
+export async function renameGroup(oldName: string, newName: string) {
+  const res = await api.put<UpdateOptionResponse>('/api/group/rename', {
+    old_name: oldName,
+    new_name: newName,
+  })
+  return res.data
+}
+
+export async function getDefaultPlazaCategories() {
+  const res = await api.get<{
+    success: boolean
+    message?: string
+    data?: PlazaCategoryConfig[]
+  }>('/api/option/plaza_categories/defaults')
+  return res.data
+}
+
+export async function getDefaultRequestExamples() {
+  const res = await api.get<{
+    success: boolean
+    message?: string
+    data?: Record<string, RequestExample>
+  }>('/api/option/request_examples/defaults')
   return res.data
 }
 

@@ -23,7 +23,11 @@ import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
-import { updatePasskeyDomains, updateSystemOption } from '../api'
+import {
+  renameGroup,
+  updatePasskeyDomains,
+  updateSystemOption,
+} from '../api'
 import type { UpdateOptionRequest, UpdatePasskeyDomainsRequest } from '../types'
 
 // Configuration keys that require status refresh
@@ -79,6 +83,21 @@ export function useUpdateOption() {
     },
     onError: (error: Error) => {
       handleServerError(error, i18next.t('Failed to update setting'))
+    },
+  })
+}
+
+export function useRenameGroup() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (request: { oldName: string; newName: string }) =>
+      requireServerSuccess(await renameGroup(request.oldName, request.newName)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-options'] })
+      toast.success(i18next.t('Group renamed'))
+    },
+    onError: (error: Error) => {
+      handleServerError(error, i18next.t('Failed to rename group'))
     },
   })
 }

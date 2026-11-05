@@ -33,6 +33,8 @@ const defaultContentSettings: ContentSettings = {
   'console_setting.announcements_enabled': true,
   'console_setting.faq_enabled': true,
   'console_setting.uptime_kuma_enabled': false,
+  'model_plaza_setting.request_examples': '',
+  'model_plaza_setting.categories': '',
   DataExportEnabled: false,
   DataExportDefaultTime: 'hour',
   DataExportInterval: 5,

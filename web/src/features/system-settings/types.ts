@@ -207,6 +207,8 @@ export type ContentSettings = {
   'console_setting.announcements_enabled': boolean
   'console_setting.faq_enabled': boolean
   'console_setting.uptime_kuma_enabled': boolean
+  'model_plaza_setting.request_examples': string
+  'model_plaza_setting.categories': string
   DataExportEnabled: boolean
   DataExportDefaultTime: string
   DataExportInterval: number
