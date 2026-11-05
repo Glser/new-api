@@ -147,7 +147,6 @@ export function parseClusterNodeId(id: string) {
 export function emptyTopologyLayout(): TopologyLayout {
   return {
     version: TOPOLOGY_LAYOUT_VERSION,
-    viewport: { x: 0, y: 0, zoom: 1 },
     positions: {},
     collapsed: {},
     clusters: {},

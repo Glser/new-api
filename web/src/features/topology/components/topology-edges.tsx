@@ -56,7 +56,7 @@ function TopologyFlowEdgeComponent(
         id={props.id}
         path={path}
         markerEnd={props.markerEnd}
-        style={props.style}
+        style={{ ...props.style, color }}
         interactionWidth={28}
       />
       {props.animated && !props.data?.disabled ? (

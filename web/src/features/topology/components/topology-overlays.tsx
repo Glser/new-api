@@ -362,6 +362,13 @@ function SearchPopover(props: {
             </SelectContent>
           </Select>
           <Select
+            items={[
+              { value: '__all_channels__', label: t('All channels') },
+              ...props.channels.map((channel) => ({
+                value: String(channel.id),
+                label: `${channel.name} (#${channel.id})`,
+              })),
+            ]}
             value={props.filters.channel || null}
             onValueChange={(value) => {
               props.onFiltersChange({

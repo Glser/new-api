@@ -21,14 +21,15 @@ import {
   TOPOLOGY_LAYOUT_VERSION,
   type TopologyLayout,
   type TopologyNode,
+  type TopologyViewport,
 } from '../types'
 
 const ROW_ORDER = ['userGroup', 'channel', 'model'] as const
 
 const NODE_WIDTH = {
-  userGroup: 360,
-  channel: 360,
-  model: 340,
+  userGroup: 300,
+  channel: 300,
+  model: 280,
   cluster: 420,
 } as const
 
@@ -44,7 +45,38 @@ const START_Y = 36
 const GAP_X = 24
 const ROW_GAP_Y = 160
 
-export const INITIAL_CANVAS_ZOOM = 0.76
+// Treat the preferred 57% canvas scale as the user-facing 100% baseline.
+export const INITIAL_CANVAS_ZOOM = 0.57
+export const MIN_CANVAS_ZOOM = 0.2
+export const MAX_CANVAS_ZOOM = INITIAL_CANVAS_ZOOM * 1.8
+export const CANVAS_BACKGROUND_GAP = 32 * 0.6
+export const CANVAS_BACKGROUND_DOT_SIZE = 0.6
+
+export function getSavedViewport(
+  layout: TopologyLayout
+): TopologyViewport | undefined {
+  const viewport = layout.viewport
+  if (
+    layout.version < TOPOLOGY_LAYOUT_VERSION ||
+    !viewport ||
+    typeof viewport.zoom !== 'number' ||
+    !Number.isFinite(viewport.zoom) ||
+    viewport.zoom <= 0
+  ) {
+    return undefined
+  }
+  return {
+    x:
+      typeof viewport.x === 'number' && Number.isFinite(viewport.x)
+        ? viewport.x
+        : 0,
+    y:
+      typeof viewport.y === 'number' && Number.isFinite(viewport.y)
+        ? viewport.y
+        : 0,
+    zoom: Math.min(MAX_CANVAS_ZOOM, Math.max(MIN_CANVAS_ZOOM, viewport.zoom)),
+  }
+}
 const INITIAL_VIEW_WORLD_WIDTH = 1280
 
 export function applyAutoLayout(nodes: TopologyNode[]): TopologyNode[] {
@@ -115,7 +147,10 @@ function nodeSize(node: TopologyNode) {
   }
 }
 
-export function createClusterBounds(nodes: TopologyNode[], memberIds: string[]) {
+export function createClusterBounds(
+  nodes: TopologyNode[],
+  memberIds: string[]
+) {
   const members = nodes.filter((node) => memberIds.includes(node.id))
   if (members.length === 0) {
     return { x: 40, y: 40, width: 480, height: 280 }

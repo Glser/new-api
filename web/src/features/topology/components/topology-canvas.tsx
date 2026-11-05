@@ -20,13 +20,14 @@ For commercial licensing, please contact support@quantumnous.com
 import {
   Background,
   BackgroundVariant,
-  Controls,
   MiniMap,
   Panel,
   ReactFlow,
   SelectionMode,
   applyEdgeChanges,
   applyNodeChanges,
+  useReactFlow,
+  useStore,
   type Connection,
   type Edge,
   type EdgeChange,
@@ -36,11 +37,17 @@ import {
 } from '@xyflow/react'
 import {
   useCallback,
+  useId,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Scan } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import { Slider } from '@/components/ui/slider'
 
 import '@xyflow/react/dist/style.css'
 import '../topology-flow.css'
@@ -48,6 +55,11 @@ import '../topology-flow.css'
 import { useFlashingIds } from '../hooks/use-topology-traffic'
 import {
   INITIAL_CANVAS_ZOOM,
+  MIN_CANVAS_ZOOM,
+  MAX_CANVAS_ZOOM,
+  CANVAS_BACKGROUND_GAP,
+  CANVAS_BACKGROUND_DOT_SIZE,
+  getSavedViewport,
   applyAutoLayout,
   collectPositions,
   getInitialViewNodes,
@@ -77,6 +89,73 @@ const nodeTypes = {
 
 const edgeTypes = {
   default: TopologyFlowEdge,
+}
+
+function TopologyZoomControls() {
+  const { t } = useTranslation()
+  const labelId = useId()
+  const { zoomTo, fitView } = useReactFlow()
+  const zoomPercent = useStore((state) =>
+    Math.round((state.transform[2] / INITIAL_CANVAS_ZOOM) * 100)
+  )
+
+  return (
+    <Panel
+      position='bottom-left'
+      className='nodrag nopan nowheel !m-3 flex items-center gap-0 rounded-xl border border-border/70 bg-background/90 p-0.5 shadow-[0_8px_24px_rgba(0,0,0,0.1)] backdrop-blur-xl dark:shadow-[0_12px_36px_rgba(0,0,0,0.4)]'
+      role='group'
+      aria-label={t('Zoom')}
+    >
+      <Button
+        type='button'
+        variant='ghost'
+        size='icon-lg'
+        className='rounded-lg'
+        aria-label={t('Fit view')}
+        title={t('Fit view')}
+        onClick={() => {
+          void fitView({
+            minZoom: MIN_CANVAS_ZOOM,
+            maxZoom: MAX_CANVAS_ZOOM,
+            duration: 220,
+          })
+        }}
+      >
+        <Scan className='size-4.5' />
+      </Button>
+      <div className='nodrag nopan nowheel flex w-36 items-center px-3'>
+        <span id={labelId} className='sr-only'>
+          {t('Zoom')}
+        </span>
+        <Slider
+          aria-labelledby={labelId}
+          min={Math.ceil((MIN_CANVAS_ZOOM / INITIAL_CANVAS_ZOOM) * 100)}
+          max={Math.round((MAX_CANVAS_ZOOM / INITIAL_CANVAS_ZOOM) * 100)}
+          step={1}
+          value={[zoomPercent]}
+          onValueChange={(value) => {
+            const next = Array.isArray(value) ? value[0] : value
+            if (typeof next === 'number') {
+              void zoomTo((next / 100) * INITIAL_CANVAS_ZOOM)
+            }
+          }}
+        />
+      </div>
+      <Button
+        type='button'
+        variant='ghost'
+        size='lg'
+        className='min-w-14 rounded-lg tabular-nums'
+        aria-label={`${t('Reset to default')} (100%)`}
+        title={`${t('Reset to default')} (100%)`}
+        onClick={() => {
+          void zoomTo(INITIAL_CANVAS_ZOOM, { duration: 220 })
+        }}
+      >
+        {zoomPercent}%
+      </Button>
+    </Panel>
+  )
 }
 
 type TopologyCanvasProps = {
@@ -293,13 +372,10 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
     }
 
     if (fittedRef.current && !staleLayout) return
-    fittedRef.current = true
-    const viewport = props.layout.viewport
-    const hasSavedViewport =
-      !staleLayout &&
-      Object.keys(props.layout.positions).length > 0 &&
-      viewport != null &&
-      Number.isFinite(viewport.zoom)
+    viewportReadyRef.current = false
+    const savedViewport = staleLayout
+      ? undefined
+      : getSavedViewport(props.layout)
     let cancelled = false
     let retryTimer: number | undefined
     const applyViewport = (attempt = 0) => {
@@ -313,13 +389,12 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         }
         return
       }
-      if (hasSavedViewport) {
-        instance.setViewport({
-          x: viewport.x ?? 0,
-          y: viewport.y ?? 0,
-          zoom: viewport.zoom ?? INITIAL_CANVAS_ZOOM,
+      if (savedViewport) {
+        void instance.setViewport(savedViewport).then(() => {
+          if (cancelled) return
+          fittedRef.current = true
+          viewportReadyRef.current = true
         })
-        viewportReadyRef.current = true
         return
       }
       const currentNodes = instance.getNodes() as TopologyNode[]
@@ -328,12 +403,13 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         .fitView({
           nodes: getInitialViewNodes(fitNodes),
           padding: 0.1,
-          minZoom: 0.7,
-          maxZoom: 0.8,
-          duration: 220,
+          minZoom: INITIAL_CANVAS_ZOOM,
+          maxZoom: INITIAL_CANVAS_ZOOM,
+          duration: 0,
         })
         .then(() => {
           if (cancelled) return
+          fittedRef.current = true
           viewportReadyRef.current = true
           onLayoutChangeRef.current({ viewport: instance.getViewport() })
         })
@@ -530,9 +606,15 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
         elevateNodesOnSelect={false}
         deleteKeyCode={['Backspace', 'Delete']}
         proOptions={{ hideAttribution: true }}
-        minZoom={0.2}
-        maxZoom={1.6}
-        defaultViewport={{ x: 48, y: 36, zoom: INITIAL_CANVAS_ZOOM }}
+        minZoom={MIN_CANVAS_ZOOM}
+        maxZoom={MAX_CANVAS_ZOOM}
+        defaultViewport={
+          getSavedViewport(props.layout) ?? {
+            x: 48,
+            y: 36,
+            zoom: INITIAL_CANVAS_ZOOM,
+          }
+        }
         connectionLineStyle={{ stroke: '#8b5cf6', strokeWidth: 1.6 }}
         defaultEdgeOptions={{
           type: 'default',
@@ -542,8 +624,8 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
       >
         <Background
           variant={BackgroundVariant.Dots}
-          gap={32}
-          size={1}
+          gap={CANVAS_BACKGROUND_GAP}
+          size={CANVAS_BACKGROUND_DOT_SIZE}
           className='opacity-30'
         />
         {props.showMiniMap ? (
@@ -555,10 +637,7 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
             />
           </Panel>
         ) : null}
-        <Controls
-          showInteractive={false}
-          className='!bg-background/85 !overflow-hidden !rounded-xl !border !shadow-none backdrop-blur-xl'
-        />
+        <TopologyZoomControls />
       </ReactFlow>
     </div>
   )

@@ -131,7 +131,7 @@ function FlowCard(props: {
   return (
     <div
       className={cn(
-        'bg-card relative w-full overflow-visible rounded-3xl border px-5 py-3.5',
+        'bg-card relative w-full overflow-visible rounded-2xl border px-4 py-3',
         'shadow-[0_1px_2px_rgba(15,23,42,0.06),0_8px_20px_-12px_rgba(15,23,42,0.18)]',
         'dark:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.55)]',
         props.selected ? 'border-transparent' : 'border-border',
@@ -177,7 +177,7 @@ function TopologyGroupNodeComponent(
         />
         <div className='min-w-0 flex-1'>
           <div className='flex items-center justify-between gap-2'>
-            <div className='truncate text-lg leading-7 font-semibold'>
+            <div className='truncate text-base leading-6 font-semibold'>
               {props.data.name}
             </div>
             <div className='flex items-center gap-1'>
@@ -283,7 +283,7 @@ function TopologyModelNodeComponent(
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex items-start justify-between gap-2'>
-            <div className='truncate text-lg leading-7 font-semibold'>
+            <div className='truncate text-base leading-6 font-semibold'>
               {props.data.name}
             </div>
             <NodeDeleteButton

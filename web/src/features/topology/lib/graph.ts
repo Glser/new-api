@@ -84,6 +84,9 @@ export function buildTopologyGraph(
   const selectedGroup = filters.group.trim()
   const selectedChannel = filters.channel.trim()
   const selectedModel = filters.model.trim()
+  const hasFilters = Boolean(
+    search || selectedGroup || selectedChannel || selectedModel
+  )
 
   const registryByName = new Map<string, Model>()
   for (const model of payload.models) {
@@ -148,22 +151,11 @@ export function buildTopologyGraph(
 
   const visibleGroups = groupNames.filter((name) => {
     if (selectedGroup && name !== selectedGroup) return false
+    if (!hasFilters) return true
     const bound = [...(groupChannels.get(name) ?? [])]
-    if (search && !matchesSearch(name, search)) {
-      return bound.some((id) => visibleChannelIds.has(id))
-    }
-    if (
-      !search &&
-      selectedGroup === '' &&
-      selectedChannel === '' &&
-      selectedModel === ''
-    ) {
-      return true
-    }
-    return (
-      bound.some((id) => visibleChannelIds.has(id)) ||
-      matchesSearch(name, search)
-    )
+    if (bound.some((id) => visibleChannelIds.has(id))) return true
+    if (selectedChannel || selectedModel) return false
+    return matchesSearch(name, search)
   })
 
   const relatedModelNames = new Set<string>()
@@ -173,18 +165,11 @@ export function buildTopologyGraph(
     }
   }
 
-  const selectedChannelModels = selection.channelId
-    ? new Set(channelModels.get(selection.channelId) ?? [])
-    : new Set<string>()
-
   let visibleModelNames = modelNames.filter((name) => {
     if (selectedModel && name !== selectedModel) return false
-    if (search && matchesSearch(name, search)) return true
-    if (selectedChannelModels.has(name)) return true
-    if (selectedGroup || selectedChannel || selectedModel || search) {
-      return relatedModelNames.has(name)
-    }
-    return relatedModelNames.has(name) || registryByName.has(name)
+    if (!hasFilters || relatedModelNames.has(name)) return true
+    if (selectedGroup || selectedChannel) return false
+    return matchesSearch(name, search)
   })
 
   const truncated =
@@ -207,11 +192,13 @@ export function buildTopologyGraph(
 
   const nodes: TopologyNode[] = [
     ...visibleGroups.map((name) => {
-      const channelIds = [...(groupChannels.get(name) ?? [])]
+      const channelIds = [...(groupChannels.get(name) ?? [])].filter((id) =>
+        visibleChannelIds.has(id)
+      )
       const models = new Set<string>()
       for (const channelId of channelIds) {
         for (const modelName of channelModels.get(channelId) ?? []) {
-          models.add(modelName)
+          if (visibleModelSet.has(modelName)) models.add(modelName)
         }
       }
       return {
@@ -247,7 +234,9 @@ export function buildTopologyGraph(
         data: {
           name,
           registryId: model && model.id > 0 ? model.id : undefined,
-          channelCount: modelChannels.get(name)?.size ?? 0,
+          channelCount: [...(modelChannels.get(name) ?? [])].filter((id) =>
+            visibleChannelIds.has(id)
+          ).length,
           vendorId: model?.vendor_id,
           status: model?.status,
           icon: model?.icon || price?.icon,
@@ -292,7 +281,9 @@ export function buildTopologyGraph(
       const registeredModel = registryByName.get(modelName)
       const disabled =
         channelDisabled ||
-        (registeredModel != null && registeredModel.status !== 1)
+        (registeredModel != null &&
+          registeredModel.id > 0 &&
+          registeredModel.status !== 1)
       edges.push({
         id: `cm:${channel.id}:${modelName}`,
         source: channelId,
@@ -319,9 +310,9 @@ export function buildTopologyGraph(
     totalModels: modelNames.length,
     shownModels: visibleModelNames.length,
     stats: {
-      groups: groupNames.length,
-      channels: payload.channels.length,
-      models: modelNames.length,
+      groups: visibleGroups.length,
+      channels: visibleChannels.length,
+      models: visibleModelNames.length,
       connections: edges.length,
     },
   }
