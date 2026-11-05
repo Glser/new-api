@@ -20,10 +20,6 @@ import type { FieldPath } from 'react-hook-form'
 
 import type { ChannelFormValues } from './channel-form'
 
-type ChannelFormErrorMap = Partial<
-  Record<FieldPath<ChannelFormValues>, unknown>
->
-
 const ADVANCED_SETTINGS_FIELDS = new Set<FieldPath<ChannelFormValues>>([
   'priority',
   'weight',
@@ -60,12 +56,4 @@ export function isAdvancedSettingsField(
   fieldName: string
 ): fieldName is FieldPath<ChannelFormValues> {
   return ADVANCED_SETTINGS_FIELDS.has(fieldName as FieldPath<ChannelFormValues>)
-}
-
-export function hasAdvancedSettingsErrors(
-  errors: ChannelFormErrorMap
-): boolean {
-  return Object.keys(errors).some((fieldName) =>
-    isAdvancedSettingsField(fieldName)
-  )
 }

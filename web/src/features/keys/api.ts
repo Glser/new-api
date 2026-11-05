@@ -23,7 +23,6 @@ import type {
   ApiResponse,
   GetApiKeysParams,
   GetApiKeysResponse,
-  SearchApiKeysParams,
   ApiKeyFormData,
   TokenAutoGroupsConfig,
 } from './types'
@@ -42,18 +41,6 @@ export async function getApiKeys(
 }
 
 // Search API keys by keyword or token (with pagination)
-export async function searchApiKeys(
-  params: SearchApiKeysParams
-): Promise<GetApiKeysResponse> {
-  const { keyword = '', token = '', p, size } = params
-  const queryParams = new URLSearchParams()
-  if (keyword) queryParams.set('keyword', keyword)
-  if (token) queryParams.set('token', token)
-  if (p != null) queryParams.set('p', String(p))
-  if (size != null) queryParams.set('size', String(size))
-  const res = await api.get(`/api/token/search?${queryParams.toString()}`)
-  return res.data
-}
 
 // Get single API key by ID
 export async function getApiKey(id: number): Promise<ApiResponse<ApiKey>> {
@@ -92,12 +79,6 @@ export async function deleteApiKey(id: number): Promise<ApiResponse> {
 }
 
 // Batch delete multiple API keys
-export async function batchDeleteApiKeys(
-  ids: number[]
-): Promise<ApiResponse<number>> {
-  const res = await api.post('/api/token/batch', { ids })
-  return res.data
-}
 
 // Update API key status (enable/disable)
 export async function updateApiKeyStatus(

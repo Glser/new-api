@@ -20,12 +20,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef, RowSelectionState } from '@tanstack/react-table'
 import {
   Check,
-  CheckCircle2,
+  CircleX,
   Copy,
   Gauge,
   Info,
   Loader2,
   Settings,
+  Trash2,
 } from 'lucide-react'
 import {
   type ChangeEvent,
@@ -38,6 +39,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   DataTablePagination,
   DataTableView,
@@ -80,8 +82,10 @@ import {
 } from '@/components/ui/tooltip'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { handleServerError } from '@/lib/handle-server-error'
 import { cn } from '@/lib/utils'
 
+import { updateChannel } from '../../api'
 import {
   channelsQueryKeys,
   formatResponseTime,
@@ -334,6 +338,11 @@ function ChannelTestDialogContent({
   const [searchTerm, setSearchTerm] = useState('')
   const [testResults, setTestResults] = useState<Record<string, TestResult>>({})
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [removedModels, setRemovedModels] = useState<Set<string>>(
+    () => new Set()
+  )
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
+  const [isRemovingModels, setIsRemovingModels] = useState(false)
   const [testingModels, setTestingModels] = useState<Set<string>>(
     () => new Set()
   )
@@ -395,6 +404,8 @@ function ChannelTestDialogContent({
     setSearchTerm('')
     setTestResults({})
     setRowSelection({})
+    setRemovedModels(() => new Set())
+    setIsRemoveDialogOpen(false)
     setTestingModels(() => new Set())
     setIsBatchTesting(false)
     setIsBatchStopRequested(false)
@@ -436,10 +447,13 @@ function ChannelTestDialogContent({
       .filter(Boolean)
   }, [modelsValue])
 
-  const models = baseModels
+  const models = useMemo(
+    () => baseModels.filter((model) => !removedModels.has(model)),
+    [baseModels, removedModels]
+  )
 
-  const successModels = useMemo(
-    () => models.filter((model) => testResults[model]?.status === 'success'),
+  const failedModels = useMemo(
+    () => models.filter((model) => testResults[model]?.status === 'error'),
     [models, testResults]
   )
 
@@ -455,8 +469,8 @@ function ChannelTestDialogContent({
   )
 
   const selectedModels = useMemo(
-    () => Object.keys(rowSelection).filter((model) => rowSelection[model]),
-    [rowSelection]
+    () => models.filter((model) => rowSelection[model]),
+    [models, rowSelection]
   )
   const modelsToTest =
     selectedModels.length > 0 ? selectedModels : filteredModels
@@ -744,15 +758,66 @@ function ChannelTestDialogContent({
     ]
   )
 
-  const handleSelectSuccessfulModels = useCallback(() => {
+  const handleSelectFailedModels = useCallback(() => {
     setRowSelection(() => {
       const next: RowSelectionState = {}
-      for (const model of successModels) {
+      for (const model of failedModels) {
         next[model] = true
       }
       return next
     })
-  }, [successModels])
+  }, [failedModels])
+
+  const remainingModelCount = models.length - selectedModels.length
+
+  const handleRemoveSelectedModels = useCallback(async () => {
+    const toRemove = new Set(selectedModels)
+    if (toRemove.size === 0) {
+      setIsRemoveDialogOpen(false)
+      return
+    }
+    const remaining = models.filter((model) => !toRemove.has(model))
+    if (remaining.length === 0) {
+      toast.error(t('Channel must keep at least one model'))
+      return
+    }
+
+    setIsRemovingModels(true)
+    try {
+      const response = await updateChannel(currentRow.id, {
+        models: remaining.join(','),
+      })
+      if (!response.success) {
+        handleServerError(response, t('Failed to update models'))
+        return
+      }
+      setRemovedModels((prev) => {
+        const next = new Set(prev)
+        for (const model of toRemove) next.add(model)
+        return next
+      })
+      setTestResults((prev) => {
+        const next = { ...prev }
+        for (const model of toRemove) delete next[model]
+        return next
+      })
+      setRowSelection({})
+      setPagination((prev) =>
+        prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }
+      )
+      setIsRemoveDialogOpen(false)
+      toast.success(
+        t('Removed {{count}} models from this channel', {
+          count: toRemove.size,
+        })
+      )
+      refreshChannelLists()
+    } catch (error: unknown) {
+      handleServerError(error, t('Failed to update models'))
+    } finally {
+      setIsRemovingModels(false)
+    }
+  }, [currentRow.id, models, refreshChannelLists, selectedModels, t])
 
   const handleClose = useCallback(() => {
     resetState()
@@ -809,7 +874,7 @@ function ChannelTestDialogContent({
           const isDefault = defaultTestModel === model
 
           return (
-            <div className='mx-auto flex min-w-0 max-w-full items-center justify-center gap-1.5'>
+            <div className='mx-auto flex max-w-full min-w-0 items-center justify-center gap-1.5'>
               <TooltipHint content={model}>
                 <span className='truncate font-medium'>{model}</span>
               </TooltipHint>
@@ -939,7 +1004,7 @@ function ChannelTestDialogContent({
           </DialogHeader>
 
           <div className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3'>
-            <div className='flex flex-nowrap items-center gap-2'>
+            <div className='flex flex-wrap items-center gap-2'>
               <TooltipHint
                 content={t(
                   'Override the endpoint used for testing. Leave empty to auto detect.'
@@ -980,41 +1045,57 @@ function ChannelTestDialogContent({
                 onChange={handleSearchTermChange}
                 className='h-8 w-48 shrink-0'
               />
-              <div className='ml-auto flex shrink-0 items-center gap-2'>
-              {isBatchTesting ? (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={handleStopBatchTest}
-                  disabled={isBatchStopRequested}
-                >
-                  {isBatchStopRequested ? t('Stopping...') : t('Stop testing')}
-                </Button>
-              ) : (
-                <>
+              <div className='ml-auto flex flex-wrap items-center justify-end gap-2'>
+                {isBatchTesting ? (
                   <Button
-                    shine
+                    variant='outline'
                     size='sm'
-                    onClick={() => handleBatchTest(modelsToTest)}
-                    disabled={isAnyTesting || modelsToTest.length === 0}
+                    onClick={handleStopBatchTest}
+                    disabled={isBatchStopRequested}
                   >
-                    <Gauge data-icon='inline-start' />
-                    {testAllButtonLabel}
+                    {isBatchStopRequested
+                      ? t('Stopping...')
+                      : t('Stop testing')}
                   </Button>
-                  {successModels.length > 0 && (
+                ) : (
+                  <>
                     <Button
-                      variant='outline'
+                      shine
                       size='sm'
-                      onClick={handleSelectSuccessfulModels}
+                      onClick={() => handleBatchTest(modelsToTest)}
+                      disabled={isAnyTesting || modelsToTest.length === 0}
                     >
-                      <CheckCircle2 data-icon='inline-start' />
-                      {t('Select successful models ({{count}})', {
-                        count: successModels.length,
-                      })}
+                      <Gauge data-icon='inline-start' />
+                      {testAllButtonLabel}
                     </Button>
-                  )}
-                </>
-              )}
+                    {failedModels.length > 0 && (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={handleSelectFailedModels}
+                      >
+                        <CircleX data-icon='inline-start' />
+                        {t('Select failed models ({{count}})', {
+                          count: failedModels.length,
+                        })}
+                      </Button>
+                    )}
+                    {selectedModels.length > 0 && (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-destructive hover:text-destructive'
+                        onClick={() => setIsRemoveDialogOpen(true)}
+                        disabled={isAnyTesting || isRemovingModels}
+                      >
+                        <Trash2 data-icon='inline-start' />
+                        {t('Remove selected models ({{count}})', {
+                          count: selectedModels.length,
+                        })}
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
@@ -1050,6 +1131,28 @@ function ChannelTestDialogContent({
           </div>
         </DialogContent>
       </Dialog>
+      <ConfirmDialog
+        open={isRemoveDialogOpen}
+        onOpenChange={(nextOpen) => {
+          if (!isRemovingModels) setIsRemoveDialogOpen(nextOpen)
+        }}
+        title={t('Remove selected models')}
+        desc={
+          remainingModelCount > 0
+            ? t(
+                'This removes {{count}} selected models from this channel. This action cannot be undone.',
+                { count: selectedModels.length }
+              )
+            : t('Channel must keep at least one model')
+        }
+        destructive
+        disabled={remainingModelCount <= 0}
+        isLoading={isRemovingModels}
+        confirmText={t('Remove')}
+        handleConfirm={() => {
+          void handleRemoveSelectedModels()
+        }}
+      />
       <FailureDetailsSheet
         details={failureDetails}
         onOpenChange={(sheetOpen) => {

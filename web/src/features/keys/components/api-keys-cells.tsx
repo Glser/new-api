@@ -36,7 +36,6 @@ import {
 } from '@/components/ui/tooltip'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { formatQuotaWithCurrency, getCurrencyDisplay } from '@/lib/currency'
-import { formatTimestampToDate } from '@/lib/format'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import type { ApiKey } from '../types'
@@ -162,47 +161,6 @@ export function ApiKeyQuotaOverviewCell({ apiKey }: { apiKey: ApiKey }) {
         <span className='text-foreground tabular-nums'>{total}</span>
         <span className='ml-1 text-xs'>({unit})</span>
       </div>
-    </div>
-  )
-}
-
-export function ApiKeyRateLimitCell() {
-  return (
-    <div className='text-muted-foreground space-y-1 text-center text-sm leading-5'>
-      <div>RPS: ∞</div>
-      <div>RPM: ∞</div>
-      <div>Concurrency: ∞</div>
-    </div>
-  )
-}
-
-export function ApiKeyTimeInfoCell({ apiKey }: { apiKey: ApiKey }) {
-  const { t } = useTranslation()
-  const format = (timestamp: number) =>
-    timestamp > 0 ? formatTimestampToDate(timestamp) : t('Never')
-
-  return (
-    <div className='text-muted-foreground space-y-1 text-center text-sm leading-5'>
-      <div>
-        {t('Created')}:{' '}
-        <span className='text-foreground tabular-nums'>
-          {format(apiKey.created_time)}
-        </span>
-      </div>
-      <div>
-        {t('Last Used')}:{' '}
-        <span className='text-foreground tabular-nums'>
-          {format(apiKey.accessed_time)}
-        </span>
-      </div>
-      {apiKey.expired_time !== -1 && (
-        <div>
-          {t('Expires')}:{' '}
-          <span className='text-foreground tabular-nums'>
-            {format(apiKey.expired_time)}
-          </span>
-        </div>
-      )}
     </div>
   )
 }

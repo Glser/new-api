@@ -233,8 +233,6 @@ export interface PingStatus {
   error: boolean
 }
 
-export type PingStatusMap = Record<string, PingStatus>
-
 // ============================================================================
 // Chart Types
 // ============================================================================

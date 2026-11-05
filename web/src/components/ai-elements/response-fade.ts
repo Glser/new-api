@@ -175,12 +175,6 @@ export function commitRun(state: FadeState): void {
   }
 }
 
-/** Stages and immediately commits — for callers without a commit phase. */
-export function endRun(run: FadeRun): void {
-  stageRun(run)
-  commitRun(run.state)
-}
-
 /**
  * Classifies one text value into fade segments, advancing document-order
  * character offset. New parts (start >= prevCount) animate; parts still

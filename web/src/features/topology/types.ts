@@ -23,8 +23,6 @@ import type { Channel } from '@/features/channels/types'
 import type { Model } from '@/features/models/types'
 import type { PricingModel } from '@/features/pricing/types'
 
-export type TopologyNodeType = 'userGroup' | 'channel' | 'model' | 'cluster'
-
 export type TopologyClusterData = {
   name: string
   memberIds: string[]

@@ -27,5 +27,4 @@ export * from './model-form'
 
 // Actions
 export * from './model-actions'
-export * from './vendor-actions'
 export * from './table-style'

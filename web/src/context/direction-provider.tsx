@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { DirectionProvider as BaseDirectionProvider } from '@base-ui/react/direction-provider'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useEffect, useState } from 'react'
 
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
@@ -71,10 +71,3 @@ export function DirectionProvider({ children }: { children: React.ReactNode }) {
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function useDirection() {
-  const context = useContext(DirectionContext)
-  if (!context) {
-    throw new Error('useDirection must be used within a DirectionProvider')
-  }
-  return context
-}

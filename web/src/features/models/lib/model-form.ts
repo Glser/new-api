@@ -132,10 +132,3 @@ export function validateJSON(value: string): boolean {
     return false
   }
 }
-
-/**
- * Validate endpoints JSON
- */
-export function validateEndpoints(endpoints: string): boolean {
-  return validateJSON(endpoints)
-}

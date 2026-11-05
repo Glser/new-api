@@ -297,5 +297,3 @@ export const statusPresets = {
     pulse: true,
   },
 } as const
-
-export type StatusPreset = keyof typeof statusPresets

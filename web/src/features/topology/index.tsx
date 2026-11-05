@@ -37,6 +37,7 @@ import { Main } from '@/components/layout'
 import { RenderWhenOpen } from '@/components/render-when-open'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTheme } from '@/context/theme-provider'
 import { updateChannel } from '@/features/channels/api'
 import { ChannelsDialogs } from '@/features/channels/components/channels-dialogs'
 import {
@@ -56,7 +57,10 @@ import {
   ModelsProvider,
   useModels,
 } from '@/features/models/components/models-provider'
-import { modelsQueryKeys, vendorsQueryKeys } from '@/features/models/lib/query-keys'
+import {
+  modelsQueryKeys,
+  vendorsQueryKeys,
+} from '@/features/models/lib/query-keys'
 import {
   ADMIN_PERMISSION_ACTIONS,
   ADMIN_PERMISSION_RESOURCES,
@@ -65,11 +69,9 @@ import {
 import { handleServerError } from '@/lib/handle-server-error'
 import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
-import { useTheme } from '@/context/theme-provider'
 
 import { getTopologyGraph, getTopologyLayout, saveTopologyLayout } from './api'
 import { GroupMutateDrawer } from './components/group-mutate-drawer'
-import { deleteTopologyGroup } from './group-api'
 import { TopologyCanvas } from './components/topology-canvas'
 import { TopologyNodeActionsProvider } from './components/topology-nodes'
 import {
@@ -77,6 +79,7 @@ import {
   TopologyOverlays,
 } from './components/topology-overlays'
 import { TopologyTrafficProvider } from './components/topology-traffic-provider'
+import { deleteTopologyGroup } from './group-api'
 import {
   addUniqueItem,
   buildTopologyGraph,
@@ -111,7 +114,6 @@ function TopologyCanvasBody(props: {
   graphEdges: TopologyEdge[]
   layout: TopologyLayout
   canWrite: boolean
-  relayoutVersion: number
   onLayoutChange: (patch: Partial<TopologyLayout>) => void
   onConnect: (connection: Connection) => Promise<boolean> | boolean
   onDeleteEdges: (edges: TopologyEdge[]) => Promise<boolean> | boolean
@@ -154,7 +156,6 @@ function TopologyCanvasBody(props: {
       graphEdges={props.graphEdges}
       layout={props.layout}
       canWrite={props.canWrite}
-      relayoutVersion={props.relayoutVersion}
       onLayoutChange={props.onLayoutChange}
       onConnect={props.onConnect}
       onDeleteEdges={props.onDeleteEdges}
@@ -201,7 +202,6 @@ function TopologyWorkspace() {
     x: number
     y: number
   }>()
-  const [relayoutVersion] = useState(0)
   const [pendingGroupDelete, setPendingGroupDelete] = useState<string>()
   const [pendingModelDelete, setPendingModelDelete] = useState<string>()
   const layoutRef = useRef<TopologyLayout>(emptyTopologyLayout())
@@ -339,7 +339,11 @@ function TopologyWorkspace() {
         ...current,
         ...patch,
         version: TOPOLOGY_LAYOUT_VERSION,
-        positions: patch.positions ?? current.positions,
+        // Filtered views only contain visible cards; merge so hidden cards keep
+        // their saved positions instead of falling back to auto layout.
+        positions: patch.positions
+          ? { ...current.positions, ...patch.positions }
+          : current.positions,
         viewport: patch.viewport ?? current.viewport,
       }
       layoutRef.current = next
@@ -611,7 +615,6 @@ function TopologyWorkspace() {
     ]
   )
 
-
   const groupOptions = graphQuery.data?.groups ?? []
   const loading = graphQuery.isLoading || layoutQuery.isLoading
   const stats = graph.stats
@@ -627,81 +630,80 @@ function TopologyWorkspace() {
             onDeleteCluster: handleDeleteCluster,
           }}
         >
-        <div className='relative min-h-0 flex-1 overflow-hidden'>
-          <TopologyCanvasBody
-            loading={loading}
-            graphNodes={graphNodes}
-            graphEdges={graph.edges}
-            layout={layoutQuery.data ?? emptyTopologyLayout()}
-            canWrite={canWrite}
-            relayoutVersion={relayoutVersion}
-            showMiniMap={showMiniMap}
-            focusNodeId={focusNodeId}
-            onLayoutChange={handleLayoutChange}
-            onConnect={handleConnect}
-            onDeleteEdges={handleDeleteEdges}
-            onNodeClick={handleNodeClick}
-            onSelectionComplete={handleSelectionComplete}
-            groupingMode={groupingMode}
-            selectionResetKey={selectionResetKey}
-            onCreateChannel={() => {
-              setCurrentChannel(null)
-              setChannelOpen('create-channel')
-            }}
-          />
-          <TopologyOverlays
-            search={searchInput}
-            onSearchChange={setSearchInput}
-            filters={filters}
-            onFiltersChange={setFilters}
-            groups={groupOptions}
-            channels={graphQuery.data?.channels ?? []}
-            models={
-              graphQuery.data?.models
-                .map((model) => model.model_name)
-                .filter(Boolean) ?? []
-            }
-            stats={stats}
-            truncated={graph.truncated}
-            shownModels={graph.shownModels}
-            totalModels={graph.totalModels}
-            loading={loading}
-            refreshing={graphQuery.isFetching}
-            canWrite={canWrite}
-            canCreateGroup={user?.role === ROLE.SUPER_ADMIN}
-            showMiniMap={showMiniMap}
-            onToggleMiniMap={() => setShowMiniMap((value) => !value)}
-            liveTraffic={liveTraffic}
-            onToggleLiveTraffic={() => setLiveTraffic((value) => !value)}
-            onRefresh={() => {
-              void graphQuery.refetch()
-              void layoutQuery.refetch()
-            }}
-            canCreateCluster={canWrite}
-            groupingMode={groupingMode}
-            onCreateCluster={() => {
-              if (groupingMode) {
-                exitGroupingMode()
-                return
+          <div className='relative min-h-0 flex-1 overflow-hidden'>
+            <TopologyCanvasBody
+              loading={loading}
+              graphNodes={graphNodes}
+              graphEdges={graph.edges}
+              layout={layoutQuery.data ?? emptyTopologyLayout()}
+              canWrite={canWrite}
+              showMiniMap={showMiniMap}
+              focusNodeId={focusNodeId}
+              onLayoutChange={handleLayoutChange}
+              onConnect={handleConnect}
+              onDeleteEdges={handleDeleteEdges}
+              onNodeClick={handleNodeClick}
+              onSelectionComplete={handleSelectionComplete}
+              groupingMode={groupingMode}
+              selectionResetKey={selectionResetKey}
+              onCreateChannel={() => {
+                setCurrentChannel(null)
+                setChannelOpen('create-channel')
+              }}
+            />
+            <TopologyOverlays
+              search={searchInput}
+              onSearchChange={setSearchInput}
+              filters={filters}
+              onFiltersChange={setFilters}
+              groups={groupOptions}
+              channels={graphQuery.data?.channels ?? []}
+              models={
+                graphQuery.data?.models
+                  .map((model) => model.model_name)
+                  .filter(Boolean) ?? []
               }
-              setPendingCluster(undefined)
-              setGroupingMode(true)
-              toast.message(t('Drag a box to select cards'))
-            }}
-            onCreateGroup={() => {
-              setEditingGroupName(undefined)
-              setGroupDrawerOpen(true)
-            }}
-            onCreateChannel={() => {
-              setCurrentChannel(null)
-              setChannelOpen('create-channel')
-            }}
-            onCreateModel={() => {
-              setCurrentModel(null)
-              setModelOpen('create-model')
-            }}
-          />
-        </div>
+              stats={stats}
+              truncated={graph.truncated}
+              shownModels={graph.shownModels}
+              totalModels={graph.totalModels}
+              loading={loading}
+              refreshing={graphQuery.isFetching}
+              canWrite={canWrite}
+              canCreateGroup={user?.role === ROLE.SUPER_ADMIN}
+              showMiniMap={showMiniMap}
+              onToggleMiniMap={() => setShowMiniMap((value) => !value)}
+              liveTraffic={liveTraffic}
+              onToggleLiveTraffic={() => setLiveTraffic((value) => !value)}
+              onRefresh={() => {
+                void graphQuery.refetch()
+                void layoutQuery.refetch()
+              }}
+              canCreateCluster={canWrite}
+              groupingMode={groupingMode}
+              onCreateCluster={() => {
+                if (groupingMode) {
+                  exitGroupingMode()
+                  return
+                }
+                setPendingCluster(undefined)
+                setGroupingMode(true)
+                toast.message(t('Drag a box to select cards'))
+              }}
+              onCreateGroup={() => {
+                setEditingGroupName(undefined)
+                setGroupDrawerOpen(true)
+              }}
+              onCreateChannel={() => {
+                setCurrentChannel(null)
+                setChannelOpen('create-channel')
+              }}
+              onCreateModel={() => {
+                setCurrentModel(null)
+                setModelOpen('create-model')
+              }}
+            />
+          </div>
         </TopologyNodeActionsProvider>
       </TopologyTrafficProvider>
       <ChannelsDialogs />

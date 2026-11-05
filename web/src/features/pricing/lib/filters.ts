@@ -139,32 +139,6 @@ export function sortModels(
 }
 
 /**
- * Apply all filters and sorting to models
- */
-export function filterAndSortModels(
-  models: PricingModel[],
-  filters: {
-    search: string
-    vendor: string
-    group: string
-    quotaType: string
-    endpointType: string
-    tag: string
-    sortBy: string
-  }
-): PricingModel[] {
-  let result = filterBySearch(models, filters.search)
-  result = filterByVendor(result, filters.vendor)
-  result = filterByGroup(result, filters.group)
-  result = filterByQuotaType(result, filters.quotaType)
-  result = filterByEndpointType(result, filters.endpointType)
-  result = filterByTag(result, filters.tag)
-  result = sortModels(result, filters.sortBy)
-
-  return result
-}
-
-/**
  * Parse tags from comma-separated string
  */
 export function parseTags(tagsString?: string): string[] {
@@ -173,24 +147,6 @@ export function parseTags(tagsString?: string): string[] {
     .split(/[,;|\s]+/)
     .map((t) => t.trim())
     .filter(Boolean)
-}
-
-/**
- * Extract all unique tags from models
- */
-export function extractAllTags(models: PricingModel[]): string[] {
-  const tagSet = new Set<string>()
-
-  models.forEach((model) => {
-    if (model.tags) {
-      const tags = parseTags(model.tags)
-      tags.forEach((tag) => {
-        tagSet.add(tag.toLowerCase())
-      })
-    }
-  })
-
-  return [...tagSet].sort((a, b) => a.localeCompare(b))
 }
 
 /**

@@ -35,6 +35,7 @@ import {
   type OnBeforeDelete,
   type ReactFlowInstance,
 } from '@xyflow/react'
+import { Scan } from 'lucide-react'
 import {
   useCallback,
   useId,
@@ -44,7 +45,6 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Scan } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -102,7 +102,7 @@ function TopologyZoomControls() {
   return (
     <Panel
       position='bottom-left'
-      className='nodrag nopan nowheel !m-3 flex items-center gap-0 rounded-xl border border-border/70 bg-background/90 p-0.5 shadow-[0_8px_24px_rgba(0,0,0,0.1)] backdrop-blur-xl dark:shadow-[0_12px_36px_rgba(0,0,0,0.4)]'
+      className='nodrag nopan nowheel border-border/70 bg-background/90 !m-3 flex items-center gap-0 rounded-xl border p-0.5 shadow-[0_8px_24px_rgba(0,0,0,0.1)] backdrop-blur-xl dark:shadow-[0_12px_36px_rgba(0,0,0,0.4)]'
       role='group'
       aria-label={t('Zoom')}
     >
@@ -163,7 +163,6 @@ type TopologyCanvasProps = {
   graphEdges: TopologyEdge[]
   layout: TopologyLayout
   canWrite: boolean
-  relayoutVersion: number
   onLayoutChange: (layout: Partial<TopologyLayout>) => void
   onConnect: (connection: Connection) => Promise<boolean> | boolean
   onDeleteEdges: (edges: TopologyEdge[]) => Promise<boolean> | boolean
@@ -243,9 +242,7 @@ function mergeGraphNodes(
       dragging: previous.dragging,
       width: node.width ?? previous.width,
       height:
-        node.type === 'model'
-          ? undefined
-          : (node.height ?? previous.height),
+        node.type === 'model' ? undefined : (node.height ?? previous.height),
       measured: widthChanged ? undefined : previous.measured,
     }
   })
@@ -262,7 +259,6 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
   const migratedRef = useRef(
     (props.layout.version ?? 1) >= TOPOLOGY_LAYOUT_VERSION
   )
-  const relayoutSeenRef = useRef(0)
   const onLayoutChangeRef = useRef(props.onLayoutChange)
   const onConnectRef = useRef(props.onConnect)
   const onDeleteEdgesRef = useRef(props.onDeleteEdges)
@@ -422,17 +418,6 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
     }
   }, [props.graphNodes, props.layout])
 
-  useEffect(() => {
-    if (props.relayoutVersion === 0) return
-    if (props.relayoutVersion === relayoutSeenRef.current) return
-    relayoutSeenRef.current = props.relayoutVersion
-    setNodes((current) => {
-      const next = applyAutoLayout(current)
-      onLayoutChangeRef.current({ positions: collectPositions(next) })
-      return next
-    })
-  }, [props.relayoutVersion])
-
   const onNodesChange = useCallback((changes: NodeChange<TopologyNode>[]) => {
     setNodes((current) => {
       const next = applyNodeChanges(changes, current) as TopologyNode[]
@@ -532,8 +517,7 @@ export function TopologyCanvas(props: TopologyCanvasProps) {
       <ReactFlow
         nodes={nodes.map((node) => ({
           ...node,
-          selectable:
-            props.groupingMode === true && node.type !== 'cluster',
+          selectable: props.groupingMode === true && node.type !== 'cluster',
         }))}
         edges={edges.map((edge) => ({
           ...edge,

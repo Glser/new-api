@@ -413,20 +413,3 @@ export interface ListDeploymentsResponse {
     status_counts?: Record<string, number>
   }
 }
-
-/**
- * Deployment logs response
- */
-export interface DeploymentLogsResponse {
-  success: boolean
-  message?: string
-  data?: {
-    logs?: Array<{
-      timestamp?: string
-      level?: string
-      message?: string
-      source?: string
-    }>
-    cursor?: string
-  }
-}

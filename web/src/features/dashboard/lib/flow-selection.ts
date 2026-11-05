@@ -16,10 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type {
-  FlowQuotaDataItem,
-  FlowUserFilterOption,
-} from '@/features/dashboard/types'
+import type { FlowQuotaDataItem } from '@/features/dashboard/types'
 import { createServerError } from '@/lib/server-error-message'
 
 export type FlowDisplayState = 'loading' | 'error' | 'empty' | 'chart'
@@ -51,17 +48,4 @@ export function flowDisplayState(options: {
   if (options.linkCount === 0) return 'empty'
   if (!options.themeReady) return 'loading'
   return 'chart'
-}
-
-export function compactFlowSelectionLabel(count: number): string {
-  return count > 0 ? String(count) : '*'
-}
-
-export function visibleFlowUsers(
-  users: FlowUserFilterOption[],
-  selectedUsers: string[]
-): FlowUserFilterOption[] {
-  if (selectedUsers.length === 0) return users
-  const selected = new Set(selectedUsers)
-  return users.filter((user) => selected.has(user.value))
 }

@@ -401,23 +401,6 @@ export async function listDeploymentContainers(
 }
 
 /**
- * Get single container details
- */
-export async function getDeploymentContainerDetails(
-  deploymentId: string | number,
-  containerId: string
-): Promise<{
-  success: boolean
-  message?: string
-  data?: Record<string, unknown>
-}> {
-  const res = await api.get(
-    `/api/deployments/${deploymentId}/containers/${encodeURIComponent(containerId)}`
-  )
-  return res.data
-}
-
-/**
  * Delete deployment
  */
 export async function deleteDeployment(
@@ -455,18 +438,6 @@ export async function getHardwareTypes(): Promise<{
   data?: { hardware_types?: Array<Record<string, unknown>> }
 }> {
   const res = await api.get('/api/deployments/hardware-types')
-  return res.data
-}
-
-/**
- * Get locations for deployment
- */
-export async function getDeploymentLocations(): Promise<{
-  success: boolean
-  message?: string
-  data?: { locations?: Array<Record<string, unknown>>; total?: number }
-}> {
-  const res = await api.get('/api/deployments/locations')
   return res.data
 }
 

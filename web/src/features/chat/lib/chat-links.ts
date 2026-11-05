@@ -16,7 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { API_KEY_STATUS } from '@/features/keys/constants'
 
 export type ChatLinkType = 'web' | 'custom-protocol' | 'fluent'
 
@@ -210,11 +209,4 @@ export function resolveChatUrl({
   }
 
   return url
-}
-
-export function getFirstActiveKey(
-  keys: ActiveApiKey[] | undefined
-): ActiveApiKey | undefined {
-  if (!Array.isArray(keys)) return undefined
-  return keys.find((item) => item.status === API_KEY_STATUS.ENABLED)
 }

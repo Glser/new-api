@@ -562,26 +562,6 @@ export function getCurrencyLabel(): string {
 }
 
 /**
- * Check if currency display is enabled (not in token-only mode).
- *
- * @returns True if displaying in actual currency (USD/CNY/etc), false if tokens only
- *
- * @example
- * // With quotaDisplayType: 'USD' or 'CNY'
- * isCurrencyDisplayEnabled() → true
- *
- * // With quotaDisplayType: 'TOKENS'
- * isCurrencyDisplayEnabled() → false
- *
- * @remarks
- * Use this to conditionally show currency-specific UI elements
- */
-export function isCurrencyDisplayEnabled(): boolean {
-  const { meta } = getCurrencyDisplay()
-  return meta.kind !== 'tokens'
-}
-
-/**
  * Format an amount that is ALREADY in local currency.
  *
  * ⚠️ CRITICAL: This function does NOT apply exchange rate conversion.

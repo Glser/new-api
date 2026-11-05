@@ -16,12 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import type { TFunction } from 'i18next'
 
 import { formatTimestampToDate } from '@/lib/format'
 
-import { getNameRuleConfig, getQuotaTypeConfig } from '../constants'
-import type { NameRule, Model } from '../types'
+import type { Model } from '../types'
 
 // ============================================================================
 // Time Formatting
@@ -71,13 +69,6 @@ export function parseModelTags(tags: string | undefined): string[] {
     .filter(Boolean)
 }
 
-/**
- * Format tags array to string
- */
-export function formatTagsString(tags: string[]): string {
-  return tags.join(',')
-}
-
 // ============================================================================
 // Endpoints Parsing
 // ============================================================================
@@ -121,62 +112,13 @@ export function formatEndpointsDisplay(
 // Name Rule Utils
 // ============================================================================
 
-/**
- * Get name rule label
- */
-export function getNameRuleLabelByRule(rule: NameRule, t: TFunction): string {
-  const config = getNameRuleConfig(t)
-  return config[rule]?.label || '-'
-}
-
-/**
- * Get name rule config by rule
- */
-export function getNameRuleConfigByRule(rule: NameRule, t: TFunction) {
-  const config = getNameRuleConfig(t)
-  return config[rule] || config[0]
-}
-
 // ============================================================================
 // Quota Type Utils
 // ============================================================================
 
-/**
- * Format quota types array
- */
-export function formatQuotaTypes(
-  quotaTypes: number[] | undefined,
-  t: TFunction
-): string {
-  if (!quotaTypes || quotaTypes.length === 0) return '-'
-  const config = getQuotaTypeConfig(t)
-  return quotaTypes.map((qt) => config[qt]?.label || String(qt)).join(', ')
-}
-
 // ============================================================================
 // Model Validation
 // ============================================================================
-
-/**
- * Validate model name
- */
-export function validateModelName(name: string): boolean {
-  return name.trim().length > 0
-}
-
-/**
- * Validate endpoints JSON
- */
-export function validateEndpointsJSON(endpoints: string): boolean {
-  if (!endpoints || endpoints.trim() === '') return true
-
-  try {
-    JSON.parse(endpoints)
-    return true
-  } catch {
-    return false
-  }
-}
 
 // ============================================================================
 // Model Status Utils
@@ -187,13 +129,6 @@ export function validateEndpointsJSON(endpoints: string): boolean {
  */
 export function isModelEnabled(model: Model): boolean {
   return model.status === 1
-}
-
-/**
- * Check if model syncs with official
- */
-export function isModelSyncOfficial(model: Model): boolean {
-  return model.sync_official === 1
 }
 
 // Keep table labels compact; the drawer and tooltip share the full explanation.

@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { GroupBadge, GroupMultiplierBadge } from '@/components/group-badge'
+import { GroupMultiplierBadge } from '@/components/group-badge'
 import { cn } from '@/lib/utils'
 
 export type GroupRatio = number | string | null | undefined
@@ -102,16 +102,5 @@ export function GroupRatioBadge(props: GroupRatioBadgeProps) {
         />
       )}
     </GroupMultiplierBadge>
-  )
-}
-
-export function AutoGroupBadge(props: { shouldReduceMotion: boolean }) {
-  return (
-    <AutoGroupFrame
-      effect='badge'
-      shouldReduceMotion={props.shouldReduceMotion}
-    >
-      <GroupBadge group='auto' />
-    </AutoGroupFrame>
   )
 }

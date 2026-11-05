@@ -669,10 +669,6 @@ export function createEmptyRuleGroup(): RequestRuleGroup {
   return { conditions: [createEmptyCondition()], multiplier: '' }
 }
 
-export function createEmptyTimeRuleGroup(): RequestRuleGroup {
-  return { conditions: [createEmptyTimeCondition()], multiplier: '' }
-}
-
 // ---------------------------------------------------------------------------
 // Editor: match option helpers
 // ---------------------------------------------------------------------------

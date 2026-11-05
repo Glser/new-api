@@ -63,30 +63,6 @@ export function getBgColorClass(color?: string): string {
 }
 
 /**
- * Announcement status types
- */
-type AnnouncementType = 'default' | 'ongoing' | 'success' | 'warning' | 'error'
-
-/**
- * Announcement status color mapping
- */
-const ANNOUNCEMENT_TYPE_COLORS: Record<AnnouncementType, string> = {
-  default: 'bg-neutral',
-  ongoing: 'bg-info',
-  success: 'bg-success',
-  warning: 'bg-warning',
-  error: 'bg-destructive',
-}
-
-/**
- * Get announcement status color class
- */
-export function getAnnouncementColorClass(type?: string): string {
-  const validType = (type || 'default') as AnnouncementType
-  return ANNOUNCEMENT_TYPE_COLORS[validType] || ANNOUNCEMENT_TYPE_COLORS.default
-}
-
-/**
  * Semantic colors for tags and badges
  */
 const TAG_COLORS = [

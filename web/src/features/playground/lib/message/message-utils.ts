@@ -107,33 +107,6 @@ export function createLoadingAssistantMessage(
 }
 
 /**
- * Build message content with optional images
- */
-export function buildMessageContent(
-  text: string,
-  imageUrls: string[] = []
-): string | ContentPart[] {
-  const validImages = imageUrls.filter((url) => url.trim() !== '')
-
-  if (validImages.length === 0) {
-    return text
-  }
-
-  const parts: ContentPart[] = [
-    {
-      type: 'text',
-      text: text || '',
-    },
-    ...validImages.map((url) => ({
-      type: 'image_url' as const,
-      image_url: { url: url.trim() },
-    })),
-  ]
-
-  return parts
-}
-
-/**
  * Extract text content from message content
  */
 export function getTextContent(content: string | ContentPart[]): string {

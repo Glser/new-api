@@ -27,14 +27,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-export function encodeChannelConnectionInfo(key: string, url: string): string {
-  return JSON.stringify({
-    _type: CHANNEL_CONNECTION_INFO_TYPE,
-    key,
-    url,
-  })
-}
-
 export function parseChannelConnectionInfo(
   text: string | null | undefined
 ): ChannelConnectionInfo | null {

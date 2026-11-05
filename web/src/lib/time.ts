@@ -64,40 +64,6 @@ export function getEndOfDay(date: Date = new Date()): Date {
 }
 
 /**
- * Calculate date range with start and end of day normalization
- * @param days Number of days to go back
- * @param fromDate Starting point (defaults to now)
- * @returns Object with normalized start (00:00:00) and end (23:59:59) dates
- */
-export function getNormalizedDateRange(
-  days: number,
-  fromDate: Date = new Date()
-): { start: Date; end: Date } {
-  const end = new Date(fromDate)
-  const start = new Date(fromDate)
-  start.setDate(end.getDate() - days)
-
-  return {
-    start: getStartOfDay(start),
-    end: getEndOfDay(end),
-  }
-}
-
-/**
- * Calculate a rolling date range ending at the current moment.
- * Example: 1 day means the last 24 hours, not yesterday 00:00 to today 23:59.
- */
-export function getRollingDateRange(
-  days: number,
-  fromDate: Date = new Date()
-): { start: Date; end: Date } {
-  const end = new Date(fromDate)
-  const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000)
-
-  return { start, end }
-}
-
-/**
  * Compute time range as Unix timestamps (seconds)
  * @param days Default number of days if no dates provided
  * @param startDate Optional start date

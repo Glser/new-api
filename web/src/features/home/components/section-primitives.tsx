@@ -110,28 +110,6 @@ export function SectionPrimaryLink(props: {
 }
 
 /**
- * 次级文字链接：等宽字体 + 箭头位移，用于卡片内的跳转。
- */
-export function SectionTextLink(props: {
-  to: string
-  label: string
-  className?: string
-}) {
-  return (
-    <Link
-      to={props.to}
-      className={cn(
-        'group inline-flex items-center gap-1.5 font-mono text-xs font-semibold tracking-wider text-muted-foreground transition-colors hover:text-foreground',
-        props.className
-      )}
-    >
-      <span>{props.label}</span>
-      <ArrowUpRight className='size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
-    </Link>
-  )
-}
-
-/**
  * section 之间的分隔线：刻意做成「若隐若现」的淡出渐变，
  * 两端透明、中央仅有一丝微光，不构成视觉断点。
  */
