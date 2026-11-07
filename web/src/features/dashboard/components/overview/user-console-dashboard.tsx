@@ -71,9 +71,8 @@ export function UserConsoleDashboard() {
   const [dataScope, setDataScope] = useState<ConsoleDataScope>(() =>
     isAdmin ? getSavedConsoleDataScope() : 'self'
   )
-  const consoleData = useUserConsoleData(range, {
-    siteWide: isAdmin && dataScope === 'site',
-  })
+  const siteWide = isAdmin && dataScope === 'site'
+  const consoleData = useUserConsoleData(range, { siteWide })
   const { items: announcements } = useAnnouncements()
   const latestAnnouncement = announcements[0]
   const rangeLabel = `${dayjs(range.start).format('YYYY-MM-DD')} — ${dayjs(range.end).format('YYYY-MM-DD')}`
@@ -160,6 +159,7 @@ export function UserConsoleDashboard() {
           <UserConsoleActivity
             logs={consoleData.recentLogs}
             loading={consoleData.loading}
+            showUser={siteWide}
           />
         </div>
       </SectionPageLayout.Content>

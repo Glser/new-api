@@ -28,6 +28,7 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ShineButton } from '@/components/ui/button'
 import {
   Popover,
@@ -56,6 +57,7 @@ import {
 import { isPerCallBilling } from '@/features/usage-logs/lib/utils'
 import type { LogOtherData } from '@/features/usage-logs/types'
 import { getUserGroups } from '@/lib/api'
+import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
 import { formatBillingCurrencyFromUSD } from '@/lib/currency'
 import {
   formatLogQuota,
@@ -68,6 +70,7 @@ import { cn } from '@/lib/utils'
 interface UserConsoleActivityProps {
   logs: UsageLog[]
   loading?: boolean
+  showUser?: boolean
 }
 
 type UserGroupInfo = { desc: string; ratio: number | string }
@@ -341,11 +344,13 @@ function ActivityRows(props: {
   logs: UsageLog[]
   loading?: boolean
   groups: UserGroupMap
+  showUser?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const isZh = i18n.language?.startsWith('zh')
   const sep = isZh ? '，' : ', '
   const colon = isZh ? '：' : ': '
+  const columnCount = props.showUser ? 7 : 6
   const logs = props.logs.filter(
     (log) =>
       log.type === LOG_TYPE_ENUM.CONSUME || log.type === LOG_TYPE_ENUM.ERROR
@@ -354,7 +359,7 @@ function ActivityRows(props: {
   if (props.loading) {
     return ['row-1', 'row-2', 'row-3'].map((key) => (
       <TableRow key={key}>
-        <TableCell colSpan={6} className='px-4 sm:px-5'>
+        <TableCell colSpan={columnCount} className='px-4 sm:px-5'>
           <Skeleton className='h-6 w-full' />
         </TableCell>
       </TableRow>
@@ -365,7 +370,7 @@ function ActivityRows(props: {
     return (
       <TableRow>
         <TableCell
-          colSpan={6}
+          colSpan={columnCount}
           className='text-muted-foreground h-16 px-4 text-center sm:px-5'
         >
           {t('No request records yet')}
@@ -398,6 +403,30 @@ function ActivityRows(props: {
             {formatTimestampToDate(log.created_at)}
           </span>
         </TableCell>
+        {props.showUser && (
+          <TableCell className='px-3 text-center'>
+            {log.username ? (
+              <div className='mx-auto flex w-fit items-center justify-center gap-1.5'>
+                <Avatar className='ring-border/60 size-5 ring-1'>
+                  <AvatarFallback
+                    className='grid size-full place-items-center text-[10px] leading-none font-semibold'
+                    style={getUserAvatarStyle(log.username)}
+                  >
+                    {getUserAvatarFallback(log.username)}
+                  </AvatarFallback>
+                </Avatar>
+                <span
+                  className='text-muted-foreground max-w-[100px] truncate'
+                  title={log.username}
+                >
+                  {log.username}
+                </span>
+              </div>
+            ) : (
+              <span className='text-muted-foreground'>-</span>
+            )}
+          </TableCell>
+        )}
         <TableCell className='px-3 text-center'>
           <LogTokenCell
             tokenName={log.token_name}
@@ -580,9 +609,17 @@ export function UserConsoleActivity(props: UserConsoleActivityProps) {
         </ShineButton>
       </div>
 
-      <Table className='min-w-[56rem] table-auto @min-[48rem]/activity:min-w-[68rem] [&_td]:px-2 [&_td]:text-xs @min-[48rem]/activity:[&_td]:text-sm @min-[80rem]/activity:[&_td]:px-3 [&_th]:px-2 [&_th]:text-xs @min-[48rem]/activity:[&_th]:text-sm @min-[80rem]/activity:[&_th]:px-3'>
+      <Table
+        className={cn(
+          'min-w-[56rem] table-auto @min-[48rem]/activity:min-w-[68rem] [&_td]:px-2 [&_td]:text-xs @min-[48rem]/activity:[&_td]:text-sm @min-[80rem]/activity:[&_td]:px-3 [&_th]:px-2 [&_th]:text-xs @min-[48rem]/activity:[&_th]:text-sm @min-[80rem]/activity:[&_th]:px-3',
+          props.showUser && 'min-w-[64rem] @min-[48rem]/activity:min-w-[78rem]'
+        )}
+      >
         <colgroup>
           <col className='w-36 @min-[48rem]/activity:w-44 @min-[80rem]/activity:w-[14%]' />
+          {props.showUser && (
+            <col className='w-32 @min-[48rem]/activity:w-40' />
+          )}
           <col className='w-32 @min-[48rem]/activity:w-40 @min-[80rem]/activity:w-[12%]' />
           <col className='w-48 @min-[48rem]/activity:w-60 @min-[80rem]/activity:w-[18%]' />
           <col className='w-32 @min-[48rem]/activity:w-40 @min-[80rem]/activity:w-[14%]' />
@@ -592,6 +629,9 @@ export function UserConsoleActivity(props: UserConsoleActivityProps) {
         <TableHeader>
           <TableRow>
             <TableHead className='px-3 text-center'>{t('Time')}</TableHead>
+            {props.showUser && (
+              <TableHead className='px-3 text-center'>{t('User')}</TableHead>
+            )}
             <TableHead className='px-3 text-center'>{t('Token')}</TableHead>
             <TableHead className='px-3 text-center'>{t('Model')}</TableHead>
             <TableHead className='px-3 text-center'>{t('Usage')}</TableHead>
@@ -606,6 +646,7 @@ export function UserConsoleActivity(props: UserConsoleActivityProps) {
             logs={props.logs}
             loading={props.loading}
             groups={groups}
+            showUser={props.showUser}
           />
         </TableBody>
       </Table>
