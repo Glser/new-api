@@ -17,17 +17,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import { z } from 'zod'
 
 import { SignUp } from '@/features/auth/sign-up'
 import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/(auth)/sign-up')({
   component: SignUp,
-  beforeLoad: async () => {
+  validateSearch: z.object({ redirect: z.string().optional() }),
+  beforeLoad: async ({ search }) => {
     const { auth } = useAuthStore.getState()
 
     // 如果已经有用户信息，说明已登录，注册页对其无意义，跳转到 dashboard
     if (auth.user) {
+      if (search.redirect) {
+        throw redirect({
+          to: '/sign-in',
+          search: { redirect: search.redirect },
+          replace: true,
+        })
+      }
       throw redirect({ to: '/dashboard' })
     }
   },

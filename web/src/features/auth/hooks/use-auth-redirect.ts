@@ -60,6 +60,13 @@ export function useAuthRedirect() {
       applyAuthBundle(bundle)
       const targetPath =
         sanitizeAuthRedirect(redirectTo, window.location.origin) ?? '/dashboard'
+      if (
+        targetPath.startsWith('http://') ||
+        targetPath.startsWith('https://')
+      ) {
+        window.location.assign(targetPath)
+        return
+      }
       // Leave the zoomed login layout before changing language. i18n updates
       // would otherwise re-render SignInScaleFrame and flash an enlarged page.
       await navigate({ href: targetPath, replace: true })
@@ -108,9 +115,16 @@ export function useAuthRedirect() {
   /**
    * Redirect to login page
    */
-  const redirectToLogin = useCallback(() => {
-    void navigate({ to: '/sign-in', replace: true })
-  }, [navigate])
+  const redirectToLogin = useCallback(
+    (redirectTo?: string) => {
+      void navigate({
+        to: '/sign-in',
+        search: redirectTo ? { redirect: redirectTo } : {},
+        replace: true,
+      })
+    },
+    [navigate]
+  )
 
   /**
    * Redirect to register page

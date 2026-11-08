@@ -125,6 +125,16 @@ SESSION_COOKIE_TRUSTED_URL=https://panel.example.com,https://admin.example.com
 
 该开关只控制面板 Refresh Cookie 和 refresh/logout 的 OriginGuard，不会修改 relay、旧 billing dashboard、`/api/usage/token` 或 `/api/log/token` 的 CORS 行为。
 
+## 外部画布的浏览器跨域接入
+
+`CORS_ALLOWED_ORIGINS` 控制 `/api/user` 和 `/api/token` 的浏览器跨域来源，多个精确 Origin 用英文逗号分隔。画布直接从浏览器携带 Cookie 调用 New API 时，应配置明确来源，例如 `https://api.oioi.lat,https://flow.oioi.lat`。未配置时保留允许所有来源的兼容行为，但浏览器不会接受携带 Cookie 的通配来源响应。
+
+生产 HTTPS 部署同时保留 `SESSION_COOKIE_SECURE=true`，并将画布的 HTTPS Origin 加入 `SESSION_COOKIE_TRUSTED_URL`，允许其调用 refresh/logout。CORS 来源列表与 Cookie 端点的可信来源列表分别控制预检和 OriginGuard，不能互相替代。
+
+当前前端允许跳转到 `https://flow.oioi.lat/auth/callback` 和 `http://localhost:3100/auth/callback`，要求携带非空 `state`，不允许 fragment。替换画布域名时需更新 `web/src/features/auth/lib/auth-redirect.ts` 并重新构建前端。
+
+这些设置不修改 relay CORS 或 IP 限流。浏览器直连以各自出口 IP 计数；服务端代转请求需通过可信代理正确传递真实客户端 IP。多个用户共用同一出口 IP 时，仍然共用 IP 限流额度。
+
 ## 可信代理与 IP 限流
 
 Gin 默认会信任所有代理提供的客户端 IP 请求头。本项目改为兼顾常见反代拓扑和公网直连安全的三态配置：

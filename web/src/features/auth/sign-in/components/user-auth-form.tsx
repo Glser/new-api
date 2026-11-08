@@ -422,6 +422,9 @@ export function UserAuthForm({
                             {t("Don't have an account?")}{' '}
                             <Link
                               to='/sign-up'
+                              search={
+                                redirectTo ? { redirect: redirectTo } : {}
+                              }
                               className='text-foreground hover:text-foreground/70 font-semibold underline underline-offset-4'
                             >
                               {t('Sign up')}

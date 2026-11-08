@@ -19,6 +19,10 @@ For commercial licensing, please contact support@quantumnous.com
 import type { AuthUser } from '@/stores/auth-store'
 
 const allowedRedirectProtocols = new Set(['http:', 'https:'])
+const allowedExternalRedirects = new Set([
+  'https://flow.oioi.lat',
+  'http://localhost:3100',
+])
 
 export function getSavedLanguage(user: AuthUser): string | undefined {
   if (typeof user.language === 'string') {
@@ -69,11 +73,20 @@ export function sanitizeAuthRedirect(
     return null
   }
 
-  if (
-    !allowedRedirectProtocols.has(redirectURL.protocol) ||
-    redirectURL.origin !== trustedOrigin.origin
-  ) {
+  if (!allowedRedirectProtocols.has(redirectURL.protocol)) {
     return null
+  }
+
+  if (redirectURL.origin !== trustedOrigin.origin) {
+    if (
+      !allowedExternalRedirects.has(redirectURL.origin) ||
+      redirectURL.pathname !== '/auth/callback' ||
+      redirectURL.hash ||
+      !redirectURL.searchParams.get('state')
+    ) {
+      return null
+    }
+    return redirectURL.href
   }
 
   return `${redirectURL.pathname}${redirectURL.search}${redirectURL.hash}`

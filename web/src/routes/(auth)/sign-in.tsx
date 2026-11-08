@@ -43,6 +43,10 @@ export const Route = createFileRoute('/(auth)/sign-in')({
       const target =
         sanitizeAuthRedirect(search?.redirect, window.location.origin) ??
         '/dashboard'
+      if (target.startsWith('http://') || target.startsWith('https://')) {
+        window.location.assign(target)
+        throw redirect({ to: '/sign-in', replace: true })
+      }
       throw redirect({ href: target, replace: true })
     }
   },

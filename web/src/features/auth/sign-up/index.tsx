@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
@@ -27,12 +28,13 @@ import { SignUpForm } from './components/sign-up-form'
 export function SignUp() {
   const { t } = useTranslation()
   const { status } = useStatus()
+  const { redirect } = useSearch({ from: '/(auth)/sign-up' })
 
   return (
     <>
       <AuthCardHeading title={t('Create an account')} />
 
-      <SignUpForm />
+      <SignUpForm redirectTo={redirect} />
 
       <TermsFooter
         variant='sign-up'
