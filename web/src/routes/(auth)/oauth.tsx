@@ -16,19 +16,23 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { createFileRoute, useSearch } from '@tanstack/react-router'
 import i18next from 'i18next'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { wechatLoginByCode } from '@/features/auth/api'
-import { sanitizeAuthRedirect } from '@/features/auth/lib/auth-redirect'
-import { applyAuthBundle, isAuthBundle } from '@/lib/api'
+import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { handleServerError } from '@/lib/handle-server-error'
 import { AuthOperationError } from '@/lib/secure-verification'
 import { createServerError } from '@/lib/server-error-message'
 
 function OAuthComponent() {
-  const navigate = useNavigate()
+  const { handleLoginResult, redirectToLogin } = useAuthRedirect()
+  const exchange = useRef<{
+    code: string
+    request: ReturnType<typeof wechatLoginByCode>
+  } | null>(null)
+  const completedCode = useRef<string | null>(null)
   const search = useSearch({ from: '/(auth)/oauth' }) as {
     redirect?: string
     provider?: 'github' | 'discord' | 'oidc' | 'linuxdo' | 'telegram' | 'wechat'
@@ -37,29 +41,39 @@ function OAuthComponent() {
   }
 
   useEffect(() => {
-    ;(async () => {
+    if (search.code && completedCode.current === search.code) return
+    let active = true
+    void (async () => {
       try {
         if (search?.provider === 'wechat' && search.code) {
-          const res = await wechatLoginByCode(search.code)
-          if (res?.success && isAuthBundle(res.data)) {
-            applyAuthBundle(res.data)
-            const target =
-              sanitizeAuthRedirect(search?.redirect, window.location.origin) ??
-              '/dashboard'
-            navigate({ href: target, replace: true })
+          if (exchange.current?.code !== search.code) {
+            exchange.current = {
+              code: search.code,
+              request: wechatLoginByCode(search.code),
+            }
+          }
+          const res = await exchange.current.request
+          if (!active) return
+          if (res?.success) {
+            completedCode.current = search.code
+            await handleLoginResult(res.data, search.redirect)
             return
           }
           throw createServerError(res, i18next.t('OAuth failed'))
         }
         handleServerError(new AuthOperationError(i18next.t('OAuth failed')))
       } catch (error: unknown) {
+        if (!active) return
         handleServerError(
           AuthOperationError.from(error, i18next.t('OAuth failed'))
         )
       }
-      navigate({ to: '/sign-in', replace: true })
+      redirectToLogin(search.redirect)
     })()
-  }, [navigate, search])
+    return () => {
+      active = false
+    }
+  }, [handleLoginResult, redirectToLogin, search])
 
   return null
 }

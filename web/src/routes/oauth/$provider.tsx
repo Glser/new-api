@@ -67,6 +67,7 @@ interface OAuthPopupResult {
 function OAuthCallback() {
   const navigate = useNavigate()
   const { handleLoginResult } = useAuthRedirect()
+  const loginRedirect = useRef<{ state: string; target?: string } | null>(null)
   const loginExchange = useRef<{
     key: string
     request: Promise<{ data: LoginResponse }>
@@ -191,15 +192,29 @@ function OAuthCallback() {
       }
     }
 
-    const safeNavigate = (target: unknown, fallback = '/dashboard') => {
-      const href =
-        sanitizeAuthRedirect(target, window.location.origin) ?? fallback
-      void navigate({ href, replace: true })
+    if (loginRedirect.current?.state !== state) {
+      const storedRedirect = consumeOAuthLoginRedirect(state)
+      loginRedirect.current = {
+        state,
+        target:
+          sanitizeAuthRedirect(
+            search.redirect ?? storedRedirect,
+            window.location.origin
+          ) ?? undefined,
+      }
+    }
+    const redirectTo = loginRedirect.current.target
+    const returnToLogin = () => {
+      void navigate({
+        to: '/sign-in',
+        search: redirectTo ? { redirect: redirectTo } : undefined,
+        replace: true,
+      })
     }
 
     if (!code && !search.error) {
       toast.error(i18next.t('Missing code'))
-      safeNavigate('/sign-in', '/sign-in')
+      returnToLogin()
       return
     }
 
@@ -228,12 +243,7 @@ function OAuthCallback() {
         if (!active) return
         if (response.data?.success) {
           completedLogin.current = loginKey
-          if (
-            await handleLoginResult(
-              response.data.data,
-              search.redirect ?? consumeOAuthLoginRedirect(state) ?? undefined
-            )
-          ) {
+          if (await handleLoginResult(response.data.data, redirectTo)) {
             toast.success(i18next.t('Signed in successfully!'))
           }
           return
@@ -251,7 +261,7 @@ function OAuthCallback() {
           AuthOperationError.from(error, i18next.t('OAuth failed'))
         )
       }
-      safeNavigate('/sign-in', '/sign-in')
+      returnToLogin()
     })()
     return () => {
       active = false

@@ -19,7 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Box, Check, ChevronDown, ShieldCheck } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, type SubmitErrorHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -152,10 +152,42 @@ export function ModelMutateDrawer(props: {
     enabled: props.open,
   })
   const vendors = vendorsQuery.data?.data?.items ?? []
-  const { categories: plazaCategories } = usePricingData(props.open)
+  const {
+    categories: plazaCategories,
+    requestExamples,
+    endpointMap,
+  } = usePricingData(props.open)
   const categoryOptions = plazaCategories?.length
     ? plazaCategories
     : FALLBACK_PLAZA_CATEGORIES
+  // Built-in templates plus protocols configured in system settings.
+  const endpointTemplates = useMemo(() => {
+    const templates: Record<string, { path: string; method: string }> = {
+      ...ENDPOINT_TEMPLATES,
+    }
+    const knownPaths = endpointMap as Record<
+      string,
+      { path?: string; method?: string }
+    >
+    for (const key of Object.keys(requestExamples)) {
+      if (templates[key]) continue
+      const known = knownPaths[key]
+      templates[key] = {
+        // The backend requires a path starting with "/"; fill in a
+        // placeholder for custom protocols no model has used yet.
+        path: known?.path || `/${key}`,
+        method: known?.method || 'POST',
+      }
+    }
+    return templates
+  }, [endpointMap, requestExamples])
+  const endpointTemplateOptions = useMemo(() => {
+    const builtIn = Object.keys(ENDPOINT_TEMPLATES)
+    const custom = Object.keys(endpointTemplates)
+      .filter((key) => !ENDPOINT_TEMPLATES[key])
+      .sort()
+    return [...builtIn, ...custom].map((key) => ({ value: key, label: key }))
+  }, [endpointTemplates])
   const selectedVendor = vendors.find(
     (vendor) => vendor.id === form.watch('vendor_id')
   )
@@ -259,7 +291,7 @@ export function ModelMutateDrawer(props: {
   })
   const isSubmitting = save.isPending
   const handleFillEndpointTemplate = (key: string) => {
-    const template = ENDPOINT_TEMPLATES[key]
+    const template = endpointTemplates[key]
     if (template) {
       form.setValue('endpoints', JSON.stringify({ [key]: template }, null, 2), {
         shouldDirty: true,
@@ -784,9 +816,7 @@ export function ModelMutateDrawer(props: {
                                 {t('Endpoint Configuration')}
                               </p>
                               <Combobox
-                                options={Object.keys(ENDPOINT_TEMPLATES).map(
-                                  (key) => ({ value: key, label: key })
-                                )}
+                                options={endpointTemplateOptions}
                                 onValueChange={(value: string | null) => {
                                   if (value) handleFillEndpointTemplate(value)
                                 }}
