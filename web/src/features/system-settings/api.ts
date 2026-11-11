@@ -73,6 +73,15 @@ export async function getDefaultRequestExamples() {
   return res.data
 }
 
+export async function getRequestExamplePaths() {
+  const res = await api.get<{
+    success: boolean
+    message?: string
+    data?: { path: string; methods: string[] }[]
+  }>('/api/option/request_examples/paths')
+  return res.data
+}
+
 export async function updatePasskeyDomains(
   request: UpdatePasskeyDomainsRequest
 ) {

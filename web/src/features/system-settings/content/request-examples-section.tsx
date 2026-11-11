@@ -26,6 +26,7 @@ import {
   CodeBlock,
   CodeBlockCopyButton,
 } from '@/components/ai-elements/code-block'
+import { ErrorState } from '@/components/error-state'
 import { JsonCodeEditor } from '@/components/json-code-editor'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -53,7 +54,7 @@ import type {
 } from '@/features/pricing/types'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
-import { getDefaultRequestExamples } from '../api'
+import { getDefaultRequestExamples, getRequestExamplePaths } from '../api'
 import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
@@ -177,6 +178,14 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
     staleTime: Infinity,
   })
 
+  const requestPathsQuery = useQuery({
+    queryKey: ['request-example-paths'],
+    queryFn: async () =>
+      requireServerSuccess(await getRequestExamplePaths()).data ?? [],
+    staleTime: Infinity,
+  })
+  const requestPaths = requestPathsQuery.data
+
   const savedOverrides = useMemo(() => parseOverrides(data ?? ''), [data])
   const [protocol, setProtocol] = useState('openai')
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
@@ -223,6 +232,31 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
   const draft = drafts[protocol]
   const defaultExample = defaults?.[protocol]
   const parsedDraft = draft ? parseDraft(draft) : null
+
+  const requestPathOptions = useMemo(() => {
+    const paths = new Map<
+      string,
+      { value: string; label: string; methods: string[] }
+    >()
+    for (const endpoint of requestPaths ?? []) {
+      paths.set(endpoint.path, {
+        value: endpoint.path,
+        label: endpoint.path,
+        methods: endpoint.methods,
+      })
+    }
+    // Keep older overrides selectable without presenting them as built-in routes.
+    const saved = savedOverrides[protocol]
+    const savedPath = saved?.path?.trim()
+    if (savedPath && !paths.has(savedPath)) {
+      paths.set(savedPath, {
+        value: savedPath,
+        label: t('Saved path: {{path}}', { path: savedPath }),
+        methods: [saved.method || 'POST'],
+      })
+    }
+    return [...paths.values()].sort((a, b) => a.value.localeCompare(b.value))
+  }, [requestPaths, protocol, savedOverrides, t])
 
   const isCustomized = (type: string) => {
     const example = drafts[type] ? parseDraft(drafts[type]) : null
@@ -345,9 +379,18 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
         )}
       </p>
 
-      {!defaults || !draft ? (
+      {requestPathsQuery.isError && (
+        <ErrorState
+          title={t('Failed to load request paths')}
+          onRetry={() => void requestPathsQuery.refetch()}
+        />
+      )}
+      {(!defaults ||
+        !draft ||
+        (!requestPaths && !requestPathsQuery.isError)) && (
         <p className='text-muted-foreground text-sm'>{t('Loading...')}</p>
-      ) : (
+      )}
+      {defaults && draft && requestPaths && (
         <div className='grid min-w-0 gap-4 lg:grid-cols-2'>
           <div className='flex min-w-0 flex-col gap-4'>
             <div className='flex items-end gap-2'>
@@ -432,11 +475,6 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
                   {t('Add protocol')}
                 </Button>
               </div>
-              <p className='text-muted-foreground text-xs'>
-                {t(
-                  'A custom protocol is shown only for models whose custom endpoints (in model management) use the same name.'
-                )}
-              </p>
             </div>
 
             <FieldGroup className='gap-4'>
@@ -444,19 +482,57 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
                 <FieldLabel htmlFor={`${fieldId}-path`}>
                   {t('Request path')}
                 </FieldLabel>
-                <Input
-                  id={`${fieldId}-path`}
-                  value={draft.path}
-                  onChange={(event) =>
-                    updateDraft({ path: event.target.value })
-                  }
-                  placeholder='/v1/images/generations'
-                />
-                <FieldDescription>
-                  {t(
-                    'Use a relative path starting with /. Leave empty to use the protocol default or model endpoint. The {model} placeholder is replaced with the model name.'
-                  )}
-                </FieldDescription>
+                {isBuiltIn(protocol) ? (
+                  <Select
+                    items={requestPathOptions}
+                    value={draft.path.trim() || defaultExample?.path}
+                    onValueChange={(path) => {
+                      const selected = requestPathOptions.find(
+                        (option) => option.value === path
+                      )
+                      if (selected) {
+                        updateDraft({
+                          path: selected.value,
+                          method: selected.methods.includes(draft.method)
+                            ? draft.method
+                            : selected.methods[0] || 'POST',
+                        })
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      id={`${fieldId}-path`}
+                      className='w-full min-w-0'
+                    >
+                      <SelectValue className='truncate' />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false}>
+                      <SelectGroup>
+                        {requestPathOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id={`${fieldId}-path`}
+                    value={draft.path}
+                    onChange={(event) =>
+                      updateDraft({ path: event.target.value })
+                    }
+                    placeholder='/v1/images/generations'
+                  />
+                )}
+                {!isBuiltIn(protocol) && (
+                  <FieldDescription>
+                    {t(
+                      'Use a relative path starting with /. Leave empty to use the protocol default or model endpoint. The {model} placeholder is replaced with the model name.'
+                    )}
+                  </FieldDescription>
+                )}
               </Field>
               <Field>
                 <FieldLabel htmlFor={`${fieldId}-method`}>
@@ -479,11 +555,6 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <FieldDescription>
-                  {t(
-                    'For GET and HEAD, body fields are included as URL query parameters in the example.'
-                  )}
-                </FieldDescription>
               </Field>
             </FieldGroup>
 
@@ -561,7 +632,7 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
       <SettingsPageFormActions
         onSave={() => void onSave()}
         isSaving={updateOption.isPending}
-        isSaveDisabled={!defaults || !isDirty}
+        isSaveDisabled={!defaults || !requestPaths || !isDirty}
         onReset={() => setDrafts(buildDrafts())}
         isResetDisabled={!isDirty}
       />
