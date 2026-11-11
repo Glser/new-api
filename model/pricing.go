@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/QuantumNous/new-api/pkg/jsplugin"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
+	"github.com/QuantumNous/new-api/setting/model_plaza_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
 	"github.com/QuantumNous/new-api/types"
 )
@@ -26,6 +28,7 @@ type PricingPluginVariant struct {
 }
 
 type Pricing struct {
+	Endpoints              map[string]common.EndpointInfo       `json:"endpoints,omitempty"`
 	BillingPluginVariants  []PricingPluginVariant               `json:"billing_plugin_variants,omitempty"`
 	ModelName              string                               `json:"model_name"`
 	Description            string                               `json:"description,omitempty"`
@@ -184,11 +187,42 @@ func loadPricingAdvancedCustomConfigs(enableAbilities []AbilityWithChannel) map[
 	return configs
 }
 
-func appendPricingEndpoint(endpoints []string, endpoint string) []string {
-	if endpoint == "" || common.StringsContains(endpoints, endpoint) {
-		return endpoints
+// configuredPricingEndpoints resolves model-local overrides without leaking them
+// into other models using the same protocol. Empty metadata uses channel defaults.
+func configuredPricingEndpoints(raw string, defaults map[string]common.EndpointInfo) map[string]common.EndpointInfo {
+	if strings.TrimSpace(raw) == "" || ValidateModelEndpoints(raw) != nil {
+		return nil
 	}
-	return append(endpoints, endpoint)
+	var value any
+	if common.UnmarshalJsonStr(raw, &value) != nil {
+		return nil
+	}
+	endpoints := make(map[string]common.EndpointInfo)
+	switch entries := value.(type) {
+	case []any:
+		for _, entry := range entries {
+			name := entry.(string)
+			endpoints[name] = defaults[name]
+		}
+	case map[string]any:
+		for name, entry := range entries {
+			info := defaults[name]
+			if info.Method == "" {
+				info.Method = "POST"
+			}
+			switch details := entry.(type) {
+			case string:
+				info.Path = details
+			case map[string]any:
+				info.Path = details["path"].(string)
+				if method, ok := details["method"].(string); ok {
+					info.Method = method
+				}
+			}
+			endpoints[name] = info
+		}
+	}
+	return endpoints
 }
 
 func updatePricing() {
@@ -256,24 +290,27 @@ func updatePricing() {
 		modelSupportEndpointsStr[ability.Model] = endpoints
 	}
 
-	// 再补充模型自定义端点：若配置有效则追加到已有推断，不再裁剪渠道真实能力
+	// Protocol defaults come from system settings; model paths stay model-local.
+	supportedEndpointMap = make(map[string]common.EndpointInfo)
+	for protocol, example := range model_plaza_setting.GetEffectiveRequestExamples() {
+		if example.Path != "" {
+			supportedEndpointMap[protocol] = common.EndpointInfo{Path: example.Path, Method: example.Method}
+		}
+	}
+	modelEndpoints := make(map[string]map[string]common.EndpointInfo)
 	for modelName, meta := range metaMap {
-		if strings.TrimSpace(meta.Endpoints) == "" {
+		endpoints := configuredPricingEndpoints(meta.Endpoints, supportedEndpointMap)
+		if len(endpoints) == 0 {
 			continue
 		}
-		var raw map[string]any
-		if err := common.Unmarshal([]byte(meta.Endpoints), &raw); err == nil {
-			endpoints := modelSupportEndpointsStr[modelName]
-			for k, v := range raw {
-				switch v.(type) {
-				case string, map[string]any:
-					endpoints = appendPricingEndpoint(endpoints, k)
-				}
-			}
-			if len(endpoints) > 0 {
-				modelSupportEndpointsStr[modelName] = endpoints
-			}
+		modelEndpoints[modelName] = endpoints
+		types := make([]string, 0, len(endpoints))
+		for protocol := range endpoints {
+			types = append(types, protocol)
 		}
+		sort.Strings(types)
+		// Explicit metadata is the display contract, not an addition to inference.
+		modelSupportEndpointsStr[modelName] = types
 	}
 
 	modelSupportEndpointTypes = make(map[string][]constant.EndpointType)
@@ -286,45 +323,6 @@ func updatePricing() {
 		modelSupportEndpointTypes[model] = supportedEndpoints
 	}
 
-	// 构建全局 supportedEndpointMap（默认 + 自定义覆盖）
-	supportedEndpointMap = make(map[string]common.EndpointInfo)
-	// 1. 默认端点
-	for _, endpoints := range modelSupportEndpointTypes {
-		for _, et := range endpoints {
-			if info, ok := common.GetDefaultEndpointInfo(et); ok {
-				if _, exists := supportedEndpointMap[string(et)]; !exists {
-					supportedEndpointMap[string(et)] = info
-				}
-			}
-		}
-	}
-	// 2. 自定义端点（models 表）覆盖默认
-	for _, meta := range metaMap {
-		if strings.TrimSpace(meta.Endpoints) == "" {
-			continue
-		}
-		var raw map[string]any
-		if err := common.Unmarshal([]byte(meta.Endpoints), &raw); err == nil {
-			for k, v := range raw {
-				switch val := v.(type) {
-				case string:
-					supportedEndpointMap[k] = common.EndpointInfo{Path: val, Method: "POST"}
-				case map[string]any:
-					ep := common.EndpointInfo{Method: "POST"}
-					if p, ok := val["path"].(string); ok {
-						ep.Path = p
-					}
-					if m, ok := val["method"].(string); ok {
-						ep.Method = strings.ToUpper(m)
-					}
-					supportedEndpointMap[k] = ep
-				default:
-					// ignore unsupported types
-				}
-			}
-		}
-	}
-
 	pricingMap = make([]Pricing, 0)
 	pluginGeneration := jsplugin.DefaultRegistry.Generation()
 	for model, groups := range modelGroupsMap {
@@ -332,6 +330,7 @@ func updatePricing() {
 			ModelName:              model,
 			EnableGroup:            groups.Items(),
 			SupportedEndpointTypes: modelSupportEndpointTypes[model],
+			Endpoints:              modelEndpoints[model],
 		}
 
 		// 补充模型元数据（描述、标签、供应商、状态）

@@ -37,6 +37,13 @@ func GetEffectiveRequestExamples() map[string]RequestExample {
 		return examples
 	}
 	for endpointType, example := range overrides {
+		// Older saved examples only override auth, headers and body.
+		if example.Path == "" {
+			example.Path = examples[endpointType].Path
+		}
+		if example.Method == "" {
+			example.Method = "POST"
+		}
 		examples[endpointType] = example
 	}
 	return examples

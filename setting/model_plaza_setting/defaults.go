@@ -1,6 +1,7 @@
 package model_plaza_setting
 
 import (
+	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 )
 
@@ -16,6 +17,8 @@ const ModelPlaceholder = "{{model}}"
 
 // RequestExample 单个端点协议的调用示例
 type RequestExample struct {
+	Path    string            `json:"path,omitempty"`
+	Method  string            `json:"method,omitempty"`
 	Auth    string            `json:"auth"`
 	Headers map[string]string `json:"headers,omitempty"`
 	Body    map[string]any    `json:"body"`
@@ -29,7 +32,7 @@ func userMessages() []any {
 
 // GetDefaultRequestExamples 返回内置示例，每次返回新的副本，调用方可以随意修改
 func GetDefaultRequestExamples() map[string]RequestExample {
-	return map[string]RequestExample{
+	examples := map[string]RequestExample{
 		string(constant.EndpointTypeOpenAI): {
 			Auth: AuthBearer,
 			Body: map[string]any{
@@ -115,6 +118,14 @@ func GetDefaultRequestExamples() map[string]RequestExample {
 			},
 		},
 	}
+	for protocol, example := range examples {
+		if endpoint, ok := common.GetDefaultEndpointInfo(constant.EndpointType(protocol)); ok {
+			example.Path = endpoint.Path
+			example.Method = endpoint.Method
+			examples[protocol] = example
+		}
+	}
+	return examples
 }
 
 // IsKnownEndpointType 判断协议是否在支持列表中

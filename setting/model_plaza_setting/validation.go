@@ -3,6 +3,7 @@ package model_plaza_setting
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -26,6 +27,8 @@ var reservedHeaders = map[string]struct{}{
 }
 
 var allowedExampleFields = map[string]struct{}{
+	"path":    {},
+	"method":  {},
 	"auth":    {},
 	"headers": {},
 	"body":    {},
@@ -73,6 +76,32 @@ func parseRequestExample(entry map[string]any) (RequestExample, error) {
 	for field := range entry {
 		if _, ok := allowedExampleFields[field]; !ok {
 			return example, fmt.Errorf("不支持的字段: %s", field)
+		}
+	}
+
+	if value, exists := entry["path"]; exists {
+		path, ok := value.(string)
+		if !ok {
+			return example, errors.New("path 必须是字符串")
+		}
+		path = strings.TrimSpace(path)
+		parsed, err := url.Parse(path)
+		if path != "" && (!strings.HasPrefix(path, "/") || strings.HasPrefix(path, "//") || strings.ContainsAny(path, "\\\r\n\t ") || err != nil || parsed.Host != "" || parsed.Fragment != "") {
+			return example, errors.New("path 必须是以 / 开头的相对请求路径，不能包含域名、空白或 fragment")
+		}
+		example.Path = path
+	}
+	if value, exists := entry["method"]; exists {
+		method, ok := value.(string)
+		if !ok {
+			return example, errors.New("method 必须是字符串")
+		}
+		method = strings.ToUpper(strings.TrimSpace(method))
+		switch method {
+		case "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS":
+			example.Method = method
+		default:
+			return example, errors.New("method 必须是 GET、POST、PUT、PATCH、DELETE、HEAD 或 OPTIONS")
 		}
 	}
 

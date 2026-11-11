@@ -49,11 +49,24 @@ export function buildCurlSample(params: {
   example: RequestExample
   url: string
   modelName: string
+  method?: string
 }): string {
   const { example, modelName } = params
   const headers: string[] = []
+  const method = (params.method || example.method || 'POST').toUpperCase()
+  const body = fillModel(example.body, modelName) as Record<string, unknown>
+  const hasBody = method !== 'GET' && method !== 'HEAD'
   let url = params.url
-
+  if (!hasBody && Object.keys(body).length) {
+    const query = new URLSearchParams(
+      Object.entries(body).map(([key, value]) => [
+        key,
+        typeof value === 'string' ? value : JSON.stringify(value),
+      ])
+    )
+    url += `${url.includes('?') ? '&' : '?'}${query}`
+  }
+  url = url.replaceAll(/["\\$`]/g, '\\$&')
   if (example.auth === 'query') {
     url += `${url.includes('?') ? '&' : '?'}key=$${API_KEY_ENV}`
   } else if (example.auth === 'x-api-key') {
@@ -64,12 +77,15 @@ export function buildCurlSample(params: {
   for (const [name, value] of Object.entries(example.headers ?? {})) {
     headers.push(`${name}: ${value.replaceAll(/["\\$`]/g, '\\$&')}`)
   }
-  headers.push('Content-Type: application/json')
-
-  const body = JSON.stringify(fillModel(example.body, modelName), null, 2)
-  return [
-    `curl "${url}" \\`,
-    ...headers.map((header) => `  -H "${header}" \\`),
-    `  -d '${shellSingleQuote(body).replaceAll('\n', '\n     ')}'`,
-  ].join('\n')
+  if (hasBody) headers.push('Content-Type: application/json')
+  const command = method === 'HEAD' ? 'curl --head' : `curl --request ${method}`
+  const lines = [
+    `${command} "${url}"`,
+    ...headers.map((header) => `  -H "${header}"`),
+  ]
+  if (hasBody) {
+    const json = JSON.stringify(body, null, 2)
+    lines.push(`  -d '${shellSingleQuote(json).replaceAll('\n', '\n     ')}'`)
+  }
+  return lines.join(' \\\n')
 }

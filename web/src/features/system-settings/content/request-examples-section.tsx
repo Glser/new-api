@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, RotateCcw, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -29,6 +29,12 @@ import {
 import { JsonCodeEditor } from '@/components/json-code-editor'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -68,7 +74,23 @@ const AUTH_OPTIONS: { value: RequestExampleAuth; label: string }[] = [
   { value: 'query', label: '?key= (URL)' },
 ]
 
-type Draft = { auth: RequestExampleAuth; headers: string; body: string }
+const HTTP_METHODS = [
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'HEAD',
+  'OPTIONS',
+]
+
+type Draft = {
+  path: string
+  method: string
+  auth: RequestExampleAuth
+  headers: string
+  body: string
+}
 
 /** JSON with sorted keys so equal objects always serialize the same way. */
 function canonical(value: unknown): string {
@@ -84,9 +106,13 @@ function canonical(value: unknown): string {
 
 function normalizeExample(example: RequestExample): RequestExample {
   const headers = example.headers ?? {}
-  return Object.keys(headers).length > 0
-    ? { auth: example.auth, headers, body: example.body }
-    : { auth: example.auth, body: example.body }
+  return {
+    path: example.path?.trim() || undefined,
+    method: example.method || 'POST',
+    auth: example.auth,
+    ...(Object.keys(headers).length ? { headers } : {}),
+    body: example.body,
+  }
 }
 
 function sameExample(a: RequestExample, b: RequestExample): boolean {
@@ -95,6 +121,8 @@ function sameExample(a: RequestExample, b: RequestExample): boolean {
 
 function toDraft(example: RequestExample): Draft {
   return {
+    path: example.path ?? '',
+    method: example.method || 'POST',
     auth: example.auth,
     headers: JSON.stringify(example.headers ?? {}, null, 2),
     body: JSON.stringify(example.body, null, 2),
@@ -118,6 +146,8 @@ function parseDraft(draft: Draft): RequestExample | null {
   const body = parseObject(draft.body)
   if (!headers || !body) return null
   return normalizeExample({
+    path: draft.path,
+    method: draft.method,
     auth: draft.auth,
     headers: headers as Record<string, string>,
     body,
@@ -135,6 +165,7 @@ interface RequestExamplesSectionProps {
 
 export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
   const { t } = useTranslation()
+  const fieldId = useId()
   const queryClient = useQueryClient()
   const updateOption = useUpdateOption()
   const { endpointMap } = usePricingData()
@@ -168,7 +199,16 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
   const buildDrafts = useCallback(() => {
     const next: Record<string, Draft> = {}
     for (const [type, example] of Object.entries(defaults ?? {})) {
-      next[type] = toDraft(savedOverrides[type] ?? example)
+      const saved = savedOverrides[type]
+      next[type] = toDraft(
+        saved
+          ? {
+              ...saved,
+              path: saved.path || example.path,
+              method: saved.method || example.method,
+            }
+          : example
+      )
     }
     for (const [type, example] of Object.entries(savedOverrides)) {
       if (!next[type]) next[type] = toDraft(example)
@@ -256,6 +296,20 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
         )
         return
       }
+      if (
+        example.path &&
+        (!example.path.startsWith('/') ||
+          example.path.startsWith('//') ||
+          /[\\\s#]/.test(example.path))
+      ) {
+        setProtocol(type)
+        toast.error(
+          t(
+            'Request paths must start with / and cannot contain a domain, whitespace or fragment.'
+          )
+        )
+        return
+      }
       const fallback = defaults?.[type]
       if (!fallback || !sameExample(example, fallback)) {
         overrides[type] = example
@@ -271,7 +325,9 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
   const preview = useMemo(() => {
     if (!parsedDraft) return ''
     const path = (
-      (endpointMap as Record<string, { path?: string }>)[protocol]?.path ??
+      parsedDraft.path ||
+      defaults?.[protocol]?.path ||
+      endpointMap[protocol]?.path ||
       `/<${protocol}>`
     ).replaceAll('{model}', PREVIEW_MODEL)
     return buildCurlSample({
@@ -279,7 +335,7 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
       url: `${PREVIEW_BASE_URL}${path}`,
       modelName: PREVIEW_MODEL,
     })
-  }, [endpointMap, parsedDraft, protocol])
+  }, [defaults, endpointMap, parsedDraft, protocol])
 
   return (
     <SettingsSection title={t('Model Plaza Code Samples')} className='min-w-0'>
@@ -382,6 +438,54 @@ export function RequestExamplesSection({ data }: RequestExamplesSectionProps) {
                 )}
               </p>
             </div>
+
+            <FieldGroup className='gap-4'>
+              <Field>
+                <FieldLabel htmlFor={`${fieldId}-path`}>
+                  {t('Request path')}
+                </FieldLabel>
+                <Input
+                  id={`${fieldId}-path`}
+                  value={draft.path}
+                  onChange={(event) =>
+                    updateDraft({ path: event.target.value })
+                  }
+                  placeholder='/v1/images/generations'
+                />
+                <FieldDescription>
+                  {t(
+                    'Use a relative path starting with /. Leave empty to use the protocol default or model endpoint. The {model} placeholder is replaced with the model name.'
+                  )}
+                </FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`${fieldId}-method`}>
+                  {t('HTTP method')}
+                </FieldLabel>
+                <Select
+                  value={draft.method}
+                  onValueChange={(method) => method && updateDraft({ method })}
+                >
+                  <SelectTrigger id={`${fieldId}-method`} className='w-full'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent alignItemWithTrigger={false}>
+                    <SelectGroup>
+                      {HTTP_METHODS.map((method) => (
+                        <SelectItem key={method} value={method}>
+                          {method}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  {t(
+                    'For GET and HEAD, body fields are included as URL query parameters in the example.'
+                  )}
+                </FieldDescription>
+              </Field>
+            </FieldGroup>
 
             <div className='flex flex-col gap-2'>
               <Label>{t('API key location')}</Label>

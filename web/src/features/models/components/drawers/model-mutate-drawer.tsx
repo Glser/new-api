@@ -165,18 +165,11 @@ export function ModelMutateDrawer(props: {
     const templates: Record<string, { path: string; method: string }> = {
       ...ENDPOINT_TEMPLATES,
     }
-    const knownPaths = endpointMap as Record<
-      string,
-      { path?: string; method?: string }
-    >
-    for (const key of Object.keys(requestExamples)) {
-      if (templates[key]) continue
-      const known = knownPaths[key]
+    for (const [key, example] of Object.entries(requestExamples)) {
+      const known = endpointMap[key] ?? templates[key]
       templates[key] = {
-        // The backend requires a path starting with "/"; fill in a
-        // placeholder for custom protocols no model has used yet.
-        path: known?.path || `/${key}`,
-        method: known?.method || 'POST',
+        path: example.path || known?.path || `/${key}`,
+        method: example.method || known?.method || 'POST',
       }
     }
     return templates
@@ -292,12 +285,40 @@ export function ModelMutateDrawer(props: {
   const isSubmitting = save.isPending
   const handleFillEndpointTemplate = (key: string) => {
     const template = endpointTemplates[key]
-    if (template) {
-      form.setValue('endpoints', JSON.stringify({ [key]: template }, null, 2), {
-        shouldDirty: true,
-      })
+    if (!template) return
+    const raw = (form.getValues('endpoints') ?? '').trim()
+    let current: unknown
+    try {
+      current = raw ? JSON.parse(raw) : {}
+    } catch {
+      toast.error(t('Fix the endpoint JSON before loading a template.'))
+      return
     }
+    let next: unknown
+    if (
+      Array.isArray(current) &&
+      current.every((value) => typeof value === 'string')
+    ) {
+      if (current.includes(key)) return
+      next = [...current, key]
+    } else if (
+      current &&
+      typeof current === 'object' &&
+      !Array.isArray(current)
+    ) {
+      // Loading another template must never discard or reset existing entries.
+      if (Object.hasOwn(current, key)) return
+      next = { ...current, [key]: template }
+    } else {
+      toast.error(t('Fix the endpoint JSON before loading a template.'))
+      return
+    }
+    form.setValue('endpoints', JSON.stringify(next, null, 2), {
+      shouldDirty: true,
+      shouldValidate: true,
+    })
   }
+
   const metadataDirty = form.formState.isDirty
   const onInvalid: SubmitErrorHandler<ModelFormValues> = () => {
     toast.error(t('Please fix the highlighted fields before saving'))

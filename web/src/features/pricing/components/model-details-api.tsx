@@ -58,10 +58,14 @@ function CodeSamplesSection(props: {
   }, [status])
 
   const endpoints = useMemo(() => {
-    const types = props.model.supported_endpoint_types || []
+    const configured = props.model.endpoints
+    const types =
+      configured && Object.keys(configured).length
+        ? Object.keys(configured)
+        : props.model.supported_endpoint_types || []
     return types
       .map((type) => {
-        const info = props.endpointMap[type] || {}
+        const info = configured?.[type] ?? props.endpointMap[type] ?? {}
         let path = info.path || ''
         if (path && path.includes('{model}')) {
           path = replaceModelInPath(path, props.model.model_name || '')
@@ -87,6 +91,7 @@ function CodeSamplesSection(props: {
     example: requestExamples[activeEndpoint.type],
     url: `${baseUrl}${activeEndpoint.path}`,
     modelName: props.model.model_name || '',
+    method: activeEndpoint.method,
   })
 
   return (
@@ -94,7 +99,7 @@ function CodeSamplesSection(props: {
       <SectionTitle icon={ScrollText}>{t('Code samples')}</SectionTitle>
 
       {endpoints.length > 1 && (
-        <Tabs value={endpointType} onValueChange={setEndpointType}>
+        <Tabs value={activeEndpoint.type} onValueChange={setEndpointType}>
           <TabsList className='bg-muted/40 h-8 p-0.5'>
             {endpoints.map((ep) => (
               <TabsTrigger

@@ -79,6 +79,7 @@ export type PricingModel = {
   /** Plaza category key set in model management; empty means auto-detect. */
   category?: string
   supported_endpoint_types?: string[]
+  endpoints?: Record<string, { path?: string; method?: string }>
   key?: string
   group_ratio?: Record<string, number>
   /** Billing mode (e.g. "tiered_expr") used to flag dynamic pricing */
@@ -137,6 +138,8 @@ export type RequestExampleAuth = 'bearer' | 'x-api-key' | 'query'
 
 /** Call sample for one endpoint protocol, configured in system settings. */
 export type RequestExample = {
+  path?: string
+  method?: string
   auth: RequestExampleAuth
   headers?: Record<string, string>
   body: Record<string, unknown>
@@ -149,7 +152,7 @@ export type PricingData = {
   vendors: PricingVendor[]
   group_ratio: Record<string, number>
   usable_group: PricingUsableGroup
-  supported_endpoint: Record<string, string>
+  supported_endpoint: Record<string, { path?: string; method?: string }>
   request_examples?: Record<string, RequestExample>
   categories?: PlazaCategoryConfig[]
   auto_groups: string[]
