@@ -254,7 +254,7 @@ func proxyTaskMedia(c *gin.Context, task *model.Task, descriptor *relaychannel.T
 		req.Header.Set(name, value)
 	}
 
-	client = taskMediaRedirectClient(client, proxy, c, clientHeaders, descriptor.Credentialless)
+	client = taskMediaRedirectClient(client, proxy, c, clientHeaders, descriptor.Credentialless, strings.EqualFold(descriptor.CrossOriginRedirect, "strip"))
 	clientWithoutBodyTimeout := *client
 	clientWithoutBodyTimeout.Timeout = 0
 	resp, err := doTaskMediaRequest(&clientWithoutBodyTimeout, req, taskMediaResponseHeaderTimeout)
@@ -406,7 +406,7 @@ func applyTaskMediaRequestHeaders(destination http.Header, headers map[string]st
 	return nil
 }
 
-func taskMediaRedirectClient(base *http.Client, proxy string, c *gin.Context, clientHeaders map[string]string, credentialless bool) *http.Client {
+func taskMediaRedirectClient(base *http.Client, proxy string, c *gin.Context, clientHeaders map[string]string, credentialless, stripCrossOrigin bool) *http.Client {
 	cloned := *base
 	cloned.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if len(via) >= 10 {
@@ -423,9 +423,13 @@ func taskMediaRedirectClient(base *http.Client, proxy string, c *gin.Context, cl
 			return fmt.Errorf("%w: proxy loop", errTaskMediaRequestRejected)
 		}
 		if len(via) > 0 && !sameTaskMediaOrigin(via[len(via)-1].URL, req.URL) {
-			if !credentialless {
+			if !credentialless && !stripCrossOrigin {
 				return fmt.Errorf("%w: credentialed cross-origin redirect", errTaskMediaRequestRejected)
 			}
+			// A provider may start at an authenticated same-origin file endpoint and
+			// redirect to a signed public CDN. Never forward provider credentials or
+			// body bytes to that cross-origin destination; safe client headers are
+			// restored below after SSRF validation.
 			for name := range req.Header {
 				req.Header.Del(name)
 			}

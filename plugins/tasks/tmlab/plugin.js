@@ -184,7 +184,7 @@ export function buildContentRequest(ctx) {
   const index = ctx.artifactKey === "video" ? 0 : /^video_[1-9][0-9]*$/.test(ctx.artifactKey) ? Number(ctx.artifactKey.slice(6)) : -1;
   const fileId = files[index];
   if (!text(fileId)) throw new Error("artifact_not_found");
-  return {url: baseUrl(ctx) + "/v1/files/" + encodeURIComponent(fileId), method: ctx.clientRequest.method, headers: {Authorization: headers(ctx).Authorization}};
+  return {url: baseUrl(ctx) + "/v1/files/" + encodeURIComponent(fileId), method: ctx.clientRequest.method, headers: {Authorization: headers(ctx).Authorization}, crossOriginRedirect: "strip"};
 }
 
 function taskView(task) {

@@ -614,6 +614,7 @@ GET /v1/files/{file_id}
 - `prepared_file` 请求期文件引用和 multipart descriptor 校验。
 - 新提交结果契约、ProviderTracking 校验和恢复能力声明。
 - 查询批查上限、间隔、下载行为和产物策略声明。
+- 产物下载支持受控跨域跳转策略：默认拒绝携带认证头的跨域跳转；插件可对同源认证文件入口声明 `crossOriginRedirect: "strip"`，宿主对每一跳做 SSRF 校验，并在进入签名 CDN 前移除上游认证与请求体，只恢复安全的客户端 Range/条件请求头。
 - Task 执行阶段、幂等领取、租约、恢复和资金事务。
 - d.ts、schema、加载校验、fixtures 和 CLI 测试同步。
 

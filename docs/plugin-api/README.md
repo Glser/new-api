@@ -68,7 +68,11 @@ Provider-authenticated content URLs must use the channel base host or a
 plugin-declared `meta.allowedHosts` entry. A public dynamic CDN URL may instead
 set `credentialless: true`; the host then permits only GET/HEAD with no
 plugin-supplied headers or body and applies SSRF checks to the initial URL and
-every redirect.
+every redirect. An authenticated same-origin endpoint that redirects to a signed
+public CDN may set `crossOriginRedirect: "strip"` (default `"reject"`). The host
+validates every redirect, removes the provider authorization and body before the
+cross-origin hop, and restores only the safe client Range/conditional-header
+subset.
 
 Registry publication is generation-atomic. A request pins one plugin generation
 for its full lifetime, while background polling may use a later active plugin

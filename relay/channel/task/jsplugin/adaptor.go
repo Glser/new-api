@@ -35,17 +35,18 @@ import (
 )
 
 type requestDescriptor struct {
-	ResponseType   string            `json:"responseType"`
-	URL            string            `json:"url"`
-	Method         string            `json:"method"`
-	Headers        map[string]string `json:"headers"`
-	Body           any               `json:"body"`
-	Credentialless bool              `json:"credentialless"`
-	Action         string            `json:"action"`
-	Model          string            `json:"model"`
-	RewriteModel   string            `json:"rewriteModel"`
-	BodyType       string            `json:"bodyType"`
-	Parts          []requestPart     `json:"parts"`
+	ResponseType        string            `json:"responseType"`
+	URL                 string            `json:"url"`
+	Method              string            `json:"method"`
+	Headers             map[string]string `json:"headers"`
+	Body                any               `json:"body"`
+	Credentialless      bool              `json:"credentialless"`
+	CrossOriginRedirect string            `json:"crossOriginRedirect"`
+	Action              string            `json:"action"`
+	Model               string            `json:"model"`
+	RewriteModel        string            `json:"rewriteModel"`
+	BodyType            string            `json:"bodyType"`
+	Parts               []requestPart     `json:"parts"`
 }
 
 type requestPart struct {
@@ -965,6 +966,13 @@ func (a *TaskAdaptor) BuildContentRequest(task *model.Task, artifactKey string, 
 	if method != http.MethodGet && method != http.MethodHead && method != http.MethodPost {
 		return nil, fmt.Errorf("plugin returned an unsupported artifact request method")
 	}
+	switch descriptor.CrossOriginRedirect {
+	case "", "reject":
+		descriptor.CrossOriginRedirect = "reject"
+	case "strip":
+	default:
+		return nil, fmt.Errorf("plugin returned an unsupported cross-origin redirect policy")
+	}
 	if descriptor.Credentialless {
 		if method != http.MethodGet && method != http.MethodHead {
 			return nil, fmt.Errorf("credentialless artifact requests must use GET or HEAD")
@@ -991,11 +999,12 @@ func (a *TaskAdaptor) BuildContentRequest(task *model.Task, artifactKey string, 
 		}
 	}
 	return &channel.TaskContentRequest{
-		URL:            descriptor.URL,
-		Method:         method,
-		Headers:        descriptor.Headers,
-		Body:           body,
-		Credentialless: descriptor.Credentialless,
+		URL:                 descriptor.URL,
+		Method:              method,
+		Headers:             descriptor.Headers,
+		Body:                body,
+		Credentialless:      descriptor.Credentialless,
+		CrossOriginRedirect: descriptor.CrossOriginRedirect,
 	}, nil
 }
 
