@@ -307,8 +307,15 @@ func CompilePlugin(source string, options Options) (*LoadedPlugin, error) {
 	} else {
 		requiredHooks = append(requiredHooks, "buildQueryRequest")
 	}
+	if slices.Contains(meta.RequiredCapabilities, CapabilityAssetImport) {
+		requiredHooks = append(requiredHooks, "assets.buildImportRequest", "assets.parseImportResponse")
+	}
+	if slices.Contains(meta.RequiredCapabilities, CapabilityPrepare) {
+		requiredHooks = append(requiredHooks, "prepare.buildRequest", "prepare.parseResponse")
+	}
 	for _, hook := range requiredHooks {
-		has, hasErr := engine.HasCallablePath(context.Background(), hook)
+		parts := strings.Split(hook, ".")
+		has, hasErr := engine.HasCallablePath(context.Background(), parts[0], parts[1:]...)
 		if hasErr != nil {
 			return nil, hasErr
 		}

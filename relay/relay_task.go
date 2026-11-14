@@ -338,7 +338,18 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 		}
 	}
 
-	// 8. 构建请求体
+	// 8. Execute request-time asset imports and optional provider preparation.
+	// These operations happen after quota reservation and before the billable
+	// generation request. Any rejected or unknown preparation blocks submission.
+	if preparer, ok := adaptor.(interface {
+		PrepareSubmission(c *gin.Context, info *relaycommon.RelayInfo) *dto.TaskError
+	}); ok {
+		if taskErr := preparer.PrepareSubmission(c, info); taskErr != nil {
+			return nil, taskErr
+		}
+	}
+
+	// 9. 构建请求体
 	requestBody, err := adaptor.BuildRequestBody(c, info)
 	if err != nil {
 		return nil, service.TaskErrorWrapper(err, "build_request_failed", http.StatusInternalServerError)
@@ -353,7 +364,11 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 		return nil, service.TaskErrorWrapperLocal(errors.New("upstream returned an empty response"), "fail_to_fetch_task", http.StatusBadGateway)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	allowsPluginStatus := false
+	if statusPlugin, ok := adaptor.(interface{ AllowsPluginSubmitStatus() bool }); ok {
+		allowsPluginStatus = statusPlugin.AllowsPluginSubmitStatus()
+	}
+	if resp.StatusCode != http.StatusOK && (!allowsPluginStatus || resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices) {
 		responseBody, _ := io.ReadAll(resp.Body)
 		return nil, service.TaskErrorWrapper(fmt.Errorf("%s", string(responseBody)), "fail_to_fetch_task", resp.StatusCode)
 	}

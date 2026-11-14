@@ -1,5 +1,5 @@
 export type JSONValue = null | boolean | number | string | readonly JSONValue[] | {readonly [key: string]: JSONValue};
-export type HostCapability = "json-clone@1" | "submit-sse-delta@1";
+export type HostCapability = "json-clone@1" | "submit-sse-delta@1" | "asset-import@1" | "prepare@1" | "submit-status@1";
 export type MutableJSON<T> = T extends readonly (infer Item)[] ? MutableJSON<Item>[] : T extends object ? {-readonly [Key in keyof T]: MutableJSON<T[Key]>} : T;
 export interface HostUtils {
   hasCapability(name: string): boolean;
@@ -45,7 +45,7 @@ export type UsageExample = {label: string; facts: Readonly<Record<string, string
 export type UsageProfile = {models: readonly string[]; schema: Readonly<Record<string, UsageFieldSchema>>; examples?: readonly UsageExample[]};
 export interface Meta {requiredCapabilities?: readonly HostCapability[]; submitResponseTypes?: readonly ("json" | "sse")[]; sortPriority?: number; website?: string; apiVersion: 1; key: string; name: string; icon?: string; description?: LocalizedText; version: string; author: {name: string; url?: string}; baseUrl?: string; channelTypes?: readonly number[]; models: readonly string[]; fetchMode: "per_task" | "batch"; allowedHosts?: readonly string[]; routes?: readonly NativeRoute[]; protocols?: readonly ProtocolClaim[]; usageSchema?: Readonly<Record<string, UsageFieldSchema>>; usageExamples?: readonly UsageExample[]; usageProfiles?: readonly UsageProfile[]; auth?: "none" | "api_key" | "vertex_oauth" | {type: "none" | "api_key" | "oauth2_jwt"}}
 export interface TaskView {task_id: string; status: string; progress?: string; fail_reason?: string; created_at?: number; updated_at?: number; data?: unknown; properties?: Record<string, unknown>}
-export interface DriverContext {requestBody: unknown; requestHeaders: Readonly<Record<string, string>>; action: string; model: string; upstreamModel: string; baseUrl: string; apiKey?: string; authHeader: string; files: readonly FileReference[]; publicTaskId: string; originTasks?: readonly {taskId: string; upstreamTaskId: string; action: string; status: string; data: unknown}[]}
+export interface DriverContext {requestBody: unknown; requestHeaders: Readonly<Record<string, string>>; action: string; model: string; upstreamModel: string; baseUrl: string; apiKey?: string; authHeader: string; files: readonly FileReference[]; publicTaskId: string; originTasks?: readonly {taskId: string; upstreamTaskId: string; action: string; status: string; data: unknown}[]}; resolvedReferences?: readonly {localId: string; kind: "image" | "audio" | "video"; role?: string; providerAssetId: string; providerMetadata?: Record<string, JSONValue>}[]; prepareState?: unknown
 export interface TaskQueryContext {taskId: string; publicTaskId: string; action: string; model: string; upstreamModel: string; baseUrl: string; apiKey?: string; authHeader: string; auth?: unknown; data: unknown; state: unknown}
 export interface BatchQueryContext {baseUrl: string; apiKey?: string; authHeader: string; auth?: unknown; tasks: readonly TaskQueryContext[]}
 export type HookHTTPResponse = {readonly status: number; readonly headers: Readonly<Record<string, string>>}
@@ -59,6 +59,11 @@ export declare const protocols: {
   openai_responses?: {decodeRequest(ctx: ProtocolDecodeContext): SubmitIntent; renderEvents?(ctx: unknown, task: TaskView, previousState: unknown): unknown; renderFinal?(ctx: unknown, task: TaskView): unknown};
   openai_video?: {decodeRequest(ctx: ProtocolDecodeContext): SubmitIntent; render(ctx: unknown, task: TaskView): unknown};
 };
+export interface AssetImportContext extends DriverContext {asset: {localId: string; kind: "image" | "audio" | "video"; role?: string; fileRef: string; filename: string; mimeType?: string; size: number}}
+export type AssetImportOutcome = {outcome: "imported"; providerAssetId: string; providerMetadata?: Record<string, JSONValue>} | {outcome: "rejected"; code: string; message: string} | {outcome: "unknown"; reason: string};
+export type PrepareOutcome = {outcome: "prepared"; state: JSONValue; quote?: {amount?: string; unit?: string; expiresAt?: string}} | {outcome: "rejected"; code: string; message: string} | {outcome: "unknown"; reason: string};
+export declare const assets: {buildImportRequest(ctx: AssetImportContext): RequestDescriptor; parseImportResponse(ctx: AssetImportContext, response: UpstreamResponse): AssetImportOutcome};
+export declare const prepare: {buildRequest(ctx: DriverContext): RequestDescriptor; parseResponse(ctx: DriverContext, response: UpstreamResponse): PrepareOutcome};
 export declare function buildSubmitRequest(ctx: DriverContext): RequestDescriptor;
 export interface SubmitEvent {event: string; id: string; data: string}
 export type JSONPath = readonly (string | number)[];

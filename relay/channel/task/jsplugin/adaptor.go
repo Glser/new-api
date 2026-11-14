@@ -130,8 +130,10 @@ func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycom
 			return service.TaskErrorWrapperLocal(err, "plugin_usage_invalid", http.StatusBadRequest)
 		}
 	}
-	if _, err := a.buildSubmit(c, info); err != nil {
-		return service.TaskErrorWrapperLocal(err, "plugin_request_invalid", http.StatusBadRequest)
+	if !a.hasSubmissionPreparation() {
+		if _, err := a.buildSubmit(c, info); err != nil {
+			return service.TaskErrorWrapperLocal(err, "plugin_request_invalid", http.StatusBadRequest)
+		}
 	}
 	// The descriptor may rewrite the model. Validate profiled requests against
 	// that final model before any quota calculation or upstream submission.
@@ -227,12 +229,17 @@ func (a *TaskAdaptor) BuildRequestURL(info *relaycommon.RelayInfo) (string, erro
 	return a.submit.URL, pluginruntime.ValidateRequestURL(a.submit.URL, info.ChannelBaseUrl, a.plugin.Meta.AllowedHosts)
 }
 
-func (a *TaskAdaptor) BuildRequestHeader(_ *gin.Context, req *http.Request, _ *relaycommon.RelayInfo) error {
+func (a *TaskAdaptor) BuildRequestHeader(c *gin.Context, req *http.Request, _ *relaycommon.RelayInfo) error {
 	if a.submit == nil {
 		return fmt.Errorf("plugin submit request was not built")
 	}
 	for name, value := range a.submit.Headers {
 		req.Header.Set(name, value)
+	}
+	if a.submit.BodyType == "multipart" && req.Header.Get("Content-Type") == "" && c != nil && c.Request != nil {
+		if contentType := c.Request.Header.Get("Content-Type"); contentType != "" {
+			req.Header.Set("Content-Type", contentType)
+		}
 	}
 	return nil
 }
@@ -577,6 +584,12 @@ func (a *TaskAdaptor) ParseResponse(c *gin.Context, resp *http.Response, info *r
 }
 
 func (a *TaskAdaptor) GetModelList() []string { return append([]string(nil), a.plugin.Meta.Models...) }
+
+// AllowsPluginSubmitStatus reports whether the plugin has opted in to parsing
+// non-200 2xx submission responses such as HTTP 202.
+func (a *TaskAdaptor) AllowsPluginSubmitStatus() bool {
+	return a.plugin != nil && pluginHasCapability(a.plugin, pluginruntime.CapabilitySubmitStatus)
+}
 func (a *TaskAdaptor) GetChannelName() string { return a.plugin.Meta.Name }
 func (a *TaskAdaptor) FetchMode() string      { return a.plugin.Meta.FetchMode }
 
@@ -1348,6 +1361,14 @@ func (a *TaskAdaptor) submitContext(c *gin.Context, info *relaycommon.RelayInfo)
 		ctx["originTasks"] = originTasks
 	}
 	ctx["publicTaskId"] = info.PublicTaskID
+	if c != nil {
+		if resolved, exists := c.Get("task_resolved_references"); exists {
+			ctx["resolvedReferences"] = jsonValue(resolved)
+		}
+		if prepareState, exists := c.Get("task_prepare_state"); exists {
+			ctx["prepareState"] = jsonValue(prepareState)
+		}
+	}
 	ctx["model"] = info.OriginModelName
 	ctx["upstreamModel"] = info.UpstreamModelName
 	ctx["baseUrl"] = info.ChannelBaseUrl
