@@ -115,6 +115,10 @@ func CreateModelMeta(c *gin.Context) {
 		common.ApiErrorMsg(c, "模型名称不能为空")
 		return
 	}
+	if err := model.ValidateModelFeatures(m.Features); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	if err := model.ValidateMetadataValues(model.MetadataValues{Endpoints: m.Endpoints, Status: m.Status, NameRule: m.NameRule}); err != nil {
 		common.ApiError(c, err)
 		return
@@ -168,6 +172,10 @@ func UpdateModelMeta(c *gin.Context) {
 	} else {
 		if strings.TrimSpace(m.ModelName) == "" {
 			common.ApiErrorMsg(c, "模型名称不能为空")
+			return
+		}
+		if err := model.ValidateModelFeatures(m.Features); err != nil {
+			common.ApiError(c, err)
 			return
 		}
 		if err := model.ValidateMetadataValues(model.MetadataValues{Endpoints: m.Endpoints, Status: m.Status, NameRule: m.NameRule}); err != nil {

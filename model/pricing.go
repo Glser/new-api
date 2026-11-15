@@ -2,7 +2,6 @@ package model
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -35,6 +34,7 @@ type Pricing struct {
 	Icon                   string                               `json:"icon,omitempty"`
 	Tags                   string                               `json:"tags,omitempty"`
 	Category               string                               `json:"category,omitempty"`
+	Features               map[string]any                       `json:"features,omitempty"`
 	VendorID               int                                  `json:"vendor_id,omitempty"`
 	QuotaType              int                                  `json:"quota_type"`
 	ModelRatio             float64                              `json:"model_ratio"`
@@ -304,12 +304,15 @@ func updatePricing() {
 			continue
 		}
 		modelEndpoints[modelName] = endpoints
-		types := make([]string, 0, len(endpoints))
+		types := append(make([]string, 0, len(endpoints)+len(modelSupportEndpointsStr[modelName])), modelSupportEndpointsStr[modelName]...)
 		for protocol := range endpoints {
-			types = append(types, protocol)
+			if !common.StringsContains(types, protocol) {
+				types = append(types, protocol)
+			}
 		}
-		sort.Strings(types)
-		// Explicit metadata is the display contract, not an addition to inference.
+
+		// Explicit metadata is the display contract, but it must not erase
+		// endpoint types inferred from live channel routing.
 		modelSupportEndpointsStr[modelName] = types
 	}
 
@@ -344,6 +347,9 @@ func updatePricing() {
 			pricing.Tags = meta.Tags
 			pricing.Category = meta.Category
 			pricing.VendorID = meta.VendorID
+			if parsedFeatures, err := ParseModelFeatures(meta.Features); err == nil {
+				pricing.Features = parsedFeatures
+			}
 		}
 		modelPrice, findPrice := ratio_setting.GetModelPrice(model, false)
 		if findPrice {
