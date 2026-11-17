@@ -16,6 +16,8 @@ func TestDefaultRequestExamplesCoverAllProtocols(t *testing.T) {
 		example, ok := defaults[endpointType]
 		require.True(t, ok, endpointType)
 		require.NotEmpty(t, example.Auth, endpointType)
+		require.NotEmpty(t, example.Path, endpointType)
+		require.Equal(t, "POST", example.Method, endpointType)
 		require.NotEmpty(t, example.Body, endpointType)
 	}
 	require.Contains(t, defaults["jina-rerank"].Body, "documents")
@@ -71,6 +73,8 @@ func TestEffectiveRequestExamplesMergeOverrides(t *testing.T) {
 
 	effective := GetEffectiveRequestExamples()
 	require.Equal(t, true, effective["openai"].Body["stream"])
+	require.Equal(t, "/v1/chat/completions", effective["openai"].Path)
+	require.Equal(t, "POST", effective["openai"].Method)
 	require.NotContains(t, effective, "my-chat")
 
 	config.UpdateConfigFromMap(&modelPlazaSetting, map[string]string{
@@ -86,4 +90,31 @@ func TestEffectiveRequestExamplesMergeOverrides(t *testing.T) {
 	// 数据库里的值被改坏时退回默认值
 	modelPlazaSetting.RequestExamples = `{"openai":`
 	require.Equal(t, GetDefaultRequestExamples(), GetEffectiveRequestExamples())
+}
+
+func TestRequestExamplePathAndMethod(t *testing.T) {
+	original := modelPlazaSetting.RequestExamples
+	t.Cleanup(func() { modelPlazaSetting.RequestExamples = original })
+	modelPlazaSetting.RequestExamples = `{"my-images":{"path":"/v2/models/{model}/images?mode=fast","method":"put","auth":"bearer","body":{"model":"{{model}}"}}}`
+	require.NoError(t, ValidateRequestExamples(modelPlazaSetting.RequestExamples))
+	example := GetEffectiveRequestExamples()["my-images"]
+	require.Equal(t, "/v2/models/{model}/images?mode=fast", example.Path)
+	require.Equal(t, "PUT", example.Method)
+
+	for _, raw := range []string{
+		`{"openai":{"path":"https://example.com/x","auth":"bearer","body":{}}}`,
+		`{"openai":{"path":"//example.com/x","auth":"bearer","body":{}}}`,
+		`{"openai":{"path":"v1/x","auth":"bearer","body":{}}}`,
+		`{"openai":{"path":"/x#fragment","auth":"bearer","body":{}}}`,
+		`{"openai":{"path":"/x y","auth":"bearer","body":{}}}`,
+		`{"openai":{"path":123,"auth":"bearer","body":{}}}`,
+		`{"openai":{"method":"TRACE","auth":"bearer","body":{}}}`,
+		`{"openai":{"method":123,"auth":"bearer","body":{}}}`,
+	} {
+		require.Error(t, ValidateRequestExamples(raw), raw)
+	}
+	for _, method := range []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"} {
+		raw := `{"custom":{"path":"/v1/custom","method":"` + method + `","auth":"bearer","body":{}}}`
+		require.NoError(t, ValidateRequestExamples(raw), raw)
+	}
 }

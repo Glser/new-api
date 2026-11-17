@@ -48,4 +48,7 @@ func TestGetDefaultRequestExamplesEndpoint(t *testing.T) {
 	require.True(t, payload.Success)
 	require.Equal(t, model_plaza_setting.AuthXAPIKey, payload.Data["anthropic"].Auth)
 	require.Contains(t, payload.Data["jina-rerank"].Body, "query")
+	require.Equal(t, "/v1/messages", payload.Data["anthropic"].Path)
+	require.Equal(t, "POST", payload.Data["anthropic"].Method)
+	require.Equal(t, "/v1/videos", payload.Data["openai-video"].Path)
 }

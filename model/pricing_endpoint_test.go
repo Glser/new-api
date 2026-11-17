@@ -7,6 +7,8 @@ import (
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/relaykit/dto"
+	"github.com/QuantumNous/new-api/setting/config"
+	"github.com/QuantumNous/new-api/setting/model_plaza_setting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -107,7 +109,7 @@ func TestPricingAdvancedCustomUsesConfiguredEndpointTypes(t *testing.T) {
 	}, byModel["gpt-4o"])
 }
 
-func TestPricingModelMetadataEndpointsMergeWithAdvancedCustomInference(t *testing.T) {
+func TestPricingModelMetadataEndpointsOverrideAdvancedCustomInference(t *testing.T) {
 	resetPricingEndpointTestTables(t)
 
 	insertPricingEndpointChannel(t, 103, constant.ChannelTypeAdvancedCustom, pricingEndpointAdvancedCustomConfig(
@@ -131,7 +133,6 @@ func TestPricingModelMetadataEndpointsMergeWithAdvancedCustomInference(t *testin
 	byModel := pricingEndpointTypesByModel(t)
 
 	assert.Equal(t, []constant.EndpointType{
-		constant.EndpointTypeOpenAIResponse,
 		constant.EndpointTypeOpenAI,
 	}, byModel["gemini-2.5-flash"])
 }
@@ -291,4 +292,61 @@ func TestCacheUpdateChannelSyncsAdvancedCustomConfig(t *testing.T) {
 	CacheUpdateChannel(channel)
 
 	assert.Nil(t, channel2advancedCustomConfig[401])
+}
+
+func TestPricingExplicitImageEndpointsAndModelLocalPaths(t *testing.T) {
+	resetPricingEndpointTestTables(t)
+	insertPricingEndpointChannel(t, 401, constant.ChannelTypeOpenAI, dto.ChannelOtherSettings{})
+	cases := []struct{ name, endpoints string }{
+		{"image-a", `{"image-generation":{"path":"/v1/images/generations","method":"POST"}}`},
+		{"image-b", `{"image-generation":{"path":"/v2/images","method":"PUT"}}`},
+		{"image-types", `["image-generation"]`},
+		{"default-empty", ""},
+		{"default-object", "{}"},
+		{"default-array", "[]"},
+	}
+	for _, tc := range cases {
+		insertPricingEndpointAbility(t, 401, tc.name)
+		require.NoError(t, DB.Create(&Model{ModelName: tc.name, Endpoints: tc.endpoints, Status: 1, NameRule: NameRuleExact}).Error)
+	}
+	InitChannelCache()
+	for _, pricing := range GetPricing() {
+		switch pricing.ModelName {
+		case "image-a", "image-b", "image-types":
+			require.Equal(t, []constant.EndpointType{constant.EndpointTypeImageGeneration}, pricing.SupportedEndpointTypes)
+			require.Equal(t, pricing.SupportedEndpointTypes, GetModelSupportEndpointTypes(pricing.ModelName))
+			endpoint := pricing.Endpoints["image-generation"]
+			if pricing.ModelName == "image-b" {
+				require.Equal(t, common.EndpointInfo{Path: "/v2/images", Method: "PUT"}, endpoint)
+			} else {
+				require.Equal(t, common.EndpointInfo{Path: "/v1/images/generations", Method: "POST"}, endpoint)
+			}
+		default:
+			require.Equal(t, []constant.EndpointType{constant.EndpointTypeOpenAI}, pricing.SupportedEndpointTypes)
+			require.Empty(t, pricing.Endpoints)
+		}
+	}
+	require.Equal(t, "/v1/images/generations", GetSupportedEndpointMap()["image-generation"].Path)
+}
+
+func TestPricingProtocolSettingsRefreshPathsWithoutChangingModelOverrides(t *testing.T) {
+	resetPricingEndpointTestTables(t)
+	cfg := config.GlobalConfig.Get("model_plaza_setting").(*model_plaza_setting.ModelPlazaSetting)
+	original := cfg.RequestExamples
+	t.Cleanup(func() { handleConfigUpdate(model_plaza_setting.RequestExamplesOptionKey, original) })
+	insertPricingEndpointChannel(t, 402, constant.ChannelTypeOpenAI, dto.ChannelOtherSettings{})
+	insertPricingEndpointAbility(t, 402, "default-chat")
+	insertPricingEndpointAbility(t, 402, "custom-chat")
+	require.NoError(t, DB.Create(&Model{ModelName: "custom-chat", Endpoints: `["my-chat"]`, Status: 1, NameRule: NameRuleExact}).Error)
+	InitChannelCache()
+	GetPricing()
+	require.True(t, handleConfigUpdate(model_plaza_setting.RequestExamplesOptionKey, `{"openai":{"path":"/v2/chat","method":"PUT","auth":"bearer","body":{}},"my-chat":{"path":"/v2/custom","method":"GET","auth":"bearer","body":{}}}`))
+	require.Empty(t, pricingMap)
+	for _, pricing := range GetPricing() {
+		if pricing.ModelName == "custom-chat" {
+			require.Equal(t, common.EndpointInfo{Path: "/v2/custom", Method: "GET"}, pricing.Endpoints["my-chat"])
+			require.Equal(t, []constant.EndpointType{"my-chat"}, pricing.SupportedEndpointTypes)
+		}
+	}
+	require.Equal(t, common.EndpointInfo{Path: "/v2/chat", Method: "PUT"}, GetSupportedEndpointMap()["openai"])
 }
