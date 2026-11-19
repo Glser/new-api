@@ -119,6 +119,7 @@ export function getOfficialUsdParts(other: LogOtherData | null): {
       cacheReadPrice: 'cacheRead',
       cacheCreatePrice: 'cacheWrite',
       cacheCreate1hPrice: 'cacheWrite',
+      cacheCreate12hPrice: 'cacheWrite',
     }
     const parts: HitPricePart[] = []
     const seen = new Set<HitPriceKind>()

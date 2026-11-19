@@ -16,12 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useState } from 'react'
+import { KeyRound, Plus } from 'lucide-react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { EmptyState } from '@/components/empty-state'
+import { ErrorState } from '@/components/error-state'
+import { LoadingState } from '@/components/loading-state'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import {
   Sheet,
   SheetClose,
@@ -34,157 +40,251 @@ import { SecureVerificationDialog } from '@/features/auth/secure-verification'
 import { AuditLogViewer } from '@/features/usage-logs/audit/components/audit-log-viewer'
 import dayjs from '@/lib/dayjs'
 
-import { useAccessToken } from '../hooks/use-access-token'
+import type { AccessTokenItem as AccessToken } from '../api'
+import { useAccessTokens } from '../hooks/use-access-tokens'
+import { AccessTokenItem } from './access-token-item'
+import { AccessTokenCreateDialog } from './dialogs/access-token-create-dialog'
 import { AccessTokenDialog } from './dialogs/access-token-dialog'
+import { AccessTokenEditDialog } from './dialogs/access-token-edit-dialog'
 
 export function AccessTokenCard() {
   const { t } = useTranslation()
-  const access = useAccessToken()
-  const [confirmation, setConfirmation] = useState<'rotate' | 'revoke' | null>(
-    null
+  const access = useAccessTokens()
+  const formatTime = (seconds: number) =>
+    dayjs.unix(seconds).format('YYYY-MM-DD HH:mm:ss')
+  const [createOpen, setCreateOpen] = useState(false)
+  const [revokeTarget, setRevokeTarget] = useState<
+    AccessToken | 'legacy' | null
+  >(null)
+  const [editTarget, setEditTarget] = useState<AccessToken | null>(null)
+  // undefined shows every access record; a token ref opens the viewer on it.
+  const [records, setRecords] = useState<{ tokenRef?: string } | null>(null)
+  const catalog = access.catalog.data
+  const list = access.list.data
+  const resourceLabels = useMemo(
+    () =>
+      new Map(
+        catalog?.groups.flatMap((group) =>
+          group.resources.map(
+            (resource) => [resource.resource, resource.label_key] as const
+          )
+        ) ?? []
+      ),
+    [catalog]
   )
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const pending = access.pending
-  const status = access.status.data
-  const ready = !access.status.isError && !access.status.isPending && !!status
-  let lastUsed = t('Unknown')
-  if (status?.last_used_at) {
-    lastUsed = dayjs.unix(status.last_used_at).format('YYYY-MM-DD HH:mm:ss')
-  } else if (status?.created_at) lastUsed = t('Not used yet')
-  const confirm = () => {
-    if (pending || !confirmation) return
-    const operation = confirmation
-    setConfirmation(null)
-    if (operation === 'revoke') void access.revoke()
-    else void access.generate()
+  const atLimit = !!list && !!catalog && list.items.length >= catalog.max_tokens
+  const now = Date.now()
+
+  const confirmRevoke = async () => {
+    const target = revokeTarget
+    if (access.pending || !target) return
+    setRevokeTarget(null)
+    if (target === 'legacy') await access.revokeLegacy()
+    else await access.revoke(target.id)
   }
+
+  let content: ReactNode
+  if (access.list.isPending) {
+    content = (
+      <div role='status'>
+        <LoadingState size='sm' className='min-h-24' />
+      </div>
+    )
+  } else if (access.list.isError || !list) {
+    content = (
+      <div role='alert'>
+        <ErrorState
+          className='min-h-40'
+          title={t('Failed to load access tokens')}
+          onRetry={() => void access.list.refetch()}
+        />
+      </div>
+    )
+  } else {
+    const legacy = list.legacy
+    content = (
+      <div className='space-y-3'>
+        {legacy && (
+          <div className='space-y-2 rounded-md border p-3'>
+            <div className='flex flex-wrap items-center gap-2'>
+              <Badge variant='outline'>{t('Legacy token')}</Badge>
+              <code className='text-muted-foreground text-xs'>
+                …{legacy.token_hint}
+              </code>
+            </div>
+            <p className='text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 text-xs'>
+              {legacy.created_at ? (
+                <span>
+                  {t('Created {{time}}', {
+                    time: formatTime(legacy.created_at),
+                  })}
+                </span>
+              ) : null}
+              <span>
+                {legacy.last_used_at
+                  ? t('Last used {{time}}', {
+                      time: formatTime(legacy.last_used_at),
+                    })
+                  : t('Never used')}
+              </span>
+            </p>
+            <div className='flex flex-wrap items-center justify-between gap-2'>
+              <p className='text-sm'>
+                {t(
+                  'The legacy token stops working on {{date}}. Create a new token to replace it.',
+                  { date: formatTime(legacy.retire_at) }
+                )}
+              </p>
+              <div className='flex flex-wrap gap-2'>
+                <Button
+                  size='sm'
+                  variant='outline'
+                  onClick={() => setRecords({ tokenRef: legacy.token_ref })}
+                >
+                  {t('Access records')}
+                </Button>
+                <Button
+                  size='sm'
+                  variant='destructive'
+                  disabled={access.pending}
+                  onClick={() => setRevokeTarget('legacy')}
+                >
+                  {t('Revoke')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {list.items.length === 0 ? (
+          <EmptyState
+            icon={KeyRound}
+            className='min-h-40'
+            title={t('No access tokens')}
+          />
+        ) : (
+          <div className='flex flex-col'>
+            {list.items.map((token, index) => (
+              <div key={token.id}>
+                {index > 0 && <Separator />}
+                <AccessTokenItem
+                  token={token}
+                  resourceLabels={resourceLabels}
+                  formatTime={formatTime}
+                  now={now}
+                  disabled={access.pending}
+                  canEdit={!!catalog}
+                  onEdit={setEditTarget}
+                  onShowRecords={(target) =>
+                    setRecords({ tokenRef: target.token_ref })
+                  }
+                  onRevoke={setRevokeTarget}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
       <Card data-card-hover='false' className='gap-3 p-3 sm:p-4'>
         <div className='flex flex-wrap items-center justify-between gap-2'>
           <h4 className='text-sm font-semibold'>{t('Access Token')}</h4>
-          <Button
-            size='sm'
-            variant='outline'
-            onClick={() => setHistoryOpen(true)}
-          >
-            {t('Access records')}
-          </Button>
-        </div>
-        {access.status.isPending && (
-          <p role='status' className='text-muted-foreground text-xs'>
-            {t('Loading...')}
-          </p>
-        )}
-        {access.status.isError && (
-          <div role='alert' className='flex flex-wrap items-center gap-2'>
-            <span className='text-destructive text-sm'>
-              {t('Failed to load token status')}
-            </span>
+          <div className='text-muted-foreground order-last w-full text-xs'>
+            {t(
+              'Use access tokens to call the dashboard API from scripts. Each token only has the permissions you select.'
+            )}
+          </div>
+          <div className='flex flex-wrap justify-end gap-2'>
+            <Button size='sm' variant='outline' onClick={() => setRecords({})}>
+              {t('Access records')}
+            </Button>
             <Button
               size='sm'
-              variant='outline'
-              disabled={access.status.isFetching}
-              onClick={() => void access.status.refetch()}
+              disabled={!catalog || atLimit || access.pending}
+              onClick={() => setCreateOpen(true)}
             >
-              {t('Retry')}
+              <Plus data-icon='inline-start' />
+              {t('Create access token')}
             </Button>
           </div>
-        )}
-        {ready && (
-          <>
-            <dl className='grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-4'>
-              <div>
-                <dt className='text-muted-foreground'>{t('Status')}</dt>
-                <dd className='mt-1 font-medium'>
-                  {status.exists ? t('Generated') : t('Not generated')}
-                </dd>
-              </div>
-              {status.exists && (
-                <>
-                  <div>
-                    <dt className='text-muted-foreground'>{t('Created At')}</dt>
-                    <dd className='mt-1'>
-                      {status.created_at
-                        ? dayjs
-                            .unix(status.created_at)
-                            .format('YYYY-MM-DD HH:mm:ss')
-                        : t('Unknown')}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className='text-muted-foreground'>{t('Last used')}</dt>
-                    <dd className='mt-1'>{lastUsed}</dd>
-                  </div>
-                  <div>
-                    <dt className='text-muted-foreground'>
-                      {t('Last used IP')}
-                    </dt>
-                    <dd className='mt-1 break-all'>
-                      {status.last_used_ip || '—'}
-                    </dd>
-                  </div>
-                </>
-              )}
-            </dl>
-            <div className='flex flex-wrap justify-end gap-2'>
-              {status.exists ? (
-                <>
-                  <Button
-                    size='sm'
-                    variant='outline'
-                    disabled={pending}
-                    onClick={() => setConfirmation('rotate')}
-                  >
-                    {t('Regenerate')}
-                  </Button>
-                  <Button
-                    size='sm'
-                    variant='destructive'
-                    disabled={pending}
-                    onClick={() => setConfirmation('revoke')}
-                  >
-                    {t('Revoke')}
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  size='sm'
-                  disabled={pending}
-                  onClick={() => void access.generate()}
-                >
-                  {t('Generate')}
-                </Button>
-              )}
+        </div>
+        <div className='space-y-2'>
+          {access.catalog.isError && (
+            <div role='alert' className='flex flex-wrap items-center gap-2'>
+              <span className='text-destructive text-sm'>
+                {t('Failed to load access tokens')}
+              </span>
+              <Button
+                size='sm'
+                variant='outline'
+                disabled={access.catalog.isFetching}
+                onClick={() => void access.catalog.refetch()}
+              >
+                {t('Retry')}
+              </Button>
             </div>
-          </>
-        )}
+          )}
+          {atLimit && catalog && (
+            <p className='text-muted-foreground text-xs'>
+              {t('You can create up to {{count}} access tokens', {
+                count: catalog.max_tokens,
+              })}
+            </p>
+          )}
+          {content}
+        </div>
       </Card>
-      {access.token && (
-        <AccessTokenDialog token={access.token} onClose={access.clearToken} />
+      {catalog && (
+        <AccessTokenCreateDialog
+          open={createOpen}
+          hidden={access.showVerification}
+          catalog={catalog}
+          pending={access.pending}
+          onOpenChange={setCreateOpen}
+          onCreate={access.create}
+        />
+      )}
+      {catalog && editTarget && (
+        <AccessTokenEditDialog
+          key={editTarget.id}
+          token={editTarget}
+          hidden={access.showVerification}
+          catalog={catalog}
+          pending={access.updatePending}
+          onClose={() => setEditTarget(null)}
+          onSave={(input) => access.update(editTarget.id, input)}
+        />
+      )}
+      {access.createdToken && (
+        <AccessTokenDialog
+          token={access.createdToken}
+          onClose={access.clearCreatedToken}
+        />
       )}
       <SecureVerificationDialog {...access.verificationDialogProps} />
       <ConfirmDialog
-        open={confirmation !== null}
+        open={revokeTarget !== null}
         onOpenChange={(open) => {
-          if (!open && !pending) setConfirmation(null)
+          if (!open && !access.pending) setRevokeTarget(null)
         }}
-        title={
-          confirmation === 'revoke'
-            ? t('Revoke access token?')
-            : t('Regenerate access token?')
-        }
+        title={t('Revoke')}
         desc={t(
-          'This will immediately invalidate your existing access token. Any applications or scripts using it will stop working.'
+          'Revoke this access token? Scripts using it stop working immediately.'
         )}
-        confirmText={
-          confirmation === 'revoke' ? t('Revoke') : t('Regenerate token')
-        }
+        confirmText={t('Revoke')}
         destructive
-        isLoading={pending}
-        handleConfirm={() => void confirm()}
+        isLoading={access.pending}
+        handleConfirm={() => void confirmRevoke()}
       />
-      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+      <Sheet
+        open={records !== null}
+        onOpenChange={(open) => {
+          if (!open) setRecords(null)
+        }}
+      >
         <SheetContent className='w-full sm:max-w-5xl' showCloseButton={false}>
           <SheetHeader className='border-b pr-20'>
             <SheetTitle>{t('Access records')}</SheetTitle>
@@ -206,11 +306,13 @@ export function AccessTokenCard() {
             {t('Close')}
           </SheetClose>
           <div className='min-h-0 flex-1 px-4 pb-4'>
-            {historyOpen && (
+            {records && (
               <AuditLogViewer
+                key={records.tokenRef ?? 'all'}
                 scope='self'
                 accessOnly
-                currentTokenRef={ready ? status.token_ref : undefined}
+                currentTokenRef={records.tokenRef}
+                defaultTokenScope={records.tokenRef ? 'current' : undefined}
               />
             )}
           </div>

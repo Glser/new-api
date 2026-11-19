@@ -37,12 +37,14 @@ const TOKEN_FIELD_KIND: Record<string, HitPriceKind> = {
   cacheReadPrice: 'cacheRead',
   cacheCreatePrice: 'cacheWrite',
   cacheCreate1hPrice: 'cacheWrite',
+  cacheCreate12hPrice: 'cacheWrite',
 }
 
 const CACHE_FIELDS = new Set([
   'cacheReadPrice',
   'cacheCreatePrice',
   'cacheCreate1hPrice',
+  'cacheCreate12hPrice',
 ])
 
 export type ModelHitPriceEmptyStatus =

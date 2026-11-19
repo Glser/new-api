@@ -182,6 +182,7 @@ function resolveMatchedTierLabel(
   if (!billingExpr) return ''
   const cacheWrite5m = other?.cache_creation_tokens_5m || 0
   const cacheWrite1h = other?.cache_creation_tokens_1h || 0
+  const cacheWrite12h = other?.cache_creation_tokens_12h || 0
   const result = evalExprLocally(
     billingExpr,
     log.prompt_tokens || 0,
@@ -191,8 +192,9 @@ function resolveMatchedTierLabel(
       cacheCreateTokens:
         cacheWrite5m > 0 || cacheWrite1h > 0
           ? cacheWrite5m
-          : other?.cache_creation_tokens || 0,
+          : Math.max((other?.cache_creation_tokens || 0) - cacheWrite12h, 0),
       cacheCreate1hTokens: cacheWrite1h,
+      cacheCreate12hTokens: cacheWrite12h,
       imageTokens: 0,
       imageCacheTokens: other?.image_cache_tokens || 0,
       imageOutputTokens: other?.image_output || 0,

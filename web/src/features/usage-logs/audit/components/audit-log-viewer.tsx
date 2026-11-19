@@ -48,6 +48,7 @@ export function AuditLogViewer(props: {
   scope: 'all' | 'self'
   accessOnly?: boolean
   currentTokenRef?: string
+  defaultTokenScope?: 'all' | 'current' | 'historical'
   onAccessDenied?: () => Promise<void>
 }) {
   const { t } = useTranslation()
@@ -55,7 +56,9 @@ export function AuditLogViewer(props: {
   const [filters, setFilters] = useState<AuditFilters>(() =>
     buildDefaultAuditFilters()
   )
-  const [tokenScope, setTokenScope] = useState('all')
+  const [tokenScope, setTokenScope] = useState<string>(
+    props.defaultTokenScope ?? 'all'
+  )
   const params = { ...filters }
   if (props.accessOnly) params.category = 'access_token'
   if (tokenScope === 'current') params.token_ref = props.currentTokenRef
