@@ -16,6 +16,9 @@ const (
 	CapabilitySubmitSSEDelta = "submit-sse-delta@1"
 	CapabilityJSONOrder      = "json-order@1"
 	CapabilityDurationAuto   = "duration-auto@1"
+	CapabilityAssetImport    = "asset-import@1"
+	CapabilityPrepare        = "prepare@1"
+	CapabilitySubmitStatus   = "submit-status@1"
 	MaxJSONToolBytes         = 1 << 20
 	maxJSONToolDepth         = 32
 	maxJSONToolNodes         = 32768
@@ -24,7 +27,8 @@ const (
 
 // HasCapability describes host APIs independently of a plugin's mutable globals.
 func HasCapability(name string) bool {
-	return name == CapabilityJSONClone || name == CapabilitySubmitSSEDelta || name == CapabilityJSONOrder || name == CapabilityDurationAuto
+	return name == CapabilityJSONClone || name == CapabilitySubmitSSEDelta || name == CapabilityJSONOrder || name == CapabilityDurationAuto ||
+		name == CapabilityAssetImport || name == CapabilityPrepare || name == CapabilitySubmitStatus
 }
 
 // ValidateJSONPath checks a path into a JSON document by the rules of a JSON

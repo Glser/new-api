@@ -55,6 +55,49 @@ export type BillingPluginVariant = {
   billing_usage_examples?: BillingUsageExample[]
 }
 
+export type ModelFeatureMediaLimit = {
+  min?: number
+  max?: number
+  roles?: string[]
+}
+
+export type ModelFeatureVideoInput = {
+  modes?: string[]
+  frames?: Record<'image', ModelFeatureMediaLimit>
+  reference?: Record<'image' | 'video' | 'audio', ModelFeatureMediaLimit>
+}
+
+export type ModelFeatureVideoOutput = {
+  resolutions?: string[]
+  aspect_ratios?: string[]
+  duration_seconds?: number[]
+  defaults?: {
+    resolution?: string
+    aspect_ratio?: string
+    duration_seconds?: number
+  }
+  resolution_constraints?: Record<
+    string,
+    { aspect_ratios?: string[]; duration_seconds?: number[] }
+  >
+  size_overrides?: Record<string, string>
+}
+
+export type ModelFeatureSwitch = {
+  supported: boolean
+  default: boolean
+}
+
+export type ModelFeatures = {
+  version: number
+  video?: {
+    input?: ModelFeatureVideoInput
+    output?: ModelFeatureVideoOutput
+    generate_audio?: ModelFeatureSwitch
+    watermark?: ModelFeatureSwitch
+  }
+}
+
 export type PricingModel = {
   billing_plugin_variants?: BillingPluginVariant[]
   id: number
@@ -78,6 +121,7 @@ export type PricingModel = {
   tags?: string
   /** Plaza category key set in model management; empty means auto-detect. */
   category?: string
+  features?: ModelFeatures
   supported_endpoint_types?: string[]
   endpoints?: Record<string, { path?: string; method?: string }>
   key?: string

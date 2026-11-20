@@ -113,11 +113,12 @@ type TaskArtifactProvider interface {
 }
 
 type TaskContentRequest struct {
-	URL            string
-	Method         string
-	Headers        map[string]string
-	Body           []byte
-	Credentialless bool
+	URL                 string
+	Method              string
+	Headers             map[string]string
+	Body                []byte
+	Credentialless      bool
+	CrossOriginRedirect string
 	// ContentPath, when set, locates the artifact's bytes as a base64 string
 	// in the JSON reply instead of the reply being the artifact; MimeType is
 	// then its media type.

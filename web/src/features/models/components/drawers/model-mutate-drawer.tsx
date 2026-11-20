@@ -90,7 +90,11 @@ import {
 import { cn } from '@/lib/utils'
 
 import { createModel, updateModel, getModel, getVendors } from '../../api'
-import { getNameRuleOptions, ENDPOINT_TEMPLATES } from '../../constants'
+import {
+  getNameRuleOptions,
+  ENDPOINT_TEMPLATES,
+  MODEL_FEATURES_TEMPLATE,
+} from '../../constants'
 import { modelsQueryKeys, vendorsQueryKeys } from '../../lib'
 import {
   modelFormSchema,
@@ -858,7 +862,7 @@ export function ModelMutateDrawer(props: {
                                       keyPlaceholder='endpoint_type'
                                       valuePlaceholder='{"path": "/v1/...", "method": "POST"}'
                                       keyLabel='Endpoint Type'
-                                      valueLabel='Configuration'
+                                      valueLabel={t('Configuration')}
                                       valueType='any'
                                       emptyMessage={t(
                                         'No endpoints configured. Switch to JSON mode or add rows to define endpoints.'
@@ -868,6 +872,43 @@ export function ModelMutateDrawer(props: {
                                   <FormDescription>
                                     {t(
                                       'Define API endpoints for this model (JSON format)'
+                                    )}
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className='flex items-center justify-between gap-3'>
+                              <p className='pl-[3px] text-xs leading-none font-medium'>
+                                {t('Model Feature Configuration')}
+                              </p>
+                            </div>
+                            <FormField
+                              control={form.control}
+                              name='features'
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className='pl-[3px]'>
+                                    {t('Model features')}
+                                  </FormLabel>
+                                  <FormControl>
+                                    <JsonEditor
+                                      value={field.value || ''}
+                                      onChange={field.onChange}
+                                      keyPlaceholder='capability'
+                                      valuePlaceholder='{ "video": { ... } }'
+                                      keyLabel={t('Capability')}
+                                      valueLabel={t('Configuration')}
+                                      valueType='any'
+                                      template={MODEL_FEATURES_TEMPLATE}
+                                      emptyMessage={t(
+                                        'No features configured. Use JSON mode or fill the video template.'
+                                      )}
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    {t(
+                                      'Define public model capabilities returned by the pricing API.'
                                     )}
                                   </FormDescription>
                                   <FormMessage />

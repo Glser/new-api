@@ -115,6 +115,10 @@ func CreateModelMeta(c *gin.Context) {
 		common.ApiErrorT(c, "Model name cannot be empty")
 		return
 	}
+	if err := model.ValidateModelFeatures(m.Features); err != nil {
+		common.ApiError(c, err)
+		return
+	}
 	if err := model.ValidateMetadataValues(model.MetadataValues{Endpoints: m.Endpoints, Status: m.Status, NameRule: m.NameRule}); err != nil {
 		common.ApiError(c, err)
 		return
@@ -169,6 +173,10 @@ func UpdateModelMeta(c *gin.Context) {
 	} else {
 		if strings.TrimSpace(m.ModelName) == "" {
 			common.ApiErrorT(c, "Model name cannot be empty")
+			return
+		}
+		if err := model.ValidateModelFeatures(m.Features); err != nil {
+			common.ApiError(c, err)
 			return
 		}
 		if err := model.ValidateMetadataValues(model.MetadataValues{Endpoints: m.Endpoints, Status: m.Status, NameRule: m.NameRule}); err != nil {

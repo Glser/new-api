@@ -48,6 +48,8 @@ export interface Model {
   category?: string
   vendor_id?: number
   endpoints?: string
+  /** Model capability metadata stored as JSON and returned as an object by /api/pricing. */
+  features?: string
   supported_endpoints?: string[]
   status: number
   sync_official: number

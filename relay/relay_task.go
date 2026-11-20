@@ -366,7 +366,18 @@ func RelayTaskSubmit(c *gin.Context, info *relaycommon.RelayInfo) (*TaskSubmitRe
 		}
 	}
 
-	// 8. 构建请求体
+	// 8. Execute request-time asset imports and optional provider preparation.
+	// These operations happen after quota reservation and before the billable
+	// generation request. Any rejected or unknown preparation blocks submission.
+	if preparer, ok := adaptor.(interface {
+		PrepareSubmission(c *gin.Context, info *relaycommon.RelayInfo) *dto.TaskError
+	}); ok {
+		if taskErr := preparer.PrepareSubmission(c, info); taskErr != nil {
+			return nil, taskErr
+		}
+	}
+
+	// 9. 构建请求体
 	requestBody, err := adaptor.BuildRequestBody(c, info)
 	if err != nil {
 		return nil, service.TaskErrorWrapper(err, "build_request_failed", http.StatusInternalServerError, common.UpstreamAddresses(c)...)

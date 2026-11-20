@@ -146,6 +146,37 @@ export const ENDPOINT_TEMPLATES: Record<
   embeddings: { path: '/v1/embeddings', method: 'POST' },
 }
 
+export const MODEL_FEATURES_TEMPLATE: Record<string, unknown> = {
+  version: 1,
+  video: {
+    input: {
+      modes: ['text', 'frames', 'reference'],
+      frames: {
+        image: { min: 1, max: 2, roles: ['first_frame', 'last_frame'] },
+      },
+      reference: {
+        image: { min: 0, max: 9 },
+        video: { min: 0, max: 3 },
+        audio: { min: 0, max: 1 },
+      },
+    },
+    output: {
+      resolutions: ['480p', '720p', '1080p'],
+      aspect_ratios: ['16:9'],
+      duration_seconds: [5, 10],
+      defaults: {
+        resolution: '720p',
+        aspect_ratio: '16:9',
+        duration_seconds: 5,
+      },
+      resolution_constraints: {},
+      size_overrides: {},
+    },
+    generate_audio: { supported: true, default: true },
+    watermark: { supported: true, default: false },
+  },
+}
+
 // ============================================================================
 // Sync Locale Options
 // ============================================================================

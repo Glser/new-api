@@ -37,17 +37,18 @@ import (
 )
 
 type requestDescriptor struct {
-	ResponseType   string            `json:"responseType"`
-	URL            string            `json:"url"`
-	Method         string            `json:"method"`
-	Headers        map[string]string `json:"headers"`
-	Body           any               `json:"body"`
-	Credentialless bool              `json:"credentialless"`
-	Action         string            `json:"action"`
-	Model          string            `json:"model"`
-	RewriteModel   string            `json:"rewriteModel"`
-	BodyType       string            `json:"bodyType"`
-	Parts          []requestPart     `json:"parts"`
+	ResponseType        string            `json:"responseType"`
+	URL                 string            `json:"url"`
+	Method              string            `json:"method"`
+	Headers             map[string]string `json:"headers"`
+	Body                any               `json:"body"`
+	Credentialless      bool              `json:"credentialless"`
+	CrossOriginRedirect string            `json:"crossOriginRedirect"`
+	Action              string            `json:"action"`
+	Model               string            `json:"model"`
+	RewriteModel        string            `json:"rewriteModel"`
+	BodyType            string            `json:"bodyType"`
+	Parts               []requestPart     `json:"parts"`
 
 	// ContentPath and MimeType are read from buildContentRequest only: the
 	// artifact's bytes are a base64 string at that path of the JSON reply.
@@ -62,17 +63,18 @@ type requestDescriptor struct {
 // JSON order returns it: decoded from the JSON.stringify text of the result,
 // with the body kept as that text.
 type orderedRequestDescriptor struct {
-	ResponseType   string            `json:"responseType"`
-	URL            string            `json:"url"`
-	Method         string            `json:"method"`
-	Headers        map[string]string `json:"headers"`
-	Body           json.RawMessage   `json:"body"`
-	Credentialless bool              `json:"credentialless"`
-	Action         string            `json:"action"`
-	Model          string            `json:"model"`
-	RewriteModel   string            `json:"rewriteModel"`
-	BodyType       string            `json:"bodyType"`
-	Parts          []requestPart     `json:"parts"`
+	ResponseType        string            `json:"responseType"`
+	URL                 string            `json:"url"`
+	Method              string            `json:"method"`
+	Headers             map[string]string `json:"headers"`
+	Body                json.RawMessage   `json:"body"`
+	Credentialless      bool              `json:"credentialless"`
+	CrossOriginRedirect string            `json:"crossOriginRedirect"`
+	Action              string            `json:"action"`
+	Model               string            `json:"model"`
+	RewriteModel        string            `json:"rewriteModel"`
+	BodyType            string            `json:"bodyType"`
+	Parts               []requestPart     `json:"parts"`
 
 	ContentPath []any  `json:"contentPath"`
 	MimeType    string `json:"mimeType"`
@@ -234,6 +236,9 @@ func (a *TaskAdaptor) ValidateRequestAndSetAction(c *gin.Context, info *relaycom
 		if taskErr := relaycommon.ValidateBasicTaskRequest(c, info, "image_to_video"); taskErr != nil {
 			return taskErr
 		}
+	}
+	if a.hasSubmissionPreparation() {
+		return nil
 	}
 	if _, err := a.buildSubmit(c, info); err != nil {
 		// utils.fetch failures in the build hook name the host fetched: the
@@ -825,6 +830,12 @@ func (a *TaskAdaptor) ParseResponse(c *gin.Context, resp *http.Response, info *r
 }
 
 func (a *TaskAdaptor) GetModelList() []string { return append([]string(nil), a.plugin.Meta.Models...) }
+
+// AllowsPluginSubmitStatus reports whether the plugin has opted in to parsing
+// non-200 2xx submission responses such as HTTP 202.
+func (a *TaskAdaptor) AllowsPluginSubmitStatus() bool {
+	return a.plugin != nil && pluginHasCapability(a.plugin, pluginruntime.CapabilitySubmitStatus)
+}
 func (a *TaskAdaptor) GetChannelName() string { return a.plugin.Meta.Name }
 func (a *TaskAdaptor) FetchMode() string      { return a.plugin.Meta.FetchMode }
 
@@ -1330,6 +1341,11 @@ func (a *TaskAdaptor) BuildContentRequest(ctx context.Context, task *model.Task,
 	if method != http.MethodGet && method != http.MethodHead && method != http.MethodPost {
 		return nil, fmt.Errorf("plugin returned an unsupported artifact request method")
 	}
+	switch descriptor.CrossOriginRedirect {
+	case "", "reject", "strip":
+	default:
+		return nil, fmt.Errorf("plugin returned an unsupported cross-origin redirect policy")
+	}
 	if descriptor.Credentialless {
 		if method != http.MethodGet && method != http.MethodHead {
 			return nil, fmt.Errorf("credentialless artifact requests must use GET or HEAD")
@@ -1402,13 +1418,14 @@ func (a *TaskAdaptor) BuildContentRequest(ctx context.Context, task *model.Task,
 		}
 	}
 	return &channel.TaskContentRequest{
-		URL:            requestURL,
-		Method:         method,
-		Headers:        headers,
-		Body:           body,
-		Credentialless: descriptor.Credentialless,
-		ContentPath:    descriptor.ContentPath,
-		MimeType:       descriptor.MimeType,
+		URL:                 requestURL,
+		Method:              method,
+		Headers:             headers,
+		Body:                body,
+		Credentialless:      descriptor.Credentialless,
+		ContentPath:         descriptor.ContentPath,
+		MimeType:            descriptor.MimeType,
+		CrossOriginRedirect: descriptor.CrossOriginRedirect,
 	}, nil
 }
 
@@ -1702,7 +1719,7 @@ func (a *TaskAdaptor) requestDescriptor(ctx context.Context, hook string, args .
 	}
 	descriptor := requestDescriptor{
 		ResponseType: ordered.ResponseType, URL: ordered.URL, Method: ordered.Method, Headers: ordered.Headers,
-		Credentialless: ordered.Credentialless, Action: ordered.Action, Model: ordered.Model,
+		Credentialless: ordered.Credentialless, CrossOriginRedirect: ordered.CrossOriginRedirect, Action: ordered.Action, Model: ordered.Model,
 		RewriteModel: ordered.RewriteModel, BodyType: ordered.BodyType, Parts: ordered.Parts,
 		ContentPath: ordered.ContentPath, MimeType: ordered.MimeType,
 	}
@@ -1921,6 +1938,14 @@ func (a *TaskAdaptor) submitContext(c *gin.Context, info *relaycommon.RelayInfo)
 		ctx["originTasks"] = originTasks
 	}
 	ctx["publicTaskId"] = info.PublicTaskID
+	if c != nil {
+		if resolved, exists := c.Get("task_resolved_references"); exists {
+			ctx["resolvedReferences"] = jsonValue(resolved)
+		}
+		if prepareState, exists := c.Get("task_prepare_state"); exists {
+			ctx["prepareState"] = jsonValue(prepareState)
+		}
+	}
 	ctx["model"] = info.OriginModelName
 	ctx["upstreamModel"] = info.UpstreamModelName
 	ctx["baseUrl"] = info.ChannelBaseUrl
