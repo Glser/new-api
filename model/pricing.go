@@ -2,6 +2,7 @@ package model
 
 import (
 	"slices"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -341,15 +342,12 @@ func updatePricing() {
 			continue
 		}
 		modelEndpoints[modelName] = endpoints
-		types := append(make([]string, 0, len(endpoints)+len(modelSupportEndpointsStr[modelName])), modelSupportEndpointsStr[modelName]...)
+		types := make([]string, 0, len(endpoints))
 		for protocol := range endpoints {
-			if !common.StringsContains(types, protocol) {
-				types = append(types, protocol)
-			}
+			types = append(types, protocol)
 		}
-
-		// Explicit metadata is the display contract, but it must not erase
-		// endpoint types inferred from live channel routing.
+		sort.Strings(types)
+		// Explicit metadata is the display contract, not an addition to inference.
 		modelSupportEndpointsStr[modelName] = types
 	}
 
