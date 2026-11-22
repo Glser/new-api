@@ -30,6 +30,8 @@ import { TooltipHint } from '@/components/ui/tooltip'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
+import { useModelIconMap } from '../hooks/use-model-icon-map'
+
 interface ModelBadgeProps {
   modelName: string
   actualModel?: string
@@ -128,7 +130,14 @@ function resolveModelProvider(modelName: string): ModelProvider | null {
 }
 
 function ModelBadgeContent(props: ModelBadgeProps) {
-  const provider = resolveModelProvider(props.modelName)
+  const iconMap = useModelIconMap()
+  const catalogEntry = iconMap?.get(props.modelName)
+  const provider = catalogEntry
+    ? {
+        icon: catalogEntry.icon,
+        label: catalogEntry.label ?? props.modelName,
+      }
+    : resolveModelProvider(props.modelName)
   const isMd = props.size === 'md'
   const iconSize = isMd ? 20 : 18
 

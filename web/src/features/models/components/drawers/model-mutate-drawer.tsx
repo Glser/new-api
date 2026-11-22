@@ -869,20 +869,10 @@ export function ModelMutateDrawer(props: {
                                       )}
                                     />
                                   </FormControl>
-                                  <FormDescription>
-                                    {t(
-                                      'Define API endpoints for this model (JSON format)'
-                                    )}
-                                  </FormDescription>
                                   <FormMessage />
                                 </FormItem>
                               )}
                             />
-                            <div className='flex items-center justify-between gap-3'>
-                              <p className='pl-[3px] text-xs leading-none font-medium'>
-                                {t('Model Feature Configuration')}
-                              </p>
-                            </div>
                             <FormField
                               control={form.control}
                               name='features'
@@ -906,11 +896,6 @@ export function ModelMutateDrawer(props: {
                                       )}
                                     />
                                   </FormControl>
-                                  <FormDescription>
-                                    {t(
-                                      'Define public model capabilities returned by the pricing API.'
-                                    )}
-                                  </FormDescription>
                                   <FormMessage />
                                 </FormItem>
                               )}
