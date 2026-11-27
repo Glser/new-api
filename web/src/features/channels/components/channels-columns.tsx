@@ -591,7 +591,9 @@ export function BalanceCell({ channel }: { channel: Channel }) {
           >
             <button
               type='button'
-              onClick={() => {
+              onClick={(event) => {
+                // 卡片空白处点击会进入编辑抽屉，这里先阻断冒泡。
+                event.stopPropagation()
                 void handleClickUpdate()
               }}
               aria-label={

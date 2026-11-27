@@ -230,7 +230,11 @@ export function NumericSpinnerInput({
           <TooltipHint content={localValue}>
             <button
               type='button'
-              onClick={handleStartEdit}
+              onClick={(event) => {
+                // 卡片空白处点击会进入编辑抽屉，这里先阻断冒泡。
+                event.stopPropagation()
+                handleStartEdit()
+              }}
               disabled={disabled}
               className={cn(
                 'h-7 min-w-8 max-w-16 cursor-text truncate px-1 text-center font-mono text-sm tabular-nums',

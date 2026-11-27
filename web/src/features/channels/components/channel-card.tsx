@@ -24,7 +24,14 @@ import {
   SlidersHorizontal,
   Tags,
 } from 'lucide-react'
-import { memo, useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
+import {
+  memo,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { GroupBadge } from '@/components/group-badge'
@@ -241,7 +248,7 @@ function ChannelCardComponent({
   onStatusChanged?: (status: number) => void
 }) {
   const { t, i18n } = useTranslation()
-  const { sensitiveVisible } = useChannels()
+  const { sensitiveVisible, setCurrentRow, setOpen, batchMode } = useChannels()
   const channel = row?.original ?? channelProp
   if (!channel) return null
   const isTagRow = isTagAggregateRow(channel)
@@ -252,6 +259,34 @@ function ChannelCardComponent({
       return null
     }
     return flexRender(cell.column.columnDef.cell, cell.getContext())
+  }
+
+  // 点击卡片空白区域直接打开编辑抽屉；批处理模式下点击卡片切换选中，
+  // 与「点卡片多选批量操作」的使用习惯一致。行内交互控件均已 stopPropagation。
+  const handleCardClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (batchMode) {
+      row?.toggleSelected(!row.getIsSelected())
+      return
+    }
+    event.stopPropagation()
+    if (isTagAggregateRow(channel)) {
+      return
+    }
+    setCurrentRow(channel)
+    setOpen('update-channel')
+  }
+  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (batchMode) {
+      return
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      if (isTagAggregateRow(channel)) {
+        return
+      }
+      setCurrentRow(channel)
+      setOpen('update-channel')
+    }
   }
 
   const groups = parseGroupsList(channel.group ?? '')
@@ -316,8 +351,14 @@ function ChannelCardComponent({
         data-card-hover='false'
         data-state={isSelected ? 'selected' : undefined}
         size='sm'
+        role='button'
+        tabIndex={0}
+        aria-label={t('Edit channel {{name}}', { name: displayName })}
+        onClick={handleCardClick}
+        onKeyDown={handleCardKeyDown}
         className={cn(
           'min-w-0 gap-3.5 bg-(--data-table-card-bg,var(--card)) py-3.5 ring-inset',
+          !batchMode && 'cursor-pointer',
           PLAZA_CARD_HOVER,
           isSelected && 'ring-primary/40'
         )}
