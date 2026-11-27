@@ -76,6 +76,10 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
   const filter =
     !props.canBindPlugin && selectedFilter === 'plugin' ? 'all' : selectedFilter
   const keyword = search.trim().toLocaleLowerCase()
+  const bindablePlugins = useMemo(
+    () => props.plugins.filter((plugin) => plugin.provider || plugin.task),
+    [props.plugins]
+  )
   const options = useMemo(() => {
     const availablePlugins =
       props.canBindPlugin && !props.loading && !props.failed
@@ -83,9 +87,14 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
         : []
     const pluginAliases = new Map<string, string>()
     const replacedTypes = new Set<number>()
-    if (props.isCreating) {
+    if (
+      props.isCreating &&
+      props.canBindPlugin &&
+      !props.loading &&
+      !props.failed
+    ) {
       const availablePluginKeys = new Set(
-        availablePlugins.map((plugin) => plugin.key)
+        bindablePlugins.map((plugin) => plugin.key)
       )
       for (const option of CHANNEL_TYPE_OPTIONS) {
         const pluginKey = LEGACY_TASK_PLUGIN_KEYS[option.value]
@@ -119,7 +128,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
         if (!props.canBindPlugin || (filter !== 'all' && filter !== 'plugin')) {
           continue
         }
-        for (const plugin of props.plugins) {
+        for (const plugin of bindablePlugins) {
           entries.push({
             id: `plugin:${plugin.key}`,
             label: plugin.name,
@@ -180,6 +189,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
       entry.searchText.toLocaleLowerCase().includes(keyword)
     )
   }, [
+    bindablePlugins,
     filter,
     i18n.language,
     keyword,
@@ -439,7 +449,7 @@ export function ChannelProviderPicker(props: ChannelProviderPickerProps) {
         {showPluginStatus &&
           !props.loading &&
           !props.failed &&
-          props.plugins.length === 0 && (
+          bindablePlugins.length === 0 && (
             <EmptyState
               className='min-h-0 p-3'
               title={t('No plugins available for binding')}

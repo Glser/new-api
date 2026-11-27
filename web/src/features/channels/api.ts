@@ -58,6 +58,8 @@ export type TaskPluginOption = {
   icon?: string
   hasIcon?: boolean
   baseUrl?: string
+  task: boolean
+  provider: boolean
   models: string[]
   channelTypes?: number[] | null
 }
@@ -65,9 +67,12 @@ export type TaskPluginOption = {
 export async function getTaskPluginOptions(): Promise<TaskPluginOption[]> {
   const response = await api.get<{
     success: boolean
-    data: TaskPluginOption[]
+    data: (Omit<TaskPluginOption, 'models'> & { models: string[] | null })[]
   }>('/api/task_plugin_options')
-  return requireServerSuccess(response.data).data
+  return requireServerSuccess(response.data).data.map((plugin) => ({
+    ...plugin,
+    models: plugin.models ?? [],
+  }))
 }
 
 export type CodexUsageResponse = {
