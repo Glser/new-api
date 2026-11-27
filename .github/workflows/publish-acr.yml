@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "镜像版本号（留空则使用 v1.0.0-rc.37-glser.1）"
+        description: "镜像版本号（留空则使用 v2.0.0；须大于已发布的最新版本）"
         required: false
         type: string
       git_ref:
         description: "要打包的分支、标签或提交"
         required: false
         type: string
-        default: main
+        default: dev
 
 permissions:
   contents: read
@@ -24,7 +24,7 @@ concurrency:
 env:
   ACR_REGISTRY: crpi-pd9pvjyewqjvbrn0.cn-beijing.personal.cr.aliyuncs.com
   ACR_REPOSITORY: glser/new-api
-  DEFAULT_IMAGE_TAG: v1.0.0-rc.37-glser.1
+  DEFAULT_IMAGE_TAG: v2.0.0
 
 jobs:
   build_and_push:
@@ -67,6 +67,15 @@ jobs:
             echo "::error::Invalid image tag: $TAG"
             exit 1
           }
+          # 版本号只能往上走：新 tag 必须大于仓库内 VERSION 的当前值
+          # （VERSION 由上次发布后自动提交写入）。比较按 major.minor.patch
+          # 数值序；非数字段（如 rc.1）视为低于同号正式版。
+          CURRENT=$(tr -d '[:space:]' < VERSION 2>/dev/null || true)
+          if [ -n "$CURRENT" ] && ! scripts/semver-gt.sh "$TAG" "$CURRENT"; then
+            echo "::error::Image tag $TAG must be greater than the published VERSION ($CURRENT)."
+            echo "Bump the patch segment for the next release (e.g. v2.0.1)."
+            exit 1
+          fi
           printf '%s\n' "$TAG" > VERSION
           {
             echo "sha=$SHA"
@@ -104,6 +113,17 @@ jobs:
             io.oioi.build.variant=licensefix.1
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Bump VERSION to the released tag
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "chore(release): bump VERSION to ${{ steps.meta.outputs.tag }} [skip ci]" || {
+            echo "VERSION unchanged; nothing to commit"
+          }
+          git push origin HEAD:${{ inputs.git_ref || 'dev' }}
 
       - name: Summary
         run: |
