@@ -31,6 +31,10 @@ export function handleDropdownMenuItemSelect(
   onClick?: React.MouseEventHandler<HTMLElement>,
   onSelect?: DropdownMenuItemSelectHandler
 ) {
+  // 菜单经 Portal 渲染到 body，DOM 冒泡不经过触发容器，但 React 合成
+  // 事件仍沿 React 树冒泡（Portal 的经典陷阱）。菜单项点击不应激活外层
+  // 容器的 onClick（如渠道卡片的「点击进编辑」），故在入口统一阻断。
+  event.stopPropagation()
   onClick?.(event)
 
   if (!event.defaultPrevented) {
