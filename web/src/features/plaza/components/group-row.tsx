@@ -21,10 +21,17 @@ import { useTranslation } from 'react-i18next'
 
 import { FILTER_ALL } from '@/features/pricing/constants'
 import { matchesPrefix } from '@/features/pricing/lib/usd-price'
-import type { PricingModel, PricingUsableGroup } from '@/features/pricing/types'
+import type {
+  GroupPriceCurrency,
+  PricingModel,
+  PricingUsableGroup,
+} from '@/features/pricing/types'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
-import { formatGroupRatio } from '../lib/group-ratio'
+import {
+  formatGroupRatio,
+  formatUsdGroupRatioBadge,
+} from '../lib/group-ratio'
 import { PlazaFilterChip, type PlazaFilterChipOption } from './filter-chip'
 import { PlazaFilterRow } from './filter-row'
 
@@ -49,6 +56,11 @@ export function PlazaGroupRow(props: {
   groups: string[]
   models: PricingModel[]
   groupRatios?: Record<string, number>
+  /**
+   * /api/pricing group_price_currency：分组价格货币模式（后台配置）。
+   * CNY 展示原始倍率，USD 除以固定汇率折算，MIXED/未配置沿用前缀自动判定。
+   */
+  groupPriceCurrency?: Record<string, GroupPriceCurrency>
   /**
    * /api/pricing usable_group 是「分组名 -> 描述」。
    * 胶囊统一展示分组名称。
@@ -76,6 +88,7 @@ export function PlazaGroupRow(props: {
         return []
       }
       const ratio = props.groupRatios?.[group]
+      const currencyMode = props.groupPriceCurrency?.[group]
       const groupModels = props.models.filter((model) =>
         model.enable_groups?.includes(group)
       )
@@ -84,17 +97,32 @@ export function PlazaGroupRow(props: {
       ).length
       const usdOfficial = usdCount > 0
       const mixedCurrencies = usdCount > 0 && usdCount < groupModels.length
+      // 后台显式配置优先：CNY 固定原始倍率，USD 固定汇率口径；
+      // MIXED/未配置保留前缀扫描的自动判定。
+      const autoDetected = currencyMode === undefined
+      const useAutoDetection = currencyMode === 'MIXED' || autoDetected
+      const effectiveUsdOfficial = useAutoDetection ? usdOfficial : currencyMode === 'USD'
+      const effectiveMixedCurrencies = useAutoDetection
+        ? mixedCurrencies
+        : false
       return [
         {
           value: group,
           label: group,
-          // 这里的标签语义是分组倍率，始终展示后台配置的原始倍率。
-          // 汇率换算和折扣解释保留在悬浮提示及模型详情中。
-          suffix: formatRatioBadge(ratio),
+          // 标签语义是分组倍率：CNY/MIXED 展示后台配置的原始倍率，
+          // USD 展示除以固定汇率后的折算值。汇率换算和折扣解释保留在悬浮提示。
+          suffix:
+            currencyMode === 'USD'
+              ? formatUsdGroupRatioBadge(ratio)
+              : formatRatioBadge(ratio),
           priceDiscount:
             ratio == null
               ? undefined
-              : { groupRatio: ratio, usdOfficial, mixedCurrencies },
+              : {
+                  groupRatio: ratio,
+                  usdOfficial: effectiveUsdOfficial,
+                  mixedCurrencies: effectiveMixedCurrencies,
+                },
         },
       ]
     }),

@@ -287,7 +287,10 @@ export function AutoGroupOrderEditor(props: AutoGroupOrderEditorProps) {
                   >
                     {option.label}
                   </span>
-                  <GroupRatioBadge ratio={option.ratio} />
+                  <GroupRatioBadge
+                    ratio={option.ratio}
+                    priceCurrency={option.priceCurrency}
+                  />
                 </span>
               </TooltipHint>
             </li>

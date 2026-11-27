@@ -22,6 +22,8 @@ import { useTranslation } from 'react-i18next'
 
 import { StatusBadge } from '@/components/status-badge'
 import { toIntlLocale } from '@/i18n/languages'
+import { isValidGroupPriceCurrency } from '@/features/plaza/lib/group-ratio'
+import type { GroupPriceCurrency } from '@/features/pricing/types'
 import { getUserGroups } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
@@ -40,17 +42,27 @@ import {
 } from './api-keys-cells'
 import { DataTableRowActions } from './data-table-row-actions'
 
-function useGroupRatios(): Record<string, number | string> {
+type GroupRatioInfo = {
+  ratio: number | string
+  priceCurrency?: GroupPriceCurrency
+}
+
+function useGroupRatios(): Record<string, GroupRatioInfo> {
   const { data } = useQuery({
     queryKey: ['user-groups'],
     queryFn: async () => requireServerSuccess(await getUserGroups()),
     staleTime: 0,
     select: (res) => {
       if (!res.success || !res.data) return {}
-      const ratios: Record<string, number | string> = {}
+      const ratios: Record<string, GroupRatioInfo> = {}
       for (const [group, info] of Object.entries(res.data)) {
         if (typeof info.ratio === 'number' || typeof info.ratio === 'string') {
-          ratios[group] = info.ratio
+          ratios[group] = {
+            ratio: info.ratio,
+            priceCurrency: isValidGroupPriceCurrency(info.price_currency)
+              ? info.price_currency
+              : undefined,
+          }
         }
       }
       return ratios
@@ -117,10 +129,12 @@ export function useApiKeysColumns(now: number): ColumnDef<ApiKey>[] {
       cell: ({ row }) => {
         const apiKey = row.original
         const group = row.getValue('group') as string
+        const groupInfo = groupRatios[group]
         return (
           <ApiKeyGroupCell
             group={group}
-            ratio={groupRatios[group]}
+            ratio={groupInfo?.ratio}
+            priceCurrency={groupInfo?.priceCurrency}
             crossGroupRetry={apiKey.cross_group_retry}
           />
         )

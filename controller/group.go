@@ -48,13 +48,19 @@ func GetUserGroups(c *gin.Context) {
 	userId := c.GetInt("id")
 	userGroup, _ = model.GetUserGroup(userId, false)
 	userUsableGroups := service.GetUserUsableGroups(userGroup)
+	groupPriceCurrencies := ratio_setting.GetGroupPriceCurrencyCopy()
 	for groupName, _ := range ratio_setting.GetGroupRatioCopy() {
 		// UserUsableGroups contains the groups that the user can use
 		if desc, ok := userUsableGroups[groupName]; ok {
-			usableGroups[groupName] = map[string]any{
+			groupInfo := map[string]any{
 				"ratio": service.GetUserGroupRatio(userGroup, groupName),
 				"desc":  desc,
 			}
+			// 展示口径随分组价格货币配置；未配置时省略，前端按 MIXED 处理。
+			if currency, ok := groupPriceCurrencies[groupName]; ok {
+				groupInfo["price_currency"] = currency
+			}
+			usableGroups[groupName] = groupInfo
 		}
 	}
 	if _, ok := userUsableGroups["auto"]; ok {

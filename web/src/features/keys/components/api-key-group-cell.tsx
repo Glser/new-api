@@ -8,21 +8,17 @@ License, or (at your option) any later version.
 */
 import { useTranslation } from 'react-i18next'
 
+import type { GroupPriceCurrency } from '@/features/pricing/types'
+import { resolveGroupRatioBadgeValue } from '@/features/plaza/lib/group-ratio'
 import { cn } from '@/lib/utils'
 
 type ApiKeyGroupCellProps = {
   crossGroupRetry: boolean
   group: string
   ratio?: number | string | null
+  /** Plaza price-currency mode; USD converts the ratio by the fixed rate. */
+  priceCurrency?: GroupPriceCurrency
   shouldReduceMotion?: boolean
-}
-
-function formatRatioCompact(value: number | string | null | undefined) {
-  const ratio = typeof value === 'number' ? value : Number(value)
-  if (!Number.isFinite(ratio)) return null
-  return ratio % 1 === 0
-    ? String(ratio)
-    : ratio.toFixed(4).replace(/\.?0+$/, '')
 }
 
 export function ApiKeyGroupCell(props: ApiKeyGroupCellProps) {
@@ -32,7 +28,8 @@ export function ApiKeyGroupCell(props: ApiKeyGroupCellProps) {
   if (group === 'auto') {
     label = props.crossGroupRetry ? t('Cross-group') : t('Auto')
   }
-  const ratio = formatRatioCompact(props.ratio)
+  // 按货币模式解析徽章数值（USD ÷ 固定汇率折算），与广场分组胶囊同一口径。
+  const ratio = resolveGroupRatioBadgeValue(props.ratio, props.priceCurrency)
   const showRatio = ratio != null && ratio !== '1'
 
   return (
@@ -47,7 +44,7 @@ export function ApiKeyGroupCell(props: ApiKeyGroupCellProps) {
       </span>
       {showRatio && (
         <span className='shrink-0 rounded bg-lime-400 px-1 py-px text-[10px] leading-none font-semibold text-black tabular-nums @min-[48rem]/keys:text-xs'>
-          {ratio}x
+          x{ratio}
         </span>
       )}
     </div>

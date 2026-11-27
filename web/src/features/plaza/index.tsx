@@ -65,6 +65,7 @@ export function Plaza() {
     models,
     vendors,
     groupRatio,
+    groupPriceCurrency,
     usableGroup,
     endpointMap,
     autoGroups,
@@ -196,6 +197,7 @@ export function Plaza() {
                 groups={availableGroups}
                 models={models}
                 groupRatios={groupRatio}
+                groupPriceCurrency={groupPriceCurrency}
                 usableGroup={usableGroup}
                 value={groupFilter}
                 onChange={setGroupFilter}

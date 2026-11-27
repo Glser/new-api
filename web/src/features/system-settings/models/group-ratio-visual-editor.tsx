@@ -72,8 +72,58 @@ import {
 
 import { useRenameGroup } from '../hooks/use-update-option'
 import { safeJsonParse } from '../utils/json-parser'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+import type { GroupPriceCurrency } from '@/features/pricing/types'
 
 const PROTECTED_GROUPS = ['default', 'auto', 'all']
+
+const PRICE_CURRENCY_OPTIONS: {
+  value: GroupPriceCurrency
+  label: string
+}[] = [
+  { value: 'CNY', label: 'CNY' },
+  { value: 'USD', label: 'USD' },
+  { value: 'MIXED', label: 'Mixed' },
+]
+
+const VALID_PRICE_CURRENCIES = new Set<string>([
+  'CNY',
+  'USD',
+  'MIXED',
+])
+
+const DEFAULT_PRICE_CURRENCY: GroupPriceCurrency = 'MIXED'
+
+function normalizePriceCurrency(
+  value: string | undefined
+): GroupPriceCurrency {
+  const trimmed = (value ?? '').trim().toUpperCase()
+  if (VALID_PRICE_CURRENCIES.has(trimmed)) {
+    return trimmed as GroupPriceCurrency
+  }
+  return DEFAULT_PRICE_CURRENCY
+}
+
+function parsePriceCurrencyMap(
+  value: string
+): Record<string, GroupPriceCurrency> {
+  const raw = safeJsonParse<Record<string, string>>(value, {
+    fallback: {},
+    silent: true,
+  })
+  const result: Record<string, GroupPriceCurrency> = {}
+  for (const [name, currency] of Object.entries(raw)) {
+    result[name] = normalizePriceCurrency(currency)
+  }
+  return result
+}
 
 type GroupRatioVisualEditorProps = {
   groupRatio: string
@@ -83,6 +133,7 @@ type GroupRatioVisualEditorProps = {
   autoGroups: string
   maxTokenAutoGroupsField: ReactNode
   groupSpecialUsableGroup: string
+  groupPriceCurrency: string
   savedGroupNames: string[]
   hasUnsavedChanges: boolean
   onChange: (field: string, value: string) => void
@@ -95,6 +146,7 @@ type GroupPricingRow = {
   topupRatio: string
   selectable: boolean
   description: string
+  priceCurrency: GroupPriceCurrency
 }
 
 type RegistryEntry = {
@@ -143,11 +195,13 @@ function parseNestedRatioMap(
 function buildGroupPricingRows(
   groupRatio: string,
   userUsableGroups: string,
-  topupGroupRatio: string
+  topupGroupRatio: string,
+  groupPriceCurrency: string
 ): GroupPricingRow[] {
   const ratioMap = parseRatioMap(groupRatio)
   const usableMap = parseUsableMap(userUsableGroups)
   const topupMap = parseRatioMap(topupGroupRatio)
+  const currencyMap = parsePriceCurrencyMap(groupPriceCurrency)
   const names = new Set([
     ...Object.keys(ratioMap),
     ...Object.keys(usableMap),
@@ -161,6 +215,9 @@ function buildGroupPricingRows(
     topupRatio: Object.hasOwn(topupMap, name) ? String(topupMap[name]) : '',
     selectable: Object.hasOwn(usableMap, name),
     description: String(usableMap[name] ?? ''),
+    priceCurrency: Object.hasOwn(currencyMap, name)
+      ? currencyMap[name]
+      : DEFAULT_PRICE_CURRENCY,
   }))
 }
 
@@ -168,6 +225,7 @@ function serializeGroupPricingRows(rows: GroupPricingRow[]) {
   const groupRatio: Record<string, number> = {}
   const userUsableGroups: Record<string, string> = {}
   const topupGroupRatio: Record<string, number> = {}
+  const groupPriceCurrency: Record<string, string> = {}
 
   for (const row of rows) {
     const name = row.name.trim()
@@ -180,12 +238,17 @@ function serializeGroupPricingRows(rows: GroupPricingRow[]) {
     if (topup !== '' && Number.isFinite(Number(topup))) {
       topupGroupRatio[name] = Number(topup)
     }
+    // 缺省值不写入，保持存储精简；展示层把缺失当作 MIXED。
+    if (row.priceCurrency !== DEFAULT_PRICE_CURRENCY) {
+      groupPriceCurrency[name] = row.priceCurrency
+    }
   }
 
   return {
     GroupRatio: JSON.stringify(groupRatio, null, 2),
     UserUsableGroups: JSON.stringify(userUsableGroups, null, 2),
     TopupGroupRatio: JSON.stringify(topupGroupRatio, null, 2),
+    GroupPriceCurrency: JSON.stringify(groupPriceCurrency, null, 2),
   }
 }
 
@@ -195,18 +258,21 @@ function groupPricingSignature(rows: GroupPricingRow[]): string {
     groupRatio: parseRatioMap(serialized.GroupRatio),
     userUsableGroups: parseUsableMap(serialized.UserUsableGroups),
     topupGroupRatio: parseRatioMap(serialized.TopupGroupRatio),
+    groupPriceCurrency: parsePriceCurrencyMap(serialized.GroupPriceCurrency),
   })
 }
 
 function sourceGroupPricingSignature(
   groupRatio: string,
   userUsableGroups: string,
-  topupGroupRatio: string
+  topupGroupRatio: string,
+  groupPriceCurrency: string
 ): string {
   return JSON.stringify({
     groupRatio: parseRatioMap(groupRatio),
     userUsableGroups: parseUsableMap(userUsableGroups),
     topupGroupRatio: parseRatioMap(topupGroupRatio),
+    groupPriceCurrency: parsePriceCurrencyMap(groupPriceCurrency),
   })
 }
 
@@ -258,6 +324,7 @@ export const GroupRatioVisualEditor = memo(function GroupRatioVisualEditor({
   autoGroups,
   maxTokenAutoGroupsField,
   groupSpecialUsableGroup,
+  groupPriceCurrency,
   savedGroupNames,
   hasUnsavedChanges,
   onChange,
@@ -331,6 +398,7 @@ export const GroupRatioVisualEditor = memo(function GroupRatioVisualEditor({
         groupRatio={groupRatio}
         userUsableGroups={userUsableGroups}
         topupGroupRatio={topupGroupRatio}
+        groupPriceCurrency={groupPriceCurrency}
         savedGroupNames={savedGroupNames}
         hasUnsavedChanges={hasUnsavedChanges}
         onChange={onChange}
@@ -425,6 +493,7 @@ type GroupPricingTableProps = {
   groupRatio: string
   userUsableGroups: string
   topupGroupRatio: string
+  groupPriceCurrency: string
   savedGroupNames: string[]
   hasUnsavedChanges: boolean
   onChange: (field: string, value: string) => void
@@ -435,6 +504,7 @@ function GroupPricingTable({
   groupRatio,
   userUsableGroups,
   topupGroupRatio,
+  groupPriceCurrency,
   savedGroupNames,
   hasUnsavedChanges,
   onChange,
@@ -445,14 +515,20 @@ function GroupPricingTable({
   const [renameTarget, setRenameTarget] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [rows, setRows] = useState<GroupPricingRow[]>(() =>
-    buildGroupPricingRows(groupRatio, userUsableGroups, topupGroupRatio)
+    buildGroupPricingRows(
+      groupRatio,
+      userUsableGroups,
+      topupGroupRatio,
+      groupPriceCurrency
+    )
   )
 
   useEffect(() => {
     const incomingSignature = sourceGroupPricingSignature(
       groupRatio,
       userUsableGroups,
-      topupGroupRatio
+      topupGroupRatio,
+      groupPriceCurrency
     )
     setRows((currentRows) => {
       if (groupPricingSignature(currentRows) === incomingSignature) {
@@ -461,10 +537,11 @@ function GroupPricingTable({
       return buildGroupPricingRows(
         groupRatio,
         userUsableGroups,
-        topupGroupRatio
+        topupGroupRatio,
+        groupPriceCurrency
       )
     })
-  }, [groupRatio, userUsableGroups, topupGroupRatio])
+  }, [groupRatio, userUsableGroups, topupGroupRatio, groupPriceCurrency])
 
   const emitRows = useCallback(
     (nextRows: GroupPricingRow[]) => {
@@ -473,6 +550,7 @@ function GroupPricingTable({
       onChange('GroupRatio', serialized.GroupRatio)
       onChange('UserUsableGroups', serialized.UserUsableGroups)
       onChange('TopupGroupRatio', serialized.TopupGroupRatio)
+      onChange('GroupPriceCurrency', serialized.GroupPriceCurrency)
     },
     [onChange]
   )
@@ -507,6 +585,7 @@ function GroupPricingTable({
         topupRatio: '',
         selectable: true,
         description: '',
+        priceCurrency: DEFAULT_PRICE_CURRENCY,
       },
     ])
   }, [emitRows, rows])
@@ -602,6 +681,37 @@ function GroupPricingTable({
                       updateRow(row._id, 'topupRatio', event.target.value)
                     }
                   />
+                ),
+              },
+              {
+                id: 'price-currency',
+                header: t('Price currency'),
+                className: 'w-32',
+                cell: (row) => (
+                  <Select
+                    items={PRICE_CURRENCY_OPTIONS}
+                    value={row.priceCurrency}
+                    onValueChange={(value) => {
+                      if (value) {
+                        updateRow(row._id, 'priceCurrency', value)
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      size='sm'
+                      className='w-full'
+                      aria-label={t('Price currency')}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent alignItemWithTrigger={false}>
+                      {PRICE_CURRENCY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ),
               },
               {

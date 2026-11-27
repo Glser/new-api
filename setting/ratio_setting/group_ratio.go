@@ -25,12 +25,24 @@ var defaultGroupGroupRatio = map[string]map[string]float64{
 
 var groupGroupRatioMap = types.NewRWMap[string, map[string]float64]()
 
+// 分组价格货币模式：模型广场分组倍率徽章的展示口径。
+const (
+	GroupPriceCurrencyCNY   = "CNY"
+	GroupPriceCurrencyUSD   = "USD"
+	GroupPriceCurrencyMixed = "MIXED"
+)
+
+var groupPriceCurrencyMap = types.NewRWMap[string, string]()
+
 var defaultGroupSpecialUsableGroup = map[string]map[string]string{}
 
 type GroupRatioSetting struct {
 	GroupRatio              *types.RWMap[string, float64]            `json:"group_ratio"`
 	GroupGroupRatio         *types.RWMap[string, map[string]float64] `json:"group_group_ratio"`
 	GroupSpecialUsableGroup *types.RWMap[string, map[string]string]  `json:"group_special_usable_group"`
+	// GroupPriceCurrency 分组价格货币模式：CNY 展示原始倍率，USD 按固定汇率
+	// 折算，MIXED 按美元前缀名单自动判定。缺省按 MIXED 处理。
+	GroupPriceCurrency *types.RWMap[string, string] `json:"group_price_currency"`
 }
 
 var groupRatioSetting GroupRatioSetting
@@ -41,11 +53,13 @@ func init() {
 
 	groupRatioMap.AddAll(defaultGroupRatio)
 	groupGroupRatioMap.AddAll(defaultGroupGroupRatio)
+	groupPriceCurrencyMap.AddAll(map[string]string{})
 
 	groupRatioSetting = GroupRatioSetting{
 		GroupSpecialUsableGroup: groupSpecialUsableGroup,
 		GroupRatio:              groupRatioMap,
 		GroupGroupRatio:         groupGroupRatioMap,
+		GroupPriceCurrency:      groupPriceCurrencyMap,
 	}
 
 	config.GlobalConfig.Register("group_ratio_setting", &groupRatioSetting)
@@ -61,6 +75,10 @@ func GetGroupRatioSetting() *GroupRatioSetting {
 
 func GetGroupRatioCopy() map[string]float64 {
 	return groupRatioMap.ReadAll()
+}
+
+func GetGroupPriceCurrencyCopy() map[string]string {
+	return groupPriceCurrencyMap.ReadAll()
 }
 
 func ContainsGroupRatio(name string) bool {
@@ -114,6 +132,25 @@ func CheckGroupRatio(jsonStr string) error {
 	for name, ratio := range checkGroupRatio {
 		if ratio < 0 {
 			return errors.New("group ratio must be not less than 0: " + name)
+		}
+	}
+	return nil
+}
+
+func CheckGroupPriceCurrency(jsonStr string) error {
+	checkMap := make(map[string]string)
+	err := json.Unmarshal([]byte(jsonStr), &checkMap)
+	if err != nil {
+		return err
+	}
+	validCurrencies := map[string]bool{
+		GroupPriceCurrencyCNY:   true,
+		GroupPriceCurrencyUSD:   true,
+		GroupPriceCurrencyMixed: true,
+	}
+	for name, currency := range checkMap {
+		if !validCurrencies[currency] {
+			return errors.New("group price currency must be one of CNY/USD/MIXED: " + name)
 		}
 	}
 	return nil

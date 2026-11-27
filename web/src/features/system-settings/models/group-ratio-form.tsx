@@ -73,6 +73,7 @@ type GroupFormValues = {
   MaxTokenAutoGroups: number
   DefaultUseAutoGroup: boolean
   GroupSpecialUsableGroup: string
+  GroupPriceCurrency: string
 }
 
 type GroupRatioFormProps = {
@@ -212,6 +213,7 @@ export const GroupRatioForm = memo(function GroupRatioForm({
                 />
               }
               groupSpecialUsableGroup={form.watch('GroupSpecialUsableGroup')}
+              groupPriceCurrency={form.watch('GroupPriceCurrency')}
               savedGroupNames={savedGroupNames}
               hasUnsavedChanges={form.formState.isDirty}
               onChange={(field, value) =>
@@ -426,6 +428,32 @@ export const GroupRatioForm = memo(function GroupRatioForm({
                   <FormDescription>
                     {t(
                       'Nested JSON defining per-group rules for adding (+:), removing (-:), or appending usable groups.'
+                    )}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='GroupPriceCurrency'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('Group price currency')}</FormLabel>
+                  <FormControl>
+                    <JsonCodeEditor
+                      value={field.value}
+                      onChange={field.onChange}
+                      name={field.name}
+                      onBlur={field.onBlur}
+                      textareaRef={field.ref}
+                      heightClassName='h-40 min-h-40 max-h-40'
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t(
+                      'JSON map of group → CNY / USD / MIXED. Controls how the model square shows each group ratio chip: CNY keeps the raw ratio, USD divides it by the fixed exchange rate (1 USD = 7 CNY), MIXED auto-detects from the USD price prefixes.'
                     )}
                   </FormDescription>
                   <FormMessage />

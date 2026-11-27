@@ -40,7 +40,6 @@ export function PriceDiscountHint(
 ) {
   const { t } = useTranslation()
   const discount = getPriceDiscount(props.groupRatio, props.usdOfficial)
-  const ratio = formatPriceRatio(discount.groupRatio)
   const effectiveRatio = formatPriceRatio(discount.effectiveRatio)
 
   return (
@@ -49,8 +48,6 @@ export function PriceDiscountHint(
       <TooltipContent className='block max-w-72 space-y-2'>
         <p className='font-medium'>{t('Price calculation')}</p>
         <dl className='grid grid-cols-[auto_1fr] gap-x-5 gap-y-1.5'>
-          <dt className='text-muted-foreground'>{t('Group Ratio')}</dt>
-          <dd className='text-right font-mono tabular-nums'>×{ratio}</dd>
           {props.usdOfficial && (
             <>
               <dt className='text-muted-foreground'>
@@ -65,7 +62,7 @@ export function PriceDiscountHint(
               : t('Price ratio')}
           </dt>
           <dd className='text-right font-mono tabular-nums'>
-            {props.usdOfficial ? `${ratio} ÷ ${discount.exchangeRate} = ` : '×'}
+            {props.usdOfficial ? `÷ ${discount.exchangeRate} = ` : '×'}
             {effectiveRatio}
           </dd>
           {props.mixedCurrencies && (
@@ -73,7 +70,9 @@ export function PriceDiscountHint(
               <dt className='text-muted-foreground'>
                 {t('CNY official price ratio')}
               </dt>
-              <dd className='text-right font-mono tabular-nums'>×{ratio}</dd>
+              <dd className='text-right font-mono tabular-nums'>
+                ×{formatPriceRatio(discount.groupRatio)}
+              </dd>
             </>
           )}
         </dl>

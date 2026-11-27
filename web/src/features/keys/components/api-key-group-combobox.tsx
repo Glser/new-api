@@ -34,6 +34,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import type { GroupPriceCurrency } from '@/features/pricing/types'
 import { cn } from '@/lib/utils'
 
 import { GroupRatioBadge } from './auto-group-visuals'
@@ -43,6 +44,8 @@ export type ApiKeyGroupOption = {
   label: string
   desc?: string
   ratio?: number | string
+  /** Plaza price-currency mode; controls how the ratio badge is shown. */
+  priceCurrency?: GroupPriceCurrency
 }
 
 type ApiKeyGroupComboboxProps = {
@@ -122,6 +125,7 @@ export function ApiKeyGroupCombobox({
           <span className='shrink-0'>
             <GroupRatioBadge
               ratio={selectedOption?.ratio}
+              priceCurrency={selectedOption?.priceCurrency}
               isAuto={isAutoSelected}
               shouldReduceMotion
             />
@@ -179,6 +183,7 @@ export function ApiKeyGroupCombobox({
                     </span>
                     <GroupRatioBadge
                       ratio={option.ratio}
+                      priceCurrency={option.priceCurrency}
                       isAuto={isAutoOption}
                       shouldReduceMotion
                     />

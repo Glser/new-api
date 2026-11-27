@@ -20,6 +20,8 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { GroupMultiplierBadge } from '@/components/group-badge'
+import type { GroupPriceCurrency } from '@/features/pricing/types'
+import { resolveGroupRatioBadgeValue } from '@/features/plaza/lib/group-ratio'
 import { cn } from '@/lib/utils'
 
 export type GroupRatio = number | string | null | undefined
@@ -74,6 +76,8 @@ export function AutoGroupFrame(props: AutoGroupFrameProps) {
 type GroupRatioBadgeProps = {
   isAuto?: boolean
   ratio: GroupRatio
+  /** Plaza price-currency mode; USD converts the ratio by the fixed rate. */
+  priceCurrency?: GroupPriceCurrency
   shouldReduceMotion?: boolean
 }
 
@@ -84,10 +88,20 @@ export function GroupRatioBadge(props: GroupRatioBadgeProps) {
     return null
   }
 
+  // 数值倍率统一 x 前缀，与广场分组胶囊一致；USD 按货币模式除以固定汇率。
+  // ratio 为 1 时 resolve 返回 null，徽章仍按原行为展示（x1）。
+  let badgeLabel: string | undefined
+  if (typeof props.ratio === 'number') {
+    const text = resolveGroupRatioBadgeValue(props.ratio, props.priceCurrency)
+    badgeLabel = `x${text ?? props.ratio}`
+  } else {
+    badgeLabel = t('Auto')
+  }
+
   return (
     <GroupMultiplierBadge
       ratio={typeof props.ratio === 'number' ? props.ratio : undefined}
-      label={typeof props.ratio === 'number' ? undefined : t('Auto')}
+      label={badgeLabel}
       className={cn(
         typeof props.ratio === 'number' &&
           'h-auto min-w-0 rounded border-0 bg-lime-400 px-1.5 py-px text-[11px] font-semibold text-black',

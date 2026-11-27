@@ -66,6 +66,7 @@ const defaultModelSettings: ModelsPageSettings = {
   MaxTokenAutoGroups: 5,
   DefaultUseAutoGroup: false,
   'group_ratio_setting.group_special_usable_group': '{}',
+  'group_ratio_setting.group_price_currency': '{}',
   RetryTimes: 0,
   ChannelDisableThreshold: '',
   AutomaticDisableChannelEnabled: false,

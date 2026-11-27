@@ -64,6 +64,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { usePricingData } from '@/features/pricing/hooks/use-pricing-data'
+import { isValidGroupPriceCurrency } from '@/features/plaza/lib/group-ratio'
 import { useStatus } from '@/hooks/use-status'
 import { getUserModels, getUserGroups } from '@/lib/api'
 import { getCurrencyDisplay, getCurrencyLabel } from '@/lib/currency'
@@ -182,6 +183,9 @@ export function ApiKeysMutateDrawer({
         label: key,
         desc: info.desc || key,
         ratio: info.ratio,
+        priceCurrency: isValidGroupPriceCurrency(info.price_currency)
+          ? info.price_currency
+          : undefined,
       })),
     [groupsData]
   )

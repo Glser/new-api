@@ -64,18 +64,25 @@ func GetPricing(c *gin.Context) {
 			delete(groupRatio, group)
 		}
 	}
+	groupPriceCurrency := ratio_setting.GetGroupPriceCurrencyCopy()
+	for name := range groupPriceCurrency {
+		if _, ok := usableGroup[name]; !ok {
+			delete(groupPriceCurrency, name)
+		}
+	}
 
 	c.JSON(200, gin.H{
-		"success":            true,
-		"data":               pricing,
-		"vendors":            model.GetVendors(),
-		"group_ratio":        groupRatio,
-		"usable_group":       usableGroup,
-		"supported_endpoint": model.GetSupportedEndpointMap(),
-		"request_examples":   model_plaza_setting.GetEffectiveRequestExamples(),
-		"categories":         model_plaza_setting.GetEffectiveCategories(),
-		"auto_groups":        service.GetUserAutoGroup(group),
-		"pricing_version":    "a42d372ccf0b5dd13ecf71203521f9d2",
+		"success":             true,
+		"data":                pricing,
+		"vendors":             model.GetVendors(),
+		"group_ratio":         groupRatio,
+		"group_price_currency": groupPriceCurrency,
+		"usable_group":        usableGroup,
+		"supported_endpoint":  model.GetSupportedEndpointMap(),
+		"request_examples":    model_plaza_setting.GetEffectiveRequestExamples(),
+		"categories":          model_plaza_setting.GetEffectiveCategories(),
+		"auto_groups":         service.GetUserAutoGroup(group),
+		"pricing_version":     "a42d372ccf0b5dd13ecf71203521f9d2",
 	})
 }
 

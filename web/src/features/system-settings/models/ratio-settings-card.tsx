@@ -144,6 +144,16 @@ const createGroupSchema = (t: Translate) =>
     MaxTokenAutoGroups: positiveIntegerSchema(t('Enter a positive integer')),
     DefaultUseAutoGroup: z.boolean(),
     GroupSpecialUsableGroup: createJsonStringField(t),
+    GroupPriceCurrency: createJsonStringField(t, {
+      predicate: (parsed) =>
+        typeof parsed === 'object' &&
+        parsed !== null &&
+        !Array.isArray(parsed) &&
+        Object.values(parsed).every(
+          (value) => value === 'CNY' || value === 'USD' || value === 'MIXED'
+        ),
+      predicateMessage: 'Expected a JSON map of group → CNY / USD / MIXED',
+    }),
   })
 
 type ModelFormValues = z.infer<ReturnType<typeof createModelSchema>>
@@ -251,6 +261,7 @@ export function RatioSettingsCard({
     GroupSpecialUsableGroup: normalizeJsonString(
       groupDefaults.GroupSpecialUsableGroup
     ),
+    GroupPriceCurrency: normalizeJsonString(groupDefaults.GroupPriceCurrency),
   })
   const modelSchema = useMemo(() => createModelSchema(t), [t])
   const groupSchema = useMemo(() => createGroupSchema(t), [t])
@@ -289,6 +300,7 @@ export function RatioSettingsCard({
       GroupSpecialUsableGroup: formatJsonForTextarea(
         groupDefaults.GroupSpecialUsableGroup
       ),
+      GroupPriceCurrency: formatJsonForTextarea(groupDefaults.GroupPriceCurrency),
     },
   })
 
@@ -341,6 +353,7 @@ export function RatioSettingsCard({
       GroupSpecialUsableGroup: normalizeJsonString(
         groupDefaults.GroupSpecialUsableGroup
       ),
+      GroupPriceCurrency: normalizeJsonString(groupDefaults.GroupPriceCurrency),
     }
 
     groupForm.reset({
@@ -352,6 +365,9 @@ export function RatioSettingsCard({
       AutoGroups: formatJsonForTextarea(groupDefaults.AutoGroups),
       GroupSpecialUsableGroup: formatJsonForTextarea(
         groupDefaults.GroupSpecialUsableGroup
+      ),
+      GroupPriceCurrency: formatJsonForTextarea(
+        groupDefaults.GroupPriceCurrency
       ),
     })
   }, [groupDefaults, groupForm])
@@ -419,12 +435,14 @@ export function RatioSettingsCard({
         GroupSpecialUsableGroup: normalizeJsonString(
           values.GroupSpecialUsableGroup
         ),
+        GroupPriceCurrency: normalizeJsonString(values.GroupPriceCurrency),
       }
 
       // Map form field names to API keys (most are 1:1, except GroupSpecialUsableGroup)
       const apiKeyMap: Record<string, string> = {
         GroupSpecialUsableGroup:
           'group_ratio_setting.group_special_usable_group',
+        GroupPriceCurrency: 'group_ratio_setting.group_price_currency',
       }
 
       const updates = (

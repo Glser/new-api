@@ -171,6 +171,16 @@ export type ModelCapability =
 /** group name -> description, as returned by /api/pricing usable_group */
 export type PricingUsableGroup = Record<string, string>
 
+/**
+ * Price currency mode of a plaza group chip, set per group in admin settings.
+ * CNY shows the raw ratio, USD divides it by the fixed exchange rate, MIXED
+ * auto-detects from the USD price prefix list.
+ */
+export type GroupPriceCurrency = 'CNY' | 'USD' | 'MIXED'
+
+/** group name -> price currency mode, as returned by /api/pricing group_price_currency */
+export type PricingGroupPriceCurrency = Record<string, GroupPriceCurrency>
+
 /** A model plaza category from system settings. `other` is always last. */
 export type PlazaCategoryConfig = {
   key: string
@@ -195,6 +205,7 @@ export type PricingData = {
   data: PricingModel[]
   vendors: PricingVendor[]
   group_ratio: Record<string, number>
+  group_price_currency?: PricingGroupPriceCurrency
   usable_group: PricingUsableGroup
   supported_endpoint: Record<string, { path?: string; method?: string }>
   request_examples?: Record<string, RequestExample>

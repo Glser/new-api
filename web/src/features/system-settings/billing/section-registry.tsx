@@ -55,6 +55,7 @@ const getGroupDefaults = (settings: BillingSettings) => ({
   DefaultUseAutoGroup: settings.DefaultUseAutoGroup,
   GroupSpecialUsableGroup:
     settings['group_ratio_setting.group_special_usable_group'],
+  GroupPriceCurrency: settings['group_ratio_setting.group_price_currency'],
 })
 
 const BILLING_SECTION_ALIASES = {
