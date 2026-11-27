@@ -70,8 +70,9 @@ jobs:
           # 版本号只能往上走：新 tag 必须大于仓库内 VERSION 的当前值
           # （VERSION 由上次发布后自动提交写入）。比较按 major.minor.patch
           # 数值序；非数字段（如 rc.1）视为低于同号正式版。
+          # 用 bash 显式调用：Windows 开发机上 git 不保留 +x 位。
           CURRENT=$(tr -d '[:space:]' < VERSION 2>/dev/null || true)
-          if [ -n "$CURRENT" ] && ! scripts/semver-gt.sh "$TAG" "$CURRENT"; then
+          if [ -n "$CURRENT" ] && ! bash scripts/semver-gt.sh "$TAG" "$CURRENT"; then
             echo "::error::Image tag $TAG must be greater than the published VERSION ($CURRENT)."
             echo "Bump the patch segment for the next release (e.g. v2.0.1)."
             exit 1
